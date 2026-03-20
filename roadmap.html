@@ -1,1 +1,793 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zaahi — Strategic Roadmap 2026–2030</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
+
+:root {
+–bg: #f0f2f5;
+–surface: #ffffff;
+–bd: #d4d8e0;
+–bd2: #e8eaee;
+–ink: #0f1520;
+–ink2: #2a3245;
+–ink3: #5a6480;
+–ink4: #9aa0b4;
+–blue: #1a4fa0;
+–blue2: #2563cc;
+–blt: #e8f0fc;
+–bmid: #b8d0f8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(–bg);color:var(–ink);font-family:‘Roboto Mono’,monospace;font-size:13px;line-height:1.65;}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:999;background:var(–blue);display:flex;justify-content:space-between;align-items:center;padding:0 40px;height:54px;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.hdr-logo{font-size:15px;font-weight:700;letter-spacing:.22em;color:#fff;}
+.hdr-mid{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:.15em;}
+.hdr-r{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.1em;}
+
+/* NAV */
+.nav{display:flex;overflow-x:auto;background:var(–surface);border-bottom:1px solid var(–bd);box-shadow:0 1px 4px rgba(0,0,0,.06);scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{flex-shrink:0;padding:12px 22px;border-right:1px solid var(–bd2);cursor:pointer;user-select:none;transition:background .15s;}
+.nav-btn:last-child{border-right:none;}
+.nav-btn:hover{background:var(–blt);}
+.nav-btn.on{background:var(–blue);color:#fff;}
+.nav-n{font-size:9px;letter-spacing:.2em;opacity:.5;margin-bottom:2px;}
+.nav-name{font-size:11px;font-weight:600;letter-spacing:.08em;}
+.nav-d{font-size:9px;opacity:.55;margin-top:2px;}
+
+/* PHASE CARDS */
+.phase{background:var(–surface);border:1px solid var(–bd);border-radius:4px;margin:0 20px 12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);transition:box-shadow .2s;}
+.phase.open{box-shadow:0 4px 16px rgba(26,79,160,.12);border-color:var(–bmid);}
+
+.phase-hdr{display:grid;grid-template-columns:180px 1fr 160px 44px;align-items:stretch;cursor:pointer;border-bottom:1px solid var(–bd2);min-height:64px;transition:background .12s;}
+.phase-hdr:hover{background:var(–blt);}
+.phase.open .phase-hdr{background:var(–blue);color:#fff;border-color:var(–blue);}
+
+.col-id{display:flex;flex-direction:column;justify-content:center;padding:12px 18px;border-right:1px solid currentColor;}
+.col-num{font-size:9px;letter-spacing:.25em;opacity:.4;margin-bottom:2px;}
+.col-name{font-size:13px;font-weight:700;}
+.col-tag{font-size:9px;opacity:.55;margin-top:3px;letter-spacing:.08em;}
+
+.col-title{display:flex;flex-direction:column;justify-content:center;padding:12px 22px;border-right:1px solid currentColor;}
+.ph-title{font-size:clamp(12px,1.6vw,15px);font-weight:600;line-height:1.3;margin-bottom:3px;}
+.ph-sub{font-size:11px;font-weight:300;opacity:.6;}
+
+.col-per{display:flex;flex-direction:column;justify-content:center;padding:12px 18px;border-right:1px solid currentColor;text-align:right;}
+.per-main{font-size:13px;font-weight:600;}
+.per-sub{font-size:9px;opacity:.5;margin-top:2px;letter-spacing:.1em;}
+
+.col-tog{display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:300;transition:transform .3s;}
+.phase.open .col-tog{transform:rotate(45deg);}
+
+/* PHASE BODY */
+.phase-body{display:none;background:var(–surface);color:var(–ink);}
+.phase.open .phase-body{display:block;}
+
+.obj-row{display:grid;grid-template-columns:180px 1fr;border-bottom:1px solid var(–bd2);}
+.obj-lbl{padding:20px 18px;border-right:1px solid var(–bd2);font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–blue2);}
+.obj-txt{padding:20px 22px;font-size:13px;font-weight:300;line-height:1.8;color:var(–ink3);max-width:680px;}
+
+/* TABLE */
+.t-head{display:grid;grid-template-columns:155px 200px 1fr 105px;border-bottom:2px solid var(–blue);background:var(–blt);}
+.th{padding:8px 14px;font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–blue);border-right:1px solid var(–bmid);}
+.th:last-child{border-right:none;}
+.t-row{display:grid;grid-template-columns:155px 200px 1fr 105px;border-bottom:1px solid var(–bd2);transition:background .1s;}
+.t-row:hover{background:var(–blt);}
+.t-row:last-child{border-bottom:none;}
+.td{padding:13px 14px;border-right:1px solid var(–bd2);display:flex;flex-direction:column;justify-content:center;}
+.td:last-child{border-right:none;}
+.td-cat{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–blue2);margin-bottom:3px;}
+.td-t{font-size:12px;font-weight:600;color:var(–ink);line-height:1.3;}
+.td-m{font-size:11px;font-weight:400;color:var(–ink2);line-height:1.5;}
+.td-d{font-size:11px;font-weight:300;color:var(–ink3);line-height:1.6;}
+
+.badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;}
+.badge.ac{background:var(–blue);color:#fff;}
+.badge.pl{background:var(–bd2);color:var(–ink4);border:1px solid var(–bd);}
+.badge.iv{background:var(–ink);color:#fff;}
+
+.p-foot{display:flex;flex-wrap:wrap;border-top:1px solid var(–bd2);background:var(–blt);}
+.p-tag{padding:8px 16px;font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(–blue2);border-right:1px solid var(–bmid);}
+.p-tag:last-child{border-right:none;}
+.p-tag.key{background:var(–blue);color:#fff;}
+
+/* CLOSING BLOCK */
+.closing{display:grid;grid-template-columns:1fr 1fr;background:var(–surface);border-top:2px solid var(–blue);border-bottom:1px solid var(–bd);margin-top:24px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.cl-left{padding:52px 40px;border-right:1px solid var(–bd2);}
+.cl-right{padding:52px 40px;}
+.cl-eyebrow{font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(–blue2);margin-bottom:16px;}
+.cl-headline{font-size:clamp(20px,3.5vw,34px);font-weight:700;line-height:1.12;letter-spacing:-.02em;color:var(–ink);margin-bottom:20px;}
+.cl-body{font-size:13px;font-weight:300;line-height:1.85;color:var(–ink3);}
+
+/* STATS GRID */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:28px;}
+.stat{background:var(–blt);border:1px solid var(–bmid);border-left:3px solid var(–blue2);padding:14px 16px;border-radius:2px;}
+.stat-n{font-size:22px;font-weight:700;letter-spacing:-.02em;display:block;color:var(–blue);margin-bottom:3px;}
+.stat-l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(–ink3);line-height:1.5;}
+
+/* TIMELINE */
+.tl-lbl{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–ink4);margin-bottom:10px;}
+.tl-bar{height:4px;background:var(–bd);border-radius:4px;position:relative;margin-bottom:12px;}
+.tl-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(–blue),var(–blue2));border-radius:4px;width:2%;transition:width 1.5s ease;}
+.tl-dot{position:absolute;top:-4px;left:2%;width:12px;height:12px;background:var(–blue);border:2px solid #fff;border-radius:50%;transform:translateX(-50%);box-shadow:0 0 0 3px rgba(26,79,160,.2);}
+.tl-marks{display:flex;justify-content:space-between;}
+.tlm{font-size:9px;color:var(–ink4);text-align:center;line-height:1.4;}
+.tlm.now{color:var(–blue);font-weight:700;}
+
+/* BOTTOM NUMBERS */
+.bottom{display:grid;grid-template-columns:repeat(5,1fr);margin:0 20px;background:var(–surface);border:1px solid var(–bd);border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.bot-c{padding:24px 20px;border-right:1px solid var(–bd2);}
+.bot-c:last-child{border-right:none;}
+.bot-n{font-size:22px;font-weight:700;letter-spacing:-.02em;display:block;color:var(–blue);margin-bottom:5px;}
+.bot-l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(–ink4);line-height:1.6;}
+
+/* NOTE */
+.note{margin:16px 20px 32px;padding:20px 24px;background:var(–surface);border:1px solid var(–bd);border-left:4px solid var(–blue2);border-radius:4px;display:grid;grid-template-columns:160px 1fr;gap:24px;}
+.note-l{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(–blue2);padding-top:2px;}
+.note-t{font-size:12px;font-weight:300;line-height:1.8;color:var(–ink3);}
+
+/* SPACER */
+.spacer{height:20px;}
+
+/* CREDITS */
+.credits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(–bd);border:1px solid var(–bd);border-radius:2px;overflow:hidden;}
+@media(max-width:640px){.credits-grid{grid-template-columns:1fr;}}
+
+/* MOBILE */
+@media(max-width:760px){
+.hdr{padding:0 16px;}.hdr-mid{display:none;}
+.phase{margin:0 8px 10px;}
+.phase-hdr{grid-template-columns:1fr auto 40px;}.col-id{display:none;}.col-per{display:none;}
+.obj-row{grid-template-columns:1fr;}.obj-lbl{border-right:none;border-bottom:1px solid var(–bd2);}
+.t-head{grid-template-columns:1fr 1fr;}.t-row{grid-template-columns:1fr 1fr;}
+.th:nth-child(3),.th:nth-child(4),.td:nth-child(3),.td:nth-child(4){display:none;}
+.closing{grid-template-columns:1fr;}.cl-left{border-right:none;border-bottom:1px solid var(–bd2);padding:36px 16px;}.cl-right{padding:36px 16px;}
+.bottom{grid-template-columns:repeat(2,1fr);margin:0 8px;}.bot-c:nth-child(2){border-right:none;}.bot-c:nth-child(3){border-top:1px solid var(–bd2);}
+.note{grid-template-columns:1fr;margin:12px 8px 24px;gap:12px;}
+}
+</style>
+
+</head>
+<body>
+
+<!-- HEADER -->
+
+<div class="hdr">
+<div class="hdr-logo">ZAAHI</div>
+<div class="hdr-mid">STRATEGIC ROADMAP · 2026–2030</div>
+<div class="hdr-r">CONFIDENTIAL · MARCH 2026</div>
+</div>
+
+<!-- NAV -->
+
+<div class="nav">
+<div class="nav-btn on" id="btn-all" onclick="navAll()">
+<div class="nav-n">00</div><div class="nav-name">ALL PHASES</div><div class="nav-d">2026–2030</div>
+</div>
+<div class="nav-btn" id="btn-p1" onclick="navOne('p1')">
+<div class="nav-n">01</div><div class="nav-name">FOUNDATION</div><div class="nav-d">Q1–Q2 2026</div>
+</div>
+<div class="nav-btn" id="btn-p2" onclick="navOne('p2')">
+<div class="nav-n">02</div><div class="nav-name">MVP LIVE</div><div class="nav-d">Q3–Q4 2026</div>
+</div>
+<div class="nav-btn" id="btn-p3" onclick="navOne('p3')">
+<div class="nav-n">03</div><div class="nav-name">DUBAI FULL</div><div class="nav-d">Q1–Q2 2027</div>
+</div>
+<div class="nav-btn" id="btn-p4" onclick="navOne('p4')">
+<div class="nav-n">04</div><div class="nav-name">UAE SCALE</div><div class="nav-d">Q3 2027–Q1 2028</div>
+</div>
+<div class="nav-btn" id="btn-p5" onclick="navOne('p5')">
+<div class="nav-n">05</div><div class="nav-name">GLOBAL</div><div class="nav-d">2028–2029</div>
+</div>
+<div class="nav-btn" id="btn-p6" onclick="navOne('p6')">
+<div class="nav-n">06</div><div class="nav-name">AUTONOMOUS</div><div class="nav-d">2029–2030+</div>
+</div>
+</div>
+
+<div class="spacer"></div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 01 — FOUNDATION -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase open" id="p1">
+<div class="phase-hdr" onclick="togPhase('p1')">
+<div class="col-id"><div class="col-num">PHASE 01</div><div class="col-name">FOUNDATION</div><div class="col-tag">● ACTIVE NOW</div></div>
+<div class="col-title">
+<div class="ph-title">Company incorporated. Capital secured. Architecture locked. Team deployed.</div>
+<div class="ph-sub">Legal entity · Seed round · 9-layer platform design · DLD engagement · MVP scope defined</div>
+</div>
+<div class="col-per"><div class="per-main">Q1–Q2 2026</div><div class="per-sub">6 MONTHS</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">The foundation that carries everything above it. Zaahi is incorporated in DIFC or ADGM under English law. Seed capital is closed and deployed. All nine platform layers are technically finalised and development-ready. The core team of 25 is executing against a confirmed MVP scope. Formal engagement with Dubai Land Department and the Dubai PropTech Hub is underway. This phase ends when the first line of production code deploys against spec.</div>
+</div>
+<div class="t-head"><div class="th">DOMAIN</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">LEGAL</div><div class="td-t">Company Incorporated</div></div>
+<div class="td"><div class="td-m">DIFC or ADGM. English law jurisdiction. Full corporate governance from day one.</div></div>
+<div class="td"><div class="td-d">Shareholders Agreement signed. Board of three: Founder, Guardian Partner, Investor. IP ownership assigned to the company. Equity structure and vesting schedules locked before any capital is deployed. No ambiguity about ownership from the start.</div></div>
+<div class="td"><span class="badge ac">IN MOTION</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">CAPITAL</div><div class="td-t">Seed Round Closed</div></div>
+<div class="td"><div class="td-m">First institutional capital secured and allocated across all critical functions.</div></div>
+<div class="td"><div class="td-d">Deployed across: MVP engineering, legal and compliance, DLD integration preparation, data infrastructure setup, and a 12-month operational runway for the core team. Every allocation is purposeful before capital is raised.</div></div>
+<div class="td"><span class="badge ac">IN MOTION</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ARCHITECTURE</div><div class="td-t">9-Layer Platform Finalised</div></div>
+<div class="td"><div class="td-m">All nine platform layers designed, documented, and development-ready.</div></div>
+<div class="td"><div class="td-d">Identity · Asset · Marketplace · Deal · AI Agents (Cat, Mole, Falcon) · Blockchain · UE5 Digital Twin · Robotics · Economics. Domain model, event bus, database schema, API contracts, and tech stack confirmed. No architectural rework in production.</div></div>
+<div class="td"><span class="badge ac">COMPLETE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">TEAM</div><div class="td-t">Core Team of 25 Deployed</div></div>
+<div class="td"><div class="td-m">All roles assigned, briefed, and delivering against confirmed MVP scope.</div></div>
+<div class="td"><div class="td-d">Frontend and mobile engineers. Backend and infrastructure. Blockchain developers. UE5 specialists. Domain experts in real estate and law. Business development and government relations. Operations and compliance. Every critical role filled before launch.</div></div>
+<div class="td"><span class="badge ac">IN MOTION</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">GOVERNMENT</div><div class="td-t">DLD Engagement Initiated</div></div>
+<div class="td"><div class="td-m">Formal relationship established with Dubai Land Department and DIFC PropTech Hub.</div></div>
+<div class="td"><div class="td-d">Letter of Intent or MOU signed. API access pathway confirmed. Data sharing framework agreed. Zaahi positioned within the DLD PropTech Sandbox — the UAE government's own acceleration structure for exactly this category of platform. We amplify government systems, not compete with them.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">PRODUCT</div><div class="td-t">MVP Scope Locked</div></div>
+<div class="td"><div class="td-m">First working version defined, specced, and in active development.</div></div>
+<div class="td"><div class="td-d">Scope: biometric identity verification + Dubai land asset registry + complete deal flow from listing to DLD submission. One city. One asset class. One complete transaction cycle end to end. Everything beyond this is Phase 02 and forward.</div></div>
+<div class="td"><span class="badge ac">IN MOTION</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">● ACTIVE PHASE</div>
+<div class="p-tag">CITY: DUBAI</div>
+<div class="p-tag">ASSET CLASS: LAND</div>
+<div class="p-tag">TEAM: 25</div>
+<div class="p-tag">JURISDICTION: DIFC / ADGM</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 02 — MVP LIVE -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase" id="p2">
+<div class="phase-hdr" onclick="togPhase('p2')">
+<div class="col-id"><div class="col-num">PHASE 02</div><div class="col-name">MVP LIVE</div><div class="col-tag">FIRST TRANSACTION</div></div>
+<div class="col-title">
+<div class="ph-title">First verified deal closed on platform. First revenue collected. Business model proven.</div>
+<div class="ph-sub">Biometric identity · Land registry · Deal engine · Blockchain audit · Cat agent · Series A</div>
+</div>
+<div class="col-per"><div class="per-main">Q3–Q4 2026</div><div class="per-sub">6 MONTHS</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">The platform goes live. Real participants. Real land. Real capital in escrow. One complete transaction from listing to signed exclusive agreement — every step permanently recorded on blockchain, independently verifiable by any party at any time. This is the moment the architecture becomes a product, and the product becomes the most compelling evidence for every future investor, government partner, and country-level conversation. A $393 trillion market. A platform that works. A business model proven by a single closed transaction.</div>
+</div>
+<div class="t-head"><div class="th">DOMAIN</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">IDENTITY</div><div class="td-t">Verified Participant Registry</div></div>
+<div class="td"><div class="td-m">Full biometric verification live. All participant roles onboarded and active.</div></div>
+<div class="td"><div class="td-d">Passport + Emirates ID + face scan + voice print. Every role active: land owner, buyer, investor, broker, architect, contractor, lawyer, trustee, bank representative. Verification is mandatory before any platform access — this is the trust layer that makes everything else possible.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ASSET</div><div class="td-t">Digital Land Parcel Live</div></div>
+<div class="td"><div class="td-m">First Dubai land parcels registered as living digital assets on the platform.</div></div>
+<div class="td"><div class="td-d">Title Deed, Site Plan, DCR, SNIPs, and zoning regulations auto-synced from DLD upon registration. Affection Plan and other government documents payable directly through Zaahi — government earns its fee, owner gains complete clarity in minutes rather than months.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">DEAL ENGINE</div><div class="td-t">First Transaction Closed</div></div>
+<div class="td"><div class="td-m">Full 13-status deal state machine operational from listing to DLD submission.</div></div>
+<div class="td"><div class="td-d">Owner sets conditions. Verified buyer sends 10% deposit into escrow. Exclusive agreement auto-generated and signed on blockchain. Deal process begins. Every status transition is permanent and independently verifiable. What previously took six months of fragmented negotiations now takes hours.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">BLOCKCHAIN</div><div class="td-t">Immutable Audit Trail</div></div>
+<div class="td"><div class="td-m">Every deal action permanently on-chain. Every status change has a txHash.</div></div>
+<div class="td"><div class="td-d">No intermediary. No document alterable after the fact. Any participant, lawyer, or government body can independently verify the complete history of any transaction — now and in fifty years. Sovereign-grade institutional trust is built into the platform from the first transaction forward.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">AI AGENTS</div><div class="td-t">Cat — Owner Advisor Live</div></div>
+<div class="td"><div class="td-m">First AI agent active. Guides every owner through every step in real time.</div></div>
+<div class="td"><div class="td-d">Cat knows the owner's assets, document status, current market conditions, and deal process. An inexperienced landowner becomes a competent participant in their first session. The platform gains a human dimension through Cat — approachable, precise, and always present.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">REVENUE</div><div class="td-t">First Platform Fee Collected</div></div>
+<div class="td"><div class="td-m">Minimum 0.2% fee on the first closed transaction. Business model live.</div></div>
+<div class="td"><div class="td-d">10% of every platform fee is automatically allocated to the Robotics Construction Fund from transaction one. The machine that will eventually build the world begins to be funded the moment the first deal closes. This is structural design, not a future intention.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">USERS</div><div class="td-t">500 to 2,000 Verified Participants</div></div>
+<div class="td"><div class="td-m">First verified participants across all roles. Quality and verification over volume.</div></div>
+<div class="td"><div class="td-d">Controlled onboarding. Every participant biometrically verified before access. Landowners with real, registered assets. Active buyers and investors. Verified professionals — brokers, architects, contractors, lawyers, trustees. The first cohort of a system that will eventually serve tens of millions.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">CAPITAL</div><div class="td-t">Series A — Preparation and Launch</div></div>
+<div class="td"><div class="td-m">Live product, first revenue, and DLD partnership constitute the Series A thesis.</div></div>
+<div class="td"><div class="td-d">Capital target: data centre phase one, UE5 digital twin build, team expansion to 50+, full DLD API production integration. The Series A narrative is not a vision deck — it is a demonstration of a working system generating real revenue from the world's largest asset class.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">FIRST REVENUE</div>
+<div class="p-tag">USERS: 500–2,000</div>
+<div class="p-tag">CITY: DUBAI</div>
+<div class="p-tag">ASSET CLASS: LAND</div>
+<div class="p-tag">BLOCKCHAIN: LIVE</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 03 — DUBAI FULL -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase" id="p3">
+<div class="phase-hdr" onclick="togPhase('p3')">
+<div class="col-id"><div class="col-num">PHASE 03</div><div class="col-name">DUBAI FULL</div><div class="col-tag">DIGITAL TWIN LIVE</div></div>
+<div class="col-title">
+<div class="ph-title">Dubai becomes the world's first city with a complete real estate operating system.</div>
+<div class="ph-sub">UE5 digital twin · Full DLD integration · All three AI agents · Escrow infrastructure · 50K users</div>
+</div>
+<div class="col-per"><div class="per-main">Q1–Q2 2027</div><div class="per-sub">6 MONTHS</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">Dubai is fully operational as the world's first city-scale real estate infrastructure layer. The Unreal Engine 5 digital twin is live — every registered parcel in Dubai exists as a living, navigable 3D data object. All three AI agents are active in the UE5 environment. Full DLD integration means government documents, title verification, and transfer submission are entirely automated. The Zaahi experience runs end to end with no process gaps and no intermediaries outside the platform.</div>
+</div>
+<div class="t-head"><div class="th">DOMAIN</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">DIGITAL TWIN</div><div class="td-t">Dubai City Model — UE5 Live</div></div>
+<div class="td"><div class="td-m">City-scale 3D environment. Every registered parcel navigable in real time.</div></div>
+<div class="td"><div class="td-d">Four view modes operational: aerial via Falcon, street level, interior, and subsurface via Mole. Real-time zoning overlays, market heat maps, deal status indicators, and architect proposal layers visible on every parcel. Any participant can navigate the city from anywhere on Earth.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">GOVERNMENT</div><div class="td-t">Full DLD API Integration</div></div>
+<div class="td"><div class="td-m">Real-time government data. Automated verification, submission, and registration.</div></div>
+<div class="td"><div class="td-d">Title deed verification, ownership history, zoning rules, transfer submission, and NOC management — all automated via live DLD API connection. Government remains the sole source of truth in every jurisdiction. Zaahi is the interface that makes that truth accessible and actionable for every market participant.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">AI AGENTS</div><div class="td-t">Mole and Falcon Live in UE5</div></div>
+<div class="td"><div class="td-m">All three agents active as full UE5 characters with complete domain intelligence.</div></div>
+<div class="td"><div class="td-d">Cat: owner advisor, deal guide, document explainer — always present. Mole: subsurface data, geological reports, utility line mapping, foundation recommendations — everything beneath the ground, visible before any commitment is made. Falcon: aerial navigation, market intelligence, neighbourhood comparison, and price heat maps from above.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">MARKETPLACE</div><div class="td-t">Full Proposal Layer Active</div></div>
+<div class="td"><div class="td-m">Architect, contractor, and developer proposals visible on every active parcel.</div></div>
+<div class="td"><div class="td-d">Architects upload 3D proposals that appear directly on parcels in UE5 — the owner sees a proposed building standing on their actual land before agreeing to anything. Contractors submit fully costed bids. Developers propose JV structures with projected ROI and exit strategies. All accessible on the parcel card. All verifiable.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">FINANCE</div><div class="td-t">Full Escrow and Banking Infrastructure</div></div>
+<div class="td"><div class="td-m">UAE bank integrations live. Multi-currency. Smart contract escrow on blockchain.</div></div>
+<div class="td"><div class="td-d">AED, USD, USDT supported. Smart contracts auto-release funds upon verified deal completion and auto-refund on cancellation. No manual intervention required. No disputed timing. Full permanent audit trail. Fully regulatorily compliant from the first transaction.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">INFRASTRUCTURE</div><div class="td-t">Own Data Centre — Phase 1</div></div>
+<div class="td"><div class="td-m">First proprietary Zaahi data centre node operational in UAE.</div></div>
+<div class="td"><div class="td-d">Sovereign data control begins. Core platform operations no longer dependent on third-party cloud providers. Data residency confirmed in UAE. Distributed blockchain nodes provide resilience. The foundation for the always-on, disaster-resilient platform is now structural, not aspirational.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">USERS</div><div class="td-t">10,000 to 50,000 Verified Participants</div></div>
+<div class="td"><div class="td-m">Full participant ecosystem active. Every role present. Every interaction auditable.</div></div>
+<div class="td"><div class="td-d">Land owners, property investors, developers, architects, designers, contractors, brokers, lawyers, trustees, banks, and government inspectors — all biometrically verified, all active on the platform. A verified professional environment operating with institutional-grade integrity.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">CAPITAL</div><div class="td-t">Series A Closed</div></div>
+<div class="td"><div class="td-m">Institutional Series A raised on the strength of a live, city-scale product.</div></div>
+<div class="td"><div class="td-d">Capital deployed into: data centre expansion, UE5 city models for next markets, team scale to 100+, Robotics Fund acceleration, and Phase 04 build — all seven emirates, all asset classes, and first country licence negotiations running simultaneously.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">UE5 CITY LIVE</div>
+<div class="p-tag">USERS: 10K–50K</div>
+<div class="p-tag">DLD: FULLY CONNECTED</div>
+<div class="p-tag">ALL 3 AGENTS ACTIVE</div>
+<div class="p-tag">DATA CENTRE: UAE</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 04 — UAE SCALE -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase" id="p4">
+<div class="phase-hdr" onclick="togPhase('p4')">
+<div class="col-id"><div class="col-num">PHASE 04</div><div class="col-name">UAE SCALE</div><div class="col-tag">ALL SEGMENTS · ALL EMIRATES</div></div>
+<div class="col-title">
+<div class="ph-title">Every asset class. Every emirate. 500K+ verified users. Robotics R&D formally launched.</div>
+<div class="ph-sub">Commercial · Residential · Industrial · Data centre at full scale · First country licence · Series B</div>
+</div>
+<div class="col-per"><div class="per-main">Q3 2027–Q1 2028</div><div class="per-sub">6–9 MONTHS</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">Land proved the model. Zaahi now expands across every real estate asset class and every emirate. The data centre reaches full operational capacity. All six revenue streams are active and compounding. The Robotics Construction Fund crosses its first significant threshold and formal R&D begins. The first sovereign infrastructure licence is signed — the moment Zaahi transitions from a platform into a national-level infrastructure product that governments choose to build their real estate markets upon.</div>
+</div>
+<div class="t-head"><div class="th">DOMAIN</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">PRODUCT</div><div class="td-t">All Real Estate Asset Classes</div></div>
+<div class="td"><div class="td-m">Commercial, residential, industrial, hospitality — every asset class live on platform.</div></div>
+<div class="td"><div class="td-d">Land proved the infrastructure works at the highest difficulty. Every other asset class follows the same proven pattern: verified participants, digital assets, deal engine, blockchain audit. The entire UAE real estate market — for the first time in history — operates on one verified, auditable, sovereign infrastructure layer.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">GEOGRAPHY</div><div class="td-t">All Seven Emirates</div></div>
+<div class="td"><div class="td-m">Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, Umm Al Quwain — all live.</div></div>
+<div class="td"><div class="td-d">ADGM integration for Abu Dhabi. Each emirate's municipality connected via API. Every government body retains its sovereign authority as the source of truth in its jurisdiction. Zaahi is the single interface that makes all of them accessible and interconnected for the first time in the history of UAE real estate.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">INFRASTRUCTURE</div><div class="td-t">Data Centre — Full Operational Scale</div></div>
+<div class="td"><div class="td-m">Proprietary data centre at full capacity. Platform fully sovereign and independent.</div></div>
+<div class="td"><div class="td-d">Complete operational independence from third-party cloud providers. Distributed blockchain nodes across multiple global locations. The platform operates continuously through wars, natural disasters, and infrastructure failures. The promise of permanent availability is now structural, not aspirational.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">USERS</div><div class="td-t">100,000 to 500,000 Verified Participants</div></div>
+<div class="td"><div class="td-m">Hundreds of thousands of verified participants across all roles and all seven emirates.</div></div>
+<div class="td"><div class="td-d">Mobile office fleet deployed across UAE for field verification operations. Owners, investors, developers, architects, contractors, banks, and government inspectors — all biometrically verified, all active, all generating the compounding network effects that make the platform's data increasingly valuable for every participant.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">REVENUE</div><div class="td-t">All Six Revenue Streams Active</div></div>
+<div class="td"><div class="td-m">Full business model live and compounding across all six independent streams.</div></div>
+<div class="td"><div class="td-d">1. Transaction fees at minimum 0.2%. 2. Role-based subscriptions. 3. AI assistant access — Cat, Mole, Falcon. 4. Government document facilitation fees. 5. Country data licences. 6. Robotics contracts. Each stream is independently material. Together they represent a business model without precedent in real estate.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ROBOTICS</div><div class="td-t">R&D Programme Formally Launched</div></div>
+<div class="td"><div class="td-m">Robotics Fund crosses threshold. Construction robot R&D programme begins.</div></div>
+<div class="td"><div class="td-d">Dedicated engineering team assembled. Construction robot design and prototype development underway. Controlled test environment established. Every transaction since Phase 02 has contributed 10% of its platform fee to this moment. The machine is being built — funded entirely by the platform it will ultimately serve.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">GOVERNMENT</div><div class="td-t">First Country Licence Signed</div></div>
+<div class="td"><div class="td-m">First national infrastructure licence agreement. A country adopts Zaahi as its real estate OS.</div></div>
+<div class="td"><div class="td-d">Saudi Arabia, Ukraine, or Albania — one becomes the first country to licence Zaahi as its national real estate infrastructure layer. Full platform adaptation begins: local regulatory framework, government API integration, language localisation, and sovereign data architecture tailored to that country's specific context.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">CAPITAL</div><div class="td-t">Series B</div></div>
+<div class="td"><div class="td-m">Full UAE coverage, first country licence, and active robotics programme constitute the Series B thesis.</div></div>
+<div class="td"><div class="td-d">Capital from infrastructure investors and sovereign wealth funds. Deployed into: global rollout of the country licensing programme, initial robot manufacturing, satellite data centre nodes, and the engineering capacity to advance all of these simultaneously across multiple geographies.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">FULL UAE LIVE</div>
+<div class="p-tag">USERS: 100K–500K</div>
+<div class="p-tag">ALL ASSET CLASSES</div>
+<div class="p-tag">ROBOTICS R&D ACTIVE</div>
+<div class="p-tag">FIRST COUNTRY LICENCE</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 05 — GLOBAL -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase" id="p5">
+<div class="phase-hdr" onclick="togPhase('p5')">
+<div class="col-id"><div class="col-num">PHASE 05</div><div class="col-name">GLOBAL</div><div class="col-tag">NATIONS LICENCE THE OS</div></div>
+<div class="col-title">
+<div class="ph-title">Nations adopt Zaahi as sovereign infrastructure. 1M+ verified users. First robot build complete.</div>
+<div class="ph-sub">Saudi Arabia · Ukraine · Albania · Iran · Syria · First autonomous structure built · Series C</div>
+</div>
+<div class="col-per"><div class="per-main">2028–2029</div><div class="per-sub">12–18 MONTHS</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">Zaahi is now a national infrastructure product. Countries do not build their own — they licence what works. Saudi Arabia brings a trillion-dollar real estate market. Ukraine and Syria bring post-conflict reconstruction mandates and the urgent structural need for verified, immutable land ownership registries. Albania opens the European gateway. Iran is prepared and waiting. Each country that joins multiplies platform transaction volume, user base, and compounding revenue — and funds more robots. The first Zaahi robot prototype completes its first fully autonomous build. The loop closes.</div>
+</div>
+<div class="t-head"><div class="th">MARKET</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">SAUDI ARABIA</div><div class="td-t">KSA — National Real Estate OS</div></div>
+<div class="td"><div class="td-m">Platform live across Saudi Arabia's $1T+ real estate market.</div></div>
+<div class="td"><div class="td-d">Full regulatory adaptation for KSA framework. Saudi Land Authority API integration. Arabic-language UE5 environment. Zaahi in KSA multiplies total platform transaction volume by an order of magnitude. Conversations are already initiated. The relationship is established. Timing is determined by mutual readiness, not by interest — the interest is confirmed.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">UKRAINE</div><div class="td-t">Ukraine — Reconstruction Land Registry</div></div>
+<div class="td"><div class="td-m">Verified, immutable land ownership registry for post-war national reconstruction.</div></div>
+<div class="td"><div class="td-d">Rebuilding a nation requires absolute clarity on who owns what — verified, immutable, and accessible to all parties. Zaahi's blockchain infrastructure provides exactly this. This is not a commercial opportunity alone — it is critical national infrastructure for a country rebuilding from the ground up. Government interest confirmed. Conversations active.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">SYRIA</div><div class="td-t">Syria — Post-Conflict Infrastructure</div></div>
+<div class="td"><div class="td-m">National land registry and development pipeline for Syria's reconstruction.</div></div>
+<div class="td"><div class="td-d">Before a single building can rise in a post-conflict market, ownership must be clear, verified, and trusted by all parties. Zaahi provides the verified ownership layer and the development pipeline that connects international investors to local assets — with full transparency and blockchain-backed accountability.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ALBANIA</div><div class="td-t">Albania — European Market Entry</div></div>
+<div class="td"><div class="td-m">First European market live. Gateway to EU infrastructure modernisation dialogue.</div></div>
+<div class="td"><div class="td-d">Albania's real estate market is modernising rapidly. First EU-adjacent Zaahi deployment. Opens structured dialogue with European institutional investors, EU regulatory bodies, and multiple Balkan markets seeking the same infrastructure solution. Interest confirmed. Conversations initiated.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">IRAN</div><div class="td-t">Iran — Strategic Market Preparation</div></div>
+<div class="td"><div class="td-m">Government partnership developed. Platform adapted. Entry on geopolitical timing.</div></div>
+<div class="td"><div class="td-d">Iran possesses one of the region's largest real estate markets and a deep structural need for transparent, verified, auditable infrastructure. Government partnership development is underway. The platform is fully adapted and ready. Entry timing is determined by geopolitical conditions — the preparation is complete and the conversation is active.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">USERS</div><div class="td-t">1,000,000+ Verified Participants</div></div>
+<div class="td"><div class="td-m">One million biometrically verified participants across multiple countries and all roles.</div></div>
+<div class="td"><div class="td-d">Every participant biometrically verified. Every role represented in every active market. One million verified participants across five countries is categorically different from one million registered accounts on a portal — it is the verified ecosystem that confers institutional credibility at the sovereign level.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ROBOTICS</div><div class="td-t">First Autonomous Build Complete</div></div>
+<div class="td"><div class="td-m">First structure fully built by a Zaahi robot from a digital twin instruction set.</div></div>
+<div class="td"><div class="td-d">The digital twin is the instruction set. The robot is the executor. The completed building is the proof. Owner, investor, and government inspector — all watch construction unfold in real time inside the UE5 model from anywhere on Earth. Physical and digital are one object. The loop closes here.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">CAPITAL</div><div class="td-t">Series C — Institutional Scale</div></div>
+<div class="td"><div class="td-m">Sovereign wealth funds and infrastructure investors. The largest raise to date.</div></div>
+<div class="td"><div class="td-d">Five-country compounding revenue, sovereign infrastructure contracts, one million verified participants, and a working construction robot. Capital deployed into: global country licence rollout, robot fleet manufacturing, and the distributed global data centre network that makes the platform truly planetary.</div></div>
+<div class="td"><span class="badge pl">PLANNED</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">5+ COUNTRIES LIVE</div>
+<div class="p-tag">USERS: 1M+</div>
+<div class="p-tag">FIRST ROBOT BUILD</div>
+<div class="p-tag">SERIES C</div>
+<div class="p-tag">SOVEREIGN LICENCES</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- PHASE 06 — AUTONOMOUS -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="phase" id="p6">
+<div class="phase-hdr" onclick="togPhase('p6')">
+<div class="col-id"><div class="col-num">PHASE 06</div><div class="col-name">AUTONOMOUS</div><div class="col-tag">THE LOOP IS PERMANENT</div></div>
+<div class="col-title">
+<div class="ph-title">Robots build. Platform operates at planetary scale. The loop compounds without ceiling.</div>
+<div class="ph-sub">Robot fleet deployed · Tens of millions verified · Planetary infrastructure · Self-reinforcing engine</div>
+</div>
+<div class="col-per"><div class="per-main">2029–2030+</div><div class="per-sub">PERMANENT</div></div>
+<div class="col-tog">+</div>
+</div>
+<div class="phase-body">
+<div class="obj-row">
+<div class="obj-lbl">OBJECTIVE</div>
+<div class="obj-txt">The loop engineered in Phase 01 now operates permanently and compounds without ceiling. Zaahi robots receive build instructions directly from approved digital twin models. Every transaction on the platform funds more robots. More robots accelerate more construction. More construction generates more transactions. The system is self-reinforcing — not by intention but by structural inevitability. Zaahi is no longer a company in the conventional sense. It is the infrastructure layer upon which humanity manages, trades, develops, and physically constructs its world.</div>
+</div>
+<div class="t-head"><div class="th">DOMAIN</div><div class="th">MILESTONE</div><div class="th">DESCRIPTION</div><div class="th">STATUS</div></div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ROBOTICS</div><div class="td-t">Construction Robot Fleet at Scale</div></div>
+<div class="td"><div class="td-m">Multiple construction robots deployed across multiple countries simultaneously.</div></div>
+<div class="td"><div class="td-d">Each robot receives its build specification from the approved digital twin model. Each streams live progress back into UE5 in real time. Every stakeholder — owner, investor, government inspector — watches construction from anywhere on Earth. Physical reality and digital model are the same object.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">INFRASTRUCTURE</div><div class="td-t">Planetary Coverage</div></div>
+<div class="td"><div class="td-m">Every major real estate market on Earth operating on Zaahi infrastructure.</div></div>
+<div class="td"><div class="td-d">The $393 trillion market has its operating system. No comparable alternative exists at this scale. Countries that built fragmented, legacy systems migrate to Zaahi because verified, auditable, AI-guided, blockchain-backed infrastructure is not a competitive advantage — it is the baseline the market demands once it exists.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">USERS</div><div class="td-t">Tens of Millions Verified</div></div>
+<div class="td"><div class="td-m">Every person who interacts with the built environment has a verified role on Zaahi.</div></div>
+<div class="td"><div class="td-d">Owners of a single apartment. Investors holding a fraction of a tokenised building. Tourists navigating a city. Municipalities tracking their own infrastructure. Government bodies certifying construction. Tens of millions of biometrically verified people. One infrastructure. One source of truth.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">PIPELINE</div><div class="td-t">End-to-End Autonomous Cycle</div></div>
+<div class="td"><div class="td-m">Land listed → deal closed → architect approved → robot deployed → building complete.</div></div>
+<div class="td"><div class="td-d">No gaps. No intermediaries in the construction chain. The pipeline from empty land to completed, certified building runs entirely within Zaahi. The completed building is listed as a new verified asset the moment construction is certified complete. The cycle begins again. Automatically. Without human intervention.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">ECONOMICS</div><div class="td-t">Permanently Self-Reinforcing Engine</div></div>
+<div class="td"><div class="td-m">Transactions → revenue → Robotics Fund → robots → construction → transactions.</div></div>
+<div class="td"><div class="td-d">The loop compounds without ceiling. Every transaction in every country funds more construction capacity, which generates more transactions. This is the architecture engineered in Phase 01. This is why it was always going to end here. The destination was never in doubt — only the timeline was a variable.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="t-row">
+<div class="td"><div class="td-cat">RESEARCH</div><div class="td-t">Next-Generation Construction Technology</div></div>
+<div class="td"><div class="td-m">The Robotics Fund finances research that redefines what construction is.</div></div>
+<div class="td"><div class="td-d">Compounding since the first transaction in Phase 02, the Robotics Fund now finances formal research programmes in next-generation autonomous construction: advanced materials science, structural AI, adaptive building systems, and zero-waste construction methodologies. What begins as a robot following a digital twin instruction evolves into a programme that redefines what a building fundamentally is.</div></div>
+<div class="td"><span class="badge iv">INEVITABLE</span></div>
+</div>
+<div class="p-foot">
+<div class="p-tag key">THE LOOP IS CLOSED</div>
+<div class="p-tag">TENS OF MILLIONS VERIFIED</div>
+<div class="p-tag">PLANETARY SCALE</div>
+<div class="p-tag">AUTONOMOUS CONSTRUCTION</div>
+<div class="p-tag">SELF-REINFORCING</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- CLOSING STATEMENT -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="closing">
+<div class="cl-left">
+<div class="cl-eyebrow">About Zaahi · The Mission</div>
+<div class="cl-headline">Built to last.<br>Designed for the planet.<br>Starting with one city.</div>
+<p class="cl-body">
+Zaahi is not a product looking for a market. It is the infrastructure that the $393 trillion real estate market has always needed and never had.<br><br>
+We do not replace governments. We amplify them. We do not disrupt existing systems. We make them work for the first time at scale — connecting verified participants, sovereign data, institutional trust, and physical construction in one coherent, auditable layer.<br><br>
+We begin with land in Dubai because land is the hardest. It is the most complex, the most opaque, and the most consequential segment of real estate. If the infrastructure holds here, it holds everywhere.<br><br>
+This roadmap is not a fundraising document. It is the operational blueprint by which Zaahi moves — phase by phase, market by market, robot by robot — toward a world in which every parcel of land on Earth is a transparent, verified, actionable digital asset. And every building on it was built by a machine that received its instructions from a model that was approved by a verified owner in a deal that was recorded on a chain that no one can alter.<br><br>
+The direction is fixed. The destination was always the planet.
+</p>
+</div>
+<div class="cl-right">
+<div class="stats">
+<div class="stat"><span class="stat-n">Mar 2026</span><span class="stat-l">Platform launch<br>date</span></div>
+<div class="stat"><span class="stat-n">Q4 2026</span><span class="stat-l">First verified<br>transaction</span></div>
+<div class="stat"><span class="stat-n">6</span><span class="stat-l">Development<br>phases</span></div>
+<div class="stat"><span class="stat-n">4 yrs</span><span class="stat-l">To planetary<br>scale</span></div>
+<div class="stat"><span class="stat-n">1M+</span><span class="stat-l">Verified users<br>by Phase 05</span></div>
+<div class="stat"><span class="stat-n">∞</span><span class="stat-l">Countries<br>to scale</span></div>
+</div>
+<div class="tl-lbl">TIMELINE · 2026–2030</div>
+<div class="tl-bar"><div class="tl-fill" id="tlf"></div><div class="tl-dot"></div></div>
+<div class="tl-marks">
+<div class="tlm now">MAR<br>2026</div>
+<div class="tlm">Q3<br>2026</div>
+<div class="tlm">Q1<br>2027</div>
+<div class="tlm">Q3<br>2027</div>
+<div class="tlm">2028</div>
+<div class="tlm">2029</div>
+<div class="tlm">2030</div>
+</div>
+</div>
+</div>
+
+<!-- BOTTOM NUMBERS — no duplicates from closing stats -->
+
+<div class="bottom">
+<div class="bot-c"><span class="bot-n">$393T</span><span class="bot-l">Total addressable market<br>Savills, 2025</span></div>
+<div class="bot-c"><span class="bot-n">0.2%</span><span class="bot-l">Minimum platform fee<br>per transaction</span></div>
+<div class="bot-c"><span class="bot-n">10%</span><span class="bot-l">All platform revenue<br>to Robotics Fund</span></div>
+<div class="bot-c"><span class="bot-n">6</span><span class="bot-l">Independent revenue<br>streams</span></div>
+<div class="bot-c"><span class="bot-n">25+</span><span class="bot-l">Participant roles<br>on the platform</span></div>
+</div>
+
+<!-- NOTE -->
+
+<div class="note">
+<div class="note-l">ON TIMELINES</div>
+<div class="note-t">These timelines are grounded in documented GovTech and PropTech infrastructure precedents. Government API integrations consistently require 12 to 18 months from initiation to production — DLD's own integration cycles confirm this benchmark. Each phase is sequenced to generate the evidence that funds and structurally de-risks the next. The dates are operational targets, not commitments. The direction is fixed. The destination is the only outcome this architecture was designed to produce.</div>
+</div>
+
+<!-- CREDITS -->
+
+<div style="background:var(--surface);border-top:2px solid var(--blue);margin-top:0;padding:40px 40px 48px;">
+<div style="font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--blue2);margin-bottom:28px;">FOUNDING TEAM</div>
+<div style="display:flex;flex-wrap:wrap;gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:2px;overflow:hidden;">
+
+```
+<div style="background:var(--surface);padding:28px 28px 32px;flex:1;min-width:240px;">
+<div style="font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2);margin-bottom:12px;">AUTHOR &amp; FOUNDER</div>
+<div style="font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1.2;margin-bottom:8px;">Zharkyn Zhan Ryspayev</div>
+<div style="font-size:12px;font-weight:400;color:var(--ink3);letter-spacing:.04em;">Founder · Chief Technology Officer</div>
+</div>
+
+<div style="background:var(--surface);padding:28px 28px 32px;flex:1;min-width:240px;">
+<div style="font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2);margin-bottom:12px;">CO-FOUNDER</div>
+<div style="font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1.2;margin-bottom:8px;">Dmytro Tsvyk</div>
+<div style="font-size:12px;font-weight:400;color:var(--ink3);letter-spacing:.04em;">Co-Founder · Guardian Partner · Chief Executive Officer</div>
+</div>
+
+<div style="background:var(--surface);padding:28px 28px 32px;flex:1;min-width:240px;">
+<div style="font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2);margin-bottom:12px;">INVESTOR</div>
+<div style="font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1.2;margin-bottom:8px;">Rodolphe Belin</div>
+<div style="font-size:12px;font-weight:400;color:var(--ink3);letter-spacing:.04em;">Silent Investor · Board Member</div>
+</div>
+```
+
+</div>
+<div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+<div style="font-size:10px;font-weight:300;color:var(--ink4);letter-spacing:.08em;">Zaahi Platform · Strategic Roadmap 2026–2030 · Confidential</div>
+<div style="font-size:10px;font-weight:500;color:var(--blue2);letter-spacing:.15em;">MARCH 2026</div>
+</div>
+</div>
+
+<script>
+var PHASES = ['p1','p2','p3','p4','p5','p6'];
+
+function togPhase(id) {
+var el = document.getElementById(id);
+if (!el) return;
+if (el.classList.contains('open')) {
+el.classList.remove('open');
+} else {
+el.classList.add('open');
+}
+}
+
+function navAll() {
+var btns = document.querySelectorAll('.nav-btn');
+for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('on'); }
+document.getElementById('btn-all').classList.add('on');
+for (var j = 0; j < PHASES.length; j++) {
+var ph = document.getElementById(PHASES[j]);
+if (ph) ph.style.display = '';
+}
+}
+
+function navOne(id) {
+var btns = document.querySelectorAll('.nav-btn');
+for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('on'); }
+var ab = document.getElementById('btn-' + id);
+if (ab) ab.classList.add('on');
+for (var j = 0; j < PHASES.length; j++) {
+var ph = document.getElementById(PHASES[j]);
+if (!ph) continue;
+if (PHASES[j] === id) {
+ph.style.display = '';
+ph.classList.add('open');
+} else {
+ph.style.display = 'none';
+}
+}
+}
+
+window.onload = function() {
+setTimeout(function() {
+var f = document.getElementById('tlf');
+if (f) f.style.width = '2%';
+}, 600);
+};
+</script>
+
+</body>
+</html>
