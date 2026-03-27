@@ -1,1 +1,7 @@
-{"category":"64_Golden_Visa","block":"H_GOVERNANCE","status":"pending","concepts":[]}
+{
+  "category": "64_Golden_Visa",
+  "block": "H_GOVERNANCE",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T03:30:39.922466"
+}
