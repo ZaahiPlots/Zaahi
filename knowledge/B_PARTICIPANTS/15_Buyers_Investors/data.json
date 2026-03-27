@@ -1,1 +1,7 @@
-{"category":"15_Buyers_Investors","block":"B_PARTICIPANTS","status":"pending","concepts":[]}
+{
+  "category": "15_Buyers_Investors",
+  "block": "B_PARTICIPANTS",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T02:01:19.377337"
+}
