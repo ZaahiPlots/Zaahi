@@ -1,1 +1,7 @@
-{"category":"59_Materials_Supply","block":"G_CONSTRUCTION","status":"pending","concepts":[]}
+{
+  "category": "59_Materials_Supply",
+  "block": "G_CONSTRUCTION",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T03:22:45.501674"
+}
