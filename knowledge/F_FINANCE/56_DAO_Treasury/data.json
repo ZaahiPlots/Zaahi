@@ -1,1 +1,7 @@
-{"category":"56_DAO_Treasury","block":"F_FINANCE","status":"pending","concepts":[]}
+{
+  "category": "56_DAO_Treasury",
+  "block": "F_FINANCE",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T03:16:12.079444"
+}
