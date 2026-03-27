@@ -1,1 +1,7 @@
-{"category":"61_Procurement","block":"G_CONSTRUCTION","status":"pending","concepts":[]}
+{
+  "category": "61_Procurement",
+  "block": "G_CONSTRUCTION",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T03:26:11.267923"
+}
