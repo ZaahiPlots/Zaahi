@@ -1,9 +1,9 @@
 {
-  "session": 2,
+  "session": 3,
   "status": "initialized",
   "knowledge_nodes_total": 85,
-  "knowledge_populated": 4,
-  "code_generated": 4,
+  "knowledge_populated": 6,
+  "code_generated": 6,
   "completed": [],
   "errors": []
 }
