@@ -1,8 +1,8 @@
 {
-  "session": 10,
+  "session": 11,
   "status": "initialized",
   "knowledge_nodes_total": 85,
-  "knowledge_populated": 20,
+  "knowledge_populated": 22,
   "code_generated": 15,
   "completed": [],
   "errors": []

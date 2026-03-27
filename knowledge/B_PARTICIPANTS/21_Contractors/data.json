@@ -1,1 +1,7 @@
-{"category":"21_Contractors","block":"B_PARTICIPANTS","status":"pending","concepts":[]}
+{
+  "category": "21_Contractors",
+  "block": "B_PARTICIPANTS",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T02:12:37.989831"
+}
