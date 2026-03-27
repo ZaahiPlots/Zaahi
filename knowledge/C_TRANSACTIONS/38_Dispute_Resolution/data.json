@@ -1,1 +1,7 @@
-{"category":"38_Dispute_Resolution","block":"C_TRANSACTIONS","status":"pending","concepts":[]}
+{
+  "category": "38_Dispute_Resolution",
+  "block": "C_TRANSACTIONS",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T02:43:55.443812"
+}
