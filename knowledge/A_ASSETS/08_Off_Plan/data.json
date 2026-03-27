@@ -1,1 +1,7 @@
-{"category":"08_Off_Plan","block":"A_ASSETS","status":"pending","concepts":[]}
+{
+  "category": "08_Off_Plan",
+  "block": "A_ASSETS",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T01:43:11.757356"
+}
