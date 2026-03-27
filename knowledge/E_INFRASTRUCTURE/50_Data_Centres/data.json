@@ -1,1 +1,7 @@
-{"category":"50_Data_Centres","block":"E_INFRASTRUCTURE","status":"pending","concepts":[]}
+{
+  "category": "50_Data_Centres",
+  "block": "E_INFRASTRUCTURE",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T03:05:44.158813"
+}
