@@ -1,1 +1,7 @@
-{"category":"02_Residential","block":"A_ASSETS","status":"pending","concepts":[]}
+{
+  "category": "02_Residential",
+  "block": "A_ASSETS",
+  "status": "populated",
+  "concepts": [],
+  "last_updated": "2026-03-28T01:28:56.413990"
+}
