@@ -1,20 +1,5 @@
 # 08 Off Plan
 
-Thinking...
-Okay, the user wants a professional knowledge summary about "Off Plan" in the context of Zaahi platform in Dubai UAE real estate. They specified to include definition, 5-10 key concepts, UAE regulations, technology applications, business model relevance, and required data points for the platform. Let me start by recalling what off-plan means in real estate. Off-plan refers to purchasing property before it's built, which is common in Dubai. 
-
-First, the definition should be clear. Then, the key concepts. Let me think: pre-construction purchase, developer role, legal ownership, payment structure, project timelines, risk management, marketing, and maybe financing options. That's around 8 concepts. 
-
-UAE regulations: I need to mention the Dubai Land Department (DLD) and the Off-Plan Sales Law. Also, the 2020 amendment that introduced the Off-Plan Sales Law, which requires developers to register projects, provide guarantees, and ensure transparency. 
-
-Technology applications: Zaahi is a tech platform, so they probably use blockchain for contracts, AI for market analysis, VR for virtual tours, smart contracts, data analytics, and mobile apps. That covers several tech aspects.
-
-Business model relevance: Zaahi's role as a marketplace connecting buyers and developers, facilitating transactions, and leveraging tech to enhance user experience. Also, how it aligns with Dubai's smart city goals.
-
-Required data points for the platform: Project details, developer info, property specs, payment plans, legal documents, market trends, user profiles, and compliance data. Need to ensure all these are included.
-
-Wait, the user said to start directly without intro phrases. So the summary should be structured with each section as headings. Let me check if all points are covered. Make sure the UAE regulations are accurate. Also, verify the key concepts. Maybe include risk mitigation as a key concept. Also, ensure that the business model relevance ties back to Zaahi's role. Data points should be comprehensive but not too detailed. Need to present this in a clear, professional manner without markdown. Let me structure each section with bullet points or concise paragraphs. Avoid any fluff. Make sure the information is up-to-date, especially regarding UAE regulations. Double-check the Off-Plan Sales Law details. Alright, time to put it all together.
-...done thinking.
 
 **08 Off Plan**  
 **Definition**: Off-plan property purchase refers to buying real estate before its physical construction is completed, typically through developers who offer pre-construction units with projected completion dates and investment opportunities.  
