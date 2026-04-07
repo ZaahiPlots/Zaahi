@@ -25,6 +25,10 @@ export function middleware(req: NextRequest) {
   if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/parcels')) {
     return NextResponse.next();
   }
+  // Public basemap / overlay layers (community boundaries, etc.).
+  if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/layers')) {
+    return NextResponse.next();
+  }
 
   const auth = req.headers.get('authorization');
   if (!auth || !auth.toLowerCase().startsWith('bearer ')) {
