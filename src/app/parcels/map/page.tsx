@@ -80,8 +80,8 @@ const PEARL_SRC = "pearl-jumeirah";
 const PEARL_LINE = "pearl-jumeirah-line";
 const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
-const DUBAI_HILLS_SRC = "dda-dubai-hills";
-const DUBAI_HILLS_LINE = "dda-dubai-hills-line";
+const DDA_PLOTS_SRC = "dda-plots";
+const DDA_PLOTS_LINE = "dda-plots-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +97,7 @@ export default function ParcelsMapPage() {
     meydan: true,
     pearl: true,
     d11: true,
-    dubaiHills: true,
+    ddaPlots: false, // 54 MB / 99k features — opt-in
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -242,19 +242,21 @@ export default function ParcelsMapPage() {
       }
     }
 
-    if (!map.getSource(DUBAI_HILLS_SRC)) {
+    // DDA Plots — lazy load (~54 MB / 99k features). Only attached when toggle on.
+    if (layersRef.current.ddaPlots && !map.getSource(DDA_PLOTS_SRC)) {
       try {
-        const r = await fetch("/api/layers/masterplans/dda?project=dubai-hills");
+        const r = await fetch("/api/layers/masterplans/dda?all=1");
         const data: GeoJSON.FeatureCollection = await r.json();
-        map.addSource(DUBAI_HILLS_SRC, { type: "geojson", data });
+        map.addSource(DDA_PLOTS_SRC, { type: "geojson", data });
         map.addLayer({
-          id: DUBAI_HILLS_LINE,
+          id: DDA_PLOTS_LINE,
           type: "line",
-          source: DUBAI_HILLS_SRC,
+          source: DDA_PLOTS_SRC,
+          minzoom: 12,
           paint: { ...masterPlanPaint },
         });
       } catch (e) {
-        console.error("[dda dubai-hills] load failed", e);
+        console.error("[dda-plots] load failed", e);
       }
     }
 
@@ -279,8 +281,8 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layersRef.current.d11));
     }
-    if (map.getLayer(DUBAI_HILLS_LINE)) {
-      map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layersRef.current.dubaiHills));
+    if (map.getLayer(DDA_PLOTS_LINE)) {
+      map.setLayoutProperty(DDA_PLOTS_LINE, "visibility", v(layersRef.current.ddaPlots));
     }
   }
 
@@ -385,22 +387,23 @@ export default function ParcelsMapPage() {
       map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
       map.on("mouseleave", D11_LINE, masterPlanLeave);
 
-      // DDA per-project plots — show plot number + area
-      map.on("mousemove", DUBAI_HILLS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // DDA Plots — plot number, project, area
+      map.on("mousemove", DDA_PLOTS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
         map.getCanvas().style.cursor = "pointer";
         const plot = (f.properties?.PLOT_NUMBER as string) ?? "—";
+        const project = (f.properties?.PROJECT_NAME as string) ?? "DDA";
         const sqft = (f.properties?.AREA_SQFT as number) ?? null;
         popup
           .setLngLat(e.lngLat)
           .setHTML(
             `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">Plot ${plot}</div>
-             <div style="font-size:10px;opacity:0.7;margin-top:2px">DUBAI HILLS${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
+             <div style="font-size:10px;opacity:0.8;margin-top:2px">${project}${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
           )
           .addTo(map);
       });
-      map.on("mouseleave", DUBAI_HILLS_LINE, masterPlanLeave);
+      map.on("mouseleave", DDA_PLOTS_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -452,8 +455,11 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layers.d11));
     }
-    if (map.getLayer(DUBAI_HILLS_LINE)) {
-      map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layers.dubaiHills));
+    if (map.getLayer(DDA_PLOTS_LINE)) {
+      map.setLayoutProperty(DDA_PLOTS_LINE, "visibility", v(layers.ddaPlots));
+    } else if (layers.ddaPlots) {
+      // First-time enable: lazy attach.
+      attachOverlays(map);
     }
   }, [layers]);
 
@@ -626,9 +632,9 @@ export default function ParcelsMapPage() {
           color={c.text}
         />
         <LayerToggle
-          label="Dubai Hills (DDA)"
-          checked={layers.dubaiHills}
-          onChange={(v) => setLayers((l) => ({ ...l, dubaiHills: v }))}
+          label="DDA Plots (99k · heavy)"
+          checked={layers.ddaPlots}
+          onChange={(v) => setLayers((l) => ({ ...l, ddaPlots: v }))}
           color={c.text}
         />
       </div>
