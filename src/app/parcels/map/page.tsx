@@ -78,6 +78,8 @@ const MEYDAN_SRC = "meydan-horizon";
 const MEYDAN_LINE = "meydan-horizon-line";
 const PEARL_SRC = "pearl-jumeirah";
 const PEARL_LINE = "pearl-jumeirah-line";
+const D11_SRC = "d11-parcel-ld";
+const D11_LINE = "d11-parcel-ld-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +94,7 @@ export default function ParcelsMapPage() {
     islands: true,
     meydan: true,
     pearl: true,
+    d11: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -220,6 +223,22 @@ export default function ParcelsMapPage() {
       }
     }
 
+    if (!map.getSource(D11_SRC)) {
+      try {
+        const r = await fetch("/api/layers/masterplans/d11-parcel-ld");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(D11_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: D11_LINE,
+          type: "line",
+          source: D11_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[d11-parcel-ld] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -237,6 +256,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(PEARL_LINE)) {
       map.setLayoutProperty(PEARL_LINE, "visibility", v(layersRef.current.pearl));
+    }
+    if (map.getLayer(D11_LINE)) {
+      map.setLayoutProperty(D11_LINE, "visibility", v(layersRef.current.d11));
     }
   }
 
@@ -338,6 +360,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", MEYDAN_LINE, masterPlanLeave);
       map.on("mousemove", PEARL_LINE, masterPlanHover("Pearl Jumeirah master plan"));
       map.on("mouseleave", PEARL_LINE, masterPlanLeave);
+      map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
+      map.on("mouseleave", D11_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -385,6 +409,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(PEARL_LINE)) {
       map.setLayoutProperty(PEARL_LINE, "visibility", v(layers.pearl));
+    }
+    if (map.getLayer(D11_LINE)) {
+      map.setLayoutProperty(D11_LINE, "visibility", v(layers.d11));
     }
   }, [layers]);
 
@@ -548,6 +575,12 @@ export default function ParcelsMapPage() {
           label="Pearl Jumeirah"
           checked={layers.pearl}
           onChange={(v) => setLayers((l) => ({ ...l, pearl: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="D11 — Parcel L/D"
+          checked={layers.d11}
+          onChange={(v) => setLayers((l) => ({ ...l, d11: v }))}
           color={c.text}
         />
       </div>
