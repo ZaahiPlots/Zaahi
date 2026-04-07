@@ -82,6 +82,8 @@ const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
 const DUBAI_HILLS_SRC = "dda-dubai-hills";
 const DUBAI_HILLS_LINE = "dda-dubai-hills-line";
+const DAMAC_HILLS_2_SRC = "dda-damac-hills-2";
+const DAMAC_HILLS_2_LINE = "dda-damac-hills-2-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +100,7 @@ export default function ParcelsMapPage() {
     pearl: true,
     d11: true,
     dubaiHills: true,
+    damacHills2: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -260,6 +263,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Damac Hills 2 (DDA) ────────────────────────────────────────
+    if (!map.getSource(DAMAC_HILLS_2_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/damac-hills-2");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(DAMAC_HILLS_2_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: DAMAC_HILLS_2_LINE,
+          type: "line",
+          source: DAMAC_HILLS_2_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[damac-hills-2] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -283,6 +304,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DUBAI_HILLS_LINE)) {
       map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layersRef.current.dubaiHills));
+    }
+    if (map.getLayer(DAMAC_HILLS_2_LINE)) {
+      map.setLayoutProperty(DAMAC_HILLS_2_LINE, "visibility", v(layersRef.current.damacHills2));
     }
   }
 
@@ -387,22 +411,26 @@ export default function ParcelsMapPage() {
       map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
       map.on("mouseleave", D11_LINE, masterPlanLeave);
 
-      // Dubai Hills hover — plot number + area
-      map.on("mousemove", DUBAI_HILLS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // DDA per-plot hover — show plot number + project + sqft
+      function ddaPlotHover(e: MapMouseEvent & { features?: GeoJSON.Feature[] }) {
         const f = e.features?.[0];
         if (!f) return;
         map.getCanvas().style.cursor = "pointer";
         const plot = (f.properties?.PLOT_NUMBER as string) ?? "—";
+        const project = (f.properties?.PROJECT_NAME as string) ?? "DDA";
         const sqft = (f.properties?.AREA_SQFT as number) ?? null;
         popup
           .setLngLat(e.lngLat)
           .setHTML(
             `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">Plot ${plot}</div>
-             <div style="font-size:10px;opacity:0.8;margin-top:2px">DUBAI HILLS${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
+             <div style="font-size:10px;opacity:0.8;margin-top:2px">${project}${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
           )
           .addTo(map);
-      });
+      }
+      map.on("mousemove", DUBAI_HILLS_LINE, ddaPlotHover);
       map.on("mouseleave", DUBAI_HILLS_LINE, masterPlanLeave);
+      map.on("mousemove", DAMAC_HILLS_2_LINE, ddaPlotHover);
+      map.on("mouseleave", DAMAC_HILLS_2_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -456,6 +484,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DUBAI_HILLS_LINE)) {
       map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layers.dubaiHills));
+    }
+    if (map.getLayer(DAMAC_HILLS_2_LINE)) {
+      map.setLayoutProperty(DAMAC_HILLS_2_LINE, "visibility", v(layers.damacHills2));
     }
   }, [layers]);
 
@@ -645,6 +676,12 @@ export default function ParcelsMapPage() {
           label="Dubai Hills"
           checked={layers.dubaiHills}
           onChange={(v) => setLayers((l) => ({ ...l, dubaiHills: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Damac Hills 2"
+          checked={layers.damacHills2}
+          onChange={(v) => setLayers((l) => ({ ...l, damacHills2: v }))}
           color={c.text}
         />
       </div>
