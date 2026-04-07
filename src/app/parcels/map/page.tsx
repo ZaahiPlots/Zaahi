@@ -74,7 +74,8 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
 const METRO_LINE = "metro-line";
-const METRO_LINE_DASHED = "metro-line-dashed";
+const ISLANDS_SRC = "dubai-islands";
+const ISLANDS_LINE = "dubai-islands-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,7 +84,7 @@ export default function ParcelsMapPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
-  const [layers, setLayers] = useState({ communities: true, roads: true, metro: true });
+  const [layers, setLayers] = useState({ communities: true, roads: true, metro: true, islands: true });
   const layersRef = useRef(layers);
   layersRef.current = layers;
   const themeRef = useRef<Theme>("light");
@@ -155,7 +156,7 @@ export default function ParcelsMapPage() {
       }
     }
 
-    // ── Metro ──────────────────────────────────────────────────────
+    // ── Metro (Dubai Metro from OSM) ───────────────────────────────
     if (!map.getSource(METRO_SRC)) {
       try {
         const r = await fetch("/api/layers/metro");
@@ -165,29 +166,37 @@ export default function ParcelsMapPage() {
           id: METRO_LINE,
           type: "line",
           source: METRO_SRC,
-          filter: ["==", ["get", "dashed"], false],
           paint: {
-            "line-color": ["get", "color"],
-            "line-width": 3,
+            "line-color": ["coalesce", ["get", "color"], "#888888"],
+            "line-width": 4,
             "line-opacity": 0.95,
-          },
-          layout: { "line-cap": "round", "line-join": "round" },
-        });
-        map.addLayer({
-          id: METRO_LINE_DASHED,
-          type: "line",
-          source: METRO_SRC,
-          filter: ["==", ["get", "dashed"], true],
-          paint: {
-            "line-color": ["get", "color"],
-            "line-width": 3,
-            "line-opacity": 0.9,
-            "line-dasharray": [2, 1.5],
           },
           layout: { "line-cap": "round", "line-join": "round" },
         });
       } catch (e) {
         console.error("[metro] load failed", e);
+      }
+    }
+
+    // ── Dubai Islands master plan ──────────────────────────────────
+    if (!map.getSource(ISLANDS_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dubai-islands");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(ISLANDS_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: ISLANDS_LINE,
+          type: "line",
+          source: ISLANDS_SRC,
+          paint: {
+            "line-color": "#9333EA",
+            "line-width": 1.5,
+            "line-opacity": 0.7,
+            "line-dasharray": [3, 2],
+          },
+        });
+      } catch (e) {
+        console.error("[dubai-islands] load failed", e);
       }
     }
 
@@ -202,7 +211,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(METRO_LINE)) {
       map.setLayoutProperty(METRO_LINE, "visibility", v(layersRef.current.metro));
-      map.setLayoutProperty(METRO_LINE_DASHED, "visibility", v(layersRef.current.metro));
+    }
+    if (map.getLayer(ISLANDS_LINE)) {
+      map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layersRef.current.islands));
     }
   }
 
@@ -294,13 +305,32 @@ export default function ParcelsMapPage() {
           .addTo(map);
       }
       map.on("mousemove", METRO_LINE, metroHover);
-      map.on("mousemove", METRO_LINE_DASHED, metroHover);
       const metroLeave = () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       };
       map.on("mouseleave", METRO_LINE, metroLeave);
-      map.on("mouseleave", METRO_LINE_DASHED, metroLeave);
+
+      // ── Dubai Islands hover ──
+      map.on("mousemove", ISLANDS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const layer = (f.properties?.Layer as string) ?? "Dubai Islands";
+        // Strip the "PDF _MP_LU_" prefix the AutoCAD export adds
+        const clean = layer.replace(/^PDF\s+_MP_LU_/, "").replace(/_/g, " ");
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${clean}</div>
+             <div style="font-size:10px;opacity:0.7;margin-top:2px">Dubai Islands master plan</div></div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", ISLANDS_LINE, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
     });
 
     mapRef.current = map;
@@ -342,7 +372,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(METRO_LINE)) {
       map.setLayoutProperty(METRO_LINE, "visibility", v(layers.metro));
-      map.setLayoutProperty(METRO_LINE_DASHED, "visibility", v(layers.metro));
+    }
+    if (map.getLayer(ISLANDS_LINE)) {
+      map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layers.islands));
     }
   }, [layers]);
 
@@ -480,6 +512,12 @@ export default function ParcelsMapPage() {
           label="Metro"
           checked={layers.metro}
           onChange={(v) => setLayers((l) => ({ ...l, metro: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Dubai Islands"
+          checked={layers.islands}
+          onChange={(v) => setLayers((l) => ({ ...l, islands: v }))}
           color={c.text}
         />
       </div>
