@@ -72,8 +72,6 @@ const COMMUNITIES_LINE = "communities-line";
 const COMMUNITIES_FILL = "communities-fill"; // invisible, only for hit-testing
 const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
-const METRO_SRC = "metro";
-const METRO_LINE = "metro-line";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 
@@ -84,7 +82,7 @@ export default function ParcelsMapPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
-  const [layers, setLayers] = useState({ communities: true, roads: true, metro: true, islands: true });
+  const [layers, setLayers] = useState({ communities: true, roads: true, islands: true });
   const layersRef = useRef(layers);
   layersRef.current = layers;
   const themeRef = useRef<Theme>("light");
@@ -156,28 +154,6 @@ export default function ParcelsMapPage() {
       }
     }
 
-    // ── Metro (Dubai Metro from OSM) ───────────────────────────────
-    if (!map.getSource(METRO_SRC)) {
-      try {
-        const r = await fetch("/api/layers/metro");
-        const data: GeoJSON.FeatureCollection = await r.json();
-        map.addSource(METRO_SRC, { type: "geojson", data });
-        map.addLayer({
-          id: METRO_LINE,
-          type: "line",
-          source: METRO_SRC,
-          paint: {
-            "line-color": ["coalesce", ["get", "color"], "#888888"],
-            "line-width": 4,
-            "line-opacity": 0.95,
-          },
-          layout: { "line-cap": "round", "line-join": "round" },
-        });
-      } catch (e) {
-        console.error("[metro] load failed", e);
-      }
-    }
-
     // ── Dubai Islands master plan ──────────────────────────────────
     if (!map.getSource(ISLANDS_SRC)) {
       try {
@@ -208,9 +184,6 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ROADS_LINE)) {
       map.setLayoutProperty(ROADS_LINE, "visibility", v(layersRef.current.roads));
-    }
-    if (map.getLayer(METRO_LINE)) {
-      map.setLayoutProperty(METRO_LINE, "visibility", v(layersRef.current.metro));
     }
     if (map.getLayer(ISLANDS_LINE)) {
       map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layersRef.current.islands));
@@ -288,29 +261,6 @@ export default function ParcelsMapPage() {
         popup.remove();
       });
 
-      // ── Metro hover ──
-      function metroHover(e: MapMouseEvent & { features?: GeoJSON.Feature[] }) {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const line = (f.properties?.line as string) ?? "Metro";
-        const stations = (f.properties?.NUM_OF_STATIONS as string) ?? "?";
-        const color = (f.properties?.color as string) ?? "#888";
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(
-            `<div><div style="font-family:Georgia,serif;font-weight:700;color:${color}">${line}</div>
-             <div style="font-size:10px;opacity:0.7;margin-top:2px">${stations} stations</div></div>`,
-          )
-          .addTo(map);
-      }
-      map.on("mousemove", METRO_LINE, metroHover);
-      const metroLeave = () => {
-        map.getCanvas().style.cursor = "";
-        popup.remove();
-      };
-      map.on("mouseleave", METRO_LINE, metroLeave);
-
       // ── Dubai Islands hover ──
       map.on("mousemove", ISLANDS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
@@ -369,9 +319,6 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ROADS_LINE)) {
       map.setLayoutProperty(ROADS_LINE, "visibility", v(layers.roads));
-    }
-    if (map.getLayer(METRO_LINE)) {
-      map.setLayoutProperty(METRO_LINE, "visibility", v(layers.metro));
     }
     if (map.getLayer(ISLANDS_LINE)) {
       map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layers.islands));
@@ -506,12 +453,6 @@ export default function ParcelsMapPage() {
           label="Major Roads"
           checked={layers.roads}
           onChange={(v) => setLayers((l) => ({ ...l, roads: v }))}
-          color={c.text}
-        />
-        <LayerToggle
-          label="Metro"
-          checked={layers.metro}
-          onChange={(v) => setLayers((l) => ({ ...l, metro: v }))}
           color={c.text}
         />
         <LayerToggle
