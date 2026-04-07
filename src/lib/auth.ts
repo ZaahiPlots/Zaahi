@@ -1,14 +1,24 @@
 import { headers } from 'next/headers';
+import { NextRequest } from 'next/server';
+import { supabase } from './supabase';
 
 /**
- * Returns the current authenticated user id, or null.
+ * Verify the Bearer token from the Authorization header against Supabase Auth
+ * and return the user id, or null if missing/invalid.
  *
- * TODO: replace dev header fallback with Supabase Auth (cookies → SSR client).
- * Until that step is done, the route reads `x-user-id` so we can integration-test
- * the parcels CRUD without blocking on auth wiring.
+ * Works in both `route.ts` handlers (pass the NextRequest) and server
+ * components / server actions (omit it — falls back to next/headers).
  */
-export async function getSessionUserId(): Promise<string | null> {
-  const h = await headers();
-  const devUserId = h.get('x-user-id');
-  return devUserId && devUserId.length > 0 ? devUserId : null;
+export async function getSessionUserId(req?: NextRequest): Promise<string | null> {
+  const authHeader = req
+    ? req.headers.get('authorization')
+    : (await headers()).get('authorization');
+
+  if (!authHeader) return null;
+  const [scheme, token] = authHeader.split(' ');
+  if (scheme?.toLowerCase() !== 'bearer' || !token) return null;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return null;
+  return data.user.id;
 }
