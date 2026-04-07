@@ -96,8 +96,9 @@ model Parcel {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  deals     Deal[]
-  documents Document[]
+  deals          Deal[]
+  documents      Document[]
+  affectionPlans AffectionPlan[]
 
   @@unique([emirate, district, plotNumber])
   @@index([ownerId])
@@ -125,6 +126,42 @@ model Deal {
   @@index([sellerId])
   @@index([buyerId])
   @@index([status])
+}
+
+model AffectionPlan {
+  id              String   @id @default(cuid())
+  parcelId        String
+  parcel          Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  fetchedAt       DateTime @default(now())
+  source          String   // e.g. "gis.dda.gov.ae/DIS"
+
+  plotNumber      String
+  oldNumber       String?
+  projectName     String?
+  community       String?
+  masterDeveloper String?
+
+  plotAreaSqm     Float?
+  plotAreaSqft    Float?
+  maxGfaSqm       Float?
+  maxGfaSqft      Float?
+
+  maxHeightCode   String?  // raw, e.g. "G+15"
+  maxFloors       Int?
+  maxHeightMeters Float?
+  far             Float?
+
+  setbacks        Json?    // [{side, building, podium}, ...]
+  landUseMix      Json?    // [{category, sub, areaSqm}, ...]
+  sitePlanIssue   DateTime?
+  sitePlanExpiry  DateTime?
+  notes           String?
+
+  buildingLimitGeometry Json? // GeoJSON Polygon from MAIN_MAP layer 8
+  raw             Json?       // full parsed bundle for debugging
+
+  @@index([parcelId])
+  @@index([fetchedAt])
 }
 
 model Document {

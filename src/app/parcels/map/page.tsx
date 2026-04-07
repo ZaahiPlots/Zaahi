@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -45,6 +46,7 @@ function aedFromFils(fils: string | null): string {
 }
 
 export default function ParcelsMapPage() {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [count, setCount] = useState<number | null>(null);
@@ -162,9 +164,15 @@ export default function ParcelsMapPage() {
                  <div>${p.district}, ${p.emirate}</div>
                  <div>${Number(p.area).toLocaleString()} sqft &middot; ${p.status}</div>
                  <div style="margin-top:4px;font-weight:600">${p.valuationAed}</div>
+                 <a href="/parcels/${p.id}" style="display:inline-block;margin-top:6px;color:#b45309;font-weight:600;text-decoration:none">Open details →</a>
                </div>`,
             )
             .addTo(map);
+        });
+
+        map.on("dblclick", FILL_LAYER, (e) => {
+          const f = e.features?.[0];
+          if (f?.properties?.id) router.push(`/parcels/${f.properties.id}`);
         });
 
         setCount(features.length);
