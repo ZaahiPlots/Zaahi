@@ -80,6 +80,8 @@ const PEARL_SRC = "pearl-jumeirah";
 const PEARL_LINE = "pearl-jumeirah-line";
 const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
+const DDA_SRC = "dda-districts";
+const DDA_LINE = "dda-districts-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,6 +97,7 @@ export default function ParcelsMapPage() {
     meydan: true,
     pearl: true,
     d11: true,
+    dda: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -239,6 +242,22 @@ export default function ParcelsMapPage() {
       }
     }
 
+    if (!map.getSource(DDA_SRC)) {
+      try {
+        const r = await fetch("/api/layers/masterplans/dda-districts");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(DDA_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: DDA_LINE,
+          type: "line",
+          source: DDA_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[dda-districts] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -259,6 +278,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layersRef.current.d11));
+    }
+    if (map.getLayer(DDA_LINE)) {
+      map.setLayoutProperty(DDA_LINE, "visibility", v(layersRef.current.dda));
     }
   }
 
@@ -362,6 +384,23 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", PEARL_LINE, masterPlanLeave);
       map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
       map.on("mouseleave", D11_LINE, masterPlanLeave);
+
+      // DDA districts use PROJECT_NAME (different label key) — custom hover
+      map.on("mousemove", DDA_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.PROJECT_NAME as string) ?? "DDA project";
+        const cnt = (f.properties?.plot_count as number) ?? "?";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${name}</div>
+             <div style="font-size:10px;opacity:0.7;margin-top:2px">DDA district · ${cnt} plots</div></div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", DDA_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -412,6 +451,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layers.d11));
+    }
+    if (map.getLayer(DDA_LINE)) {
+      map.setLayoutProperty(DDA_LINE, "visibility", v(layers.dda));
     }
   }, [layers]);
 
@@ -581,6 +623,12 @@ export default function ParcelsMapPage() {
           label="D11 — Parcel L/D"
           checked={layers.d11}
           onChange={(v) => setLayers((l) => ({ ...l, d11: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="DDA Districts (207)"
+          checked={layers.dda}
+          onChange={(v) => setLayers((l) => ({ ...l, dda: v }))}
           color={c.text}
         />
       </div>
