@@ -84,6 +84,8 @@ const DUBAI_HILLS_SRC = "dda-dubai-hills";
 const DUBAI_HILLS_LINE = "dda-dubai-hills-line";
 const DAMAC_HILLS_2_SRC = "dda-damac-hills-2";
 const DAMAC_HILLS_2_LINE = "dda-damac-hills-2-line";
+const DAMAC_LAGOONS_SRC = "dda-damac-lagoons";
+const DAMAC_LAGOONS_LINE = "dda-damac-lagoons-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,7 @@ export default function ParcelsMapPage() {
     d11: true,
     dubaiHills: true,
     damacHills2: true,
+    damacLagoons: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -281,6 +284,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Damac Lagoons (DDA) ────────────────────────────────────────
+    if (!map.getSource(DAMAC_LAGOONS_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/damac-lagoons");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(DAMAC_LAGOONS_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: DAMAC_LAGOONS_LINE,
+          type: "line",
+          source: DAMAC_LAGOONS_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[damac-lagoons] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -307,6 +328,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_HILLS_2_LINE)) {
       map.setLayoutProperty(DAMAC_HILLS_2_LINE, "visibility", v(layersRef.current.damacHills2));
+    }
+    if (map.getLayer(DAMAC_LAGOONS_LINE)) {
+      map.setLayoutProperty(DAMAC_LAGOONS_LINE, "visibility", v(layersRef.current.damacLagoons));
     }
   }
 
@@ -431,6 +455,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", DUBAI_HILLS_LINE, masterPlanLeave);
       map.on("mousemove", DAMAC_HILLS_2_LINE, ddaPlotHover);
       map.on("mouseleave", DAMAC_HILLS_2_LINE, masterPlanLeave);
+      map.on("mousemove", DAMAC_LAGOONS_LINE, ddaPlotHover);
+      map.on("mouseleave", DAMAC_LAGOONS_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -487,6 +513,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_HILLS_2_LINE)) {
       map.setLayoutProperty(DAMAC_HILLS_2_LINE, "visibility", v(layers.damacHills2));
+    }
+    if (map.getLayer(DAMAC_LAGOONS_LINE)) {
+      map.setLayoutProperty(DAMAC_LAGOONS_LINE, "visibility", v(layers.damacLagoons));
     }
   }, [layers]);
 
@@ -682,6 +711,12 @@ export default function ParcelsMapPage() {
           label="Damac Hills 2"
           checked={layers.damacHills2}
           onChange={(v) => setLayers((l) => ({ ...l, damacHills2: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Damac Lagoons"
+          checked={layers.damacLagoons}
+          onChange={(v) => setLayers((l) => ({ ...l, damacLagoons: v }))}
           color={c.text}
         />
       </div>
