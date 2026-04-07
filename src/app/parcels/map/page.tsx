@@ -70,6 +70,11 @@ const GOLD = "#C8A96E";
 const COMMUNITIES_SRC = "communities";
 const COMMUNITIES_LINE = "communities-line";
 const COMMUNITIES_FILL = "communities-fill"; // invisible, only for hit-testing
+const ROADS_SRC = "roads";
+const ROADS_LINE = "roads-line";
+const METRO_SRC = "metro";
+const METRO_LINE = "metro-line";
+const METRO_LINE_DASHED = "metro-line-dashed";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,51 +83,126 @@ export default function ParcelsMapPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
-  const [layers, setLayers] = useState({ communities: true });
+  const [layers, setLayers] = useState({ communities: true, roads: true, metro: true });
   const layersRef = useRef(layers);
   layersRef.current = layers;
+  const themeRef = useRef<Theme>("light");
+  themeRef.current = theme;
 
-  // Loads the communities GeoJSON onto a fresh style. Idempotent.
-  async function attachCommunities(map: MLMap) {
-    if (map.getSource(COMMUNITIES_SRC)) return;
-    try {
-      const r = await fetch("/api/layers/communities");
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data: GeoJSON.FeatureCollection = await r.json();
-      map.addSource(COMMUNITIES_SRC, { type: "geojson", data, promoteId: "COMM_NUM" });
-      map.addLayer({
-        id: COMMUNITIES_FILL,
-        type: "fill",
-        source: COMMUNITIES_SRC,
-        paint: {
-          "fill-color": GOLD,
-          "fill-opacity": [
-            "case",
-            ["boolean", ["feature-state", "hover"], false], 0.12,
-            0,
-          ],
-        },
-      });
-      map.addLayer({
-        id: COMMUNITIES_LINE,
-        type: "line",
-        source: COMMUNITIES_SRC,
-        paint: {
-          "line-color": GOLD,
-          "line-width": [
-            "case",
-            ["boolean", ["feature-state", "hover"], false], 2,
-            1,
-          ],
-          "line-opacity": 0.85,
-        },
-      });
-      // Apply current toggle state
-      const visibility = layersRef.current.communities ? "visible" : "none";
-      map.setLayoutProperty(COMMUNITIES_FILL, "visibility", visibility);
-      map.setLayoutProperty(COMMUNITIES_LINE, "visibility", visibility);
-    } catch (e) {
-      console.error("[communities] load failed", e);
+  // Load all overlay layers onto a fresh style. Idempotent: won't re-add
+  // sources that already exist (each call after setStyle attaches fresh).
+  async function attachOverlays(map: MLMap) {
+    const isDark = themeRef.current === "dark";
+    const roadsColor = isDark ? "#888888" : "#666666";
+
+    // ── Communities ────────────────────────────────────────────────
+    if (!map.getSource(COMMUNITIES_SRC)) {
+      try {
+        const r = await fetch("/api/layers/communities");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(COMMUNITIES_SRC, { type: "geojson", data, promoteId: "COMM_NUM" });
+        map.addLayer({
+          id: COMMUNITIES_FILL,
+          type: "fill",
+          source: COMMUNITIES_SRC,
+          paint: {
+            "fill-color": GOLD,
+            "fill-opacity": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false], 0.12,
+              0,
+            ],
+          },
+        });
+        map.addLayer({
+          id: COMMUNITIES_LINE,
+          type: "line",
+          source: COMMUNITIES_SRC,
+          paint: {
+            "line-color": GOLD,
+            "line-width": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false], 2,
+              1,
+            ],
+            "line-opacity": 0.85,
+          },
+        });
+      } catch (e) {
+        console.error("[communities] load failed", e);
+      }
+    }
+
+    // ── Roads ──────────────────────────────────────────────────────
+    if (!map.getSource(ROADS_SRC)) {
+      try {
+        const r = await fetch("/api/layers/roads");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(ROADS_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: ROADS_LINE,
+          type: "line",
+          source: ROADS_SRC,
+          paint: {
+            "line-color": roadsColor,
+            "line-width": 2,
+            "line-opacity": 0.7,
+          },
+          layout: { "line-cap": "round", "line-join": "round" },
+        });
+      } catch (e) {
+        console.error("[roads] load failed", e);
+      }
+    }
+
+    // ── Metro ──────────────────────────────────────────────────────
+    if (!map.getSource(METRO_SRC)) {
+      try {
+        const r = await fetch("/api/layers/metro");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(METRO_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: METRO_LINE,
+          type: "line",
+          source: METRO_SRC,
+          filter: ["==", ["get", "dashed"], false],
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": 3,
+            "line-opacity": 0.95,
+          },
+          layout: { "line-cap": "round", "line-join": "round" },
+        });
+        map.addLayer({
+          id: METRO_LINE_DASHED,
+          type: "line",
+          source: METRO_SRC,
+          filter: ["==", ["get", "dashed"], true],
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": 3,
+            "line-opacity": 0.9,
+            "line-dasharray": [2, 1.5],
+          },
+          layout: { "line-cap": "round", "line-join": "round" },
+        });
+      } catch (e) {
+        console.error("[metro] load failed", e);
+      }
+    }
+
+    // Apply current visibility state
+    const v = (on: boolean) => (on ? "visible" : "none");
+    if (map.getLayer(COMMUNITIES_FILL)) {
+      map.setLayoutProperty(COMMUNITIES_FILL, "visibility", v(layersRef.current.communities));
+      map.setLayoutProperty(COMMUNITIES_LINE, "visibility", v(layersRef.current.communities));
+    }
+    if (map.getLayer(ROADS_LINE)) {
+      map.setLayoutProperty(ROADS_LINE, "visibility", v(layersRef.current.roads));
+    }
+    if (map.getLayer(METRO_LINE)) {
+      map.setLayoutProperty(METRO_LINE, "visibility", v(layersRef.current.metro));
+      map.setLayoutProperty(METRO_LINE_DASHED, "visibility", v(layersRef.current.metro));
     }
   }
 
@@ -173,7 +253,9 @@ export default function ParcelsMapPage() {
     }
 
     map.on("load", async () => {
-      await attachCommunities(map);
+      await attachOverlays(map);
+
+      // ── Communities hover ──
       map.on("mousemove", COMMUNITIES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -184,10 +266,8 @@ export default function ParcelsMapPage() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;color:#0A1628">
-               <div style="font-weight:700;letter-spacing:0.05em">${name}</div>
-               <div style="font-size:10px;color:#8892a0;margin-top:2px">Community ${num}</div>
-             </div>`,
+            `<div><div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>
+             <div style="font-size:10px;opacity:0.7;margin-top:2px">Community ${num}</div></div>`,
           )
           .addTo(map);
       });
@@ -196,6 +276,31 @@ export default function ParcelsMapPage() {
         setHover(undefined);
         popup.remove();
       });
+
+      // ── Metro hover ──
+      function metroHover(e: MapMouseEvent & { features?: GeoJSON.Feature[] }) {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const line = (f.properties?.line as string) ?? "Metro";
+        const stations = (f.properties?.NUM_OF_STATIONS as string) ?? "?";
+        const color = (f.properties?.color as string) ?? "#888";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div><div style="font-family:Georgia,serif;font-weight:700;color:${color}">${line}</div>
+             <div style="font-size:10px;opacity:0.7;margin-top:2px">${stations} stations</div></div>`,
+          )
+          .addTo(map);
+      }
+      map.on("mousemove", METRO_LINE, metroHover);
+      map.on("mousemove", METRO_LINE_DASHED, metroHover);
+      const metroLeave = () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      };
+      map.on("mouseleave", METRO_LINE, metroLeave);
+      map.on("mouseleave", METRO_LINE_DASHED, metroLeave);
     });
 
     mapRef.current = map;
@@ -206,7 +311,8 @@ export default function ParcelsMapPage() {
     };
   }, []);
 
-  // Theme swap → reload basemap, reattach overlay layers after styledata fires.
+  // Theme swap → reload basemap, reattach overlays after styledata fires,
+  // and re-tint the road colour to match.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -215,18 +321,30 @@ export default function ParcelsMapPage() {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
       map.keyboard.enable();
-      await attachCommunities(map);
+      await attachOverlays(map);
+      if (map.getLayer(ROADS_LINE)) {
+        map.setPaintProperty(ROADS_LINE, "line-color", theme === "dark" ? "#888888" : "#666666");
+      }
     });
   }, [theme]);
 
-  // Layer toggle
+  // Layer toggles
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getLayer(COMMUNITIES_LINE)) return;
-    const visibility = layers.communities ? "visible" : "none";
-    map.setLayoutProperty(COMMUNITIES_FILL, "visibility", visibility);
-    map.setLayoutProperty(COMMUNITIES_LINE, "visibility", visibility);
-  }, [layers.communities]);
+    if (!map) return;
+    const v = (on: boolean) => (on ? "visible" : "none");
+    if (map.getLayer(COMMUNITIES_FILL)) {
+      map.setLayoutProperty(COMMUNITIES_FILL, "visibility", v(layers.communities));
+      map.setLayoutProperty(COMMUNITIES_LINE, "visibility", v(layers.communities));
+    }
+    if (map.getLayer(ROADS_LINE)) {
+      map.setLayoutProperty(ROADS_LINE, "visibility", v(layers.roads));
+    }
+    if (map.getLayer(METRO_LINE)) {
+      map.setLayoutProperty(METRO_LINE, "visibility", v(layers.metro));
+      map.setLayoutProperty(METRO_LINE_DASHED, "visibility", v(layers.metro));
+    }
+  }, [layers]);
 
   const c = PALETTE[theme];
   const isDark = theme === "dark";
@@ -346,25 +464,24 @@ export default function ParcelsMapPage() {
         >
           Layers
         </div>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 14px",
-            fontSize: 12,
-            cursor: "pointer",
-            color: c.text,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={layers.communities}
-            onChange={(e) => setLayers((l) => ({ ...l, communities: e.target.checked }))}
-            style={{ accentColor: GOLD }}
-          />
-          Communities
-        </label>
+        <LayerToggle
+          label="Communities"
+          checked={layers.communities}
+          onChange={(v) => setLayers((l) => ({ ...l, communities: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Major Roads"
+          checked={layers.roads}
+          onChange={(v) => setLayers((l) => ({ ...l, roads: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Metro"
+          checked={layers.metro}
+          onChange={(v) => setLayers((l) => ({ ...l, metro: v }))}
+          color={c.text}
+        />
       </div>
 
       <style jsx global>{`
@@ -419,6 +536,40 @@ export default function ParcelsMapPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+function LayerToggle({
+  label,
+  checked,
+  onChange,
+  color,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  color: string;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 14px",
+        fontSize: 12,
+        cursor: "pointer",
+        color,
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ accentColor: GOLD }}
+      />
+      {label}
+    </label>
   );
 }
 

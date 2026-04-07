@@ -1,21 +1,17 @@
 /**
- * Tight KML → GeoJSON parser for Dubai Community boundaries.
+ * Tight KML → GeoJSON parser for Dubai Pulse exports.
  *
- * Optimised for the specific Dubai Pulse community KML format:
- *   - 1 Placemark per community
- *   - Each Placemark has ExtendedData/SimpleData attributes and a single Polygon
- *     with outerBoundaryIs/LinearRing/coordinates (no inner rings, no MultiGeometry)
+ * Supports:
+ *   - Polygon (single outer ring) and MultiPolygon
+ *   - LineString and MultiLineString (incl. inside MultiGeometry)
  *
- * If the source format ever changes (MultiGeometry, holes), upgrade to
- * @tmcw/togeojson — for now this saves a dependency.
+ * NOT supported (intentionally — these don't appear in our datasets):
+ *   - Polygon inner rings (holes)
+ *   - GeometryCollection mixing polygons and lines
+ *   - Point/MultiPoint
+ *
+ * Attribute names are passed in by the caller; we read SimpleData blocks.
  */
-
-export interface CommunityProperties {
-  CNAME_E: string | null;
-  CNAME_A: string | null;
-  COMM_NUM: string | null;
-  OBJECTID: string | null;
-}
 
 function decode(s: string): string {
   return s
@@ -26,52 +22,97 @@ function decode(s: string): string {
     .replace(/&apos;/g, "'");
 }
 
-function parseRing(coordsText: string): number[][] {
-  return coordsText
-    .trim()
-    .split(/\s+/)
-    .map((triple) => {
-      const [lng, lat] = triple.split(',');
-      return [parseFloat(lng), parseFloat(lat)];
-    })
-    .filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+function parseRing(coordsText: string): GeoJSON.Position[] {
+  const out: GeoJSON.Position[] = [];
+  for (const triple of coordsText.trim().split(/\s+/)) {
+    const [lngStr, latStr] = triple.split(',');
+    const lng = parseFloat(lngStr);
+    const lat = parseFloat(latStr);
+    if (Number.isFinite(lng) && Number.isFinite(lat)) out.push([lng, lat]);
+  }
+  return out;
 }
 
-const SIMPLE_DATA_RE = /<SimpleData\s+name="([^"]+)">([^<]*)<\/SimpleData>/g;
-const COORDS_RE = /<coordinates>\s*([\s\S]*?)\s*<\/coordinates>/;
 const PLACEMARK_RE = /<Placemark[\s\S]*?<\/Placemark>/g;
+const SIMPLE_DATA_RE = /<SimpleData\s+name="([^"]+)">([^<]*)<\/SimpleData>/g;
+const POLYGON_RE = /<Polygon[\s\S]*?<\/Polygon>/g;
+const LINESTRING_RE = /<LineString[\s\S]*?<\/LineString>/g;
+const COORDS_RE = /<coordinates>\s*([\s\S]*?)\s*<\/coordinates>/;
 
-export function parseCommunitiesKml(kml: string): GeoJSON.FeatureCollection {
+function extractGeometry(pm: string): GeoJSON.Geometry | null {
+  // --- polygons ---
+  const polyBlocks = pm.match(POLYGON_RE) ?? [];
+  const polys: GeoJSON.Position[][][] = [];
+  for (const block of polyBlocks) {
+    const cm = block.match(COORDS_RE);
+    if (!cm) continue;
+    const ring = parseRing(cm[1]);
+    if (ring.length >= 4) polys.push([ring]);
+  }
+  if (polys.length === 1) {
+    return { type: 'Polygon', coordinates: polys[0] };
+  }
+  if (polys.length > 1) {
+    return { type: 'MultiPolygon', coordinates: polys };
+  }
+
+  // --- linestrings ---
+  const lineBlocks = pm.match(LINESTRING_RE) ?? [];
+  const lines: GeoJSON.Position[][] = [];
+  for (const block of lineBlocks) {
+    const cm = block.match(COORDS_RE);
+    if (!cm) continue;
+    const ring = parseRing(cm[1]);
+    if (ring.length >= 2) lines.push(ring);
+  }
+  if (lines.length === 1) {
+    return { type: 'LineString', coordinates: lines[0] };
+  }
+  if (lines.length > 1) {
+    return { type: 'MultiLineString', coordinates: lines };
+  }
+
+  return null;
+}
+
+export function parseKml(
+  kml: string,
+  options: { attrs: string[]; idAttr?: string },
+): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];
   const placemarks = kml.match(PLACEMARK_RE) ?? [];
 
   for (const pm of placemarks) {
     const props: Record<string, string> = {};
-    let m: RegExpExecArray | null;
     const sdRe = new RegExp(SIMPLE_DATA_RE.source, 'g');
+    let m: RegExpExecArray | null;
     while ((m = sdRe.exec(pm))) {
       props[m[1]] = decode(m[2]);
     }
 
-    const coordsMatch = pm.match(COORDS_RE);
-    if (!coordsMatch) continue;
-    const ring = parseRing(coordsMatch[1]);
-    if (ring.length < 4) continue;
+    const geom = extractGeometry(pm);
+    if (!geom) continue;
 
-    const cprops: CommunityProperties = {
-      CNAME_E: props.CNAME_E ?? null,
-      CNAME_A: props.CNAME_A ?? null,
-      COMM_NUM: props.COMM_NUM ?? null,
-      OBJECTID: props.OBJECTID ?? null,
-    };
+    const out: Record<string, string | null> = {};
+    for (const a of options.attrs) out[a] = props[a] ?? null;
+
+    const idVal = options.idAttr ? props[options.idAttr] : undefined;
 
     features.push({
       type: 'Feature',
-      id: cprops.COMM_NUM ?? cprops.OBJECTID ?? undefined,
-      geometry: { type: 'Polygon', coordinates: [ring] },
-      properties: cprops,
+      ...(idVal ? { id: idVal } : {}),
+      geometry: geom,
+      properties: out,
     });
   }
 
   return { type: 'FeatureCollection', features };
+}
+
+// Back-compat shim for the existing communities endpoint.
+export function parseCommunitiesKml(kml: string): GeoJSON.FeatureCollection {
+  return parseKml(kml, {
+    attrs: ['CNAME_E', 'CNAME_A', 'COMM_NUM', 'OBJECTID'],
+    idAttr: 'COMM_NUM',
+  });
 }
