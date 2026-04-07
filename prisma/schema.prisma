@@ -1,0 +1,144 @@
+// ZAAHI — Prisma schema
+// Source of truth for User / Parcel / Deal / Document.
+// Money: BigInt fils (1 AED = 100 fils). Geometry: GeoJSON polygon as Json.
+// User.id == Supabase auth.users.id (no passwordHash here).
+// Area is stored in sqft (Dubai market standard).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── ENUMS ─────────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  BUYER
+  BROKER
+  INVESTOR
+  DEVELOPER
+  ARCHITECT
+  ADMIN
+}
+
+enum ParcelStatus {
+  VACANT
+  LISTED
+  IN_DEAL
+  SOLD
+  DISPUTED
+  FROZEN
+}
+
+// Mirrors states in backend/services/deal_engine.ts
+enum DealStatus {
+  INITIAL
+  DEAL_INITIATED
+  DEPOSIT_SUBMITTED
+  AGREEMENT_SIGNED
+  DOCUMENTS_COLLECTED
+  GOVERNMENT_VERIFIED
+  NOC_REQUESTED
+  TRANSFER_FEE_PAID
+  DLD_SUBMITTED
+  DEAL_COMPLETED
+  DISPUTE_INITIATED
+  DEAL_CANCELLED
+}
+
+enum DocumentType {
+  TITLE_DEED
+  PASSPORT
+  EMIRATES_ID
+  NOC
+  SPA               // Sale & Purchase Agreement
+  OQOOD
+  EJARI
+  POWER_OF_ATTORNEY
+  VALUATION_REPORT
+  OTHER
+}
+
+// ── MODELS ────────────────────────────────────────────
+
+model User {
+  id        String   @id // matches Supabase auth.users.id
+  email     String   @unique
+  role      UserRole
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+
+  parcels    Parcel[] @relation("ParcelOwner")
+  dealsAsSeller Deal[] @relation("DealSeller")
+  dealsAsBuyer  Deal[] @relation("DealBuyer")
+
+  @@index([role])
+}
+
+model Parcel {
+  id               String       @id @default(cuid())
+  plotNumber       String
+  ownerId          String
+  owner            User         @relation("ParcelOwner", fields: [ownerId], references: [id])
+  area             Float        // sqft (Dubai market standard)
+  emirate          String
+  district         String
+  latitude         Float?
+  longitude        Float?
+  geometry         Json?        // GeoJSON polygon
+  status           ParcelStatus @default(VACANT)
+  currentValuation BigInt?      // fils
+  isTokenized      Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  deals     Deal[]
+  documents Document[]
+
+  @@unique([emirate, district, plotNumber])
+  @@index([ownerId])
+  @@index([emirate])
+  @@index([district])
+  @@index([status])
+}
+
+model Deal {
+  id           String     @id @default(cuid())
+  parcelId     String
+  parcel       Parcel     @relation(fields: [parcelId], references: [id])
+  sellerId     String
+  seller       User       @relation("DealSeller", fields: [sellerId], references: [id])
+  buyerId      String
+  buyer        User       @relation("DealBuyer", fields: [buyerId], references: [id])
+  status       DealStatus @default(INITIAL)
+  priceInFils  BigInt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  documents Document[]
+
+  @@index([parcelId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  dealId     String?
+  deal       Deal?        @relation(fields: [dealId], references: [id])
+  parcelId   String?
+  parcel     Parcel?      @relation(fields: [parcelId], references: [id])
+  type       DocumentType
+  fileUrl    String
+  uploadedAt DateTime     @default(now())
+
+  @@index([dealId])
+  @@index([parcelId])
+  @@index([type])
+}
