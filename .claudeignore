@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.git/objects/
+.git/pack/
+dist/
+coverage/
+*.log
+.env
+.env.production
+.env.*.local
