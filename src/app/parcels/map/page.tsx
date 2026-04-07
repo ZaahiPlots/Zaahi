@@ -1,9 +1,26 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { Map as MLMap, Marker, StyleSpecification } from "maplibre-gl";
+import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// Inline raster style — OSM tiles, no glyphs/sprite needed, no referrer checks.
+interface Parcel {
+  id: string;
+  plotNumber: string;
+  emirate: string;
+  district: string;
+  area: number;
+  latitude: number | null;
+  longitude: number | null;
+  status: string;
+  currentValuation: string | null;
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
+}
+
+const DUBAI_CENTER: [number, number] = [55.2708, 25.2048];
+const SOURCE_ID = "parcels";
+const FILL_LAYER = "parcels-fill";
+const LINE_LAYER = "parcels-line";
+
 const RASTER_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -21,87 +38,145 @@ const RASTER_STYLE: StyleSpecification = {
   layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
 
-interface Parcel {
-  id: string;
-  plotNumber: string;
-  emirate: string;
-  district: string;
-  area: number;
-  latitude: number | null;
-  longitude: number | null;
-  status: string;
-  currentValuation: string | null;
+function aedFromFils(fils: string | null): string {
+  if (!fils) return "—";
+  const aed = Number(BigInt(fils)) / 100;
+  return aed.toLocaleString("en-AE", { style: "currency", currency: "AED", maximumFractionDigits: 0 });
 }
-
-const DUBAI_CENTER: [number, number] = [55.2708, 25.2048];
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
-  const markersRef = useRef<Marker[]>([]);
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // init map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: RASTER_STYLE,
       center: DUBAI_CENTER,
-      zoom: 9,
+      zoom: 11,
     });
     map.addControl(new maplibregl.NavigationControl());
-    map.on("load", () => console.log("[map] style loaded"));
     map.on("error", (e) => {
       console.error("[map] error", e);
       setError(e?.error?.message ?? "map error");
     });
+
+    map.on("load", async () => {
+      try {
+        const res = await fetch("/api/parcels?pageSize=200");
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data: { items: Parcel[]; total: number } = await res.json();
+
+        const features: GeoJSON.Feature[] = data.items
+          .filter((p) => p.geometry != null)
+          .map((p) => ({
+            type: "Feature",
+            geometry: p.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon,
+            properties: {
+              id: p.id,
+              plotNumber: p.plotNumber,
+              district: p.district,
+              emirate: p.emirate,
+              area: p.area,
+              status: p.status,
+              valuationAed: aedFromFils(p.currentValuation),
+            },
+          }));
+
+        map.addSource(SOURCE_ID, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features },
+        });
+
+        map.addLayer({
+          id: FILL_LAYER,
+          type: "fill",
+          source: SOURCE_ID,
+          paint: {
+            "fill-color": "#f59e0b",
+            "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.55, 0.3],
+          },
+        });
+
+        map.addLayer({
+          id: LINE_LAYER,
+          type: "line",
+          source: SOURCE_ID,
+          paint: {
+            "line-color": "#b45309",
+            "line-width": 2,
+          },
+        });
+
+        // Auto-fit to all parcels
+        if (features.length > 0) {
+          const bounds = new maplibregl.LngLatBounds();
+          for (const f of features) {
+            const geom = f.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+            const rings =
+              geom.type === "Polygon" ? geom.coordinates : geom.coordinates.flat();
+            for (const ring of rings) {
+              for (const coord of ring) {
+                bounds.extend(coord as [number, number]);
+              }
+            }
+          }
+          map.fitBounds(bounds, { padding: 60, maxZoom: 16 });
+        }
+
+        // Hover state
+        let hoveredId: string | number | undefined;
+        map.on("mousemove", FILL_LAYER, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          map.getCanvas().style.cursor = "pointer";
+          const f = e.features?.[0];
+          if (!f) return;
+          if (hoveredId !== undefined) {
+            map.setFeatureState({ source: SOURCE_ID, id: hoveredId }, { hover: false });
+          }
+          hoveredId = (f.id as string | number | undefined) ?? f.properties?.id;
+          if (hoveredId !== undefined) {
+            map.setFeatureState({ source: SOURCE_ID, id: hoveredId }, { hover: true });
+          }
+        });
+        map.on("mouseleave", FILL_LAYER, () => {
+          map.getCanvas().style.cursor = "";
+          if (hoveredId !== undefined) {
+            map.setFeatureState({ source: SOURCE_ID, id: hoveredId }, { hover: false });
+          }
+          hoveredId = undefined;
+        });
+
+        // Click → popup
+        map.on("click", FILL_LAYER, (e) => {
+          const f = e.features?.[0];
+          if (!f || !f.properties) return;
+          const p = f.properties;
+          new maplibregl.Popup({ offset: 8, maxWidth: "260px" })
+            .setLngLat(e.lngLat)
+            .setHTML(
+              `<div style="font-family:system-ui,sans-serif;font-size:13px;line-height:1.45">
+                 <div style="font-weight:700;color:#b45309">${p.plotNumber}</div>
+                 <div>${p.district}, ${p.emirate}</div>
+                 <div>${Number(p.area).toLocaleString()} sqft &middot; ${p.status}</div>
+                 <div style="margin-top:4px;font-weight:600">${p.valuationAed}</div>
+               </div>`,
+            )
+            .addTo(map);
+        });
+
+        setCount(features.length);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "load failed");
+      }
+    });
+
     mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
-    };
-  }, []);
-
-  // fetch + render parcels
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/parcels?pageSize=100");
-        if (!res.ok) throw new Error(`status ${res.status}`);
-        const data: { items: Parcel[]; total: number } = await res.json();
-        if (cancelled || !mapRef.current) return;
-
-        // clear old markers
-        markersRef.current.forEach((m) => m.remove());
-        markersRef.current = [];
-
-        const withCoords = data.items.filter(
-          (p) => typeof p.latitude === "number" && typeof p.longitude === "number",
-        );
-        for (const p of withCoords) {
-          const popup = new maplibregl.Popup({ offset: 12 }).setHTML(
-            `<div style="font-family:sans-serif">
-               <strong>${p.plotNumber}</strong><br/>
-               ${p.district}, ${p.emirate}<br/>
-               ${p.area.toLocaleString()} sqft &middot; ${p.status}
-             </div>`,
-          );
-          const marker = new maplibregl.Marker({ color: "#f59e0b" })
-            .setLngLat([p.longitude as number, p.latitude as number])
-            .setPopup(popup)
-            .addTo(mapRef.current);
-          markersRef.current.push(marker);
-        }
-        setCount(data.total);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "load failed");
-      }
-    })();
-    return () => {
-      cancelled = true;
     };
   }, []);
 
