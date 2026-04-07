@@ -88,6 +88,8 @@ const DAMAC_LAGOONS_SRC = "dda-damac-lagoons";
 const DAMAC_LAGOONS_LINE = "dda-damac-lagoons-line";
 const DAMAC_ISLANDS_SRC = "dda-damac-islands";
 const DAMAC_ISLANDS_LINE = "dda-damac-islands-line";
+const THE_VALLEY_SRC = "dda-the-valley";
+const THE_VALLEY_LINE = "dda-the-valley-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +109,7 @@ export default function ParcelsMapPage() {
     damacHills2: true,
     damacLagoons: true,
     damacIslands: true,
+    theValley: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -323,6 +326,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── The Valley (DDA) ───────────────────────────────────────────
+    if (!map.getSource(THE_VALLEY_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/the-valley");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(THE_VALLEY_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: THE_VALLEY_LINE,
+          type: "line",
+          source: THE_VALLEY_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[the-valley] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -355,6 +376,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_ISLANDS_LINE)) {
       map.setLayoutProperty(DAMAC_ISLANDS_LINE, "visibility", v(layersRef.current.damacIslands));
+    }
+    if (map.getLayer(THE_VALLEY_LINE)) {
+      map.setLayoutProperty(THE_VALLEY_LINE, "visibility", v(layersRef.current.theValley));
     }
   }
 
@@ -483,6 +507,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", DAMAC_LAGOONS_LINE, masterPlanLeave);
       map.on("mousemove", DAMAC_ISLANDS_LINE, ddaPlotHover);
       map.on("mouseleave", DAMAC_ISLANDS_LINE, masterPlanLeave);
+      map.on("mousemove", THE_VALLEY_LINE, ddaPlotHover);
+      map.on("mouseleave", THE_VALLEY_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -545,6 +571,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_ISLANDS_LINE)) {
       map.setLayoutProperty(DAMAC_ISLANDS_LINE, "visibility", v(layers.damacIslands));
+    }
+    if (map.getLayer(THE_VALLEY_LINE)) {
+      map.setLayoutProperty(THE_VALLEY_LINE, "visibility", v(layers.theValley));
     }
   }, [layers]);
 
@@ -752,6 +781,12 @@ export default function ParcelsMapPage() {
           label="Damac Islands"
           checked={layers.damacIslands}
           onChange={(v) => setLayers((l) => ({ ...l, damacIslands: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="The Valley"
+          checked={layers.theValley}
+          onChange={(v) => setLayers((l) => ({ ...l, theValley: v }))}
           color={c.text}
         />
       </div>
