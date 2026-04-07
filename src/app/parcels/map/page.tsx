@@ -76,6 +76,8 @@ const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 const MEYDAN_SRC = "meydan-horizon";
 const MEYDAN_LINE = "meydan-horizon-line";
+const PEARL_SRC = "pearl-jumeirah";
+const PEARL_LINE = "pearl-jumeirah-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,6 +91,7 @@ export default function ParcelsMapPage() {
     roads: true,
     islands: true,
     meydan: true,
+    pearl: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -201,6 +204,22 @@ export default function ParcelsMapPage() {
       }
     }
 
+    if (!map.getSource(PEARL_SRC)) {
+      try {
+        const r = await fetch("/api/layers/masterplans/pearl-jumeirah");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(PEARL_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: PEARL_LINE,
+          type: "line",
+          source: PEARL_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[pearl-jumeirah] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -215,6 +234,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(MEYDAN_LINE)) {
       map.setLayoutProperty(MEYDAN_LINE, "visibility", v(layersRef.current.meydan));
+    }
+    if (map.getLayer(PEARL_LINE)) {
+      map.setLayoutProperty(PEARL_LINE, "visibility", v(layersRef.current.pearl));
     }
   }
 
@@ -314,6 +336,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", ISLANDS_LINE, masterPlanLeave);
       map.on("mousemove", MEYDAN_LINE, masterPlanHover("Meydan Horizon master plan"));
       map.on("mouseleave", MEYDAN_LINE, masterPlanLeave);
+      map.on("mousemove", PEARL_LINE, masterPlanHover("Pearl Jumeirah master plan"));
+      map.on("mouseleave", PEARL_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -358,6 +382,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(MEYDAN_LINE)) {
       map.setLayoutProperty(MEYDAN_LINE, "visibility", v(layers.meydan));
+    }
+    if (map.getLayer(PEARL_LINE)) {
+      map.setLayoutProperty(PEARL_LINE, "visibility", v(layers.pearl));
     }
   }, [layers]);
 
@@ -515,6 +542,12 @@ export default function ParcelsMapPage() {
           label="Meydan Horizon"
           checked={layers.meydan}
           onChange={(v) => setLayers((l) => ({ ...l, meydan: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Pearl Jumeirah"
+          checked={layers.pearl}
+          onChange={(v) => setLayers((l) => ({ ...l, pearl: v }))}
           color={c.text}
         />
       </div>
