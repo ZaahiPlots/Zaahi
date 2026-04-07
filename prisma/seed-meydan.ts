@@ -29,17 +29,19 @@ import { computeValuation } from '../src/lib/valuation';
 const PDF = `${process.env.HOME}/zaahi/data/meydan/Meydan_Horizon_DCR-1.pdf`;
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
-// User-confirmed approximate bbox for Meydan Horizon district
-// (~89 ha, elongated WNW-ESE, centred ~25.175°N 55.300°E)
+// Control points provided by ops:
+//   NW corner: 25.1790°N, 55.2910°E
+//   SE corner: 25.1700°N, 55.3090°E
+// Meydan Racecourse (nearby landmark, not a control point) is at 25.1675, 55.3025.
 const GEO_BBOX = {
-  minLng: 55.2926,
-  maxLng: 55.3074,
-  minLat: 25.1723,
-  maxLat: 25.1777,
+  minLng: 55.2910,
+  maxLng: 55.3090,
+  minLat: 25.1700,
+  maxLat: 25.1790,
 };
 
-// First batch — user said "Начни с первых 10".
-const BATCH_LIMIT = 10;
+// Process all extracted plots.
+const BATCH_LIMIT = Number.POSITIVE_INFINITY;
 
 interface BBox { x1: number; y1: number; x2: number; y2: number; w: string }
 
