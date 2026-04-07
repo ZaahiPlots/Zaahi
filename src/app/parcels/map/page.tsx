@@ -80,8 +80,8 @@ const PEARL_SRC = "pearl-jumeirah";
 const PEARL_LINE = "pearl-jumeirah-line";
 const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
-const DDA_SRC = "dda-districts";
-const DDA_LINE = "dda-districts-line";
+const DUBAI_HILLS_SRC = "dda-dubai-hills";
+const DUBAI_HILLS_LINE = "dda-dubai-hills-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +97,7 @@ export default function ParcelsMapPage() {
     meydan: true,
     pearl: true,
     d11: true,
-    dda: true,
+    dubaiHills: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -242,19 +242,19 @@ export default function ParcelsMapPage() {
       }
     }
 
-    if (!map.getSource(DDA_SRC)) {
+    if (!map.getSource(DUBAI_HILLS_SRC)) {
       try {
-        const r = await fetch("/api/layers/masterplans/dda-districts");
+        const r = await fetch("/api/layers/masterplans/dda?project=dubai-hills");
         const data: GeoJSON.FeatureCollection = await r.json();
-        map.addSource(DDA_SRC, { type: "geojson", data });
+        map.addSource(DUBAI_HILLS_SRC, { type: "geojson", data });
         map.addLayer({
-          id: DDA_LINE,
+          id: DUBAI_HILLS_LINE,
           type: "line",
-          source: DDA_SRC,
+          source: DUBAI_HILLS_SRC,
           paint: { ...masterPlanPaint },
         });
       } catch (e) {
-        console.error("[dda-districts] load failed", e);
+        console.error("[dda dubai-hills] load failed", e);
       }
     }
 
@@ -279,8 +279,8 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layersRef.current.d11));
     }
-    if (map.getLayer(DDA_LINE)) {
-      map.setLayoutProperty(DDA_LINE, "visibility", v(layersRef.current.dda));
+    if (map.getLayer(DUBAI_HILLS_LINE)) {
+      map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layersRef.current.dubaiHills));
     }
   }
 
@@ -385,22 +385,22 @@ export default function ParcelsMapPage() {
       map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
       map.on("mouseleave", D11_LINE, masterPlanLeave);
 
-      // DDA districts use PROJECT_NAME (different label key) — custom hover
-      map.on("mousemove", DDA_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // DDA per-project plots — show plot number + area
+      map.on("mousemove", DUBAI_HILLS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
         map.getCanvas().style.cursor = "pointer";
-        const name = (f.properties?.PROJECT_NAME as string) ?? "DDA project";
-        const cnt = (f.properties?.plot_count as number) ?? "?";
+        const plot = (f.properties?.PLOT_NUMBER as string) ?? "—";
+        const sqft = (f.properties?.AREA_SQFT as number) ?? null;
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${name}</div>
-             <div style="font-size:10px;opacity:0.7;margin-top:2px">DDA district · ${cnt} plots</div></div>`,
+            `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">Plot ${plot}</div>
+             <div style="font-size:10px;opacity:0.7;margin-top:2px">DUBAI HILLS${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
           )
           .addTo(map);
       });
-      map.on("mouseleave", DDA_LINE, masterPlanLeave);
+      map.on("mouseleave", DUBAI_HILLS_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -452,8 +452,8 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layers.d11));
     }
-    if (map.getLayer(DDA_LINE)) {
-      map.setLayoutProperty(DDA_LINE, "visibility", v(layers.dda));
+    if (map.getLayer(DUBAI_HILLS_LINE)) {
+      map.setLayoutProperty(DUBAI_HILLS_LINE, "visibility", v(layers.dubaiHills));
     }
   }, [layers]);
 
@@ -626,9 +626,9 @@ export default function ParcelsMapPage() {
           color={c.text}
         />
         <LayerToggle
-          label="DDA Districts (207)"
-          checked={layers.dda}
-          onChange={(v) => setLayers((l) => ({ ...l, dda: v }))}
+          label="Dubai Hills (DDA)"
+          checked={layers.dubaiHills}
+          onChange={(v) => setLayers((l) => ({ ...l, dubaiHills: v }))}
           color={c.text}
         />
       </div>
