@@ -6,11 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "agent": "python3 agent.py",
-    "seed": "tsx prisma/seed.ts",
-    "seed:dda": "tsx prisma/seed-from-dda.ts",
-    "refresh:affection": "tsx prisma/refresh-affection.ts",
-    "seed:meydan": "tsx prisma/seed-meydan.ts"
+    "agent": "python3 agent.py"
   },
   "dependencies": {
     "@prisma/client": "^7.7.0",
