@@ -11,10 +11,13 @@ function serialize<T>(value: T): T {
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET /api/parcels/:id
+// GET /api/parcels/:id  → parcel + latest affection plan
 export async function GET(_req: NextRequest, { params }: Ctx) {
   const { id } = await params;
-  const parcel = await prisma.parcel.findUnique({ where: { id } });
+  const parcel = await prisma.parcel.findUnique({
+    where: { id },
+    include: { affectionPlans: { orderBy: { fetchedAt: 'desc' }, take: 1 } },
+  });
   if (!parcel) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   return NextResponse.json(serialize(parcel));
 }
