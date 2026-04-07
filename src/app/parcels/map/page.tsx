@@ -74,6 +74,8 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
+const MEYDAN_SRC = "meydan-horizon";
+const MEYDAN_LINE = "meydan-horizon-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,7 +84,12 @@ export default function ParcelsMapPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
-  const [layers, setLayers] = useState({ communities: true, roads: true, islands: true });
+  const [layers, setLayers] = useState({
+    communities: true,
+    roads: true,
+    islands: true,
+    meydan: true,
+  });
   const layersRef = useRef(layers);
   layersRef.current = layers;
   const themeRef = useRef<Theme>("light");
@@ -154,7 +161,14 @@ export default function ParcelsMapPage() {
       }
     }
 
-    // ── Dubai Islands master plan ──────────────────────────────────
+    // ── Master plans (purple dashed) ───────────────────────────────
+    const masterPlanPaint: maplibregl.LineLayerSpecification["paint"] = {
+      "line-color": "#9333EA",
+      "line-width": 1.5,
+      "line-opacity": 0.7,
+      "line-dasharray": [3, 2],
+    };
+
     if (!map.getSource(ISLANDS_SRC)) {
       try {
         const r = await fetch("/api/layers/dubai-islands");
@@ -164,15 +178,26 @@ export default function ParcelsMapPage() {
           id: ISLANDS_LINE,
           type: "line",
           source: ISLANDS_SRC,
-          paint: {
-            "line-color": "#9333EA",
-            "line-width": 1.5,
-            "line-opacity": 0.7,
-            "line-dasharray": [3, 2],
-          },
+          paint: { ...masterPlanPaint },
         });
       } catch (e) {
         console.error("[dubai-islands] load failed", e);
+      }
+    }
+
+    if (!map.getSource(MEYDAN_SRC)) {
+      try {
+        const r = await fetch("/api/layers/masterplans/meydan-horizon");
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(MEYDAN_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: MEYDAN_LINE,
+          type: "line",
+          source: MEYDAN_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[meydan-horizon] load failed", e);
       }
     }
 
@@ -187,6 +212,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ISLANDS_LINE)) {
       map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layersRef.current.islands));
+    }
+    if (map.getLayer(MEYDAN_LINE)) {
+      map.setLayoutProperty(MEYDAN_LINE, "visibility", v(layersRef.current.meydan));
     }
   }
 
@@ -261,26 +289,31 @@ export default function ParcelsMapPage() {
         popup.remove();
       });
 
-      // ── Dubai Islands hover ──
-      map.on("mousemove", ISLANDS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const layer = (f.properties?.Layer as string) ?? "Dubai Islands";
-        // Strip the "PDF _MP_LU_" prefix the AutoCAD export adds
-        const clean = layer.replace(/^PDF\s+_MP_LU_/, "").replace(/_/g, " ");
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(
-            `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${clean}</div>
-             <div style="font-size:10px;opacity:0.7;margin-top:2px">Dubai Islands master plan</div></div>`,
-          )
-          .addTo(map);
-      });
-      map.on("mouseleave", ISLANDS_LINE, () => {
+      // ── Master plan hover (shared handler for islands + meydan) ──
+      function masterPlanHover(planLabel: string) {
+        return (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          map.getCanvas().style.cursor = "pointer";
+          const layerRaw = (f.properties?.Layer as string) ?? planLabel;
+          const clean = layerRaw.replace(/^PDF\s+_MP_LU_/, "").replace(/_/g, " ");
+          popup
+            .setLngLat(e.lngLat)
+            .setHTML(
+              `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${clean}</div>
+               <div style="font-size:10px;opacity:0.7;margin-top:2px">${planLabel}</div></div>`,
+            )
+            .addTo(map);
+        };
+      }
+      const masterPlanLeave = () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
-      });
+      };
+      map.on("mousemove", ISLANDS_LINE, masterPlanHover("Dubai Islands master plan"));
+      map.on("mouseleave", ISLANDS_LINE, masterPlanLeave);
+      map.on("mousemove", MEYDAN_LINE, masterPlanHover("Meydan Horizon master plan"));
+      map.on("mouseleave", MEYDAN_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -322,6 +355,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ISLANDS_LINE)) {
       map.setLayoutProperty(ISLANDS_LINE, "visibility", v(layers.islands));
+    }
+    if (map.getLayer(MEYDAN_LINE)) {
+      map.setLayoutProperty(MEYDAN_LINE, "visibility", v(layers.meydan));
     }
   }, [layers]);
 
@@ -455,10 +491,30 @@ export default function ParcelsMapPage() {
           onChange={(v) => setLayers((l) => ({ ...l, roads: v }))}
           color={c.text}
         />
+        <div
+          style={{
+            padding: "8px 14px 4px",
+            borderTop: `1px solid ${c.borderSubtle}`,
+            marginTop: 4,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 10,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: c.textDim,
+          }}
+        >
+          Master Plans
+        </div>
         <LayerToggle
           label="Dubai Islands"
           checked={layers.islands}
           onChange={(v) => setLayers((l) => ({ ...l, islands: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Meydan Horizon"
+          checked={layers.meydan}
+          onChange={(v) => setLayers((l) => ({ ...l, meydan: v }))}
           color={c.text}
         />
       </div>
