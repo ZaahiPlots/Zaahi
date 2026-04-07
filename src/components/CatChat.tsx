@@ -29,7 +29,8 @@ const CatChat = () => {
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value);
 
   const handleOutsideClick = (e: MouseEvent) => {
-    if (!e.composedPath().includes(document.querySelector(`.${styles.chat}`))) {
+    const el = document.querySelector(`.${styles.chat}`);
+    if (el && !e.composedPath().includes(el)) {
       setIsOpen(false);
     }
   };
