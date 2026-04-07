@@ -80,8 +80,23 @@ const PEARL_SRC = "pearl-jumeirah";
 const PEARL_LINE = "pearl-jumeirah-line";
 const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
-const DDA_DISTRICTS_SRC = "dda-districts";
-const DDA_DISTRICTS_LINE = "dda-districts-line";
+// Cherry-picked DDA projects, each rendered as its own toggleable layer.
+// Slug must match a file in ~/zaahi/data/layers/dda/<slug>.geojson.
+// Adding more = append a row here.
+const DDA_PROJECTS: ReadonlyArray<{ slug: string; label: string }> = [
+  { slug: 'lunaya',                                   label: 'Lunaya' },
+  { slug: 'dubai-holding-plots-at-al-safouh-first',   label: 'DH @ Al Safouh First' },
+  { slug: 'shamal-plots-at-muhaisnah-first',          label: 'Shamal @ Muhaisnah First' },
+  { slug: 'zaa-beel-first-plot',                      label: "Za'abeel First Plot" },
+  { slug: '6456408-at-wadi-al-safa-3',                label: 'Wadi Al Safa 3 (6456408)' },
+  { slug: 'al-jalila-children-s-specialty-hospital',  label: 'Al Jalila Hospital' },
+  { slug: 'dubai-land-b2-08',                         label: 'Dubai Land (B2-08)' },
+  { slug: 'meraas-plots-at-port-saeed',               label: 'Meraas @ Port Saeed' },
+  { slug: 'meraas-plots-at-nadd-al-shiba-fourth',     label: 'Meraas @ Nadd Al Shiba 4' },
+  { slug: 'meraas-plots-at-al-barsha-south-first',    label: 'Meraas @ Al Barsha S. First' },
+];
+const ddaSrcId = (slug: string) => `dda-${slug}`;
+const ddaLineId = (slug: string) => `dda-${slug}-line`;
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,8 +112,13 @@ export default function ParcelsMapPage() {
     meydan: true,
     pearl: true,
     d11: true,
-    ddaDistricts: true,
   });
+  // Per-project DDA toggles, default all on.
+  const [ddaActive, setDdaActive] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(DDA_PROJECTS.map((p) => [p.slug, true])),
+  );
+  const ddaActiveRef = useRef(ddaActive);
+  ddaActiveRef.current = ddaActive;
   const layersRef = useRef(layers);
   layersRef.current = layers;
   const themeRef = useRef<Theme>("light");
@@ -242,20 +262,29 @@ export default function ParcelsMapPage() {
       }
     }
 
-    // DDA Districts — concatenated FeatureCollection of cherry-picked DDA projects.
-    if (!map.getSource(DDA_DISTRICTS_SRC)) {
+    // ── Per-project DDA layers ─────────────────────────────────────
+    for (const proj of DDA_PROJECTS) {
+      const srcId = ddaSrcId(proj.slug);
+      const lyrId = ddaLineId(proj.slug);
+      if (map.getSource(srcId)) continue;
       try {
-        const r = await fetch("/api/layers/dda-districts");
+        const r = await fetch(`/api/layers/masterplans/dda?project=${proj.slug}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data: GeoJSON.FeatureCollection = await r.json();
-        map.addSource(DDA_DISTRICTS_SRC, { type: "geojson", data });
+        map.addSource(srcId, { type: "geojson", data });
         map.addLayer({
-          id: DDA_DISTRICTS_LINE,
+          id: lyrId,
           type: "line",
-          source: DDA_DISTRICTS_SRC,
+          source: srcId,
           paint: { ...masterPlanPaint },
         });
+        map.setLayoutProperty(
+          lyrId,
+          "visibility",
+          ddaActiveRef.current[proj.slug] ? "visible" : "none",
+        );
       } catch (e) {
-        console.error("[dda-districts] load failed", e);
+        console.error(`[dda ${proj.slug}] load failed`, e);
       }
     }
 
@@ -280,8 +309,11 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layersRef.current.d11));
     }
-    if (map.getLayer(DDA_DISTRICTS_LINE)) {
-      map.setLayoutProperty(DDA_DISTRICTS_LINE, "visibility", v(layersRef.current.ddaDistricts));
+    for (const proj of DDA_PROJECTS) {
+      const lyrId = ddaLineId(proj.slug);
+      if (map.getLayer(lyrId)) {
+        map.setLayoutProperty(lyrId, "visibility", v(ddaActiveRef.current[proj.slug] ?? false));
+      }
     }
   }
 
@@ -386,8 +418,8 @@ export default function ParcelsMapPage() {
       map.on("mousemove", D11_LINE, masterPlanHover("D11 — Parcel L/D master plan"));
       map.on("mouseleave", D11_LINE, masterPlanLeave);
 
-      // DDA Districts — show project name + plot number + area
-      map.on("mousemove", DDA_DISTRICTS_LINE, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // DDA per-project hover (one handler per layer id)
+      function ddaHover(e: MapMouseEvent & { features?: GeoJSON.Feature[] }) {
         const f = e.features?.[0];
         if (!f) return;
         map.getCanvas().style.cursor = "pointer";
@@ -401,8 +433,12 @@ export default function ParcelsMapPage() {
              <div style="font-size:10px;opacity:0.8;margin-top:2px">Plot ${plot}${sqft != null ? ` · ${Math.round(sqft).toLocaleString()} sqft` : ""}</div></div>`,
           )
           .addTo(map);
-      });
-      map.on("mouseleave", DDA_DISTRICTS_LINE, masterPlanLeave);
+      }
+      for (const proj of DDA_PROJECTS) {
+        const lyrId = ddaLineId(proj.slug);
+        map.on("mousemove", lyrId, ddaHover);
+        map.on("mouseleave", lyrId, masterPlanLeave);
+      }
     });
 
     mapRef.current = map;
@@ -454,10 +490,19 @@ export default function ParcelsMapPage() {
     if (map.getLayer(D11_LINE)) {
       map.setLayoutProperty(D11_LINE, "visibility", v(layers.d11));
     }
-    if (map.getLayer(DDA_DISTRICTS_LINE)) {
-      map.setLayoutProperty(DDA_DISTRICTS_LINE, "visibility", v(layers.ddaDistricts));
-    }
   }, [layers]);
+
+  // Per-project DDA visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    for (const proj of DDA_PROJECTS) {
+      const lyrId = ddaLineId(proj.slug);
+      if (map.getLayer(lyrId)) {
+        map.setLayoutProperty(lyrId, "visibility", ddaActive[proj.slug] ? "visible" : "none");
+      }
+    }
+  }, [ddaActive]);
 
   const c = PALETTE[theme];
   const isDark = theme === "dark";
@@ -641,12 +686,15 @@ export default function ParcelsMapPage() {
         >
           DDA Districts
         </div>
-        <LayerToggle
-          label="DDA Districts"
-          checked={layers.ddaDistricts}
-          onChange={(v) => setLayers((l) => ({ ...l, ddaDistricts: v }))}
-          color={c.text}
-        />
+        {DDA_PROJECTS.map((proj) => (
+          <LayerToggle
+            key={proj.slug}
+            label={proj.label}
+            checked={ddaActive[proj.slug] ?? false}
+            onChange={(v) => setDdaActive((s) => ({ ...s, [proj.slug]: v }))}
+            color={c.text}
+          />
+        ))}
       </div>
 
       <style jsx global>{`
