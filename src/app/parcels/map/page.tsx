@@ -1,7 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { Map as MLMap, Marker, Popup } from "maplibre-gl";
+import maplibregl, { Map as MLMap, Marker, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+
+// Inline raster style — OSM tiles, no glyphs/sprite needed, no referrer checks.
+const RASTER_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: [
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
+};
 
 interface Parcel {
   id: string;
@@ -27,15 +45,21 @@ export default function ParcelsMapPage() {
   // init map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    mapRef.current = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      style: RASTER_STYLE,
       center: DUBAI_CENTER,
       zoom: 9,
     });
-    mapRef.current.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.NavigationControl());
+    map.on("load", () => console.log("[map] style loaded"));
+    map.on("error", (e) => {
+      console.error("[map] error", e);
+      setError(e?.error?.message ?? "map error");
+    });
+    mapRef.current = map;
     return () => {
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
     };
   }, []);
@@ -82,8 +106,11 @@ export default function ParcelsMapPage() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-black">
-      <div ref={containerRef} className="absolute inset-0" />
+    <div className="relative w-screen h-screen bg-white">
+      <div
+        ref={containerRef}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "#fff" }}
+      />
       <div className="absolute top-4 left-4 bg-gray-900/90 text-white px-4 py-2 rounded-xl border border-gray-800 z-10">
         <div className="text-amber-400 font-bold">ZAAHI Parcels</div>
         {error ? (
