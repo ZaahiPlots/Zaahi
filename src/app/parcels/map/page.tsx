@@ -29,7 +29,7 @@ export default function ParcelsMapPage() {
     if (!containerRef.current || mapRef.current) return;
     mapRef.current = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://tiles.openfreemap.org/styles/positron",
+      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
       center: DUBAI_CENTER,
       zoom: 9,
     });
