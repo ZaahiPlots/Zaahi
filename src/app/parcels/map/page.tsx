@@ -100,6 +100,8 @@ const ARABIAN_RANCHES_1_SRC = "dda-arabian-ranches-1";
 const ARABIAN_RANCHES_1_LINE = "dda-arabian-ranches-1-line";
 const NAS_GARDENS_SRC = "dda-nad-al-sheba-gardens";
 const NAS_GARDENS_LINE = "dda-nad-al-sheba-gardens-line";
+const DSP_SRC = "dda-dubai-science-park";
+const DSP_LINE = "dda-dubai-science-park-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +127,7 @@ export default function ParcelsMapPage() {
     jabelAliHills: true,
     arabianRanches1: true,
     nasGardens: true,
+    dsp: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -449,6 +452,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Dubai Science Park (DDA) ───────────────────────────────────
+    if (!map.getSource(DSP_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/dubai-science-park");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(DSP_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: DSP_LINE,
+          type: "line",
+          source: DSP_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[dubai-science-park] load failed", e);
+      }
+    }
+
 
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
@@ -500,6 +521,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(NAS_GARDENS_LINE)) {
       map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layersRef.current.nasGardens));
+    }
+    if (map.getLayer(DSP_LINE)) {
+      map.setLayoutProperty(DSP_LINE, "visibility", v(layersRef.current.dsp));
     }
   }
 
@@ -640,6 +664,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", ARABIAN_RANCHES_1_LINE, masterPlanLeave);
       map.on("mousemove", NAS_GARDENS_LINE, ddaPlotHover);
       map.on("mouseleave", NAS_GARDENS_LINE, masterPlanLeave);
+      map.on("mousemove", DSP_LINE, ddaPlotHover);
+      map.on("mouseleave", DSP_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -720,6 +746,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(NAS_GARDENS_LINE)) {
       map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layers.nasGardens));
+    }
+    if (map.getLayer(DSP_LINE)) {
+      map.setLayoutProperty(DSP_LINE, "visibility", v(layers.dsp));
     }
   }, [layers]);
 
@@ -963,6 +992,12 @@ export default function ParcelsMapPage() {
           label="Nad Al Sheba Gardens"
           checked={layers.nasGardens}
           onChange={(v) => setLayers((l) => ({ ...l, nasGardens: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Dubai Science Park"
+          checked={layers.dsp}
+          onChange={(v) => setLayers((l) => ({ ...l, dsp: v }))}
           color={c.text}
         />
       </div>
