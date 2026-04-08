@@ -100,6 +100,8 @@ const ARABIAN_RANCHES_1_SRC = "dda-arabian-ranches-1";
 const ARABIAN_RANCHES_1_LINE = "dda-arabian-ranches-1-line";
 const NAS_GARDENS_SRC = "dda-nad-al-sheba-gardens";
 const NAS_GARDENS_LINE = "dda-nad-al-sheba-gardens-line";
+const VILLANOVA_SRC = "dda-villanova";
+const VILLANOVA_LINE = "dda-villanova-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +127,7 @@ export default function ParcelsMapPage() {
     jabelAliHills: true,
     arabianRanches1: true,
     nasGardens: true,
+    villanova: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -449,6 +452,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Villanova (DDA) ────────────────────────────────────────────
+    if (!map.getSource(VILLANOVA_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/villanova");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(VILLANOVA_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: VILLANOVA_LINE,
+          type: "line",
+          source: VILLANOVA_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[villanova] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -499,6 +520,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(NAS_GARDENS_LINE)) {
       map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layersRef.current.nasGardens));
+    }
+    if (map.getLayer(VILLANOVA_LINE)) {
+      map.setLayoutProperty(VILLANOVA_LINE, "visibility", v(layersRef.current.villanova));
     }
   }
 
@@ -639,6 +663,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", ARABIAN_RANCHES_1_LINE, masterPlanLeave);
       map.on("mousemove", NAS_GARDENS_LINE, ddaPlotHover);
       map.on("mouseleave", NAS_GARDENS_LINE, masterPlanLeave);
+      map.on("mousemove", VILLANOVA_LINE, ddaPlotHover);
+      map.on("mouseleave", VILLANOVA_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -719,6 +745,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(NAS_GARDENS_LINE)) {
       map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layers.nasGardens));
+    }
+    if (map.getLayer(VILLANOVA_LINE)) {
+      map.setLayoutProperty(VILLANOVA_LINE, "visibility", v(layers.villanova));
     }
   }, [layers]);
 
@@ -962,6 +991,12 @@ export default function ParcelsMapPage() {
           label="Nad Al Sheba Gardens"
           checked={layers.nasGardens}
           onChange={(v) => setLayers((l) => ({ ...l, nasGardens: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Villanova"
+          checked={layers.villanova}
+          onChange={(v) => setLayers((l) => ({ ...l, villanova: v }))}
           color={c.text}
         />
       </div>
