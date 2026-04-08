@@ -92,6 +92,8 @@ const THE_VALLEY_SRC = "dda-the-valley";
 const THE_VALLEY_LINE = "dda-the-valley-line";
 const DAMAC_HILLS_SRC = "dda-damac-hills";
 const DAMAC_HILLS_LINE = "dda-damac-hills-line";
+const MUDON_SRC = "dda-mudon";
+const MUDON_LINE = "dda-mudon-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,7 @@ export default function ParcelsMapPage() {
     damacIslands: true,
     theValley: true,
     damacHills: true,
+    mudon: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -365,6 +368,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Mudon (DDA) ────────────────────────────────────────────────
+    if (!map.getSource(MUDON_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/mudon");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(MUDON_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: MUDON_LINE,
+          type: "line",
+          source: MUDON_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[mudon] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -403,6 +424,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_HILLS_LINE)) {
       map.setLayoutProperty(DAMAC_HILLS_LINE, "visibility", v(layersRef.current.damacHills));
+    }
+    if (map.getLayer(MUDON_LINE)) {
+      map.setLayoutProperty(MUDON_LINE, "visibility", v(layersRef.current.mudon));
     }
   }
 
@@ -535,6 +559,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", THE_VALLEY_LINE, masterPlanLeave);
       map.on("mousemove", DAMAC_HILLS_LINE, ddaPlotHover);
       map.on("mouseleave", DAMAC_HILLS_LINE, masterPlanLeave);
+      map.on("mousemove", MUDON_LINE, ddaPlotHover);
+      map.on("mouseleave", MUDON_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -603,6 +629,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DAMAC_HILLS_LINE)) {
       map.setLayoutProperty(DAMAC_HILLS_LINE, "visibility", v(layers.damacHills));
+    }
+    if (map.getLayer(MUDON_LINE)) {
+      map.setLayoutProperty(MUDON_LINE, "visibility", v(layers.mudon));
     }
   }, [layers]);
 
@@ -822,6 +851,12 @@ export default function ParcelsMapPage() {
           label="Damac Hills"
           checked={layers.damacHills}
           onChange={(v) => setLayers((l) => ({ ...l, damacHills: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Mudon"
+          checked={layers.mudon}
+          onChange={(v) => setLayers((l) => ({ ...l, mudon: v }))}
           color={c.text}
         />
       </div>
