@@ -104,6 +104,8 @@ const DSP_SRC = "dda-dubai-science-park";
 const DSP_LINE = "dda-dubai-science-park-line";
 const BUSINESS_BAY_SRC = "dda-business-bay";
 const BUSINESS_BAY_LINE = "dda-business-bay-line";
+const SAMA_AL_JADAF_SRC = "dda-sama-al-jadaf";
+const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,7 @@ export default function ParcelsMapPage() {
     nasGardens: true,
     dsp: true,
     businessBay: true,
+    samaAlJadaf: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -491,6 +494,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Sama Al Jadaf (DDA) ────────────────────────────────────────
+    if (!map.getSource(SAMA_AL_JADAF_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/sama-al-jadaf");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(SAMA_AL_JADAF_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: SAMA_AL_JADAF_LINE,
+          type: "line",
+          source: SAMA_AL_JADAF_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[sama-al-jadaf] load failed", e);
+      }
+    }
+
 
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
@@ -548,6 +569,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(BUSINESS_BAY_LINE)) {
       map.setLayoutProperty(BUSINESS_BAY_LINE, "visibility", v(layersRef.current.businessBay));
+    }
+    if (map.getLayer(SAMA_AL_JADAF_LINE)) {
+      map.setLayoutProperty(SAMA_AL_JADAF_LINE, "visibility", v(layersRef.current.samaAlJadaf));
     }
   }
 
@@ -692,6 +716,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", DSP_LINE, masterPlanLeave);
       map.on("mousemove", BUSINESS_BAY_LINE, ddaPlotHover);
       map.on("mouseleave", BUSINESS_BAY_LINE, masterPlanLeave);
+      map.on("mousemove", SAMA_AL_JADAF_LINE, ddaPlotHover);
+      map.on("mouseleave", SAMA_AL_JADAF_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -778,6 +804,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(BUSINESS_BAY_LINE)) {
       map.setLayoutProperty(BUSINESS_BAY_LINE, "visibility", v(layers.businessBay));
+    }
+    if (map.getLayer(SAMA_AL_JADAF_LINE)) {
+      map.setLayoutProperty(SAMA_AL_JADAF_LINE, "visibility", v(layers.samaAlJadaf));
     }
   }, [layers]);
 
@@ -1033,6 +1062,12 @@ export default function ParcelsMapPage() {
           label="Business Bay"
           checked={layers.businessBay}
           onChange={(v) => setLayers((l) => ({ ...l, businessBay: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Sama Al Jadaf"
+          checked={layers.samaAlJadaf}
+          onChange={(v) => setLayers((l) => ({ ...l, samaAlJadaf: v }))}
           color={c.text}
         />
       </div>
