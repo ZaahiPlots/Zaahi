@@ -106,6 +106,8 @@ const BUSINESS_BAY_SRC = "dda-business-bay";
 const BUSINESS_BAY_LINE = "dda-business-bay-line";
 const SAMA_AL_JADAF_SRC = "dda-sama-al-jadaf";
 const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
+const ARJAN_SRC = "dda-arjan";
+const ARJAN_LINE = "dda-arjan-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -134,6 +136,7 @@ export default function ParcelsMapPage() {
     dsp: true,
     businessBay: true,
     samaAlJadaf: true,
+    arjan: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -512,6 +515,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Arjan (DDA) ────────────────────────────────────────────────
+    if (!map.getSource(ARJAN_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/arjan");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(ARJAN_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: ARJAN_LINE,
+          type: "line",
+          source: ARJAN_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[arjan] load failed", e);
+      }
+    }
+
 
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
@@ -572,6 +593,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(SAMA_AL_JADAF_LINE)) {
       map.setLayoutProperty(SAMA_AL_JADAF_LINE, "visibility", v(layersRef.current.samaAlJadaf));
+    }
+    if (map.getLayer(ARJAN_LINE)) {
+      map.setLayoutProperty(ARJAN_LINE, "visibility", v(layersRef.current.arjan));
     }
   }
 
@@ -718,6 +742,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", BUSINESS_BAY_LINE, masterPlanLeave);
       map.on("mousemove", SAMA_AL_JADAF_LINE, ddaPlotHover);
       map.on("mouseleave", SAMA_AL_JADAF_LINE, masterPlanLeave);
+      map.on("mousemove", ARJAN_LINE, ddaPlotHover);
+      map.on("mouseleave", ARJAN_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -807,6 +833,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(SAMA_AL_JADAF_LINE)) {
       map.setLayoutProperty(SAMA_AL_JADAF_LINE, "visibility", v(layers.samaAlJadaf));
+    }
+    if (map.getLayer(ARJAN_LINE)) {
+      map.setLayoutProperty(ARJAN_LINE, "visibility", v(layers.arjan));
     }
   }, [layers]);
 
@@ -1068,6 +1097,12 @@ export default function ParcelsMapPage() {
           label="Sama Al Jadaf"
           checked={layers.samaAlJadaf}
           onChange={(v) => setLayers((l) => ({ ...l, samaAlJadaf: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Arjan"
+          checked={layers.arjan}
+          onChange={(v) => setLayers((l) => ({ ...l, arjan: v }))}
           color={c.text}
         />
       </div>
