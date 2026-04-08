@@ -108,6 +108,8 @@ const SAMA_AL_JADAF_SRC = "dda-sama-al-jadaf";
 const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
 const ARJAN_SRC = "dda-arjan";
 const ARJAN_LINE = "dda-arjan-line";
+const DHCC2_SRC = "dda-dhcc-phase2";
+const DHCC2_LINE = "dda-dhcc-phase2-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,6 +139,7 @@ export default function ParcelsMapPage() {
     businessBay: true,
     samaAlJadaf: true,
     arjan: true,
+    dhcc2: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -533,6 +536,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── DHCC Phase 2 (DDA) ─────────────────────────────────────────
+    if (!map.getSource(DHCC2_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/dhcc-phase2");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(DHCC2_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: DHCC2_LINE,
+          type: "line",
+          source: DHCC2_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[dhcc-phase2] load failed", e);
+      }
+    }
+
 
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
@@ -596,6 +617,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ARJAN_LINE)) {
       map.setLayoutProperty(ARJAN_LINE, "visibility", v(layersRef.current.arjan));
+    }
+    if (map.getLayer(DHCC2_LINE)) {
+      map.setLayoutProperty(DHCC2_LINE, "visibility", v(layersRef.current.dhcc2));
     }
   }
 
@@ -744,6 +768,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", SAMA_AL_JADAF_LINE, masterPlanLeave);
       map.on("mousemove", ARJAN_LINE, ddaPlotHover);
       map.on("mouseleave", ARJAN_LINE, masterPlanLeave);
+      map.on("mousemove", DHCC2_LINE, ddaPlotHover);
+      map.on("mouseleave", DHCC2_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -836,6 +862,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ARJAN_LINE)) {
       map.setLayoutProperty(ARJAN_LINE, "visibility", v(layers.arjan));
+    }
+    if (map.getLayer(DHCC2_LINE)) {
+      map.setLayoutProperty(DHCC2_LINE, "visibility", v(layers.dhcc2));
     }
   }, [layers]);
 
@@ -1103,6 +1132,12 @@ export default function ParcelsMapPage() {
           label="Arjan"
           checked={layers.arjan}
           onChange={(v) => setLayers((l) => ({ ...l, arjan: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="DHCC Phase 2"
+          checked={layers.dhcc2}
+          onChange={(v) => setLayers((l) => ({ ...l, dhcc2: v }))}
           color={c.text}
         />
       </div>
