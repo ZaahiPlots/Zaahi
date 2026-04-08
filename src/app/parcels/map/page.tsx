@@ -96,6 +96,8 @@ const MUDON_SRC = "dda-mudon";
 const MUDON_LINE = "dda-mudon-line";
 const JABEL_ALI_HILLS_SRC = "dda-jabel-ali-hills";
 const JABEL_ALI_HILLS_LINE = "dda-jabel-ali-hills-line";
+const ARABIAN_RANCHES_1_SRC = "dda-arabian-ranches-1";
+const ARABIAN_RANCHES_1_LINE = "dda-arabian-ranches-1-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +121,7 @@ export default function ParcelsMapPage() {
     damacHills: true,
     mudon: true,
     jabelAliHills: true,
+    arabianRanches1: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -407,6 +410,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Arabian Ranches I (DDA) ────────────────────────────────────
+    if (!map.getSource(ARABIAN_RANCHES_1_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/arabian-ranches-1");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(ARABIAN_RANCHES_1_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: ARABIAN_RANCHES_1_LINE,
+          type: "line",
+          source: ARABIAN_RANCHES_1_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[arabian-ranches-1] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -451,6 +472,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(JABEL_ALI_HILLS_LINE)) {
       map.setLayoutProperty(JABEL_ALI_HILLS_LINE, "visibility", v(layersRef.current.jabelAliHills));
+    }
+    if (map.getLayer(ARABIAN_RANCHES_1_LINE)) {
+      map.setLayoutProperty(ARABIAN_RANCHES_1_LINE, "visibility", v(layersRef.current.arabianRanches1));
     }
   }
 
@@ -587,6 +611,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", MUDON_LINE, masterPlanLeave);
       map.on("mousemove", JABEL_ALI_HILLS_LINE, ddaPlotHover);
       map.on("mouseleave", JABEL_ALI_HILLS_LINE, masterPlanLeave);
+      map.on("mousemove", ARABIAN_RANCHES_1_LINE, ddaPlotHover);
+      map.on("mouseleave", ARABIAN_RANCHES_1_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -661,6 +687,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(JABEL_ALI_HILLS_LINE)) {
       map.setLayoutProperty(JABEL_ALI_HILLS_LINE, "visibility", v(layers.jabelAliHills));
+    }
+    if (map.getLayer(ARABIAN_RANCHES_1_LINE)) {
+      map.setLayoutProperty(ARABIAN_RANCHES_1_LINE, "visibility", v(layers.arabianRanches1));
     }
   }, [layers]);
 
@@ -892,6 +921,12 @@ export default function ParcelsMapPage() {
           label="Jabel Ali Hills"
           checked={layers.jabelAliHills}
           onChange={(v) => setLayers((l) => ({ ...l, jabelAliHills: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Arabian Ranches I"
+          checked={layers.arabianRanches1}
+          onChange={(v) => setLayers((l) => ({ ...l, arabianRanches1: v }))}
           color={c.text}
         />
       </div>
