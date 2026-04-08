@@ -98,6 +98,8 @@ const JABEL_ALI_HILLS_SRC = "dda-jabel-ali-hills";
 const JABEL_ALI_HILLS_LINE = "dda-jabel-ali-hills-line";
 const ARABIAN_RANCHES_1_SRC = "dda-arabian-ranches-1";
 const ARABIAN_RANCHES_1_LINE = "dda-arabian-ranches-1-line";
+const NAS_GARDENS_SRC = "dda-nad-al-sheba-gardens";
+const NAS_GARDENS_LINE = "dda-nad-al-sheba-gardens-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,7 @@ export default function ParcelsMapPage() {
     mudon: true,
     jabelAliHills: true,
     arabianRanches1: true,
+    nasGardens: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -428,6 +431,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Nad Al Sheba Gardens (DDA) ─────────────────────────────────
+    if (!map.getSource(NAS_GARDENS_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/nad-al-sheba-gardens");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(NAS_GARDENS_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: NAS_GARDENS_LINE,
+          type: "line",
+          source: NAS_GARDENS_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[nad-al-sheba-gardens] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -475,6 +496,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ARABIAN_RANCHES_1_LINE)) {
       map.setLayoutProperty(ARABIAN_RANCHES_1_LINE, "visibility", v(layersRef.current.arabianRanches1));
+    }
+    if (map.getLayer(NAS_GARDENS_LINE)) {
+      map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layersRef.current.nasGardens));
     }
   }
 
@@ -613,6 +637,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", JABEL_ALI_HILLS_LINE, masterPlanLeave);
       map.on("mousemove", ARABIAN_RANCHES_1_LINE, ddaPlotHover);
       map.on("mouseleave", ARABIAN_RANCHES_1_LINE, masterPlanLeave);
+      map.on("mousemove", NAS_GARDENS_LINE, ddaPlotHover);
+      map.on("mouseleave", NAS_GARDENS_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -690,6 +716,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(ARABIAN_RANCHES_1_LINE)) {
       map.setLayoutProperty(ARABIAN_RANCHES_1_LINE, "visibility", v(layers.arabianRanches1));
+    }
+    if (map.getLayer(NAS_GARDENS_LINE)) {
+      map.setLayoutProperty(NAS_GARDENS_LINE, "visibility", v(layers.nasGardens));
     }
   }, [layers]);
 
@@ -927,6 +956,12 @@ export default function ParcelsMapPage() {
           label="Arabian Ranches I"
           checked={layers.arabianRanches1}
           onChange={(v) => setLayers((l) => ({ ...l, arabianRanches1: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Nad Al Sheba Gardens"
+          checked={layers.nasGardens}
+          onChange={(v) => setLayers((l) => ({ ...l, nasGardens: v }))}
           color={c.text}
         />
       </div>
