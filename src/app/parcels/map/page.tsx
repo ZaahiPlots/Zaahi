@@ -102,6 +102,8 @@ const NAS_GARDENS_SRC = "dda-nad-al-sheba-gardens";
 const NAS_GARDENS_LINE = "dda-nad-al-sheba-gardens-line";
 const DSP_SRC = "dda-dubai-science-park";
 const DSP_LINE = "dda-dubai-science-park-line";
+const BUSINESS_BAY_SRC = "dda-business-bay";
+const BUSINESS_BAY_LINE = "dda-business-bay-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -128,6 +130,7 @@ export default function ParcelsMapPage() {
     arabianRanches1: true,
     nasGardens: true,
     dsp: true,
+    businessBay: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -470,6 +473,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Business Bay (DDA) ─────────────────────────────────────────
+    if (!map.getSource(BUSINESS_BAY_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/business-bay");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(BUSINESS_BAY_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: BUSINESS_BAY_LINE,
+          type: "line",
+          source: BUSINESS_BAY_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[business-bay] load failed", e);
+      }
+    }
+
 
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
@@ -524,6 +545,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DSP_LINE)) {
       map.setLayoutProperty(DSP_LINE, "visibility", v(layersRef.current.dsp));
+    }
+    if (map.getLayer(BUSINESS_BAY_LINE)) {
+      map.setLayoutProperty(BUSINESS_BAY_LINE, "visibility", v(layersRef.current.businessBay));
     }
   }
 
@@ -666,6 +690,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", NAS_GARDENS_LINE, masterPlanLeave);
       map.on("mousemove", DSP_LINE, ddaPlotHover);
       map.on("mouseleave", DSP_LINE, masterPlanLeave);
+      map.on("mousemove", BUSINESS_BAY_LINE, ddaPlotHover);
+      map.on("mouseleave", BUSINESS_BAY_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -749,6 +775,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(DSP_LINE)) {
       map.setLayoutProperty(DSP_LINE, "visibility", v(layers.dsp));
+    }
+    if (map.getLayer(BUSINESS_BAY_LINE)) {
+      map.setLayoutProperty(BUSINESS_BAY_LINE, "visibility", v(layers.businessBay));
     }
   }, [layers]);
 
@@ -998,6 +1027,12 @@ export default function ParcelsMapPage() {
           label="Dubai Science Park"
           checked={layers.dsp}
           onChange={(v) => setLayers((l) => ({ ...l, dsp: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Business Bay"
+          checked={layers.businessBay}
+          onChange={(v) => setLayers((l) => ({ ...l, businessBay: v }))}
           color={c.text}
         />
       </div>
