@@ -94,6 +94,8 @@ const DAMAC_HILLS_SRC = "dda-damac-hills";
 const DAMAC_HILLS_LINE = "dda-damac-hills-line";
 const MUDON_SRC = "dda-mudon";
 const MUDON_LINE = "dda-mudon-line";
+const JABEL_ALI_HILLS_SRC = "dda-jabel-ali-hills";
+const JABEL_ALI_HILLS_LINE = "dda-jabel-ali-hills-line";
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,6 +118,7 @@ export default function ParcelsMapPage() {
     theValley: true,
     damacHills: true,
     mudon: true,
+    jabelAliHills: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -386,6 +389,24 @@ export default function ParcelsMapPage() {
       }
     }
 
+    // ── Jabel Ali Hills (DDA) ──────────────────────────────────────
+    if (!map.getSource(JABEL_ALI_HILLS_SRC)) {
+      try {
+        const r = await fetch("/api/layers/dda/jabel-ali-hills");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data: GeoJSON.FeatureCollection = await r.json();
+        map.addSource(JABEL_ALI_HILLS_SRC, { type: "geojson", data });
+        map.addLayer({
+          id: JABEL_ALI_HILLS_LINE,
+          type: "line",
+          source: JABEL_ALI_HILLS_SRC,
+          paint: { ...masterPlanPaint },
+        });
+      } catch (e) {
+        console.error("[jabel-ali-hills] load failed", e);
+      }
+    }
+
     // Apply current visibility state
     const v = (on: boolean) => (on ? "visible" : "none");
     if (map.getLayer(COMMUNITIES_FILL)) {
@@ -427,6 +448,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(MUDON_LINE)) {
       map.setLayoutProperty(MUDON_LINE, "visibility", v(layersRef.current.mudon));
+    }
+    if (map.getLayer(JABEL_ALI_HILLS_LINE)) {
+      map.setLayoutProperty(JABEL_ALI_HILLS_LINE, "visibility", v(layersRef.current.jabelAliHills));
     }
   }
 
@@ -561,6 +585,8 @@ export default function ParcelsMapPage() {
       map.on("mouseleave", DAMAC_HILLS_LINE, masterPlanLeave);
       map.on("mousemove", MUDON_LINE, ddaPlotHover);
       map.on("mouseleave", MUDON_LINE, masterPlanLeave);
+      map.on("mousemove", JABEL_ALI_HILLS_LINE, ddaPlotHover);
+      map.on("mouseleave", JABEL_ALI_HILLS_LINE, masterPlanLeave);
     });
 
     mapRef.current = map;
@@ -632,6 +658,9 @@ export default function ParcelsMapPage() {
     }
     if (map.getLayer(MUDON_LINE)) {
       map.setLayoutProperty(MUDON_LINE, "visibility", v(layers.mudon));
+    }
+    if (map.getLayer(JABEL_ALI_HILLS_LINE)) {
+      map.setLayoutProperty(JABEL_ALI_HILLS_LINE, "visibility", v(layers.jabelAliHills));
     }
   }, [layers]);
 
@@ -857,6 +886,12 @@ export default function ParcelsMapPage() {
           label="Mudon"
           checked={layers.mudon}
           onChange={(v) => setLayers((l) => ({ ...l, mudon: v }))}
+          color={c.text}
+        />
+        <LayerToggle
+          label="Jabel Ali Hills"
+          checked={layers.jabelAliHills}
+          onChange={(v) => setLayers((l) => ({ ...l, jabelAliHills: v }))}
           color={c.text}
         />
       </div>
