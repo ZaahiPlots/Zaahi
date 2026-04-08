@@ -1,136 +1,302 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
-export default function Home() {
-  const [loaded, setLoaded] = useState(false);
-  const [hovering, setHovering] = useState(false);
+const GOLD = '#C8A96E';
 
+type Mode = 'login' | 'register';
+type Role = 'Owner' | 'Buyer' | 'Broker' | 'Investor' | 'Developer';
+
+export default function AuthPage() {
+  const router = useRouter();
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+
+  const [mode, setMode] = useState<Mode>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState<Role>('Owner');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Background map (blurred)
   useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 100);
-    return () => clearTimeout(t);
+    if (!mapContainer.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
+      style: {
+        version: 8,
+        sources: {
+          carto: {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+              'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
+      },
+      center: [55.27, 25.2],
+      zoom: 12,
+      pitch: 45,
+      bearing: -17,
+      interactive: false,
+      attributionControl: false,
+    });
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
   }, []);
 
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      if (mode === 'login') {
+        const { error } = await supabaseBrowser.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseBrowser.auth.signUp({
+          email,
+          password,
+          options: { data: { name, phone, role } },
+        });
+        if (error) throw error;
+      }
+      router.push('/parcels/map');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    background: 'rgba(10,22,40,0.4)',
+    border: `1px solid ${GOLD}33`,
+    borderRadius: 6,
+    color: '#E8E0D0',
+    fontSize: 13,
+    outline: 'none',
+    fontFamily: 'inherit',
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#08080a] text-white overflow-hidden">
-      {/* Ambient glow */}
-      <div className="absolute top-[-40%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full opacity-[0.07]"
-        style={{ background: 'radial-gradient(circle, #d4a853 0%, transparent 70%)' }} />
-      <div className="absolute bottom-[-30%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-[0.04]"
-        style={{ background: 'radial-gradient(circle, #d4a853 0%, transparent 70%)' }} />
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#0A1628' }}>
+      {/* Blurred map background */}
+      <div
+        ref={mapContainer}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          filter: 'blur(8px) brightness(0.7)',
+          transform: 'scale(1.05)',
+        }}
+      />
 
-      {/* Grid texture */}
-      <div className="absolute inset-0 opacity-[0.03]"
-        style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-
-      {/* Nav */}
-      <nav className={`relative z-10 flex justify-between items-center px-8 md:px-16 py-6 transition-all duration-1000 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border border-[#d4a853]/40 rotate-45 flex items-center justify-center">
-            <div className="w-3 h-3 bg-[#d4a853] rotate-0" />
-          </div>
-          <span className="text-sm tracking-[0.3em] text-[#d4a853]/80 font-light">ZAAHI</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-[11px] tracking-[0.2em] text-white/40">
-          <span className="hover:text-white/80 transition cursor-pointer">PLATFORM</span>
-          <span className="hover:text-white/80 transition cursor-pointer">VISION</span>
-          <span className="hover:text-white/80 transition cursor-pointer">TECHNOLOGY</span>
-          <Link href="/register" className="text-[#d4a853]/70 hover:text-[#d4a853] transition">JOIN</Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
-        {/* Eyebrow */}
-        <div className={`transition-all duration-1000 delay-300 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[#d4a853]/50" />
-            <span className="text-[10px] tracking-[0.4em] text-[#d4a853]/60 uppercase">Dubai · UAE · 2026</span>
-            <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-[#d4a853]/50" />
-          </div>
-        </div>
-
-        {/* Title */}
-        <h1 className={`text-center transition-all duration-1000 delay-500 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <span className="block text-[clamp(4rem,12vw,10rem)] font-extralight tracking-[-0.02em] leading-[0.85]"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-            ZAAHI
-          </span>
-        </h1>
-
-        {/* Divider */}
-        <div className={`my-8 transition-all duration-1000 delay-700 ${loaded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`}>
-          <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#d4a853]/40 to-transparent" />
-        </div>
-
-        {/* Subtitle */}
-        <p className={`text-center max-w-xl transition-all duration-1000 delay-[800ms] ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <span className="block text-[13px] md:text-[15px] tracking-[0.15em] text-white/30 leading-relaxed font-light">
-            CIVILIZATIONAL INFRASTRUCTURE
-          </span>
-          <span className="block text-[13px] md:text-[15px] tracking-[0.15em] text-white/30 leading-relaxed font-light mt-1">
-            FOR REAL ESTATE
-          </span>
-        </p>
-
-        {/* Description */}
-        <p className={`text-center max-w-md mt-6 text-[12px] leading-[1.8] text-white/20 font-light transition-all duration-1000 delay-[900ms] ${loaded ? 'opacity-100' : 'opacity-0'}`}>
-          From one land plot in Dubai to every parcel on Earth.
-          <br />
-          AI agents. 3D metaverse. Autonomous construction.
-        </p>
-
-        {/* CTA */}
-        <div className={`mt-12 transition-all duration-1000 delay-[1100ms] ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <Link
-            href="/register"
-            onMouseEnter={() => setHovering(true)}
-            onMouseLeave={() => setHovering(false)}
-            className="group relative inline-flex items-center gap-4 px-10 py-4 border border-[#d4a853]/30 hover:border-[#d4a853]/60 transition-all duration-500 rounded-none"
-          >
-            <div className={`absolute inset-0 bg-[#d4a853]/5 transition-all duration-500 ${hovering ? 'opacity-100' : 'opacity-0'}`} />
-            <span className="relative text-[11px] tracking-[0.3em] text-[#d4a853]/80 group-hover:text-[#d4a853] transition-colors">
-              ENTER ZAAHI
-            </span>
-            <svg className={`relative w-4 h-4 text-[#d4a853]/40 group-hover:text-[#d4a853]/80 transition-all duration-500 ${hovering ? 'translate-x-1' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* Stats */}
-        <div className={`mt-20 grid grid-cols-3 gap-8 md:gap-16 transition-all duration-1000 delay-[1300ms] ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          {[
-            { value: '85', label: 'KNOWLEDGE NODES' },
-            { value: '3', label: 'AI AGENTS' },
-            { value: '21', label: 'REVENUE STREAMS' },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl md:text-3xl font-extralight text-white/60"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                {stat.value}
-              </div>
-              <div className="mt-2 text-[8px] md:text-[9px] tracking-[0.25em] text-white/20">{stat.label}</div>
+      {/* Centered auth card */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 400,
+            padding: '32px 28px',
+            background: 'rgba(10, 22, 40, 0.78)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: `1px solid ${GOLD}`,
+            borderRadius: 12,
+            boxShadow: '0 12px 48px rgba(0,0,0,0.6)',
+            color: '#E8E0D0',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+          }}
+        >
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: 36,
+                fontWeight: 300,
+                letterSpacing: '0.15em',
+                color: GOLD,
+                lineHeight: 1,
+              }}
+            >
+              ZAAHI
             </div>
-          ))}
-        </div>
-      </main>
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 10,
+                letterSpacing: '0.25em',
+                color: '#7a8a9c',
+                textTransform: 'uppercase',
+              }}
+            >
+              Sovereign Real Estate Infrastructure
+            </div>
+          </div>
 
-      {/* Footer */}
-      <footer className={`relative z-10 flex flex-col items-center py-12 transition-all duration-1000 delay-[1500ms] ${loaded ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="flex items-center gap-6 text-[9px] tracking-[0.2em] text-white/15">
-          <span>LAND</span>
-          <span className="text-[#d4a853]/30">◆</span>
-          <span>METAVERSE</span>
-          <span className="text-[#d4a853]/30">◆</span>
-          <span>ROBOTICS</span>
-          <span className="text-[#d4a853]/30">◆</span>
-          <span>SOVEREIGN</span>
+          {/* Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: `1px solid ${GOLD}33`,
+              marginBottom: 20,
+            }}
+          >
+            {(['login', 'register'] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: mode === m ? `2px solid ${GOLD}` : '2px solid transparent',
+                  color: mode === m ? GOLD : '#7a8a9c',
+                  fontSize: 12,
+                  letterSpacing: '0.1em',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {m === 'login' ? 'ВОЙТИ' : 'РЕГИСТРАЦИЯ'}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={inputStyle}
+            />
+            <input
+              type="password"
+              placeholder="Пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              style={inputStyle}
+            />
+            {mode === 'register' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Имя"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
+                <input
+                  type="tel"
+                  placeholder="Телефон"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as Role)}
+                  style={inputStyle}
+                >
+                  <option value="Owner">Owner</option>
+                  <option value="Buyer">Buyer</option>
+                  <option value="Broker">Broker</option>
+                  <option value="Investor">Investor</option>
+                  <option value="Developer">Developer</option>
+                </select>
+              </>
+            )}
+
+            {error && (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: '#ff8a8a',
+                  background: 'rgba(255,80,80,0.1)',
+                  border: '1px solid rgba(255,80,80,0.3)',
+                  borderRadius: 6,
+                  padding: '8px 10px',
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                marginTop: 4,
+                padding: '12px',
+                background: GOLD,
+                color: '#0A1628',
+                border: 'none',
+                borderRadius: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                cursor: busy ? 'wait' : 'pointer',
+                opacity: busy ? 0.6 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              {busy ? '...' : mode === 'login' ? 'ВОЙТИ' : 'СОЗДАТЬ АККАУНТ'}
+            </button>
+          </form>
+
+          <div
+            style={{
+              marginTop: 20,
+              textAlign: 'center',
+              fontSize: 10,
+              color: '#7a8a9c',
+              letterSpacing: '0.05em',
+            }}
+          >
+            <a href="/terms" style={{ color: GOLD, textDecoration: 'none' }}>
+              Пользовательское соглашение
+            </a>
+          </div>
         </div>
-        <p className="mt-6 text-[9px] tracking-[0.15em] text-white/10">
-          10% OF EVERY DOLLAR → BUILDING ROBOTS THAT BUILD THE FUTURE
-        </p>
-      </footer>
+      </div>
     </div>
   );
 }
