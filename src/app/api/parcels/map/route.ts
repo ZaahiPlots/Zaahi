@@ -19,6 +19,7 @@ export async function GET() {
           plotAreaSqm: true,
           maxGfaSqm: true,
           far: true,
+          landUseMix: true,
         },
       },
     },
@@ -45,6 +46,7 @@ export async function GET() {
             plotAreaSqm: plan.plotAreaSqm,
             maxGfaSqm: plan.maxGfaSqm,
             far: plan.far,
+            landUseMix: plan.landUseMix,
             buildingLimitGeometry: plan.buildingLimitGeometry,
           }
         : null,

@@ -33,20 +33,27 @@ interface ParcelDetail {
   affectionPlans: Plan[];
 }
 
-function fmtAed(fils: string | null): string {
-  if (!fils) return "—";
-  const aed = Number(BigInt(fils)) / 100;
-  return aed.toLocaleString("en-AE", { style: "currency", currency: "AED", maximumFractionDigits: 0 });
+function aedFromFils(fils: string | null): number | null {
+  if (!fils) return null;
+  return Number(BigInt(fils)) / 100;
+}
+function fmtBigAed(aed: number | null): string {
+  if (aed == null) return "—";
+  if (aed >= 1_000_000) return `${(aed / 1_000_000).toFixed(1)}M AED`;
+  if (aed >= 1_000) return `${(aed / 1_000).toFixed(0)}K AED`;
+  return `${aed} AED`;
 }
 
 export default function SidePanel({ parcelId, onClose }: { parcelId: string | null; onClose: () => void }) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
 
   useEffect(() => {
     if (!parcelId) return;
     setLoading(true);
     setData(null);
+    setDocsOpen(false);
     fetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
       .then((d) => setData(d))
@@ -55,99 +62,96 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 
   const open = parcelId != null;
   const plan = data?.affectionPlans?.[0] ?? null;
+  const aed = aedFromFils(data?.currentValuation ?? null);
+  const pricePerSqft = aed != null && data?.area ? aed / data.area : null;
 
   return (
     <aside
-      className={`absolute top-0 right-0 h-full w-[420px] bg-gray-950/95 backdrop-blur border-l border-gray-800 text-white z-20 overflow-y-auto transition-transform duration-300 ${
+      style={{ maxHeight: "100vh" }}
+      className={`absolute top-0 right-0 h-full w-[350px] bg-gray-950/95 backdrop-blur border-l border-gray-800 text-white z-20 overflow-y-auto transition-transform duration-300 ${
         open ? "translate-x-0" : "translate-x-full"
       }`}
     >
-      <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-5 py-4 flex items-center gap-3">
-        <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
+      <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-4 py-2 flex items-center gap-2">
+        <button onClick={onClose} className="text-gray-400 hover:text-white text-lg leading-none">×</button>
         <div className="flex-1 min-w-0">
           {data ? (
             <>
-              <div className="text-amber-400 font-bold truncate">Plot {data.plotNumber}</div>
-              <div className="text-xs text-gray-400 truncate">{data.district} · {data.emirate}</div>
+              <div className="text-amber-400 font-bold text-[13px] leading-tight truncate">Plot {data.plotNumber}</div>
+              <div className="text-[10px] text-gray-400 truncate">{data.district} · {data.emirate}</div>
             </>
           ) : (
-            <div className="text-gray-500 text-sm">{loading ? "Loading…" : ""}</div>
+            <div className="text-gray-500 text-xs">{loading ? "Loading…" : ""}</div>
           )}
         </div>
-        {data?.currentValuation && (
-          <div className="text-amber-400 text-sm font-semibold whitespace-nowrap">
-            {fmtAed(data.currentValuation)}
-          </div>
-        )}
       </div>
 
       {data && (
-        <div className="p-5 space-y-5 text-sm">
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }} className="text-[11px]">
+          {/* Price block */}
+          <div className="pb-2 border-b border-gray-800">
+            <div className="text-amber-400 font-bold" style={{ fontSize: 20, lineHeight: 1.1 }}>
+              {fmtBigAed(aed)}
+            </div>
+            {pricePerSqft != null && (
+              <div className="text-gray-500" style={{ fontSize: 10, marginTop: 2 }}>
+                {pricePerSqft.toLocaleString("en-US", { maximumFractionDigits: 0 })} AED/sqft
+              </div>
+            )}
+          </div>
+
           {plan ? (
             <>
               <Section title="Project">
                 <Row label="Name" v={plan.projectName} />
                 <Row label="Community" v={plan.community} />
                 <Row label="Master Dev" v={plan.masterDeveloper} />
-                <Row label="Old #" v={plan.oldNumber} />
               </Section>
 
               <Section title="Dimensions">
-                <Row label="Plot Area" v={plan.plotAreaSqm ? `${plan.plotAreaSqm.toLocaleString()} m² (${plan.plotAreaSqft?.toLocaleString()} ft²)` : null} />
-                <Row label="Max GFA" v={plan.maxGfaSqm ? `${plan.maxGfaSqm.toLocaleString()} m²` : null} />
+                <Row label="Plot" v={plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft² (${plan.plotAreaSqm?.toLocaleString()} m²)` : null} />
+                <Row label="Max GFA" v={plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null} />
                 <Row label="FAR" v={plan.far?.toString()} />
-                <Row label="Max Height" v={plan.maxHeightCode ? `${plan.maxHeightCode} · ${plan.maxFloors}f · ~${plan.maxHeightMeters}m` : null} />
-                <Row label="Site Plan" v={plan.sitePlanIssue ? `${plan.sitePlanIssue.slice(0,10)} → ${plan.sitePlanExpiry?.slice(0,10) ?? "—"}` : null} />
+                <Row label="Height" v={plan.maxHeightCode ? `${plan.maxHeightCode} · ${plan.maxFloors}f · ~${plan.maxHeightMeters}m` : null} />
               </Section>
 
-              {plan.setbacks && plan.setbacks.length > 0 && (
-                <Section title="Setbacks (m)">
-                  <table className="w-full text-xs">
-                    <thead className="text-gray-500">
-                      <tr><th className="text-left">Side</th><th className="text-left">Building</th><th className="text-left">Podium</th></tr>
-                    </thead>
-                    <tbody>
-                      {plan.setbacks.map((s) => (
-                        <tr key={s.side}><td>Side {s.side}</td><td>{s.building ?? "N/A"}</td><td>{s.podium ?? "N/A"}</td></tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Section>
-              )}
-
               {plan.landUseMix && plan.landUseMix.length > 0 && (
-                <Section title="Land Use Mix">
-                  <ul className="text-xs space-y-0.5">
+                <Section title="Land Use">
+                  <ul className="text-[11px] space-y-0.5">
                     {plan.landUseMix.map((u, i) => (
                       <li key={i}>
                         <span className="text-amber-400">{u.category}</span> · {u.sub}
-                        {u.areaSqm != null && ` (${u.areaSqm.toLocaleString()} m²)`}
                       </li>
                     ))}
                   </ul>
                 </Section>
               )}
 
-              <div className="flex gap-2">
-                <a
-                  href={`/api/parcels/${data.id}/pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 text-center text-xs px-3 py-2 rounded-lg bg-amber-500 text-black font-bold hover:bg-amber-400"
-                >
-                  Download Official PDF
-                </a>
+              {/* Action buttons */}
+              <div className="flex flex-col gap-1 pt-0.5">
                 <button
-                  disabled
-                  title="DWG export — coming next"
-                  className="flex-1 text-xs px-3 py-2 rounded-lg bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed"
+                  onClick={() => setDocsOpen((v) => !v)}
+                  className="w-full text-left text-[11px] px-2.5 py-1.5 rounded bg-gray-900 border border-gray-800 hover:border-amber-500/60 flex items-center justify-between"
                 >
-                  Download DWG
+                  <span>Documents</span>
+                  <span className="text-gray-500">{docsOpen ? "▾" : "▸"}</span>
                 </button>
+                {docsOpen && (
+                  <div className="flex flex-col gap-1 pl-2 border-l border-gray-800">
+                    <a
+                      href={`/api/parcels/${data.id}/pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-1 rounded hover:bg-gray-900/60"
+                    >
+                      📄 Affection Plan (PDF)
+                    </a>
+                  </div>
+                )}
               </div>
 
-              <div className="text-[10px] text-gray-600 pt-2 border-t border-gray-800">
-                Source: {plan.source} · {plan.fetchedAt.slice(0, 19)}Z
+              <div className="text-[9px] text-gray-600 pt-2 border-t border-gray-800">
+                Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
               </div>
             </>
           ) : (
@@ -162,17 +166,18 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-amber-400 font-semibold text-xs uppercase tracking-wide mb-2">{title}</div>
-      <div className="space-y-1">{children}</div>
+      <div className="text-amber-400 font-semibold text-[9px] uppercase tracking-wider mb-1">{title}</div>
+      <div className="space-y-0.5">{children}</div>
     </div>
   );
 }
 
 function Row({ label, v }: { label: string; v: string | null | undefined }) {
+  if (v == null) return null;
   return (
-    <div className="flex justify-between gap-3 border-b border-gray-800/60 pb-1">
+    <div className="flex justify-between gap-2" style={{ fontSize: 11, lineHeight: 1.4 }}>
       <span className="text-gray-500">{label}</span>
-      <span className="text-right">{v ?? "—"}</span>
+      <span className="text-right text-gray-200">{v}</span>
     </div>
   );
 }

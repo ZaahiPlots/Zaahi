@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import SidePanel from "./SidePanel";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -130,6 +131,29 @@ const SAMA_AL_JADAF_SRC = "dda-sama-al-jadaf";
 const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
 const ARJAN_SRC = "dda-arjan";
 const ARJAN_LINE = "dda-arjan-line";
+// ── ZAAHI Plots (real listings from /api/parcels/map) ──
+const ZAAHI_PLOTS_SRC = "zaahi-plots";
+const ZAAHI_PLOTS_FILL = "zaahi-plots-fill";
+const ZAAHI_PLOTS_LINE = "zaahi-plots-line";
+const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
+const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
+const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
+  RESIDENTIAL: "#FFD700",
+  MIXED_USE: "#9333EA",
+  COMMERCIAL: "#3B82F6",
+  HOTEL: "#F59E0B",
+};
+const ZAAHI_DEFAULT_COLOR = "#FFD700";
+
+function deriveLandUse(
+  mix: Array<{ category: string }> | null | undefined,
+): string {
+  if (!mix || mix.length === 0) return "RESIDENTIAL";
+  const cats = new Set(mix.map((u) => u.category.toUpperCase().trim()));
+  if (cats.size > 1) return "MIXED_USE";
+  return [...cats][0];
+}
+
 const DHCC2_SRC = "dda-dhcc-phase2";
 const DHCC2_LINE = "dda-dhcc-phase2-line";
 const BARSHA_HEIGHTS_SRC = "dda-barsha-heights";
@@ -1021,6 +1045,16 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  const [zaahiHover, setZaahiHover] = useState<{
+    x: number;
+    y: number;
+    plotNumber: string;
+    district: string;
+    area: number;
+    priceAed: number | null;
+    landUse: string;
+  } | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
@@ -1036,8 +1070,8 @@ export default function ParcelsMapPage() {
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
   const [layers, setLayers] = useState<LayersState>({
-    communities: false,
-    roads: false,
+    communities: true,
+    roads: true,
     islands: false,
     meydan: false,
     alFurjan: false,
@@ -1660,6 +1694,214 @@ export default function ParcelsMapPage() {
         });
       } catch (e) {
         console.error("[arjan] load failed", e);
+      }
+    }
+
+    // ── ZAAHI Plots (real listings from our DB) ────────────────────
+    if (!map.getSource(ZAAHI_PLOTS_SRC)) {
+      try {
+        const r = await fetch("/api/parcels/map");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const payload = (await r.json()) as {
+          items: Array<{
+            id: string;
+            plotNumber: string;
+            district: string;
+            emirate: string;
+            status: string;
+            area: number;
+            geometry: GeoJSON.Polygon | null;
+            currentValuation: string | null;
+            plan: {
+              projectName?: string | null;
+              community?: string | null;
+              maxFloors?: number | null;
+              maxHeightMeters?: number | null;
+              maxHeightCode?: string | null;
+              buildingLimitGeometry?: GeoJSON.Polygon | null;
+            } | null;
+          }>;
+        };
+
+        const plotFeatures: GeoJSON.Feature[] = [];
+        const buildingFeatures: GeoJSON.Feature[] = [];
+        for (const it of payload.items) {
+          if (!it.geometry || it.geometry.type !== "Polygon") continue;
+          const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
+          const landUse = deriveLandUse(
+            (it.plan as { landUseMix?: Array<{ category: string }> } | null)?.landUseMix,
+          );
+          plotFeatures.push({
+            type: "Feature",
+            id: it.id,
+            geometry: it.geometry,
+            properties: {
+              id: it.id,
+              plotNumber: it.plotNumber,
+              district: it.district,
+              area: it.area,
+              priceAed: aed,
+              landUse,
+              color: ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR,
+            },
+          });
+          // ── ZAAHI Signature 3D ──────────────────────────────
+          // RESIDENTIAL: one tower from buildingLimitGeometry
+          // MIXED_USE:   3 procedural buildings (retail / residential / resort)
+          //              centred on plot polygon — used when no building limit
+          //              is available for huge master plots.
+          const pushSignature = (
+            ring: number[][],
+            totalH: number,
+            useGold: boolean,
+            tag: string,
+          ) => {
+            const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+            const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+            const scaleRing = (s: number): number[][] =>
+              ring.map(([lng, lat]) => [
+                cLng + (lng - cLng) * s,
+                cLat + (lat - cLat) * s,
+              ]);
+            const podiumTop = Math.min(8, totalH * 0.3);
+            const crownH = Math.min(6, totalH * 0.2);
+            const crownBase = Math.max(podiumTop, totalH - crownH);
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(1.05)] },
+              properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag },
+            });
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(0.9)] },
+              properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag },
+            });
+            if (useGold) {
+              buildingFeatures.push({
+                type: "Feature",
+                geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
+                properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag },
+              });
+            }
+          };
+
+          const blg = it.plan?.buildingLimitGeometry;
+
+          if (landUse === "MIXED_USE") {
+            // Procedural cluster — three small footprints inside the plot.
+            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+            const cLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
+            const cLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
+            // 80m × 80m square, ~150m offsets between buildings
+            const halfLat = 40 / 111000;
+            const halfLng = 40 / (111000 * Math.cos((cLat * Math.PI) / 180));
+            const offLat = 200 / 111000;
+            const offLng = 200 / (111000 * Math.cos((cLat * Math.PI) / 180));
+            const square = (lng: number, lat: number): number[][] => [
+              [lng - halfLng, lat - halfLat],
+              [lng + halfLng, lat - halfLat],
+              [lng + halfLng, lat + halfLat],
+              [lng - halfLng, lat + halfLat],
+              [lng - halfLng, lat - halfLat],
+            ];
+            // retail G+2 (12m), residential G+4 (20m), resort G+6 (28m — tallest, gets gold crown)
+            pushSignature(square(cLng - offLng, cLat - offLat), 12, false, "retail");
+            pushSignature(square(cLng + offLng, cLat - offLat * 0.5), 20, false, "residential");
+            pushSignature(square(cLng, cLat + offLat), 28, true, "resort");
+          } else if (blg && blg.type === "Polygon") {
+            const totalH = it.plan?.maxHeightMeters ?? 44;
+            pushSignature(blg.coordinates[0], totalH, true, "tower");
+          }
+        }
+
+        map.addSource(ZAAHI_PLOTS_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: plotFeatures },
+        });
+        map.addLayer({
+          id: ZAAHI_PLOTS_FILL,
+          type: "fill",
+          source: ZAAHI_PLOTS_SRC,
+          paint: {
+            "fill-color": ["get", "color"],
+            "fill-opacity": 0.4,
+          },
+        });
+        map.addLayer({
+          id: ZAAHI_PLOTS_LINE,
+          type: "line",
+          source: ZAAHI_PLOTS_SRC,
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": 2,
+          },
+        });
+
+        map.addSource(ZAAHI_BUILDINGS_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: buildingFeatures },
+        });
+        // ── ZAAHI Signature: podium ──
+        map.addLayer({
+          id: `${ZAAHI_BUILDINGS_3D}-podium`,
+          type: "fill-extrusion",
+          source: ZAAHI_BUILDINGS_SRC,
+          filter: ["==", ["get", "kind"], "podium"],
+          paint: {
+            "fill-extrusion-color": [
+              "case",
+              ["==", ["get", "landUse"], "MIXED_USE"],
+              "rgba(140,100,180,1)",
+              "rgba(170,160,150,1)",
+            ],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.4,
+          },
+        });
+        // Body — glass
+        map.addLayer({
+          id: ZAAHI_BUILDINGS_3D,
+          type: "fill-extrusion",
+          source: ZAAHI_BUILDINGS_SRC,
+          filter: ["==", ["get", "kind"], "body"],
+          paint: {
+            "fill-extrusion-color": [
+              "case",
+              ["==", ["get", "landUse"], "MIXED_USE"],
+              "rgba(170,140,210,1)",
+              "rgba(190,200,210,1)",
+            ],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.3,
+          },
+        });
+        // Crown — gold tint
+        map.addLayer({
+          id: `${ZAAHI_BUILDINGS_3D}-crown`,
+          type: "fill-extrusion",
+          source: ZAAHI_BUILDINGS_SRC,
+          filter: ["==", ["get", "kind"], "crown"],
+          paint: {
+            "fill-extrusion-color": "rgba(200,180,140,1)",
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.35,
+          },
+        });
+        // White outline on every segment
+        map.addLayer({
+          id: `${ZAAHI_BUILDINGS_3D}-outline`,
+          type: "line",
+          source: ZAAHI_BUILDINGS_SRC,
+          paint: {
+            "line-color": "rgba(255,255,255,0.85)",
+            "line-width": 1,
+          },
+        });
+      } catch (e) {
+        console.error("[zaahi-plots] load failed", e);
       }
     }
 
@@ -7965,6 +8207,41 @@ export default function ParcelsMapPage() {
     map.on("load", async () => {
       await attachOverlays(map);
 
+      // ── ZAAHI Plots hover + click ──
+      if (map.getLayer(ZAAHI_PLOTS_FILL)) {
+        map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          map.getCanvas().style.cursor = "pointer";
+          const p = f.properties as {
+            plotNumber: string;
+            district: string;
+            area: number;
+            priceAed: number | null;
+            landUse: string;
+          };
+          setZaahiHover({
+            x: e.point.x,
+            y: e.point.y,
+            plotNumber: p.plotNumber,
+            district: p.district,
+            area: p.area,
+            priceAed: p.priceAed,
+            landUse: p.landUse,
+          });
+        });
+        map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
+          map.getCanvas().style.cursor = "";
+          setZaahiHover(null);
+        });
+        map.on("click", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const id = (f.properties as { id?: string })?.id;
+          if (id) setSelectedParcelId(id);
+        });
+      }
+
       // ── Communities hover ──
       map.on("mousemove", COMMUNITIES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
@@ -9830,6 +10107,41 @@ export default function ParcelsMapPage() {
           border-top-color: ${GOLD} !important;
         }
       `}</style>
+      {zaahiHover && (
+        <div
+          style={{
+            position: "absolute",
+            left: zaahiHover.x + 14,
+            top: zaahiHover.y + 14 + 48, // +48 = top toolbar offset (matches container)
+            width: 200,
+            background: "#ffffff",
+            color: "#1a1a1a",
+            borderLeft: `3px solid ${GOLD}`,
+            borderRadius: 4,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            padding: "8px 10px",
+            fontSize: 11,
+            fontFamily: "Georgia, serif",
+            lineHeight: 1.45,
+            pointerEvents: "none",
+            zIndex: 30,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>
+            {zaahiHover.plotNumber}
+          </div>
+          <div style={{ opacity: 0.85, marginTop: 2 }}>
+            {zaahiHover.district} | {Math.round(zaahiHover.area).toLocaleString("en-US")} sqft |{" "}
+            {zaahiHover.priceAed == null
+              ? "—"
+              : zaahiHover.priceAed >= 1_000_000
+                ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
+                : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
+            | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
+          </div>
+        </div>
+      )}
+      <SidePanel parcelId={selectedParcelId} onClose={() => setSelectedParcelId(null)} />
     </div>
   );
 }
