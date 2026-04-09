@@ -1029,6 +1029,9 @@ export default function ParcelsMapPage() {
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
   const [layersOpen, setLayersOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const legendRef = useRef<HTMLDivElement>(null);
+  const legendBtnRef = useRef<HTMLButtonElement>(null);
   const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false });
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
@@ -9318,6 +9321,33 @@ export default function ParcelsMapPage() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [layersOpen]);
 
+  useEffect(() => {
+    if (!legendOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (legendRef.current?.contains(t)) return;
+      if (legendBtnRef.current?.contains(t)) return;
+      setLegendOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [legendOpen]);
+
+  const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
+    { color: "#FFD700", name: "Residential", desc: "Жилое" },
+    { color: "#9333EA", name: "Mixed Use", desc: "Смешанное" },
+    { color: "#3B82F6", name: "Commercial / Office", desc: "Коммерческое" },
+    { color: "#F97316", name: "Hotel / Hospitality", desc: "Отельное" },
+    { color: "#EC4899", name: "Retail", desc: "Торговое" },
+    { color: "#6B7280", name: "Industrial", desc: "Промышленное" },
+    { color: "#10B981", name: "Community Facilities", desc: "Школы, мечети, больницы" },
+    { color: "#22C55E", name: "Open Space / Parks", desc: "Парки" },
+    { color: "#94A3B8", name: "Utility", desc: "Инфраструктура" },
+    { color: "#78716C", name: "Warehouse / Logistics", desc: "Склады" },
+    { color: "#8B5CF6", name: "Education", desc: "Образование" },
+    { color: "#EF4444", name: "Hospital", desc: "Медицина" },
+  ];
+
   const c = PALETTE[theme];
   const isDark = theme === "dark";
 
@@ -9439,6 +9469,142 @@ export default function ParcelsMapPage() {
           <polyline points="2 12 12 17 22 12" />
         </svg>
       </button>
+
+      {/* Legend button */}
+      <button
+        ref={legendBtnRef}
+        onClick={() => setLegendOpen((o) => !o)}
+        aria-label="Toggle legend"
+        title="Legend"
+        style={{
+          position: "absolute",
+          top: 64,
+          left: 60,
+          height: 36,
+          padding: "0 12px",
+          borderRadius: 8,
+          border: `1px solid ${isDark ? GOLD : c.border}`,
+          background: c.bg,
+          color: GOLD,
+          cursor: "pointer",
+          zIndex: 11,
+          boxShadow: c.headerShadow,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: "Georgia, serif",
+          fontSize: 12,
+          letterSpacing: "0.05em",
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+        Legend
+      </button>
+
+      {legendOpen && (
+        <div
+          ref={legendRef}
+          style={{
+            position: "absolute",
+            top: 108,
+            left: 60,
+            width: 280,
+            maxHeight: "calc(100vh - 130px)",
+            overflowY: "auto",
+            background: c.bg,
+            border: `1px solid ${isDark ? GOLD : c.border}`,
+            borderRadius: 10,
+            boxShadow: c.headerShadow,
+            zIndex: 12,
+            color: c.text,
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "10px 14px",
+              borderBottom: `1px solid ${c.borderSubtle}`,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: 13,
+                letterSpacing: "0.1em",
+                color: GOLD,
+              }}
+            >
+              LAND USE LEGEND
+            </div>
+            <button
+              onClick={() => setLegendOpen(false)}
+              aria-label="Close legend"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: c.textDim,
+                cursor: "pointer",
+                fontSize: 18,
+                lineHeight: 1,
+                padding: 0,
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ padding: "8px 0" }}>
+            {LAND_USE_LEGEND.map((item) => (
+              <div
+                key={item.name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 14px",
+                }}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    background: item.color,
+                    border: `1px solid ${c.borderSubtle}`,
+                    borderRadius: 3,
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: c.text, fontWeight: 600 }}>{item.name}</div>
+                  <div style={{ fontSize: 10, color: c.textDim, marginTop: 1 }}>{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              borderTop: `1px solid ${c.borderSubtle}`,
+              padding: "10px 14px",
+              fontSize: 10,
+              color: c.textDim,
+              fontStyle: "italic",
+              lineHeight: 1.5,
+            }}
+          >
+            Серые участки не подлежат продаже
+            <br />
+            (utilities, parks, community facilities)
+          </div>
+        </div>
+      )}
 
       {/* Basemap selector */}
       <div
