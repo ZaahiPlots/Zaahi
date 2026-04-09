@@ -139,3 +139,55 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - Писать PII в логи
 - Менять схему Prisma без задания
 - Деплоить в main без PR
+
+## Правила добавления участков на продажу
+
+### Источники данных
+- DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
+- Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
+
+### Цвета по Land Use (легенда)
+- RESIDENTIAL: #FFD700 (жёлтый)
+- MIXED USE: #9333EA (фиолетовый)
+- COMMERCIAL/OFFICE: #3B82F6 (синий)
+- HOTEL/HOSPITALITY: #F97316 (оранжевый)
+- RETAIL: #EC4899 (розовый)
+- INDUSTRIAL: #6B7280 (серый)
+- FUTURE DEVELOPMENT: #84CC16 (лайм)
+
+### 3D модели — ZAAHI Signature стиль
+Для каждого land use свой 3D стиль:
+
+RESIDENTIAL:
+- Подиум (×1.05 building limit): rgba(170,160,150,0.4)
+- Тело (×0.9): rgba(190,200,210,0.3) стекло
+- Crown (×0.85): rgba(200,180,140,0.35) gold
+- Outline: white 1px
+
+MIXED USE:
+- Несколько зданий разной высоты внутри участка
+- Подиумы: rgba(140,100,180,0.35) фиолетовый
+- Башни: rgba(170,140,210,0.25)
+- Crown gold на самом высоком
+
+COMMERCIAL:
+- Строгая форма без сужения
+- Цвет: rgba(150,170,200,0.35) синеватое стекло
+
+HOTEL:
+- Цвет: rgba(220,180,140,0.3) тёплый песочный
+
+FUTURE DEVELOPMENT (земля без зданий):
+- Только fill polygon, без 3D extrusion
+
+### Слои по умолчанию
+- ВСЕГДА включены: Communities, Major Roads, ZAAHI Plots
+- ВЫКЛЮЧЕНЫ: все DDA районы, мастер-планы
+
+### UI
+- Hover на участок: мини-карточка (plotNumber | район | sqft | цена | landUse)
+- Клик на участок: side panel 350px с ценой, project, dimensions, land use, documents
+- Карточка компактная, без пустых мест
+
+### Вопросы и предложения
+Если не уверен в данных или архитектурном решении — напиши на zhanrysbayev@gmail.com
