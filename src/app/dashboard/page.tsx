@@ -7,7 +7,8 @@
  * accents (#C8A96E), Georgia headings.
  */
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -598,27 +599,89 @@ function Favorites() {
 }
 
 // ─── Section: Deals ─────────────────────────────────────────────────
-const MOCK_DEALS: Array<{ id: string; plot: string; counter: string; status: string; price: string; date: string }> = [];
-const DEAL_STAGES = ["Initiated", "Deposit", "Agreement", "Documents", "DLD", "Completed"];
+interface DealRow {
+  id: string;
+  status: string;
+  priceInFils: string;
+  agreedPriceInFils: string | null;
+  offerPriceInFils: string | null;
+  updatedAt: string;
+  parcel: { id: string; plotNumber: string; district: string; emirate: string };
+}
+const STATUS_LABEL: Record<string, string> = {
+  INITIAL: "Offer Submitted",
+  DEAL_INITIATED: "Awaiting Deposit",
+  DEPOSIT_SUBMITTED: "Deposit Confirmed",
+  AGREEMENT_SIGNED: "MOU Signed",
+  DOCUMENTS_COLLECTED: "Documents",
+  GOVERNMENT_VERIFIED: "Gov Verified",
+  NOC_REQUESTED: "NOC Pending",
+  TRANSFER_FEE_PAID: "Fees Paid",
+  DLD_SUBMITTED: "Submitted to DLD",
+  DEAL_COMPLETED: "Completed",
+  DEAL_CANCELLED: "Cancelled",
+  DISPUTE_INITIATED: "Disputed",
+};
+function fmtAedShort(fils: string | null): string {
+  if (!fils) return "—";
+  const aed = Number(BigInt(fils)) / 100;
+  if (aed >= 1_000_000) return `${(aed / 1_000_000).toFixed(2)}M AED`;
+  if (aed >= 1_000) return `${(aed / 1_000).toFixed(0)}K AED`;
+  return `${aed.toFixed(0)} AED`;
+}
 function Deals() {
+  const [deals, setDeals] = useState<DealRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseBrowser.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) { setErr("Sign in to see your deals"); return; }
+      const res = await fetch("/api/deals", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { setErr("Failed to load"); return; }
+      setDeals(await res.json());
+    })();
+  }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <H1>My Deals</H1>
       <Sub>Track each transaction from the first MOU to DLD completion.</Sub>
-      {MOCK_DEALS.length === 0 ? (
+      {err && <Card style={{ color: SUBTLE, padding: 20 }}>{err}</Card>}
+      {!err && deals === null && <Card style={{ color: SUBTLE, padding: 20 }}>Loading…</Card>}
+      {!err && deals && deals.length === 0 && (
         <Card style={{ textAlign: "center", padding: 40, color: SUBTLE }}>
-          No deals yet. Once a buyer initiates a transaction on one of your plots it will appear here with a full timeline.
-          <div style={{ marginTop: 16, display: "flex", justifyContent: "center", gap: 8 }}>
-            {DEAL_STAGES.map((s, i) => (
-              <span key={s} style={{ fontSize: 9, color: SUBTLE, display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 18, height: 18, borderRadius: "50%", border: `1px solid ${LINE}`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>
-                {s}
-              </span>
-            ))}
-          </div>
+          No deals yet. Open the map and click <strong style={{ color: GOLD }}>Start Negotiation</strong> on any plot to begin.
         </Card>
-      ) : (
-        <Card>(deal list)</Card>
+      )}
+      {!err && deals && deals.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {deals.map((d) => {
+            const price = d.agreedPriceInFils ?? d.offerPriceInFils ?? d.priceInFils;
+            const cancelled = d.status === "DEAL_CANCELLED" || d.status === "DISPUTE_INITIATED";
+            return (
+              <Link key={d.id} href={`/deals/${d.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <Card style={{ padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>Plot {d.parcel.plotNumber}</div>
+                    <div style={{ fontSize: 11, color: SUBTLE }}>{d.parcel.district} · {d.parcel.emirate}</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{
+                      display: "inline-block", padding: "4px 10px", borderRadius: 12,
+                      background: cancelled ? "#fee2e2" : "rgba(200,169,110,0.15)",
+                      color: cancelled ? "#dc2626" : GOLD,
+                      fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
+                    }}>{STATUS_LABEL[d.status] ?? d.status}</span>
+                    <div style={{ fontSize: 9, color: SUBTLE, marginTop: 4 }}>{new Date(d.updatedAt).toLocaleDateString()}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: TXT }}>{fmtAedShort(price)}</div>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </div>
   );

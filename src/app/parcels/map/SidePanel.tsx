@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import FeasibilityCalculator from "./FeasibilityCalculator";
+import OfferModal from "./OfferModal";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -55,6 +57,14 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
   const [loading, setLoading] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [feasOpen, setFeasOpen] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    supabaseBrowser.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabaseBrowser.auth.onAuthStateChange((_e, session) => setSignedIn(!!session));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!parcelId) return;
@@ -240,11 +250,58 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
               <div style={{ fontSize: 9, color: "#9CA3AF", paddingTop: 6, borderTop: `1px solid ${LINE}` }}>
                 Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
               </div>
+              {/* Spacer so sticky CTA never covers the last row */}
+              <div style={{ height: 72 }} />
             </>
           ) : (
             <p style={{ color: SUBTLE }}>No affection plan loaded for this parcel.</p>
           )}
         </div>
+      )}
+
+      {/* Sticky Start Negotiation CTA — always visible at bottom of panel */}
+      {data && signedIn && (
+        <div
+          style={{
+            position: "sticky",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: 12,
+            background: "rgba(255,255,255,0.97)",
+            backdropFilter: "blur(8px)",
+            borderTop: `1px solid ${LINE}`,
+            boxShadow: "0 -4px 14px rgba(0,0,0,0.06)",
+          }}
+        >
+          <button
+            onClick={() => setOfferOpen(true)}
+            style={{
+              width: "100%",
+              padding: "14px 16px",
+              borderRadius: 8,
+              border: 0,
+              background: `linear-gradient(135deg, ${GOLD} 0%, #B8975E 100%)`,
+              color: "white",
+              fontWeight: 800,
+              fontSize: 13,
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(200,169,110,0.35)",
+            }}
+          >
+            Start Negotiation
+          </button>
+        </div>
+      )}
+
+      {offerOpen && data && (
+        <OfferModal
+          parcelId={data.id}
+          askingPriceAed={aed}
+          onClose={() => setOfferOpen(false)}
+        />
       )}
     </aside>
   );

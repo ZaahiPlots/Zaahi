@@ -78,6 +78,8 @@ model User {
   parcels    Parcel[] @relation("ParcelOwner")
   dealsAsSeller Deal[] @relation("DealSeller")
   dealsAsBuyer  Deal[] @relation("DealBuyer")
+  dealsAsBroker Deal[] @relation("DealBroker")
+  dealMessages  DealMessage[]
 
   @@index([role])
 }
@@ -118,17 +120,71 @@ model Deal {
   seller       User       @relation("DealSeller", fields: [sellerId], references: [id])
   buyerId      String
   buyer        User       @relation("DealBuyer", fields: [buyerId], references: [id])
+  brokerId     String?
+  broker       User?      @relation("DealBroker", fields: [brokerId], references: [id])
   status       DealStatus @default(INITIAL)
-  priceInFils  BigInt
+
+  // priceInFils kept for backward compatibility — mirrors offerPriceInFils on create.
+  priceInFils       BigInt
+  offerPriceInFils  BigInt?
+  agreedPriceInFils BigInt?
+
+  paymentType     String?  // CASH | MORTGAGE | INSTALLMENT
+  mortgageBank    String?
+  mortgageAmount  BigInt?
+  closingDays     Int      @default(90)
+  conditions      String?
+  initialMessage  String?
+
+  depositPaid  Boolean @default(false)
+  mouSigned    Boolean @default(false)
+  nocReceived  Boolean @default(false)
+  dldApproved  Boolean @default(false)
+  dldReference String?
+
+  rating       Int?    // 1..5, set on completion
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  documents Document[]
+  documents   Document[]
+  messages    DealMessage[]
+  auditEvents DealAuditEvent[]
 
   @@index([parcelId])
   @@index([sellerId])
   @@index([buyerId])
+  @@index([brokerId])
   @@index([status])
+}
+
+model DealMessage {
+  id        String   @id @default(cuid())
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  fileUrl   String?
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+  @@index([createdAt])
+}
+
+model DealAuditEvent {
+  id           String   @id @default(cuid())
+  dealId       String
+  deal         Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  eventType    String   // OFFER_SUBMITTED | OFFER_ACCEPTED | COUNTER_OFFER | DEPOSIT_PAID | MOU_SIGNED | NOC_REQUESTED | NOC_RECEIVED | DLD_SUBMITTED | DLD_APPROVED | COMPLETED | CANCELLED | DISPUTED
+  txHash       String?  // polygon tx hash, or "pending"
+  documentHash String?  // SHA-256 of related document, if any
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([dealId])
+  @@index([txHash])
+  @@index([eventType])
 }
 
 model AffectionPlan {
