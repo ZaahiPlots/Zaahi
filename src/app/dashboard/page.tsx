@@ -12,7 +12,7 @@ export default function Dashboard() {
       </nav>
       <div className="max-w-6xl mx-auto p-8">
         <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-gray-500 mb-8">Welcome to ZAAHI. Cat is watching over your assets.</p>
+        <p className="text-gray-500 mb-8">Welcome to ZAAHI. Archibald is watching over your assets.</p>
         <div className="grid grid-cols-3 gap-6 mb-8">
           {[["My Parcels","0","🏞️"],["Active Deals","0","🤝"],["Portfolio Value","$0","💰"]].map(([label,val,icon]) => (
             <div key={label} className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
@@ -26,8 +26,8 @@ export default function Dashboard() {
           <div className="flex items-start gap-4">
             <div className="text-4xl">🐱</div>
             <div>
-              <p className="text-amber-400 font-bold mb-1">Cat says:</p>
-              <p className="text-gray-300">Welcome to ZAAHI. I am Cat — your personal AI advisor for all things real estate in Dubai. Start by adding your first land parcel, or explore the marketplace to find opportunities.</p>
+              <p className="text-amber-400 font-bold mb-1">Archibald says:</p>
+              <p className="text-gray-300">Welcome to ZAAHI. I am Archibald — your personal AI advisor for all things real estate in Dubai. Start by adding your first land parcel, or explore the marketplace to find opportunities.</p>
             </div>
           </div>
         </div>

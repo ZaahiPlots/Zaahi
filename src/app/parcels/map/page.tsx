@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import SidePanel from "./SidePanel";
+import ArchibaldChat from "./ArchibaldChat";
+import { sound } from "@/lib/sound";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1046,6 +1048,11 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 export default function ParcelsMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  const [soundOn, setSoundOn] = useState(false);
+  useEffect(() => {
+    sound.init();
+    return sound.subscribe(setSoundOn);
+  }, []);
   const [zaahiHover, setZaahiHover] = useState<{
     x: number;
     y: number;
@@ -1062,6 +1069,8 @@ export default function ParcelsMapPage() {
   const [is3D, setIs3D] = useState(true);
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
+  const [bearing, setBearing] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
@@ -8164,23 +8173,9 @@ export default function ParcelsMapPage() {
     map.dragRotate.enable();
     map.touchZoomRotate.enableRotation();
     map.keyboard.enable();
-    const navCtrl = new maplibregl.NavigationControl({ visualizePitch: true, showCompass: true, showZoom: true });
-    map.addControl(navCtrl, "top-right");
-    // Override compass click: reset bearing AND pitch back to default 3D view
-    const compassBtn = (navCtrl as unknown as { _compass?: HTMLButtonElement })._compass;
-    if (compassBtn) {
-      compassBtn.addEventListener(
-        "click",
-        (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          map.easeTo({ bearing: 0, pitch: 45, duration: 500 });
-        },
-        true,
-      );
-    }
     map.on("mousemove", (e) => setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat }));
     map.on("zoom", () => setZoom(map.getZoom()));
+    map.on("rotate", () => setBearing(map.getBearing()));
 
     // Single shared popup
     const popup = new maplibregl.Popup({
@@ -8207,6 +8202,11 @@ export default function ParcelsMapPage() {
     map.on("load", async () => {
       await attachOverlays(map);
 
+      // ── City ambient on zoom > 16 ──
+      const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
+      map.on("zoomend", updateCityAmbient);
+      updateCityAmbient();
+
       // ── ZAAHI Plots hover + click ──
       if (map.getLayer(ZAAHI_PLOTS_FILL)) {
         map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -8229,6 +8229,7 @@ export default function ParcelsMapPage() {
             priceAed: p.priceAed,
             landUse: p.landUse,
           });
+          sound.hover();
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
@@ -8238,7 +8239,11 @@ export default function ParcelsMapPage() {
           const f = e.features?.[0];
           if (!f) return;
           const id = (f.properties as { id?: string })?.id;
-          if (id) setSelectedParcelId(id);
+          if (id) {
+            sound.click();
+            sound.swooshOpen();
+            setSelectedParcelId(id);
+          }
         });
       }
 
@@ -9641,79 +9646,22 @@ export default function ParcelsMapPage() {
       <div ref={containerRef} style={{ position: "absolute", inset: "48px 0 0 0" }} />
 
       {/* Header */}
-      <header
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          background: c.bg,
-          borderBottom: `1px solid ${isDark ? GOLD : c.border}`,
-          display: "flex",
-          alignItems: "center",
-          padding: "0 20px",
-          zIndex: 10,
-          boxShadow: c.headerShadow,
-        }}
-      >
-        <button
-          onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-          aria-label={isDark ? "Switch to light" : "Switch to dark"}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 6,
-            border: `1px solid ${c.border}`,
-            background: "transparent",
-            color: GOLD,
-            cursor: "pointer",
-            fontSize: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 16,
+      <HeaderBar
+        c={c}
+        isDark={isDark}
+        onFly={(lng, lat) => mapRef.current?.flyTo({ center: [lng, lat], zoom: 17, duration: 1500 })}
+        onSelectParcel={(id) => setSelectedParcelId(id)}
+        onOpenAddModal={() => setShowAddModal(true)}
+      />
+      {showAddModal && (
+        <AddPlotModal
+          onClose={() => setShowAddModal(false)}
+          onAdded={(id, lng, lat) => {
+            setSelectedParcelId(id);
+            mapRef.current?.flyTo({ center: [lng, lat], zoom: 17, duration: 1500 });
           }}
-        >
-          {isDark ? "☀" : "☾"}
-        </button>
-
-        <div
-          style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: "0.22em",
-            color: GOLD,
-          }}
-        >
-          ZAAHI
-        </div>
-        <div
-          style={{
-            marginLeft: 14,
-            fontSize: 10,
-            color: c.textDim,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-          }}
-        >
-          Dubai Real Estate OS
-        </div>
-        <div
-          style={{
-            marginLeft: "auto",
-            display: "flex",
-            gap: 22,
-            fontFamily: '"SF Mono", "Menlo", monospace',
-            fontSize: 11,
-          }}
-        >
-          <Stat label="LAT" value={cursor.lat.toFixed(5)} dim={c.textDim} text={c.text} />
-          <Stat label="LNG" value={cursor.lng.toFixed(5)} dim={c.textDim} text={c.text} />
-          <Stat label="ZOOM" value={zoom.toFixed(2)} dim={c.textDim} text={c.text} />
-        </div>
-      </header>
+        />
+      )}
 
       {/* Layer switcher — compact icon button */}
       <button
@@ -9747,7 +9695,7 @@ export default function ParcelsMapPage() {
         </svg>
       </button>
 
-      {/* Legend button */}
+      {/* Legend button — top-right, icon only */}
       <button
         ref={legendBtnRef}
         onClick={() => setLegendOpen((o) => !o)}
@@ -9755,31 +9703,29 @@ export default function ParcelsMapPage() {
         title="Legend"
         style={{
           position: "absolute",
-          top: 64,
-          left: 60,
+          top: 96,
+          right: 16,
+          width: 36,
           height: 36,
-          padding: "0 12px",
           borderRadius: 8,
-          border: `1px solid ${isDark ? GOLD : c.border}`,
-          background: c.bg,
+          border: `1px solid ${c.border}`,
+          background: "white",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
-          boxShadow: c.headerShadow,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
           display: "flex",
           alignItems: "center",
-          gap: 6,
-          fontFamily: "Georgia, serif",
-          fontSize: 12,
-          letterSpacing: "0.05em",
+          justifyContent: "center",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="16" x2="12" y2="12" />
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
-        Legend
       </button>
 
       {legendOpen && (
@@ -9787,8 +9733,8 @@ export default function ParcelsMapPage() {
           ref={legendRef}
           style={{
             position: "absolute",
-            top: 108,
-            left: 60,
+            top: 140,
+            right: 16,
             width: 280,
             maxHeight: "calc(100vh - 130px)",
             overflowY: "auto",
@@ -9883,20 +9829,17 @@ export default function ParcelsMapPage() {
         </div>
       )}
 
-      {/* Basemap selector */}
+      {/* Basemap selector — left vertical center */}
       <div
         style={{
           position: "absolute",
-          top: 108,
           left: 16,
+          top: "50%",
+          transform: "translateY(-50%)",
           display: "flex",
           flexDirection: "column",
-          borderRadius: 8,
-          border: `1px solid ${isDark ? GOLD : c.border}`,
-          background: c.bg,
-          overflow: "hidden",
+          gap: 8,
           zIndex: 11,
-          boxShadow: c.headerShadow,
         }}
       >
         {(["light", "dark", "satellite"] as BaseMap[]).map((b) => (
@@ -9908,16 +9851,19 @@ export default function ParcelsMapPage() {
             style={{
               width: 36,
               height: 36,
-              border: "none",
-              borderTop: b !== "light" ? `1px solid ${c.borderSubtle}` : "none",
-              background: baseMap === b ? GOLD : "transparent",
+              borderRadius: 8,
+              border: `1px solid ${baseMap === b ? GOLD : c.border}`,
+              background: baseMap === b ? GOLD : "white",
               color: baseMap === b ? "#0A1628" : c.text,
               cursor: "pointer",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               fontSize: 14,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+            }}
+            onMouseEnter={(e) => {
+              if (baseMap !== b) e.currentTarget.style.borderColor = GOLD;
+            }}
+            onMouseLeave={(e) => {
+              if (baseMap !== b) e.currentTarget.style.borderColor = c.border;
             }}
           >
             {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
@@ -9925,38 +9871,64 @@ export default function ParcelsMapPage() {
         ))}
       </div>
 
-      {/* 2D / 3D toggle */}
-      <button
-        onClick={() => {
-          const map = mapRef.current;
-          if (!map) return;
-          const next = !is3D;
-          setIs3D(next);
-          map.easeTo({ pitch: next ? 45 : 0, duration: 400 });
-        }}
-        title={is3D ? "Switch to 2D" : "Switch to 3D"}
-        aria-label="Toggle 2D/3D"
+      {/* Cursor coordinates — left bottom corner, mini */}
+      <div
         style={{
           position: "absolute",
-          top: 148,
-          right: 10,
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          border: `1px solid ${isDark ? GOLD : c.border}`,
-          background: c.bg,
-          color: GOLD,
-          cursor: "pointer",
+          left: 16,
+          bottom: 8,
+          fontSize: 9,
+          color: c.textDim,
+          fontFamily: '"SF Mono", "Menlo", monospace',
+          letterSpacing: "0.04em",
           zIndex: 11,
-          boxShadow: c.headerShadow,
-          fontFamily: "Georgia, serif",
-          fontWeight: 700,
-          fontSize: 12,
-          padding: 0,
+          pointerEvents: "none",
         }}
       >
-        {is3D ? "3D" : "2D"}
-      </button>
+        {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z{zoom.toFixed(2)}
+      </div>
+
+      {/* Right vertical center: zoom+, zoom-, compass, 3D/2D */}
+      <div
+        style={{
+          position: "absolute",
+          right: 16,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          zIndex: 11,
+        }}
+      >
+        <ChromeBtn c={c} title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
+        <ChromeBtn c={c} title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
+        <ChromeBtn
+          c={c}
+          title="Reset bearing"
+          onClick={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45, duration: 500 })}
+        >
+          <span style={{ display: "inline-block", transform: `rotate(${-bearing}deg)`, transition: "transform 250ms ease", fontSize: 16 }}>
+            ⊕
+          </span>
+        </ChromeBtn>
+        <ChromeBtn
+          c={c}
+          title={is3D ? "Switch to 2D" : "Switch to 3D"}
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            const next = !is3D;
+            setIs3D(next);
+            sound.whoosh();
+            map.easeTo({ pitch: next ? 45 : 0, duration: 400 });
+          }}
+        >
+          <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 12 }}>
+            {is3D ? "3D" : "2D"}
+          </span>
+        </ChromeBtn>
+      </div>
 
       {layersOpen && (
       <div
@@ -10141,7 +10113,36 @@ export default function ParcelsMapPage() {
           </div>
         </div>
       )}
-      <SidePanel parcelId={selectedParcelId} onClose={() => setSelectedParcelId(null)} />
+      <button
+        onClick={() => sound.toggle()}
+        title={soundOn ? "Mute" : "Unmute"}
+        aria-label="Toggle sound"
+        style={{
+          position: "absolute",
+          right: 16,
+          top: 56, // just below the 48px header
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          border: `1px solid ${c.border}`,
+          background: "white",
+          color: GOLD,
+          cursor: "pointer",
+          fontSize: 13,
+          zIndex: 25,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+        }}
+      >
+        {soundOn ? "🔊" : "🔇"}
+      </button>
+      <ArchibaldChat />
+      <SidePanel
+        parcelId={selectedParcelId}
+        onClose={() => {
+          sound.swooshClose();
+          setSelectedParcelId(null);
+        }}
+      />
     </div>
   );
 }
@@ -10172,7 +10173,10 @@ function LayerToggle({
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => {
+          sound.toggleSfx();
+          onChange(e.target.checked);
+        }}
         style={{ accentColor: GOLD }}
       />
       {label}
@@ -10226,5 +10230,493 @@ function Stat({ label, value, dim, text }: { label: string; value: string; dim: 
       <span style={{ color: dim, marginRight: 5 }}>{label}</span>
       <span style={{ color: text }}>{value}</span>
     </span>
+  );
+}
+
+// ── New unified header bar with Add / Find / Check / Profile ──
+type ChromeTheme = {
+  bg: string;
+  text: string;
+  textDim: string;
+  border: string;
+  borderSubtle: string;
+  headerShadow: string;
+};
+
+// Square 36×36 chrome button used in the right vertical control column.
+function ChromeBtn({
+  c, title, onClick, children,
+}: {
+  c: ChromeTheme;
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        border: `1px solid ${c.border}`,
+        background: "white",
+        color: GOLD,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 18,
+        fontWeight: 700,
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+        padding: 0,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+    >
+      {children}
+    </button>
+  );
+}
+function HeaderBar({
+  c,
+  isDark,
+  onFly,
+  onSelectParcel,
+  onOpenAddModal,
+}: {
+  c: ChromeTheme;
+  isDark: boolean;
+  onFly: (lng: number, lat: number) => void;
+  onSelectParcel: (id: string) => void;
+  onOpenAddModal: () => void;
+}) {
+  const [find, setFind] = useState("");
+  const [check, setCheck] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const flash = (m: string) => {
+    setMsg(m);
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  async function doFind(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    const plotNumber = find.trim();
+    if (!plotNumber) return;
+    setBusy("find");
+    try {
+      const r = await fetch("/api/parcels/map");
+      const data = (await r.json()) as {
+        items: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
+      };
+      const hit = data.items.find((it) => it.plotNumber === plotNumber);
+      if (!hit?.geometry) {
+        flash("✕ Plot not found in ZAAHI database");
+      } else {
+        const ring = hit.geometry.coordinates[0];
+        const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+        const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+        onFly(lng, lat);
+        onSelectParcel(hit.id);
+        flash(`→ ${plotNumber}`);
+        setFind("");
+      }
+    } catch {
+      flash("✕ network error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function doCheck(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    const plotNumber = check.trim();
+    if (!plotNumber) return;
+    window.open(
+      "https://dubailand.gov.ae/en/eservices/inquiry-about-a-property-status/",
+      "_blank",
+      "noopener",
+    );
+    flash(`→ DLD check ${plotNumber}`);
+    setCheck("");
+  }
+
+  return (
+    <header
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 48,
+        background: c.bg,
+        borderBottom: `1px solid ${isDark ? GOLD : c.border}`,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
+        zIndex: 10,
+        boxShadow: c.headerShadow,
+        gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+        <div
+          style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: "0.22em",
+            color: GOLD,
+          }}
+        >
+          ZAAHI
+        </div>
+        <div
+          style={{
+            fontSize: 9,
+            color: c.textDim,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+          }}
+        >
+          Real Estate OS
+        </div>
+      </div>
+
+      {msg && (
+        <div
+          style={{
+            fontSize: 11,
+            color: msg.startsWith("✕") ? "#EF4444" : GOLD,
+            marginLeft: 8,
+          }}
+        >
+          {msg}
+        </div>
+      )}
+
+      <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+        <button
+          onClick={onOpenAddModal}
+          title="Register a new plot in ZAAHI"
+          style={hdrBtnStyle(c)}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+        >
+          <span style={{ fontSize: 16, color: GOLD, fontWeight: 700 }}>+</span>Add Plot
+        </button>
+        <HdrField
+          c={c}
+          icon="🔍"
+          label="Find"
+          placeholder="Plot #"
+          value={find}
+          onChange={setFind}
+          onKey={doFind}
+          busy={busy === "find"}
+          tooltip="Find plot in ZAAHI database"
+        />
+        <HdrField
+          c={c}
+          icon="✓"
+          label="Check"
+          placeholder="Plot #"
+          value={check}
+          onChange={setCheck}
+          onKey={doCheck}
+          busy={false}
+          tooltip="Open DLD property status check"
+        />
+        <a
+          href="/dashboard"
+          title="Profile / Dashboard"
+          style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+        >
+          <span style={{ fontSize: 14 }}>👤</span>Profile
+        </a>
+      </div>
+    </header>
+  );
+}
+
+function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
+  return {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    height: 32,
+    padding: "0 12px",
+    borderRadius: 8,
+    border: `1px solid ${c.border}`,
+    background: "white",
+    color: c.text,
+    fontSize: 12,
+    fontWeight: 600,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    cursor: "pointer",
+    transition: "border-color 150ms ease",
+  };
+}
+
+// ── Add Plot modal ─────────────────────────────────────────────────
+function AddPlotModal({
+  onClose, onAdded,
+}: {
+  onClose: () => void;
+  onAdded: (id: string, lng: number, lat: number) => void;
+}) {
+  const [plotNumber, setPlotNumber] = useState("");
+  const [priceAed, setPriceAed] = useState("");
+  const [pricePerSqft, setPricePerSqft] = useState("");
+  const [landUse, setLandUse] = useState("RESIDENTIAL");
+  const [description, setDescription] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit() {
+    setErr(null);
+    const pn = plotNumber.trim();
+    if (!pn) {
+      setErr("Plot Number required");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/parcels/seed-dda", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          plotNumber: pn,
+          priceAed: Number(priceAed) || 0,
+          pricePerSqft: Number(pricePerSqft) || 0,
+          landUse,
+          description: description.trim() || null,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data.error ?? "Failed");
+      } else {
+        onAdded(data.id, data.longitude, data.latitude);
+        onClose();
+      }
+    } catch {
+      setErr("Network error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(10,15,30,0.55)",
+        backdropFilter: "blur(2px)",
+        zIndex: 100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 380,
+          background: "white",
+          borderRadius: 12,
+          border: `1px solid ${GOLD}`,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
+          color: "#1A1A2E",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 16px",
+            background: GOLD,
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+            Register New Plot
+          </span>
+          <button onClick={onClose} style={{ background: "transparent", border: 0, color: "white", fontSize: 20, cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <Field label="Plot Number">
+            <input
+              autoFocus
+              value={plotNumber}
+              onChange={(e) => setPlotNumber(e.target.value)}
+              placeholder="e.g. 6457940"
+              style={modalInput()}
+            />
+          </Field>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <Field label="Price AED">
+              <input
+                type="number"
+                value={priceAed}
+                onChange={(e) => setPriceAed(e.target.value)}
+                placeholder="0"
+                style={modalInput()}
+              />
+            </Field>
+            <Field label="Price/sqft">
+              <input
+                type="number"
+                value={pricePerSqft}
+                onChange={(e) => setPricePerSqft(e.target.value)}
+                placeholder="0"
+                style={modalInput()}
+              />
+            </Field>
+          </div>
+          <Field label="Land Use">
+            <select value={landUse} onChange={(e) => setLandUse(e.target.value)} style={modalInput()}>
+              <option value="RESIDENTIAL">Residential</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="HOTEL">Hotel</option>
+              <option value="MIXED_USE">Mixed Use</option>
+              <option value="INDUSTRIAL">Industrial</option>
+              <option value="RETAIL">Retail</option>
+            </select>
+          </Field>
+          <Field label="Description">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Notes, listing details, target buyer…"
+              rows={3}
+              style={{ ...modalInput(), resize: "vertical", minHeight: 60 }}
+            />
+          </Field>
+          {err && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {err}</div>}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+            <button
+              onClick={onClose}
+              disabled={busy}
+              style={{
+                padding: "8px 14px",
+                fontSize: 12,
+                borderRadius: 6,
+                border: "1px solid #D1D5DB",
+                background: "white",
+                color: "#1A1A2E",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={busy}
+              style={{
+                padding: "8px 18px",
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 6,
+                border: "none",
+                background: GOLD,
+                color: "white",
+                cursor: busy ? "not-allowed" : "pointer",
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              {busy ? "Adding…" : "Add"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function modalInput(): React.CSSProperties {
+  return {
+    width: "100%",
+    fontSize: 12,
+    padding: "6px 9px",
+    border: "1px solid #D1D5DB",
+    borderRadius: 6,
+    background: "white",
+    color: "#1A1A2E",
+    outline: "none",
+  };
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function HdrField({
+  c, icon, label, placeholder, value, onChange, onKey, busy, tooltip,
+}: {
+  c: ChromeTheme;
+  icon: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  onKey: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  busy: boolean;
+  tooltip: string;
+}) {
+  return (
+    <label
+      title={tooltip}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 32,
+        padding: "0 4px 0 10px",
+        borderRadius: 8,
+        border: `1px solid ${c.border}`,
+        background: "white",
+        color: c.text,
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+        gap: 6,
+        transition: "border-color 150ms ease",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+    >
+      <span style={{ fontSize: 14, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: c.text }}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKey}
+        placeholder={busy ? "…" : placeholder}
+        disabled={busy}
+        style={{
+          width: 80,
+          height: 24,
+          padding: "0 6px",
+          border: "none",
+          background: "transparent",
+          color: c.text,
+          fontSize: 11,
+          outline: "none",
+        }}
+      />
+    </label>
   );
 }

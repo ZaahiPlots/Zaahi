@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_API = [
   '/api/auth',          // not used yet — Supabase handles auth on the client
   '/api/users/sync',    // requires auth, but checks token in handler
+  '/api/chat',          // Archibald AI assistant — public for now (TODO: rate-limit by IP)
+  '/api/parcels/seed-dda', // Add Plot launcher — public until admin auth lands
 ];
 
 const PUBLIC_READS = new Set(['GET']);

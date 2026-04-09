@@ -1,5 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import FeasibilityCalculator from "./FeasibilityCalculator";
+
+const GOLD = "#C8A96E";
+const TXT = "#1A1A2E";
+const SUBTLE = "#6B7280";
+const LINE = "#E5E7EB";
 
 interface Plan {
   projectName: string | null;
@@ -48,12 +54,14 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const [feasOpen, setFeasOpen] = useState(false);
 
   useEffect(() => {
     if (!parcelId) return;
     setLoading(true);
     setData(null);
     setDocsOpen(false);
+    setFeasOpen(false);
     fetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
       .then((d) => setData(d))
@@ -67,34 +75,55 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 
   return (
     <aside
-      style={{ maxHeight: "100vh" }}
-      className={`absolute top-0 right-0 h-full w-[350px] bg-gray-950/95 backdrop-blur border-l border-gray-800 text-white z-20 overflow-y-auto transition-transform duration-300 ${
+      style={{
+        maxHeight: "100vh",
+        background: "rgba(255,255,255,0.95)",
+        backdropFilter: "blur(8px)",
+        borderLeft: `1px solid ${LINE}`,
+        color: TXT,
+      }}
+      className={`absolute top-0 right-0 h-full w-[350px] z-20 overflow-y-auto transition-transform duration-300 ${
         open ? "translate-x-0" : "translate-x-full"
       }`}
     >
-      <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-4 py-2 flex items-center gap-2">
-        <button onClick={onClose} className="text-gray-400 hover:text-white text-lg leading-none">×</button>
+      <div
+        className="sticky top-0 px-4 py-2 flex items-center gap-2"
+        style={{
+          background: "rgba(255,255,255,0.95)",
+          borderBottom: `1px solid ${LINE}`,
+        }}
+      >
+        <button
+          onClick={onClose}
+          style={{ color: SUBTLE, fontSize: 18, lineHeight: 1, background: "none", border: 0, cursor: "pointer" }}
+        >
+          ×
+        </button>
         <div className="flex-1 min-w-0">
           {data ? (
             <>
-              <div className="text-amber-400 font-bold text-[13px] leading-tight truncate">Plot {data.plotNumber}</div>
-              <div className="text-[10px] text-gray-400 truncate">{data.district} · {data.emirate}</div>
+              <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, lineHeight: 1.1 }} className="truncate">
+                Plot {data.plotNumber}
+              </div>
+              <div style={{ color: SUBTLE, fontSize: 10 }} className="truncate">
+                {data.district} · {data.emirate}
+              </div>
             </>
           ) : (
-            <div className="text-gray-500 text-xs">{loading ? "Loading…" : ""}</div>
+            <div style={{ color: SUBTLE, fontSize: 11 }}>{loading ? "Loading…" : ""}</div>
           )}
         </div>
       </div>
 
       {data && (
-        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }} className="text-[11px]">
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
           {/* Price block */}
-          <div className="pb-2 border-b border-gray-800">
-            <div className="text-amber-400 font-bold" style={{ fontSize: 20, lineHeight: 1.1 }}>
+          <div style={{ paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+            <div style={{ color: GOLD, fontWeight: 800, fontSize: 22, lineHeight: 1.1 }}>
               {fmtBigAed(aed)}
             </div>
             {pricePerSqft != null && (
-              <div className="text-gray-500" style={{ fontSize: 10, marginTop: 2 }}>
+              <div style={{ color: SUBTLE, fontSize: 10, marginTop: 2 }}>
                 {pricePerSqft.toLocaleString("en-US", { maximumFractionDigits: 0 })} AED/sqft
               </div>
             )}
@@ -109,7 +138,7 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
               </Section>
 
               <Section title="Dimensions">
-                <Row label="Plot" v={plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft² (${plan.plotAreaSqm?.toLocaleString()} m²)` : null} />
+                <Row label="Plot" v={plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft²` : null} />
                 <Row label="Max GFA" v={plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null} />
                 <Row label="FAR" v={plan.far?.toString()} />
                 <Row label="Height" v={plan.maxHeightCode ? `${plan.maxHeightCode} · ${plan.maxFloors}f · ~${plan.maxHeightMeters}m` : null} />
@@ -117,32 +146,90 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 
               {plan.landUseMix && plan.landUseMix.length > 0 && (
                 <Section title="Land Use">
-                  <ul className="text-[11px] space-y-0.5">
+                  <ul style={{ display: "flex", flexDirection: "column", gap: 2, margin: 0, padding: 0, listStyle: "none" }}>
                     {plan.landUseMix.map((u, i) => (
-                      <li key={i}>
-                        <span className="text-amber-400">{u.category}</span> · {u.sub}
+                      <li key={i} style={{ fontSize: 11 }}>
+                        <span style={{ color: GOLD, fontWeight: 600 }}>{u.category}</span>{" "}
+                        <span style={{ color: SUBTLE }}>· {u.sub}</span>
                       </li>
                     ))}
                   </ul>
                 </Section>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-col gap-1 pt-0.5">
+              {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
+                  is supported when DDA data is missing. */}
+              <div>
+                <button
+                  onClick={() => setFeasOpen((v) => !v)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                    border: `1px solid ${GOLD}`,
+                    background: "rgba(200,169,110,0.08)",
+                    color: GOLD,
+                    fontWeight: 700,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  <span>Feasibility Calculator</span>
+                  <span>{feasOpen ? "▾" : "▸"}</span>
+                </button>
+                {feasOpen && (
+                  <div style={{ marginTop: 8 }}>
+                    <FeasibilityCalculator
+                      plotAreaSqft={data.area}
+                      plotPriceAed={aed ?? 0}
+                      gfaSqft={plan.maxGfaSqft ?? 0}
+                      far={plan.far}
+                      landUseMix={plan.landUseMix}
+                      landUse={
+                        plan.landUseMix && plan.landUseMix.length > 1
+                          ? "MIXED_USE"
+                          : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Documents */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <button
                   onClick={() => setDocsOpen((v) => !v)}
-                  className="w-full text-left text-[11px] px-2.5 py-1.5 rounded bg-gray-900 border border-gray-800 hover:border-amber-500/60 flex items-center justify-between"
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                    background: "white",
+                    border: `1px solid ${LINE}`,
+                    color: TXT,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
                 >
                   <span>Documents</span>
-                  <span className="text-gray-500">{docsOpen ? "▾" : "▸"}</span>
+                  <span style={{ color: SUBTLE }}>{docsOpen ? "▾" : "▸"}</span>
                 </button>
                 {docsOpen && (
-                  <div className="flex flex-col gap-1 pl-2 border-l border-gray-800">
+                  <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}` }}>
                     <a
                       href={`/api/parcels/${data.id}/pdf`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-1 rounded hover:bg-gray-900/60"
+                      style={{ display: "block", fontSize: 10, color: GOLD, padding: "4px 8px", textDecoration: "none" }}
                     >
                       📄 Affection Plan (PDF)
                     </a>
@@ -150,12 +237,12 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 )}
               </div>
 
-              <div className="text-[9px] text-gray-600 pt-2 border-t border-gray-800">
+              <div style={{ fontSize: 9, color: "#9CA3AF", paddingTop: 6, borderTop: `1px solid ${LINE}` }}>
                 Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
               </div>
             </>
           ) : (
-            <p className="text-gray-500">No affection plan loaded for this parcel.</p>
+            <p style={{ color: SUBTLE }}>No affection plan loaded for this parcel.</p>
           )}
         </div>
       )}
@@ -166,8 +253,10 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-amber-400 font-semibold text-[9px] uppercase tracking-wider mb-1">{title}</div>
-      <div className="space-y-0.5">{children}</div>
+      <div style={{ color: GOLD, fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>
+        {title}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{children}</div>
     </div>
   );
 }
@@ -175,9 +264,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, v }: { label: string; v: string | null | undefined }) {
   if (v == null) return null;
   return (
-    <div className="flex justify-between gap-2" style={{ fontSize: 11, lineHeight: 1.4 }}>
-      <span className="text-gray-500">{label}</span>
-      <span className="text-right text-gray-200">{v}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, lineHeight: 1.4 }}>
+      <span style={{ color: SUBTLE }}>{label}</span>
+      <span style={{ color: TXT, textAlign: "right" }}>{v}</span>
     </div>
   );
 }
