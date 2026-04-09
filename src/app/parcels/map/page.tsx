@@ -4,6 +4,7 @@ import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "map
 import "maplibre-gl/dist/maplibre-gl.css";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
+import AddPlotModal from "./AddPlotModal";
 import { sound } from "@/lib/sound";
 
 type Theme = "light" | "dark";
@@ -137,6 +138,8 @@ const ARJAN_LINE = "dda-arjan-line";
 const ZAAHI_PLOTS_SRC = "zaahi-plots";
 const ZAAHI_PLOTS_FILL = "zaahi-plots-fill";
 const ZAAHI_PLOTS_LINE = "zaahi-plots-line";
+const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
+const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
@@ -146,6 +149,54 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   HOTEL: "#F59E0B",
 };
 const ZAAHI_DEFAULT_COLOR = "#FFD700";
+
+// Apply / clear selection highlight on the ZAAHI plot + building layers.
+function applySelectionPaint(map: MLMap, selectedId: string | null) {
+  if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
+  const sel = selectedId ?? "__none__";
+  // Plot fill: bright on selected, dim on others when selection is active
+  if (selectedId) {
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+      "case",
+      ["==", ["get", "id"], sel],
+      0.7,
+      0.2,
+    ]);
+  } else {
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", 0.4);
+  }
+  // Glow filters
+  if (map.getLayer(ZAAHI_PLOTS_GLOW)) {
+    map.setFilter(ZAAHI_PLOTS_GLOW, ["==", ["id"], sel]);
+  }
+  if (map.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) {
+    map.setFilter(ZAAHI_PLOTS_GLOW_CRISP, ["==", ["id"], sel]);
+  }
+  // 3D buildings — boost selected parcel's segments
+  const podiumId = `${ZAAHI_BUILDINGS_3D}-podium`;
+  const crownId = `${ZAAHI_BUILDINGS_3D}-crown`;
+  if (map.getLayer(podiumId)) {
+    map.setPaintProperty(
+      podiumId,
+      "fill-extrusion-opacity",
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.55, 0.4] : 0.4,
+    );
+  }
+  if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+    map.setPaintProperty(
+      ZAAHI_BUILDINGS_3D,
+      "fill-extrusion-opacity",
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.3] : 0.3,
+    );
+  }
+  if (map.getLayer(crownId)) {
+    map.setPaintProperty(
+      crownId,
+      "fill-extrusion-opacity",
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.5, 0.35] : 0.35,
+    );
+  }
+}
 
 function deriveLandUse(
   mix: Array<{ category: string }> | null | undefined,
@@ -1053,6 +1104,39 @@ export default function ParcelsMapPage() {
     sound.init();
     return sound.subscribe(setSoundOn);
   }, []);
+
+  // ── Selection highlight: glow + dim others + 3D building boost ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!map.isStyleLoaded()) {
+      // Wait for first render before painting expressions on freshly-added layers.
+      const onLoad = () => applySelectionPaint(map, selectedParcelId);
+      map.once("idle", onLoad);
+      return () => { map.off("idle", onLoad); };
+    }
+    applySelectionPaint(map, selectedParcelId);
+    if (selectedParcelId == null) return;
+
+    // Pulse animation for the crisp gold outline (line-width 2 → 4 → 2)
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = () => {
+      const map2 = mapRef.current;
+      if (!map2 || !map2.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) return;
+      const t = (performance.now() - t0) / 1000;
+      // 1.5s period, smooth sin oscillation between 2 and 4
+      const w = 3 + Math.sin((t * Math.PI * 2) / 1.5);
+      try {
+        map2.setPaintProperty(ZAAHI_PLOTS_GLOW_CRISP, "line-width", w);
+      } catch {
+        /* layer not ready yet */
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [selectedParcelId]);
   const [zaahiHover, setZaahiHover] = useState<{
     x: number;
     y: number;
@@ -1076,6 +1160,7 @@ export default function ParcelsMapPage() {
   const legendRef = useRef<HTMLDivElement>(null);
   const legendBtnRef = useRef<HTMLButtonElement>(null);
   const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false });
+  const [layerSearch, setLayerSearch] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
   const [layers, setLayers] = useState<LayersState>({
@@ -1834,6 +1919,8 @@ export default function ParcelsMapPage() {
           paint: {
             "fill-color": ["get", "color"],
             "fill-opacity": 0.4,
+            "fill-opacity-transition": { duration: 300 },
+            "fill-color-transition": { duration: 300 },
           },
         });
         map.addLayer({
@@ -1843,6 +1930,32 @@ export default function ParcelsMapPage() {
           paint: {
             "line-color": ["get", "color"],
             "line-width": 2,
+            "line-opacity-transition": { duration: 300 },
+          },
+        });
+        // Wide blurred gold halo — only the selected feature.
+        map.addLayer({
+          id: ZAAHI_PLOTS_GLOW,
+          type: "line",
+          source: ZAAHI_PLOTS_SRC,
+          filter: ["==", ["id"], "__none__"],
+          paint: {
+            "line-color": "#FFD700",
+            "line-width": 6,
+            "line-blur": 8,
+            "line-opacity": 0.9,
+          },
+        });
+        // Crisp pulsing gold outline — width animated by JS RAF (2..4).
+        map.addLayer({
+          id: ZAAHI_PLOTS_GLOW_CRISP,
+          type: "line",
+          source: ZAAHI_PLOTS_SRC,
+          filter: ["==", ["id"], "__none__"],
+          paint: {
+            "line-color": "#FFD700",
+            "line-width": 2,
+            "line-opacity": 1,
           },
         });
 
@@ -1866,6 +1979,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-opacity": 0.4,
+            "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
         // Body — glass
@@ -1884,6 +1998,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-opacity": 0.3,
+            "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
         // Crown — gold tint
@@ -1897,6 +2012,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-opacity": 0.35,
+            "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
         // White outline on every segment
@@ -9649,16 +9765,24 @@ export default function ParcelsMapPage() {
       <HeaderBar
         c={c}
         isDark={isDark}
-        onFly={(lng, lat) => mapRef.current?.flyTo({ center: [lng, lat], zoom: 17, duration: 1500 })}
+        onFly={(lng, lat) =>
+          mapRef.current?.flyTo({
+            center: [lng, lat],
+            zoom: 16,
+            pitch: 45,
+            duration: 2000,
+          })
+        }
         onSelectParcel={(id) => setSelectedParcelId(id)}
         onOpenAddModal={() => setShowAddModal(true)}
       />
       {showAddModal && (
         <AddPlotModal
           onClose={() => setShowAddModal(false)}
-          onAdded={(id, lng, lat) => {
-            setSelectedParcelId(id);
-            mapRef.current?.flyTo({ center: [lng, lat], zoom: 17, duration: 1500 });
+          onSubmitted={(id) => {
+            // Submitted parcels start in PENDING_REVIEW and don't show on the
+            // public map until verified — so we can't fly to them yet, just close.
+            console.log("[zaahi] submitted parcel", id);
           }}
         />
       )}
@@ -9980,51 +10104,88 @@ export default function ParcelsMapPage() {
           </button>
         </div>
 
-        <GroupHeader
+        {/* Search */}
+        <div style={{ padding: "8px 10px", borderBottom: `1px solid ${c.borderSubtle}` }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "5px 8px",
+              border: `1px solid ${c.border}`,
+              borderRadius: 6,
+              background: c.bg,
+            }}
+          >
+            <span style={{ fontSize: 11, color: c.textDim }}>⌕</span>
+            <input
+              value={layerSearch}
+              onChange={(e) => setLayerSearch(e.target.value)}
+              placeholder="Search layers..."
+              style={{
+                flex: 1,
+                border: 0,
+                background: "transparent",
+                color: c.text,
+                fontSize: 11,
+                outline: "none",
+                minWidth: 0,
+              }}
+            />
+            {layerSearch && (
+              <button
+                onClick={() => setLayerSearch("")}
+                aria-label="Clear search"
+                style={{ background: "transparent", border: 0, color: c.textDim, cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+
+        <LayerGroup
+          c={c}
           title="Base Layers"
           open={groupOpen.base}
           onToggle={() => setGroupOpen((g) => ({ ...g, base: !g.base }))}
-          c={c}
+          search={layerSearch}
+          items={[
+            { key: "communities", label: "Communities" },
+            { key: "roads", label: "Major Roads" },
+          ]}
+          isOn={(k) => layers[k as keyof LayersState] as boolean}
+          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
         />
-        {groupOpen.base && (
-          <>
-            <LayerToggle label="Communities" checked={layers.communities} onChange={(v) => setLayers((l) => ({ ...l, communities: v }))} color={c.text} />
-            <LayerToggle label="Major Roads" checked={layers.roads} onChange={(v) => setLayers((l) => ({ ...l, roads: v }))} color={c.text} />
-          </>
-        )}
 
-        <GroupHeader
+        <LayerGroup
+          c={c}
           title="Master Plans"
           open={groupOpen.master}
           onToggle={() => setGroupOpen((g) => ({ ...g, master: !g.master }))}
-          c={c}
+          search={layerSearch}
+          items={[
+            { key: "islands", label: "Dubai Islands" },
+            { key: "meydan", label: "Meydan Horizon" },
+            { key: "alFurjan", label: "Al Furjan" },
+            { key: "intlCity23", label: "International City 2 & 3" },
+            { key: "residential12", label: "Residential District I & II" },
+            { key: "d11", label: "D11 — Parcel L/D" },
+          ]}
+          isOn={(k) => layers[k as keyof LayersState] as boolean}
+          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
         />
-        {groupOpen.master && (
-          <>
-            <LayerToggle label="Dubai Islands" checked={layers.islands} onChange={(v) => setLayers((l) => ({ ...l, islands: v }))} color={c.text} />
-            <LayerToggle label="Meydan Horizon" checked={layers.meydan} onChange={(v) => setLayers((l) => ({ ...l, meydan: v }))} color={c.text} />
-            <LayerToggle label="Al Furjan" checked={layers.alFurjan} onChange={(v) => setLayers((l) => ({ ...l, alFurjan: v }))} color={c.text} />
-            <LayerToggle label="International City 2 & 3" checked={layers.intlCity23} onChange={(v) => setLayers((l) => ({ ...l, intlCity23: v }))} color={c.text} />
-            <LayerToggle label="Residential District I & II" checked={layers.residential12} onChange={(v) => setLayers((l) => ({ ...l, residential12: v }))} color={c.text} />
-            <LayerToggle label="D11 — Parcel L/D" checked={layers.d11} onChange={(v) => setLayers((l) => ({ ...l, d11: v }))} color={c.text} />
-          </>
-        )}
 
-        <GroupHeader
-          title={`DDA Districts (${DDA_LAYERS.length})`}
+        <LayerGroup
+          c={c}
+          title="DDA Districts"
           open={groupOpen.dda}
           onToggle={() => setGroupOpen((g) => ({ ...g, dda: !g.dda }))}
-          c={c}
+          search={layerSearch}
+          items={DDA_LAYERS.map((d) => ({ key: d.key as string, label: d.label }))}
+          isOn={(k) => layers[k as keyof LayersState] as boolean}
+          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
         />
-        {groupOpen.dda && DDA_LAYERS.map((d) => (
-          <LayerToggle
-            key={d.key}
-            label={d.label}
-            checked={layers[d.key]}
-            onChange={(v) => setLayers((l) => ({ ...l, [d.key]: v }))}
-            color={c.text}
-          />
-        ))}
       </div>
       )}
 
@@ -10163,11 +10324,12 @@ function LayerToggle({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "8px 14px",
-        fontSize: 12,
+        gap: 8,
+        padding: "3px 14px",
+        fontSize: 11,
         cursor: "pointer",
         color,
+        lineHeight: 1.3,
       }}
     >
       <input
@@ -10177,11 +10339,118 @@ function LayerToggle({
           sound.toggleSfx();
           onChange(e.target.checked);
         }}
-        style={{ accentColor: GOLD }}
+        style={{ accentColor: GOLD, width: 12, height: 12, margin: 0 }}
       />
       {label}
     </label>
   );
+}
+
+// ── Searchable, sortable, collapsible layer group with All/None ──
+function LayerGroup({
+  c, title, open, onToggle, search, items, isOn, onChange,
+}: {
+  c: ChromeTheme;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  search: string;
+  items: Array<{ key: string; label: string }>;
+  isOn: (key: string) => boolean;
+  onChange: (key: string, v: boolean) => void;
+}) {
+  const q = search.trim().toLowerCase();
+  const sorted = [...items].sort((a, b) => a.label.localeCompare(b.label));
+  const filtered = q ? sorted.filter((i) => i.label.toLowerCase().includes(q)) : sorted;
+  const onCount = items.filter((i) => isOn(i.key)).length;
+  const total = items.length;
+  // When the user is searching, force-open the group so matches are visible.
+  const effectivelyOpen = q ? filtered.length > 0 : open;
+  if (q && filtered.length === 0) return null;
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "7px 12px 5px",
+          borderTop: `1px solid ${c.borderSubtle}`,
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: 10,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: c.textDim,
+          gap: 4,
+        }}
+      >
+        <button
+          onClick={onToggle}
+          disabled={!!q}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: 0,
+            color: c.textDim,
+            cursor: q ? "default" : "pointer",
+            padding: 0,
+            textAlign: "left",
+            fontFamily: "inherit",
+            fontSize: "inherit",
+            letterSpacing: "inherit",
+            textTransform: "inherit",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span>{effectivelyOpen ? "▾" : "▸"}</span>
+          <span>{title}</span>
+          <span style={{ color: GOLD, fontFamily: '"SF Mono", Menlo, monospace', letterSpacing: 0 }}>
+            ({onCount}/{total})
+          </span>
+        </button>
+        <button
+          onClick={() => filtered.forEach((i) => { if (!isOn(i.key)) onChange(i.key, true); })}
+          title="Enable all visible"
+          style={tinyBtn(c)}
+        >
+          All
+        </button>
+        <button
+          onClick={() => filtered.forEach((i) => { if (isOn(i.key)) onChange(i.key, false); })}
+          title="Disable all visible"
+          style={tinyBtn(c)}
+        >
+          None
+        </button>
+      </div>
+      {effectivelyOpen && filtered.map((i) => (
+        <LayerToggle
+          key={i.key}
+          label={i.label}
+          checked={isOn(i.key)}
+          onChange={(v) => onChange(i.key, v)}
+          color={c.text}
+        />
+      ))}
+    </div>
+  );
+}
+function tinyBtn(c: ChromeTheme): React.CSSProperties {
+  return {
+    padding: "2px 6px",
+    fontSize: 9,
+    fontFamily: '"SF Mono", Menlo, monospace',
+    letterSpacing: 0.5,
+    color: GOLD,
+    background: "transparent",
+    border: `1px solid ${c.borderSubtle}`,
+    borderRadius: 3,
+    cursor: "pointer",
+    textTransform: "uppercase",
+  };
 }
 
 function GroupHeader({
@@ -10294,8 +10563,10 @@ function HeaderBar({
   onOpenAddModal: () => void;
 }) {
   const [find, setFind] = useState("");
+  const [findOpen, setFindOpen] = useState(false);
+  const [findError, setFindError] = useState<string | null>(null);
+  const [findBusy, setFindBusy] = useState(false);
   const [check, setCheck] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   const flash = (m: string) => {
@@ -10303,11 +10574,11 @@ function HeaderBar({
     setTimeout(() => setMsg(null), 3000);
   };
 
-  async function doFind(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
+  async function doFind() {
     const plotNumber = find.trim();
     if (!plotNumber) return;
-    setBusy("find");
+    setFindError(null);
+    setFindBusy(true);
     try {
       const r = await fetch("/api/parcels/map");
       const data = (await r.json()) as {
@@ -10315,20 +10586,21 @@ function HeaderBar({
       };
       const hit = data.items.find((it) => it.plotNumber === plotNumber);
       if (!hit?.geometry) {
-        flash("✕ Plot not found in ZAAHI database");
+        setFindError("Plot not found");
       } else {
         const ring = hit.geometry.coordinates[0];
         const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
         const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
         onFly(lng, lat);
-        onSelectParcel(hit.id);
-        flash(`→ ${plotNumber}`);
+        // Wait for the 2s flyTo animation to land before popping the side panel.
+        setTimeout(() => onSelectParcel(hit.id), 2000);
         setFind("");
+        setFindOpen(false);
       }
     } catch {
-      flash("✕ network error");
+      setFindError("Network error");
     } finally {
-      setBusy(null);
+      setFindBusy(false);
     }
   }
 
@@ -10409,16 +10681,15 @@ function HeaderBar({
         >
           <span style={{ fontSize: 16, color: GOLD, fontWeight: 700 }}>+</span>Add Plot
         </button>
-        <HdrField
+        <FindLauncher
           c={c}
-          icon="🔍"
-          label="Find"
-          placeholder="Plot #"
+          open={findOpen}
+          setOpen={(v) => { setFindOpen(v); if (!v) { setFindError(null); setFind(""); } }}
           value={find}
-          onChange={setFind}
-          onKey={doFind}
-          busy={busy === "find"}
-          tooltip="Find plot in ZAAHI database"
+          setValue={(v) => { setFind(v); if (findError) setFindError(null); }}
+          onSubmit={doFind}
+          busy={findBusy}
+          error={findError}
         />
         <HdrField
           c={c}
@@ -10465,204 +10736,129 @@ function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
 }
 
 // ── Add Plot modal ─────────────────────────────────────────────────
-function AddPlotModal({
-  onClose, onAdded,
-}: {
-  onClose: () => void;
-  onAdded: (id: string, lng: number, lat: number) => void;
-}) {
-  const [plotNumber, setPlotNumber] = useState("");
-  const [priceAed, setPriceAed] = useState("");
-  const [pricePerSqft, setPricePerSqft] = useState("");
-  const [landUse, setLandUse] = useState("RESIDENTIAL");
-  const [description, setDescription] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+// AddPlotModal moved to ./AddPlotModal (broker + owner flows).
 
-  async function submit() {
-    setErr(null);
-    const pn = plotNumber.trim();
-    if (!pn) {
-      setErr("Plot Number required");
-      return;
-    }
-    setBusy(true);
-    try {
-      const r = await fetch("/api/parcels/seed-dda", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          plotNumber: pn,
-          priceAed: Number(priceAed) || 0,
-          pricePerSqft: Number(pricePerSqft) || 0,
-          landUse,
-          description: description.trim() || null,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        setErr(data.error ?? "Failed");
-      } else {
-        onAdded(data.id, data.longitude, data.latitude);
-        onClose();
-      }
-    } catch {
-      setErr("Network error");
-    } finally {
-      setBusy(false);
-    }
+// Click-to-open Find launcher: starts as a 32×32 icon button, expands into
+// an input on click. Enter submits, Escape closes, error shows below.
+function FindLauncher({
+  c, open, setOpen, value, setValue, onSubmit, busy, error,
+}: {
+  c: ChromeTheme;
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  value: string;
+  setValue: (v: string) => void;
+  onSubmit: () => void;
+  busy: boolean;
+  error: string | null;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (open) ref.current?.focus();
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        title="Find plot in ZAAHI database"
+        aria-label="Find plot"
+        onClick={() => setOpen(true)}
+        style={{
+          ...hdrBtnStyle(c),
+          width: 32,
+          padding: 0,
+          justifyContent: "center",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+      >
+        🔍
+      </button>
+    );
   }
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: "rgba(10,15,30,0.55)",
-        backdropFilter: "blur(2px)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
+    <div style={{ position: "relative" }}>
+      <label
         style={{
-          width: 380,
+          display: "flex",
+          alignItems: "center",
+          height: 32,
+          padding: "0 4px 0 10px",
+          borderRadius: 8,
+          border: `2px solid ${error ? "#EF4444" : GOLD}`,
           background: "white",
-          borderRadius: 12,
-          border: `1px solid ${GOLD}`,
-          boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
-          color: "#1A1A2E",
-          overflow: "hidden",
+          color: c.text,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          gap: 6,
         }}
       >
-        <div
+        <span style={{ fontSize: 12 }}>🔍</span>
+        <input
+          ref={ref}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onSubmit();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
+          placeholder={busy ? "Searching…" : "Plot number..."}
+          disabled={busy}
           style={{
-            padding: "12px 16px",
-            background: GOLD,
-            color: "white",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            width: 130,
+            height: 24,
+            padding: "0 6px",
+            border: "none",
+            background: "transparent",
+            color: c.text,
+            fontSize: 11,
+            outline: "none",
+          }}
+        />
+        <button
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+          style={{
+            background: "transparent",
+            border: 0,
+            color: c.textDim,
+            fontSize: 16,
+            cursor: "pointer",
+            lineHeight: 1,
+            padding: "0 4px",
           }}
         >
-          <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
-            Register New Plot
-          </span>
-          <button onClick={onClose} style={{ background: "transparent", border: 0, color: "white", fontSize: 20, cursor: "pointer" }}>×</button>
+          ×
+        </button>
+      </label>
+      {error && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            padding: "4px 8px",
+            background: "white",
+            border: "1px solid #EF4444",
+            borderRadius: 4,
+            color: "#EF4444",
+            fontSize: 10,
+            fontWeight: 600,
+            textAlign: "center",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+          }}
+        >
+          {error}
         </div>
-        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-          <Field label="Plot Number">
-            <input
-              autoFocus
-              value={plotNumber}
-              onChange={(e) => setPlotNumber(e.target.value)}
-              placeholder="e.g. 6457940"
-              style={modalInput()}
-            />
-          </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <Field label="Price AED">
-              <input
-                type="number"
-                value={priceAed}
-                onChange={(e) => setPriceAed(e.target.value)}
-                placeholder="0"
-                style={modalInput()}
-              />
-            </Field>
-            <Field label="Price/sqft">
-              <input
-                type="number"
-                value={pricePerSqft}
-                onChange={(e) => setPricePerSqft(e.target.value)}
-                placeholder="0"
-                style={modalInput()}
-              />
-            </Field>
-          </div>
-          <Field label="Land Use">
-            <select value={landUse} onChange={(e) => setLandUse(e.target.value)} style={modalInput()}>
-              <option value="RESIDENTIAL">Residential</option>
-              <option value="COMMERCIAL">Commercial</option>
-              <option value="HOTEL">Hotel</option>
-              <option value="MIXED_USE">Mixed Use</option>
-              <option value="INDUSTRIAL">Industrial</option>
-              <option value="RETAIL">Retail</option>
-            </select>
-          </Field>
-          <Field label="Description">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Notes, listing details, target buyer…"
-              rows={3}
-              style={{ ...modalInput(), resize: "vertical", minHeight: 60 }}
-            />
-          </Field>
-          {err && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {err}</div>}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
-            <button
-              onClick={onClose}
-              disabled={busy}
-              style={{
-                padding: "8px 14px",
-                fontSize: 12,
-                borderRadius: 6,
-                border: "1px solid #D1D5DB",
-                background: "white",
-                color: "#1A1A2E",
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={submit}
-              disabled={busy}
-              style={{
-                padding: "8px 18px",
-                fontSize: 12,
-                fontWeight: 700,
-                borderRadius: 6,
-                border: "none",
-                background: GOLD,
-                color: "white",
-                cursor: busy ? "not-allowed" : "pointer",
-                opacity: busy ? 0.6 : 1,
-              }}
-            >
-              {busy ? "Adding…" : "Add"}
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  );
-}
-
-function modalInput(): React.CSSProperties {
-  return {
-    width: "100%",
-    fontSize: 12,
-    padding: "6px 9px",
-    border: "1px solid #D1D5DB",
-    borderRadius: 6,
-    background: "white",
-    color: "#1A1A2E",
-    outline: "none",
-  };
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
-      {children}
-    </label>
   );
 }
 

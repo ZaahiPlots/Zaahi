@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 /** Compact payload for the main map: parcel + latest affection plan only. */
 export async function GET() {
   const parcels = await prisma.parcel.findMany({
-    where: { geometry: { not: undefined } },
+    where: {
+      geometry: { not: undefined },
+      // Hide unverified submissions from the public map
+      status: { in: [ParcelStatus.LISTED, ParcelStatus.VERIFIED, ParcelStatus.IN_DEAL] },
+    },
     include: {
       affectionPlans: {
         orderBy: { fetchedAt: 'desc' },

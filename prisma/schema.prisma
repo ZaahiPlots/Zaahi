@@ -26,6 +26,9 @@ enum UserRole {
 
 enum ParcelStatus {
   VACANT
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
   LISTED
   IN_DEAL
   SOLD

@@ -13,6 +13,8 @@ const PUBLIC_API = [
   '/api/users/sync',    // requires auth, but checks token in handler
   '/api/chat',          // Archibald AI assistant — public for now (TODO: rate-limit by IP)
   '/api/parcels/seed-dda', // Add Plot launcher — public until admin auth lands
+  '/api/parcels/submit',   // Listing submission (broker/owner)
+  '/api/parcels/parse-title-deed', // Claude Vision — public until admin auth lands
 ];
 
 const PUBLIC_READS = new Set(['GET']);
