@@ -23,8 +23,10 @@ export async function GET() {
           buildingLimitGeometry: true,
           plotAreaSqm: true,
           maxGfaSqm: true,
+          maxGfaSqft: true,
           far: true,
           landUseMix: true,
+          setbacks: true,
         },
       },
     },
@@ -50,9 +52,11 @@ export async function GET() {
             maxHeightCode: plan.maxHeightCode,
             plotAreaSqm: plan.plotAreaSqm,
             maxGfaSqm: plan.maxGfaSqm,
+            maxGfaSqft: plan.maxGfaSqft,
             far: plan.far,
             landUseMix: plan.landUseMix,
             buildingLimitGeometry: plan.buildingLimitGeometry,
+            setbacks: plan.setbacks,
           }
         : null,
     };

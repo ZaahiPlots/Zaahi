@@ -1831,7 +1831,12 @@ export default function ParcelsMapPage() {
               maxFloors?: number | null;
               maxHeightMeters?: number | null;
               maxHeightCode?: string | null;
+              plotAreaSqm?: number | null;
+              maxGfaSqm?: number | null;
+              maxGfaSqft?: number | null;
+              far?: number | null;
               buildingLimitGeometry?: GeoJSON.Polygon | null;
+              setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
             } | null;
           }>;
         };
@@ -1936,9 +1941,50 @@ export default function ParcelsMapPage() {
               geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
               properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag: "mixed-crown" },
             });
-          } else if (blg && blg.type === "Polygon") {
-            const totalH = it.plan?.maxHeightMeters ?? 44;
-            pushSignature(blg.coordinates[0], totalH, true, "tower");
+          } else if (landUse === "FUTURE DEVELOPMENT" || landUse === "FUTURE_DEVELOPMENT") {
+            // No 3D for future development — fill polygon only
+          } else {
+            // Generate building footprint from buildingLimit or plot polygon with inset.
+            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+            let footprintRing: number[][];
+            if (blg && blg.type === "Polygon") {
+              footprintRing = blg.coordinates[0];
+            } else {
+              // Inset plot polygon toward centroid to approximate setbacks.
+              // Use average setback from AffectionPlan, or default 5m.
+              const setbacks = it.plan?.setbacks;
+              let avgSetbackM = 5;
+              if (setbacks && setbacks.length > 0) {
+                const vals = setbacks.map((s) => s.building ?? s.podium ?? 5).filter((v) => v > 0);
+                if (vals.length > 0) avgSetbackM = vals.reduce((a, b) => a + b, 0) / vals.length;
+              }
+              // Convert setback meters to scale factor based on plot dimensions.
+              // Approximate plot width from ring bounding box.
+              const lngs = plotRing.map((p) => p[0]);
+              const lats = plotRing.map((p) => p[1]);
+              const dLng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos(((Math.max(...lats) + Math.min(...lats)) / 2) * Math.PI / 180);
+              const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+              const plotHalfWidth = Math.min(dLng, dLat) / 2;
+              const scaleFactor = plotHalfWidth > 0 ? Math.max(0.5, 1 - avgSetbackM / plotHalfWidth) : 0.85;
+              const cLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
+              const cLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
+              footprintRing = plotRing.map(([lng, lat]) => [
+                cLng + (lng - cLng) * scaleFactor,
+                cLat + (lat - cLat) * scaleFactor,
+              ]);
+            }
+            // Calculate height: prefer maxHeightMeters, else derive from GFA/footprint.
+            let totalH = it.plan?.maxHeightMeters ?? 0;
+            if (totalH <= 0 && it.plan?.maxGfaSqm && it.plan?.plotAreaSqm) {
+              // floors = GFA / (plot × coverage), height = floors × 3.5m
+              const coverage = 0.6;
+              const footprintArea = it.plan.plotAreaSqm * coverage;
+              const floors = Math.ceil(it.plan.maxGfaSqm / footprintArea);
+              totalH = floors * 3.5;
+            }
+            if (totalH <= 0) totalH = 44; // fallback
+            const useGold = landUse === "RESIDENTIAL" || landUse === "HOSPITALITY" || landUse === "HOTEL";
+            pushSignature(footprintRing, totalH, useGold, "tower");
           }
         }
 
