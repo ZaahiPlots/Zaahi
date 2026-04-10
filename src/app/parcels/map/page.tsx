@@ -184,21 +184,21 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
     map.setPaintProperty(
       podiumId,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.25] : 0.25,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.6, 0.45] : 0.45,
     );
   }
   if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
     map.setPaintProperty(
       ZAAHI_BUILDINGS_3D,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.35, 0.2] : 0.2,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.5, 0.35] : 0.35,
     );
   }
   if (map.getLayer(crownId)) {
     map.setPaintProperty(
       crownId,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.3, 0.15] : 0.15,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.3] : 0.3,
     );
   }
 }
@@ -2092,7 +2092,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-color": podiumColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.25,
+            "fill-extrusion-opacity": 0.45,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
@@ -2105,7 +2105,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-color": bodyColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.2,
+            "fill-extrusion-opacity": 0.35,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
@@ -2118,11 +2118,11 @@ export default function ParcelsMapPage() {
             "fill-extrusion-color": crownColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.15,
+            "fill-extrusion-opacity": 0.3,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
-        // Outline — per-landUse color at 0.6 opacity for form readability
+        // Outline — per-landUse color, high opacity for form readability
         map.addLayer({
           id: `${ZAAHI_BUILDINGS_3D}-outline`,
           type: "line",
@@ -2130,7 +2130,7 @@ export default function ParcelsMapPage() {
           paint: {
             "line-color": outlineColor,
             "line-width": 1,
-            "line-opacity": 0.6,
+            "line-opacity": 0.8,
           },
         });
       } catch (e) {

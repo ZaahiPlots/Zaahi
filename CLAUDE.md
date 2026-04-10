@@ -156,6 +156,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - FUTURE DEVELOPMENT: #84CC16 (лайм)
 
 ### 3D модели — ZAAHI Signature стиль
+Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
 Для каждого land use свой 3D стиль:
 
 RESIDENTIAL:
