@@ -133,7 +133,17 @@ export async function POST(req: NextRequest) {
       maxHeightMeters: plan?.maxHeightMeters ?? null,
       far: plan?.far ?? null,
       setbacks: (plan?.setbacks ?? []) as unknown as Prisma.InputJsonValue,
-      landUseMix: (plan?.landUseMix ?? []) as unknown as Prisma.InputJsonValue,
+      landUseMix: (
+        plan?.landUseMix && plan.landUseMix.length > 0
+          ? plan.landUseMix
+          : typeof props.MAIN_LANDUSE === 'string' && props.MAIN_LANDUSE
+            ? (props.MAIN_LANDUSE as string).split(' - ').map((cat: string) => ({
+                category: cat.trim(),
+                sub: (props.SUB_LANDUSE as string ?? '').split(' - ').map((s: string) => s.trim()).join(', '),
+                areaSqm: null,
+              }))
+            : []
+      ) as unknown as Prisma.InputJsonValue,
       sitePlanIssue: plan?.sitePlanIssue ? new Date(plan.sitePlanIssue) : null,
       sitePlanExpiry: plan?.sitePlanExpiry ? new Date(plan.sitePlanExpiry) : null,
       notes: plan?.notes ?? null,

@@ -9,6 +9,23 @@ const TXT = "#1A1A2E";
 const SUBTLE = "#6B7280";
 const LINE = "#E5E7EB";
 
+const LANDUSE_COLORS: Record<string, string> = {
+  RESIDENTIAL: "#FFD700",
+  COMMERCIAL: "#3B82F6",
+  HOTEL: "#F97316",
+  HOSPITALITY: "#F97316",
+  RETAIL: "#EC4899",
+  INDUSTRIAL: "#6B7280",
+  "FUTURE DEVELOPMENT": "#84CC16",
+};
+
+function fmtMonthYear(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 interface Plan {
   projectName: string | null;
   community: string | null;
@@ -154,16 +171,35 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 <Row label="Height" v={plan.maxHeightCode ? `${plan.maxHeightCode} · ${plan.maxFloors}f · ~${plan.maxHeightMeters}m` : null} />
               </Section>
 
+              {/* Land Use with colored indicator */}
               {plan.landUseMix && plan.landUseMix.length > 0 && (
                 <Section title="Land Use">
-                  <ul style={{ display: "flex", flexDirection: "column", gap: 2, margin: 0, padding: 0, listStyle: "none" }}>
-                    {plan.landUseMix.map((u, i) => (
-                      <li key={i} style={{ fontSize: 11 }}>
-                        <span style={{ color: GOLD, fontWeight: 600 }}>{u.category}</span>{" "}
-                        <span style={{ color: SUBTLE }}>· {u.sub}</span>
-                      </li>
-                    ))}
+                  <ul style={{ display: "flex", flexDirection: "column", gap: 3, margin: 0, padding: 0, listStyle: "none" }}>
+                    {plan.landUseMix.map((u, i) => {
+                      const color = LANDUSE_COLORS[u.category.toUpperCase().trim()] ?? GOLD;
+                      return (
+                        <li key={i} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{
+                            width: 8, height: 8, borderRadius: 2,
+                            background: color, flexShrink: 0,
+                          }} />
+                          <span style={{ color: TXT, fontWeight: 600 }}>{u.category}</span>
+                          <span style={{ color: SUBTLE }}>· {u.sub}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
+                </Section>
+              )}
+
+              {/* Affection Plan dates */}
+              {(plan.sitePlanIssue || plan.sitePlanExpiry) && (
+                <Section title="Affection Plan">
+                  <div style={{ fontSize: 11, color: TXT }}>
+                    {fmtMonthYear(plan.sitePlanIssue)}
+                    {plan.sitePlanIssue && plan.sitePlanExpiry && " → "}
+                    {fmtMonthYear(plan.sitePlanExpiry)}
+                  </div>
                 </Section>
               )}
 

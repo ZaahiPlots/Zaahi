@@ -146,7 +146,12 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   RESIDENTIAL: "#FFD700",
   MIXED_USE: "#9333EA",
   COMMERCIAL: "#3B82F6",
-  HOTEL: "#F59E0B",
+  HOTEL: "#F97316",
+  HOSPITALITY: "#F97316",
+  RETAIL: "#EC4899",
+  INDUSTRIAL: "#6B7280",
+  FUTURE_DEVELOPMENT: "#84CC16",
+  "FUTURE DEVELOPMENT": "#84CC16",
 };
 const ZAAHI_DEFAULT_COLOR = "#FFD700";
 
@@ -200,8 +205,22 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
 
 function deriveLandUse(
   mix: Array<{ category: string }> | null | undefined,
+  mainLandUse?: string | null,
 ): string {
-  if (!mix || mix.length === 0) return "RESIDENTIAL";
+  if (!mix || mix.length === 0) {
+    // Fallback to mainLandUse from DDA if landUseMix is empty
+    if (mainLandUse) {
+      const lu = mainLandUse.toUpperCase().trim();
+      if (lu.includes("FUTURE")) return "FUTURE DEVELOPMENT";
+      if (lu.includes(" - ") || lu.includes(",")) return "MIXED_USE";
+      if (lu.includes("HOTEL") || lu.includes("HOSPITALITY")) return "HOSPITALITY";
+      if (lu.includes("RETAIL")) return "RETAIL";
+      if (lu.includes("COMMERCIAL") || lu.includes("OFFICE")) return "COMMERCIAL";
+      if (lu.includes("INDUSTRIAL")) return "INDUSTRIAL";
+      return "RESIDENTIAL";
+    }
+    return "RESIDENTIAL";
+  }
   const cats = new Set(mix.map((u) => u.category.toUpperCase().trim()));
   if (cats.size > 1) return "MIXED_USE";
   return [...cats][0];
