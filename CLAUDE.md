@@ -191,3 +191,20 @@ FUTURE DEVELOPMENT (земля без зданий):
 
 ### Вопросы и предложения
 Если не уверен в данных или архитектурном решении — напиши на zhanrysbayev@gmail.com
+
+## Sovereignty Readiness Rules
+- Никакого vendor lock-in: не использовать Vercel-specific features (Edge Functions, Vercel KV, Vercel Blob)
+- Все API routes — стандартный Next.js, не Vercel serverless
+- Supabase используется ТОЛЬКО через Prisma (не Supabase SDK напрямую для данных)
+- Supabase Auth — единственная прямая зависимость, изолирована в src/lib/supabase-browser.ts и src/lib/supabase.ts
+- Файлы хранить локально или через абстракцию (src/lib/storage.ts) — не напрямую Supabase Storage
+- Environment variables для всех внешних сервисов (легко переключить)
+- Docker-ready: проект должен запускаться через docker-compose up без Vercel
+- Все данные (KML, GeoJSON, PDF) хранятся локально в data/ — не в облаке
+
+## Правило добавления участков (batch)
+- Все участки из DDA (7-значные номера)
+- Для каждого: запроси полигон, affection plan, building limit из DDA API
+- Цена участка = Max GFA sqft × цена за GFA sqft (цена за GFA предоставляется вручную)
+- 3D модель ZAAHI Signature по land use автоматически
+- После добавления жди подтверждение "yes" перед следующим
