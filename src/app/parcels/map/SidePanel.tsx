@@ -168,7 +168,11 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 <Row label="Plot" v={plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft²` : null} />
                 <Row label="Max GFA" v={plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null} />
                 <Row label="FAR" v={plan.far?.toString()} />
-                <Row label="Height" v={plan.maxHeightCode ? `${plan.maxHeightCode} · ${plan.maxFloors}f · ~${plan.maxHeightMeters}m` : null} />
+                <Row label="Height" v={plan.maxHeightCode ? [
+                  plan.maxHeightCode,
+                  plan.maxFloors != null ? `${plan.maxFloors}f` : null,
+                  plan.maxHeightMeters != null ? `~${plan.maxHeightMeters}m` : null,
+                ].filter(Boolean).join(" · ") : null} />
               </Section>
 
               {/* Land Use with colored indicator */}

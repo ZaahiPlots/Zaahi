@@ -132,8 +132,30 @@ export function parseAffectionPlan(html: string): AffectionPlan {
 
   const maxHeightCode = take('Maximum Height', 'Maximum Coverage');
   let maxFloors: number | null = null;
-  const gPlus = maxHeightCode?.match(/^G\+(\d+)$/i);
-  if (gPlus) maxFloors = parseInt(gPlus[1], 10) + 1;
+  if (maxHeightCode) {
+    // Parse various DDA height formats:
+    //   G+14        → 15 floors
+    //   G+3P+9      → 1 (G) + 3 (podium) + 9 = 13 floors
+    //   G+5P+20     → 1 + 5 + 20 = 26 floors
+    //   G+M+20      → 1 + 1 (mezzanine) + 20 = 22 floors
+    //   G+M (12m)   → explicit meters, parse separately
+    //   G+1         → 2 floors
+    const explicitM = maxHeightCode.match(/\((\d+)m\)/i);
+    if (explicitM) {
+      maxFloors = Math.round(parseInt(explicitM[1], 10) / STOREY_M);
+    } else {
+      // Sum all numeric parts after G: G+3P+9 → [3, 9], G+14 → [14], G+M+20 → [M, 20]
+      const parts = maxHeightCode.replace(/^G\+?/i, '').split(/[+]/);
+      let total = 1; // Ground floor
+      for (const p of parts) {
+        const trimmed = p.trim().toUpperCase();
+        if (trimmed === 'M' || trimmed === 'P') total += 1; // mezzanine/podium = 1 floor
+        else if (/^\d+P$/.test(trimmed)) total += parseInt(trimmed, 10); // "3P" = 3 podium floors
+        else if (/^\d+$/.test(trimmed)) total += parseInt(trimmed, 10);
+      }
+      if (total > 1) maxFloors = total;
+    }
+  }
   const maxHeightMeters = maxFloors != null ? maxFloors * STOREY_M : null;
 
   const far =

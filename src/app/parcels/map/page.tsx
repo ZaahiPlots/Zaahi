@@ -1901,26 +1901,41 @@ export default function ParcelsMapPage() {
           const blg = it.plan?.buildingLimitGeometry;
 
           if (landUse === "MIXED_USE") {
-            // Procedural cluster — three small footprints inside the plot.
-            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
-            const cLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
-            const cLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
-            // 80m × 80m square, ~150m offsets between buildings
-            const halfLat = 40 / 111000;
-            const halfLng = 40 / (111000 * Math.cos((cLat * Math.PI) / 180));
-            const offLat = 200 / 111000;
-            const offLng = 200 / (111000 * Math.cos((cLat * Math.PI) / 180));
-            const square = (lng: number, lat: number): number[][] => [
-              [lng - halfLng, lat - halfLat],
-              [lng + halfLng, lat - halfLat],
-              [lng + halfLng, lat + halfLat],
-              [lng - halfLng, lat + halfLat],
-              [lng - halfLng, lat - halfLat],
-            ];
-            // retail G+2 (12m), residential G+4 (20m), resort G+6 (28m — tallest, gets gold crown)
-            pushSignature(square(cLng - offLng, cLat - offLat), 12, false, "retail");
-            pushSignature(square(cLng + offLng, cLat - offLat * 0.5), 20, false, "residential");
-            pushSignature(square(cLng, cLat + offLat), 28, true, "resort");
+            // Stepped Tower — one building with three tiers (like real Dubai mixed-use).
+            // Uses buildingLimitGeometry if available, else falls back to plot polygon.
+            const baseRing = (blg && blg.type === "Polygon")
+              ? blg.coordinates[0]
+              : (it.geometry as GeoJSON.Polygon).coordinates[0];
+            const totalH = it.plan?.maxHeightMeters ?? 44;
+            const cLng = baseRing.reduce((s, p) => s + p[0], 0) / baseRing.length;
+            const cLat = baseRing.reduce((s, p) => s + p[1], 0) / baseRing.length;
+            const scaleRing = (s: number): number[][] =>
+              baseRing.map(([lng, lat]) => [
+                cLng + (lng - cLng) * s,
+                cLat + (lat - cLat) * s,
+              ]);
+            // Podium (Retail/Commercial): widest, bottom 20%
+            const podiumTop = Math.max(12, totalH * 0.2);
+            // Crown (Hotel/Premium): top 20%
+            const crownH = Math.max(8, totalH * 0.2);
+            const crownBase = Math.max(podiumTop + 4, totalH - crownH);
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(1.05)] },
+              properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag: "mixed-podium" },
+            });
+            // Body (Residential/Office): middle 60%
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
+              properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag: "mixed-body" },
+            });
+            // Crown (Hotel/Premium): narrowest, top 20%
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
+              properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag: "mixed-crown" },
+            });
           } else if (blg && blg.type === "Polygon") {
             const totalH = it.plan?.maxHeightMeters ?? 44;
             pushSignature(blg.coordinates[0], totalH, true, "tower");
@@ -1992,12 +2007,12 @@ export default function ParcelsMapPage() {
             "fill-extrusion-color": [
               "case",
               ["==", ["get", "landUse"], "MIXED_USE"],
-              "rgba(140,100,180,1)",
+              "rgba(59,130,246,1)",   // blue — commercial/retail podium
               "rgba(170,160,150,1)",
             ],
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.4,
+            "fill-extrusion-opacity": 0.35,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
@@ -2011,7 +2026,7 @@ export default function ParcelsMapPage() {
             "fill-extrusion-color": [
               "case",
               ["==", ["get", "landUse"], "MIXED_USE"],
-              "rgba(170,140,210,1)",
+              "rgba(147,51,234,1)",   // purple — residential/office body
               "rgba(190,200,210,1)",
             ],
             "fill-extrusion-height": ["get", "height"],
@@ -2027,7 +2042,12 @@ export default function ParcelsMapPage() {
           source: ZAAHI_BUILDINGS_SRC,
           filter: ["==", ["get", "kind"], "crown"],
           paint: {
-            "fill-extrusion-color": "rgba(200,180,140,1)",
+            "fill-extrusion-color": [
+              "case",
+              ["==", ["get", "landUse"], "MIXED_USE"],
+              "rgba(249,115,22,1)",   // orange — hotel/premium crown
+              "rgba(200,180,140,1)",  // gold — default crown
+            ],
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-opacity": 0.35,
