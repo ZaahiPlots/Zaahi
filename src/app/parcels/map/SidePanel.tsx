@@ -15,7 +15,7 @@ const LANDUSE_COLORS: Record<string, string> = {
   HOTEL: "#F97316",
   HOSPITALITY: "#F97316",
   RETAIL: "#EC4899",
-  INDUSTRIAL: "#6B7280",
+  INDUSTRIAL: "#00FF80",
   "FUTURE DEVELOPMENT": "#84CC16",
 };
 

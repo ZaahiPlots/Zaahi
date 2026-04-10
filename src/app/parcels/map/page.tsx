@@ -149,7 +149,7 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   HOTEL: "#F97316",
   HOSPITALITY: "#F97316",
   RETAIL: "#EC4899",
-  INDUSTRIAL: "#6B7280",
+  INDUSTRIAL: "#00FF80",
   FUTURE_DEVELOPMENT: "#84CC16",
   "FUTURE DEVELOPMENT": "#84CC16",
 };
@@ -184,21 +184,21 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
     map.setPaintProperty(
       podiumId,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.55, 0.4] : 0.4,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.25] : 0.25,
     );
   }
   if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
     map.setPaintProperty(
       ZAAHI_BUILDINGS_3D,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.3] : 0.3,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.35, 0.2] : 0.2,
     );
   }
   if (map.getLayer(crownId)) {
     map.setPaintProperty(
       crownId,
       "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.5, 0.35] : 0.35,
+      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.3, 0.15] : 0.15,
     );
   }
 }
@@ -2043,71 +2043,72 @@ export default function ParcelsMapPage() {
           type: "geojson",
           data: { type: "FeatureCollection", features: buildingFeatures },
         });
-        // ── ZAAHI Signature: podium ──
+        // ── ZAAHI Signature 3D — per-landUse colors, glassy transparency ──
+        // Color expressions for each layer kind, keyed on landUse property.
+        const podiumColor: maplibregl.ExpressionSpecification = [
+          "match", ["get", "landUse"],
+          "RESIDENTIAL",  "rgba(255,215,0,1)",
+          "MIXED_USE",    "rgba(147,51,234,1)",
+          "COMMERCIAL",   "rgba(59,130,246,1)",
+          "HOTEL",        "rgba(249,115,22,1)",
+          "HOSPITALITY",  "rgba(249,115,22,1)",
+          "RETAIL",       "rgba(236,72,153,1)",
+          "INDUSTRIAL",   "rgba(0,255,128,1)",
+          "FACILITIES",   "rgba(59,130,246,1)",
+          "rgba(255,215,0,1)",  // default
+        ];
+        const bodyColor: maplibregl.ExpressionSpecification = [...podiumColor] as maplibregl.ExpressionSpecification;
+        const crownColor: maplibregl.ExpressionSpecification = [...podiumColor] as maplibregl.ExpressionSpecification;
+        const outlineColor: maplibregl.ExpressionSpecification = [...podiumColor] as maplibregl.ExpressionSpecification;
+
         map.addLayer({
           id: `${ZAAHI_BUILDINGS_3D}-podium`,
           type: "fill-extrusion",
           source: ZAAHI_BUILDINGS_SRC,
           filter: ["==", ["get", "kind"], "podium"],
           paint: {
-            "fill-extrusion-color": [
-              "case",
-              ["==", ["get", "landUse"], "MIXED_USE"],
-              "rgba(59,130,246,1)",   // blue — commercial/retail podium
-              "rgba(170,160,150,1)",
-            ],
+            "fill-extrusion-color": podiumColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.35,
+            "fill-extrusion-opacity": 0.25,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
-        // Body — glass
         map.addLayer({
           id: ZAAHI_BUILDINGS_3D,
           type: "fill-extrusion",
           source: ZAAHI_BUILDINGS_SRC,
           filter: ["==", ["get", "kind"], "body"],
           paint: {
-            "fill-extrusion-color": [
-              "case",
-              ["==", ["get", "landUse"], "MIXED_USE"],
-              "rgba(147,51,234,1)",   // purple — residential/office body
-              "rgba(190,200,210,1)",
-            ],
+            "fill-extrusion-color": bodyColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.3,
+            "fill-extrusion-opacity": 0.2,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
-        // Crown — gold tint
         map.addLayer({
           id: `${ZAAHI_BUILDINGS_3D}-crown`,
           type: "fill-extrusion",
           source: ZAAHI_BUILDINGS_SRC,
           filter: ["==", ["get", "kind"], "crown"],
           paint: {
-            "fill-extrusion-color": [
-              "case",
-              ["==", ["get", "landUse"], "MIXED_USE"],
-              "rgba(249,115,22,1)",   // orange — hotel/premium crown
-              "rgba(200,180,140,1)",  // gold — default crown
-            ],
+            "fill-extrusion-color": crownColor,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.35,
+            "fill-extrusion-opacity": 0.15,
             "fill-extrusion-opacity-transition": { duration: 300 },
           },
         });
-        // White outline on every segment
+        // Outline — per-landUse color at 0.6 opacity for form readability
         map.addLayer({
           id: `${ZAAHI_BUILDINGS_3D}-outline`,
           type: "line",
           source: ZAAHI_BUILDINGS_SRC,
           paint: {
-            "line-color": "rgba(255,255,255,0.85)",
+            "line-color": outlineColor,
             "line-width": 1,
+            "line-opacity": 0.6,
           },
         });
       } catch (e) {
@@ -9822,7 +9823,7 @@ export default function ParcelsMapPage() {
     { color: "#3B82F6", name: "Commercial / Office", desc: "Коммерческое" },
     { color: "#F97316", name: "Hotel / Hospitality", desc: "Отельное" },
     { color: "#EC4899", name: "Retail", desc: "Торговое" },
-    { color: "#6B7280", name: "Industrial", desc: "Промышленное" },
+    { color: "#00FF80", name: "Industrial", desc: "Промышленное" },
     { color: "#10B981", name: "Community Facilities", desc: "Школы, мечети, больницы" },
     { color: "#22C55E", name: "Open Space / Parks", desc: "Парки" },
     { color: "#94A3B8", name: "Utility", desc: "Инфраструктура" },

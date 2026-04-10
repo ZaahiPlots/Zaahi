@@ -152,7 +152,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - COMMERCIAL/OFFICE: #3B82F6 (синий)
 - HOTEL/HOSPITALITY: #F97316 (оранжевый)
 - RETAIL: #EC4899 (розовый)
-- INDUSTRIAL: #6B7280 (серый)
+- INDUSTRIAL: #00FF80 (неоновый зелёный)
 - FUTURE DEVELOPMENT: #84CC16 (лайм)
 
 ### 3D модели — ZAAHI Signature стиль
