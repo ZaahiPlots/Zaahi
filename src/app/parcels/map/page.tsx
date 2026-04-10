@@ -1874,6 +1874,7 @@ export default function ParcelsMapPage() {
             useGold: boolean,
             tag: string,
           ) => {
+            // Scale from footprint centroid — all tiers INSIDE footprint.
             const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
             const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
             const scaleRing = (s: number): number[][] =>
@@ -1884,20 +1885,23 @@ export default function ParcelsMapPage() {
             const podiumTop = Math.min(8, totalH * 0.3);
             const crownH = Math.min(6, totalH * 0.2);
             const crownBase = Math.max(podiumTop, totalH - crownH);
+            // Podium: ×1.0 (full footprint, never exceeds plot)
             buildingFeatures.push({
               type: "Feature",
-              geometry: { type: "Polygon", coordinates: [scaleRing(1.05)] },
+              geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
               properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag },
             });
+            // Body: ×0.85 (inset from footprint)
             buildingFeatures.push({
               type: "Feature",
-              geometry: { type: "Polygon", coordinates: [scaleRing(0.9)] },
+              geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
               properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag },
             });
             if (useGold) {
+              // Crown: ×0.7 (narrowest tier)
               buildingFeatures.push({
                 type: "Feature",
-                geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
+                geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
                 properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag },
               });
             }
@@ -1907,35 +1911,53 @@ export default function ParcelsMapPage() {
 
           if (landUse === "MIXED_USE") {
             // Stepped Tower — one building with three tiers (like real Dubai mixed-use).
-            // Uses buildingLimitGeometry if available, else falls back to plot polygon.
-            const baseRing = (blg && blg.type === "Polygon")
-              ? blg.coordinates[0]
-              : (it.geometry as GeoJSON.Polygon).coordinates[0];
+            // Uses buildingLimitGeometry if available, else inset plot polygon as footprint.
+            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+            let footprintRing: number[][];
+            if (blg && blg.type === "Polygon") {
+              footprintRing = blg.coordinates[0];
+            } else {
+              // Inset plot polygon by ~5m for the footprint.
+              const lngs = plotRing.map((p) => p[0]);
+              const lats = plotRing.map((p) => p[1]);
+              const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+              const dLng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos(midLat * Math.PI / 180);
+              const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+              const halfW = Math.min(dLng, dLat) / 2;
+              const insetScale = halfW > 0 ? Math.max(0.5, 1 - 5 / halfW) : 0.85;
+              const pcLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
+              const pcLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
+              footprintRing = plotRing.map(([lng, lat]) => [
+                pcLng + (lng - pcLng) * insetScale,
+                pcLat + (lat - pcLat) * insetScale,
+              ]);
+            }
             const totalH = it.plan?.maxHeightMeters ?? 44;
-            const cLng = baseRing.reduce((s, p) => s + p[0], 0) / baseRing.length;
-            const cLat = baseRing.reduce((s, p) => s + p[1], 0) / baseRing.length;
+            // Scale from footprint centroid — all tiers INSIDE footprint.
+            const cLng = footprintRing.reduce((s, p) => s + p[0], 0) / footprintRing.length;
+            const cLat = footprintRing.reduce((s, p) => s + p[1], 0) / footprintRing.length;
             const scaleRing = (s: number): number[][] =>
-              baseRing.map(([lng, lat]) => [
+              footprintRing.map(([lng, lat]) => [
                 cLng + (lng - cLng) * s,
                 cLat + (lat - cLat) * s,
               ]);
-            // Podium (Retail/Commercial): widest, bottom 20%
+            // Podium (Retail/Commercial): ×1.0 = full footprint, bottom 20%
             const podiumTop = Math.max(12, totalH * 0.2);
             // Crown (Hotel/Premium): top 20%
             const crownH = Math.max(8, totalH * 0.2);
             const crownBase = Math.max(podiumTop + 4, totalH - crownH);
             buildingFeatures.push({
               type: "Feature",
-              geometry: { type: "Polygon", coordinates: [scaleRing(1.05)] },
+              geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
               properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag: "mixed-podium" },
             });
-            // Body (Residential/Office): middle 60%
+            // Body (Residential/Office): ×0.85, middle 60%
             buildingFeatures.push({
               type: "Feature",
               geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
               properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag: "mixed-body" },
             });
-            // Crown (Hotel/Premium): narrowest, top 20%
+            // Crown (Hotel/Premium): ×0.7, narrowest, top 20%
             buildingFeatures.push({
               type: "Feature",
               geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
