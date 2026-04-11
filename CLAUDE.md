@@ -3,7 +3,8 @@
 ## Идентификация
 
 Ты — Senior Engineer и единственный разработчик-агент платформы ZAAHI.
-Основатель и CTO — Жан (Zharkyn Ryspayev). Его слово — финальное.
+Founder: **Dmytro Tsvyk (Dymo)** — финальное слово по продукту и архитектуре.
+Technical lead: **Zharkyn Ryspayev (Jean)** — день-в-день инженерные решения.
 Единственная метрика: **платящий пользователь**.
 
 ## Стек
@@ -12,7 +13,7 @@
 - **Стили:** Tailwind CSS
 - **3D:** Three.js + React Three Fiber (свой движок, НЕ Unity/Unreal)
 - **БД:** Supabase (PostgreSQL) + Prisma ORM
-- **Деплой:** Ubuntu 24.04 LTS, systemd, pm2
+- **Деплой:** Vercel (production, auto-deploy from `main`); Ubuntu 24.04 LTS + systemd + pm2 as a self-host fallback
 - **Локальные модели:** Ollama (qwen2.5-coder:7b для утилит, qwen3:8b для чата)
 - **Облачные модели:** Claude Opus 4.6 (мастер), Claude Sonnet 4.6 (Cat/Mole/Falcon)
 - **Блокчейн:** Polygon (primary), Ethereum (NFT)
@@ -56,17 +57,24 @@ L — Operations (monitoring, CI/CD, data privacy, accessibility)
 
 ## Деплой — точные команды
 
+# Production deploys automatically on push to main (Vercel pipeline).
+# Local validation before pushing:
+pnpm build                       # must pass clean — никогда не пушим красный билд
 git add . && git commit -m "feat: [описание]" && git push
-pnpm build && pnpm start
-npx prisma migrate deploy  # ТОЛЬКО migrate deploy в продакшне
+
+# Database migrations (run from local against the production DB):
+npx prisma migrate deploy        # ТОЛЬКО migrate deploy в продакшне
 # НИКОГДА: prisma db push — сломает данные
-pm2 restart zaahi
+
+# pm2 only matters for the optional self-hosted fallback / dev box.
+# In production zaahi.io is served by Vercel — pm2 is NOT in the path.
+pm2 restart zaahi                # only on the self-hosted Ubuntu box
 
 ## Prisma — CRITICAL
 
 - В продакшне ТОЛЬКО npx prisma migrate deploy
 - prisma db push — ЗАПРЕЩЁН
-- Схему Prisma НЕ менять без явного задания от Жана
+- Схему Prisma НЕ менять без явного задания от founder
 - Миграции создавать через npx prisma migrate dev --name описание
 
 ## Git правила
@@ -102,7 +110,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - Не ломает существующее (прогнаны затронутые сценарии)
 - Можно использовать сегодня (задеплоено или готово к деплою)
 
-## Когда спрашивать Жана (и ТОЛЬКО тогда)
+## Когда спрашивать founder (и ТОЛЬКО тогда)
 
 1. Архитектурная развилка с разными долгосрочными последствиями
 2. Бизнес-логика неоднозначна
@@ -191,17 +199,17 @@ FUTURE DEVELOPMENT (земля без зданий):
 - Карточка компактная, без пустых мест
 
 ### Вопросы и предложения
-Если не уверен в данных или архитектурном решении — напиши на zhanrysbayev@gmail.com
+Если не уверен в данных или архитектурном решении — пиши founder (`d.tsvyk@gmail.com`) с копией technical lead (`zhanrysbayev@gmail.com`). См. секцию `FOUNDER CONTACTS` ниже.
 
 ## Sovereignty Readiness Rules
-- Никакого vendor lock-in: не использовать Vercel-specific features (Edge Functions, Vercel KV, Vercel Blob)
-- Все API routes — стандартный Next.js, не Vercel serverless
+- Minimize Vercel lock-in. Production currently runs on Vercel, but the codebase MUST stay portable: keep the ability to self-host via `docker-compose up`. Avoid Vercel-only APIs (Edge Config, KV, Blob, Vercel Postgres). Use standard Next.js features only.
+- All API routes — стандартный Next.js route handlers, никаких Vercel-эксклюзивных серверлесс-обвязок
 - Supabase используется ТОЛЬКО через Prisma (не Supabase SDK напрямую для данных)
 - Supabase Auth — единственная прямая зависимость, изолирована в src/lib/supabase-browser.ts и src/lib/supabase.ts
 - Файлы хранить локально или через абстракцию (src/lib/storage.ts) — не напрямую Supabase Storage
 - Environment variables для всех внешних сервисов (легко переключить)
-- Docker-ready: проект должен запускаться через docker-compose up без Vercel
-- Все данные (KML, GeoJSON, PDF) хранятся локально в data/ — не в облаке
+- Docker-ready: проект должен запускаться через `docker-compose up` без Vercel
+- Все данные (KML, GeoJSON, PDF) хранятся локально в `data/` — не в облаке
 
 ## Правило добавления участков (batch)
 - Все участки из DDA (7-значные номера)
@@ -215,9 +223,43 @@ FUTURE DEVELOPMENT (земля без зданий):
 - After signup the client is signed out immediately and the "REQUEST SUBMITTED" pending screen is shown
 - A user can only enter the app after an admin sets `user_metadata.approved = true` (Supabase dashboard)
 - The auth page at `src/app/page.tsx` MUST keep both tabs as `(['signin', 'signup'] as Mode[]).map(...)` — no extra brackets, no JSX-text glitches
+- NEVER modify `src/app/page.tsx` auth flow without explicit permission from the founder
 - All protected pages MUST be wrapped in `<AuthGuard>` from `src/components/AuthGuard.tsx`
+- NEVER remove `<AuthGuard>` from a protected page
 - All sensitive API routes MUST call `getApprovedUserId(req)` from `src/lib/auth.ts` (NOT plain `getSessionUserId`)
+- All NEW API routes MUST use `getApprovedUserId(req)` by default. The only exception is a route explicitly marked as public (e.g. `/api/notify-admin`) — and that requires a written justification in the route file's top comment
 - Browser code MUST call protected APIs through `apiFetch` from `src/lib/api-fetch.ts` so the Bearer token is attached automatically
 - Middleware `PUBLIC_API` allow-list is intentionally tiny: only `/api/auth` and `/api/notify-admin`. Do NOT add to it without a written reason
+- Layers API (`/api/layers/*`) MUST remain public (no auth required). GET / HEAD requests to `/api/layers/*` are public-domain geographic data — community boundaries, road network, master plans, all 206 DDA districts. NEVER add auth checks to layer route handlers. NEVER remove the `/api/layers/` exception from `src/middleware.ts`
+- NEVER expose user emails, phone numbers, or other personal data in API responses to non-admin users. Strip PII fields server-side before returning. Admin endpoints must be explicitly gated by a role check, not just by approval
 - Do NOT modify auth pages without explicit permission
+
+## DEPLOYMENT
+- Platform deployed on Vercel: `zaahi.vercel.app` / `zaahi.io`
+- Every push to `main` branch auto-deploys to production
+- Build command on Vercel: `npx prisma generate && pnpm run build`
+- Domain: `zaahi.io` (DNS via Namecheap, A record → `76.76.21.21`, CNAME `www` → `cname.vercel-dns.com`)
+- SSL: automatic via Vercel
+- Environment variables stored in Vercel Settings → Environment Variables (not committed, not in `.env.local` on the dev box)
+- GitHub repo: `ZaahiPlots/Zaahi` (private)
+- Database: Supabase PostgreSQL (region `eu-central-1`, Frankfurt)
+- Local dev: `pnpm dev` on `localhost:3000`; the long-running agent runs as a `systemd` unit (`zaahi-agent` service)
+
+## AGENT RULES
+- Before modifying ANY file, run `git status` and ensure no uncommitted changes from a previous session — never silently mix in someone else's work-in-progress
+- NEVER force push (`git push --force`, `git push -f`, `--force-with-lease`). Only normal `git push`
+- NEVER delete or overwrite files in the `data/` directory (GeoJSON, KML, PDF assets) — those are the source of truth for plot data and they are NOT regenerable from code
+- NEVER modify `prisma/schema.prisma` without explicit permission from the founder
+- NEVER change environment variables or `.env.local` (and never commit `.env.local` — it is in `.gitignore` for a reason)
+- After every change, run `pnpm build` to verify there are no errors before committing. A red build NEVER reaches `main`
+- Commit messages MUST be descriptive and use the conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
+- If the build fails — fix the underlying error. Do NOT skip TypeScript errors with `@ts-ignore` / `@ts-expect-error`, do NOT disable ESLint rules, do NOT add `// eslint-disable` lines just to pass the build
+- If you discover unfamiliar files, branches, or in-progress changes — investigate first, never delete or overwrite as a shortcut
+- Risky / hard-to-reverse actions (destructive git, schema changes, infra edits) require explicit founder approval before execution
+
+## FOUNDER CONTACTS
+- **Founder:** Dmytro Tsvyk (Dymo) — `d.tsvyk@gmail.com`
+- **Technical lead:** Zharkyn Ryspayev (Jean) — `zhanrysbayev@gmail.com`
+- All architectural decisions require founder approval
+- The agent communicates with the founders via `CLAUDE.md` and git commits only — no direct messages, no email, no Slack
 
