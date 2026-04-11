@@ -209,3 +209,9 @@ FUTURE DEVELOPMENT (земля без зданий):
 - Цена участка = Max GFA sqft × цена за GFA sqft (цена за GFA предоставляется вручную)
 - 3D модель ZAAHI Signature по land use автоматически
 - После добавления жди подтверждение "yes" перед следующим
+
+## SECURITY RULES - DO NOT MODIFY
+- Sign Up is DISABLED. Never add signup back to the Mode array in page.tsx
+- Only signin is allowed: ({["signin"] as Mode[]).map
+- Do NOT modify auth pages without explicit permission
+
