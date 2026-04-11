@@ -10,25 +10,27 @@ const TXT = "#1A1A2E";
 const SUBTLE = "#6B7280";
 const LINE = "#E5E7EB";
 
-// Mirrors ZAAHI_LANDUSE_COLOR in src/app/parcels/map/page.tsx so the small
-// indicator dot in the side panel matches the colour of the 3D extrusion on
-// the map. Updated per founder spec on 2026-04-11 (second iteration):
-// Residential = brand gold, Office split off from Commercial,
-// Educational gets its own teal, full repaint of the rest.
+// APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
+// remove, or recolor without explicit founder approval. Mirrors
+// ZAAHI_LANDUSE_COLOR in src/app/parcels/map/page.tsx so the indicator
+// dot in the side-panel land-use list matches the 3D extrusion on the
+// map. Source-of-truth in CLAUDE.md "Цвета по Land Use".
 const LANDUSE_COLORS: Record<string, string> = {
-  RESIDENTIAL: "#C8A96E",
-  MIXED_USE: "#27AE60",
-  "MIXED USE": "#27AE60",
-  COMMERCIAL: "#4A90D9",
-  OFFICE: "#2C3E50",
-  HOTEL: "#9B59B6",
-  HOSPITALITY: "#9B59B6",
-  RETAIL: "#E67E22",
-  INDUSTRIAL: "#7F8C8D",
-  WAREHOUSE: "#7F8C8D",
-  EDUCATIONAL: "#1ABC9C",
-  EDUCATION: "#1ABC9C",
-  "FUTURE DEVELOPMENT": "#84CC16",
+  RESIDENTIAL:           "#FFD700",
+  COMMERCIAL:            "#4A90D9",
+  MIXED_USE:             "#9B59B6",
+  "MIXED USE":           "#9B59B6",
+  HOTEL:                 "#E67E22",
+  HOSPITALITY:           "#E67E22",
+  INDUSTRIAL:            "#708090",
+  WAREHOUSE:             "#708090",
+  EDUCATIONAL:           "#1ABC9C",
+  EDUCATION:             "#1ABC9C",
+  HEALTHCARE:            "#E74C3C",
+  AGRICULTURAL:          "#6B8E23",
+  AGRICULTURE:           "#6B8E23",
+  FUTURE_DEVELOPMENT:    "#84CC16",
+  "FUTURE DEVELOPMENT":  "#84CC16",
 };
 
 function fmtMonthYear(iso: string | null): string {

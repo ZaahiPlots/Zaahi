@@ -144,42 +144,53 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
-// Land-use color legend for the ZAAHI Signature 3D extrusion. Updated per
-// founder spec on 2026-04-11 (second iteration): Residential is now the
-// brand gold #C8A96E (was bright yellow), Office is dark navy distinct
-// from Commercial, Educational gets its own teal, and the rest are slightly
-// re-balanced. CLAUDE.md "Цвета по Land Use" updated to match.
+// Land-use legend — APPROVED by founder 2026-04-11. NEVER change without
+// explicit founder approval. 9 canonical categories. The exact same set
+// is duplicated in three other places that MUST stay in sync:
+//   - the inline `buildingColor` match expression in loadZaahiPlots
+//     (drives the 3D fill-extrusion + outline)
+//   - LANDUSE_COLORS in src/app/parcels/map/SidePanel.tsx
+//     (the indicator dot in the side-panel land-use list)
+//   - LAND_USE_LEGEND in this file (the visible legend popup)
+// Source-of-truth in CLAUDE.md "Цвета по Land Use".
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
-  RESIDENTIAL: "#C8A96E",         // brand gold
-  MIXED_USE: "#27AE60",           // green
+  RESIDENTIAL: "#FFD700",         // yellow
   COMMERCIAL: "#4A90D9",          // blue
-  OFFICE: "#2C3E50",              // dark navy
-  HOTEL: "#9B59B6",               // purple
-  HOSPITALITY: "#9B59B6",         // purple
-  RETAIL: "#E67E22",              // orange
-  INDUSTRIAL: "#7F8C8D",          // gray
-  WAREHOUSE: "#7F8C8D",           // gray
+  MIXED_USE: "#9B59B6",           // purple
+  HOTEL: "#E67E22",               // orange
+  HOSPITALITY: "#E67E22",         // orange (alias)
+  INDUSTRIAL: "#708090",          // steel gray
+  WAREHOUSE: "#708090",           // steel gray (alias)
   EDUCATIONAL: "#1ABC9C",         // teal
-  EDUCATION: "#1ABC9C",           // teal (alt spelling)
-  FUTURE_DEVELOPMENT: "#84CC16",  // lime — unchanged
+  EDUCATION: "#1ABC9C",           // teal (alias)
+  HEALTHCARE: "#E74C3C",          // red
+  AGRICULTURAL: "#6B8E23",        // olive
+  AGRICULTURE: "#6B8E23",         // olive (alias)
+  FUTURE_DEVELOPMENT: "#84CC16",  // lime
   "FUTURE DEVELOPMENT": "#84CC16",
 };
-const ZAAHI_DEFAULT_COLOR = "#C8A96E";
+const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
 // Apply / clear selection highlight on the ZAAHI plot + building layers.
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
   const sel = selectedId ?? "__none__";
-  // Plot fill: bright on selected, dim on others when selection is active
+  // Plot fill: bright on selected, dim on others when selection is
+  // active. Outline-only parcels (hasLandUse === false) ALWAYS render
+  // with fill-opacity 0 — selection state must not give them a fill.
   if (selectedId) {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
-      ["==", ["get", "id"], sel],
-      0.7,
+      ["!=", ["get", "hasLandUse"], true], 0,
+      ["==", ["get", "id"], sel], 0.7,
       0.2,
     ]);
   } else {
-    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", 0.4);
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+      "case",
+      ["==", ["get", "hasLandUse"], true], 0.4,
+      0,
+    ]);
   }
   // Glow filters
   if (map.getLayer(ZAAHI_PLOTS_GLOW)) {
@@ -214,27 +225,53 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   }
 }
 
+/**
+ * Maps a DDA affection-plan landUseMix (or a free-form mainLandUse string)
+ * into one of the 9 ZAAHI canonical categories. Returns `null` when DDA
+ * has no land-use information at all — callers should render the parcel
+ * as outline-only with no 3D extrusion in that case.
+ *
+ * Categories (founder-approved 2026-04-11):
+ *   RESIDENTIAL · COMMERCIAL · MIXED_USE · HOTEL · INDUSTRIAL ·
+ *   EDUCATIONAL · HEALTHCARE · AGRICULTURAL · FUTURE_DEVELOPMENT
+ *
+ * Mapping is case-insensitive `contains` against category + sub strings.
+ * Multiple distinct categories in `mix` always collapse to MIXED_USE.
+ */
 function deriveLandUse(
-  mix: Array<{ category: string }> | null | undefined,
+  mix: Array<{ category: string; sub?: string }> | null | undefined,
   mainLandUse?: string | null,
-): string {
-  if (!mix || mix.length === 0) {
-    // Fallback to mainLandUse from DDA if landUseMix is empty
-    if (mainLandUse) {
-      const lu = mainLandUse.toUpperCase().trim();
-      if (lu.includes("FUTURE")) return "FUTURE DEVELOPMENT";
-      if (lu.includes(" - ") || lu.includes(",")) return "MIXED_USE";
-      if (lu.includes("HOTEL") || lu.includes("HOSPITALITY")) return "HOSPITALITY";
-      if (lu.includes("RETAIL")) return "RETAIL";
-      if (lu.includes("COMMERCIAL") || lu.includes("OFFICE")) return "COMMERCIAL";
-      if (lu.includes("INDUSTRIAL")) return "INDUSTRIAL";
-      return "RESIDENTIAL";
-    }
-    return "RESIDENTIAL";
+): string | null {
+  // Multiple categories in the mix → mixed use, regardless of strings.
+  if (mix && mix.length > 1) {
+    const distinctCats = new Set(mix.map((u) => (u.category || "").toUpperCase().trim()).filter(Boolean));
+    if (distinctCats.size > 1) return "MIXED_USE";
   }
-  const cats = new Set(mix.map((u) => u.category.toUpperCase().trim()));
-  if (cats.size > 1) return "MIXED_USE";
-  return [...cats][0];
+
+  // Build a lowercase haystack from every available field.
+  const tokens: string[] = [];
+  if (mix) for (const u of mix) {
+    if (u.category) tokens.push(u.category);
+    if (u.sub) tokens.push(u.sub);
+  }
+  if (mainLandUse) tokens.push(mainLandUse);
+  if (tokens.length === 0) return null;
+  const hay = tokens.join(" ").toLowerCase();
+
+  // Order matters: more specific patterns first so "mixed use" doesn't
+  // get caught by "residential", and "future development" doesn't get
+  // caught by "development" inside another phrase.
+  if (/mixed[\s-]?use|\bmixed\b/.test(hay)) return "MIXED_USE";
+  if (/\bfuture\b.*\bdevelopment\b|\bfuture\s+development\b/.test(hay)) return "FUTURE_DEVELOPMENT";
+  if (/hotel|hospitality|resort|serviced\s+apartment/.test(hay)) return "HOTEL";
+  if (/health|hospital|clinic|medical/.test(hay)) return "HEALTHCARE";
+  if (/educat|school|university|academy|nursery/.test(hay)) return "EDUCATIONAL";
+  if (/industrial|warehouse|factory|logistics|storage/.test(hay)) return "INDUSTRIAL";
+  if (/agricult|\bfarm\b/.test(hay)) return "AGRICULTURAL";
+  if (/residential|villa|townhouse|apartment/.test(hay)) return "RESIDENTIAL";
+  if (/commercial|office|retail|showroom|\bcbd\b/.test(hay)) return "COMMERCIAL";
+
+  return null;
 }
 
 const DHCC2_SRC = "dda-dhcc-phase2";
@@ -1705,7 +1742,10 @@ function ParcelsMapPageInner() {
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
+        // landUse is null when DDA has no land-use info — those parcels
+        // render as outline-only (no fill, no 3D extrusion).
         const landUse = deriveLandUse(it.plan?.landUseMix);
+        const hasLandUse = landUse != null;
         plotFeatures.push({
           type: "Feature",
           id: it.id,
@@ -1716,10 +1756,17 @@ function ParcelsMapPageInner() {
             district: it.district,
             area: it.area,
             priceAed: aed,
-            landUse,
-            color: ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR,
+            landUse: landUse ?? "",
+            hasLandUse,
+            color: hasLandUse
+              ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
+              : ZAAHI_DEFAULT_COLOR,
           },
         });
+        // Skip 3D building generation for parcels without a land use —
+        // founder spec: "Если land use пустое или неизвестное —
+        // показывать участок только как контур (outline) без 3D модели."
+        if (!hasLandUse) continue;
 
         // Footprint helper — pushes podium / body / crown features into
         // buildingFeatures for the 3D fill-extrusion layers.
@@ -1853,7 +1900,13 @@ function ParcelsMapPageInner() {
         source: ZAAHI_PLOTS_SRC,
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.4,
+          // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
+          "fill-opacity": [
+            "case",
+            ["==", ["get", "hasLandUse"], true],
+            0.4,
+            0,
+          ],
           "fill-opacity-transition": { duration: 300 },
           "fill-color-transition": { duration: 300 },
         },
@@ -1887,23 +1940,28 @@ function ParcelsMapPageInner() {
         type: "geojson",
         data: { type: "FeatureCollection", features: buildingFeatures },
       });
-      // Per-landUse 3D color expression. Updated 2026-04-11 to the
-      // latest founder palette (matches ZAAHI_LANDUSE_COLOR).
+      // Per-landUse 3D extrusion color. APPROVED by founder 2026-04-11.
+      // 9 canonical categories. MUST stay in sync with ZAAHI_LANDUSE_COLOR
+      // and SidePanel LANDUSE_COLORS. Default branch is the brand gold,
+      // but in practice it's never hit because parcels with no land use
+      // are filtered out of buildingFeatures earlier in the loop.
       const buildingColor: maplibregl.ExpressionSpecification = [
         "match",
         ["get", "landUse"],
-        "RESIDENTIAL",  "#C8A96E",
-        "MIXED_USE",    "#27AE60",
-        "COMMERCIAL",   "#4A90D9",
-        "OFFICE",       "#2C3E50",
-        "HOTEL",        "#9B59B6",
-        "HOSPITALITY",  "#9B59B6",
-        "RETAIL",       "#E67E22",
-        "INDUSTRIAL",   "#7F8C8D",
-        "WAREHOUSE",    "#7F8C8D",
-        "EDUCATIONAL",  "#1ABC9C",
-        "EDUCATION",    "#1ABC9C",
-        "#C8A96E", // default
+        "RESIDENTIAL",         "#FFD700",
+        "COMMERCIAL",          "#4A90D9",
+        "MIXED_USE",           "#9B59B6",
+        "HOTEL",               "#E67E22",
+        "HOSPITALITY",         "#E67E22",
+        "INDUSTRIAL",          "#708090",
+        "WAREHOUSE",           "#708090",
+        "EDUCATIONAL",         "#1ABC9C",
+        "EDUCATION",           "#1ABC9C",
+        "HEALTHCARE",          "#E74C3C",
+        "AGRICULTURAL",        "#6B8E23",
+        "AGRICULTURE",         "#6B8E23",
+        "FUTURE_DEVELOPMENT",  "#84CC16",
+        "#C8A96E", // default — unreachable in practice
       ];
 
       map.addLayer({
@@ -2197,21 +2255,20 @@ function ParcelsMapPageInner() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [legendOpen]);
 
+  // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
+  // remove, or recolor without explicit founder approval. The same set
+  // is mirrored in ZAAHI_LANDUSE_COLOR, the loadZaahiPlots match
+  // expression, SidePanel LANDUSE_COLORS, and CLAUDE.md.
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
-    { color: "#C8A96E", name: "Residential", desc: "Жилое" },
-    { color: "#27AE60", name: "Mixed Use", desc: "Смешанное" },
-    { color: "#4A90D9", name: "Commercial", desc: "Коммерческое" },
-    { color: "#2C3E50", name: "Office", desc: "Офисное" },
-    { color: "#9B59B6", name: "Hotel / Hospitality", desc: "Отельное" },
-    { color: "#E67E22", name: "Retail", desc: "Торговое" },
-    { color: "#7F8C8D", name: "Industrial", desc: "Промышленное" },
-    { color: "#1ABC9C", name: "Educational", desc: "Образовательное" },
-    { color: "#10B981", name: "Community Facilities", desc: "Школы, мечети, больницы" },
-    { color: "#22C55E", name: "Open Space / Parks", desc: "Парки" },
-    { color: "#94A3B8", name: "Utility", desc: "Инфраструктура" },
-    { color: "#78716C", name: "Warehouse / Logistics", desc: "Склады" },
-    { color: "#8B5CF6", name: "Education", desc: "Образование" },
-    { color: "#EF4444", name: "Hospital", desc: "Медицина" },
+    { color: "#FFD700", name: "Residential",          desc: "Жилое" },
+    { color: "#4A90D9", name: "Commercial",           desc: "Коммерческое" },
+    { color: "#9B59B6", name: "Mixed Use",            desc: "Смешанное" },
+    { color: "#E67E22", name: "Hotel / Hospitality",  desc: "Отельное" },
+    { color: "#708090", name: "Industrial / Warehouse", desc: "Промышленное" },
+    { color: "#1ABC9C", name: "Educational",          desc: "Образовательное" },
+    { color: "#E74C3C", name: "Healthcare",           desc: "Медицина" },
+    { color: "#6B8E23", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
+    { color: "#84CC16", name: "Future Development",   desc: "Под застройку" },
   ];
 
   const c = PALETTE[theme];

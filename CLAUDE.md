@@ -154,18 +154,39 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
 - Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
 
-### Цвета по Land Use (легенда — обновлено 2026-04-11 second iteration)
-- RESIDENTIAL: #C8A96E (брендовый золотой — заменил #FFD700)
-- MIXED USE: #27AE60 (зелёный)
-- COMMERCIAL: #4A90D9 (синий)
-- OFFICE: #2C3E50 (тёмно-синий — отдельно от Commercial)
-- HOTEL/HOSPITALITY: #9B59B6 (фиолетовый)
-- RETAIL: #E67E22 (оранжевый)
-- INDUSTRIAL/WAREHOUSE: #7F8C8D (серый)
-- EDUCATIONAL: #1ABC9C (бирюзовый)
-- FUTURE DEVELOPMENT: #84CC16 (лайм)
-- DDA district outlines on the map use the brand gold #C8A96E (NOT a land-use category — it's the layer-outline colour)
-- Source-of-truth in code: `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx`. The 3D `fill-extrusion-color` expression in `loadZaahiPlots` AND the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx` AND the `LAND_USE_LEGEND` array in the map page MUST stay in sync with each other.
+### Цвета по Land Use — APPROVED 9 категорий (утверждено основателем 2026-04-11)
+**НЕ менять без явного согласия основателя.** Это финальный список.
+
+| # | Category | Hex | Цвет |
+|---|---|---|---|
+| 1 | Residential | `#FFD700` | жёлтый |
+| 2 | Commercial | `#4A90D9` | синий |
+| 3 | Mixed Use | `#9B59B6` | фиолетовый |
+| 4 | Hotel / Hospitality | `#E67E22` | оранжевый |
+| 5 | Industrial / Warehouse | `#708090` | стальной серый |
+| 6 | Educational | `#1ABC9C` | бирюзовый |
+| 7 | Healthcare | `#E74C3C` | красный |
+| 8 | Agricultural / Farm | `#6B8E23` | оливковый |
+| 9 | Future Development | `#84CC16` | лайм |
+
+DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour).
+
+**Маппинг из DDA land use строк в категории** (case-insensitive `contains`, реализован в `deriveLandUse` в `src/app/parcels/map/page.tsx`):
+- `residential`, `villa`, `townhouse`, `apartment` → Residential
+- `commercial`, `office`, `retail`, `showroom`, `cbd` → Commercial
+- `mixed`, `mixed use`, `mixed-use` → Mixed Use
+- `hotel`, `hospitality`, `resort`, `serviced apartment` → Hotel/Hospitality
+- `industrial`, `warehouse`, `factory`, `logistics`, `storage` → Industrial
+- `education`, `school`, `university`, `academy`, `nursery` → Educational
+- `health`, `hospital`, `clinic`, `medical` → Healthcare
+- `agriculture`, `farm`, `agricultural` → Agricultural
+- `future development` → Future Development
+- Несколько разных категорий в `landUseMix` → Mixed Use
+- Пустое или неизвестное → `null` → участок рендерится только как контур (outline), без 3D модели, до того как DDA присвоит категорию
+
+**Source-of-truth in code:** `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx`. The 3D `fill-extrusion-color` match expression in `loadZaahiPlots`, the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx`, and the `LAND_USE_LEGEND` array in the map page MUST stay in sync. CLAUDE.md is the human-readable source of truth — code is the machine-readable one.
+
+**Land Use легенда (9 категорий) утверждена основателем 2026-04-11. НЕ менять без явного согласия.**
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
