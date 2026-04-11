@@ -1861,41 +1861,45 @@ function ParcelsMapPageInner() {
 
         // ── HARDCODED OVERRIDE — plot 6854566 (hospital) ─────────────
         // Founder spec 2026-04-12: this single hospital plot must
-        // render as 4 buildings (3 hospital wings + 1 parking) instead
-        // of the default one box. All four are the same height, all
-        // HEALTHCARE-coloured, and laid out as a 2×2 grid strictly
-        // inside the plot bounding box (cell width × 0.6 footprint
-        // with margins on all sides). The default per-parcel building
-        // generation is skipped via `continue`.
+        // render as 4 buildings instead of the default one box. All
+        // four same height, all HEALTHCARE red, all STRICTLY inside
+        // the plot polygon, never touching the plot boundary.
+        //
+        // Two-step shrink so a slightly-irregular DDA quad cannot
+        // produce rectangles that stick out:
+        //   1. insetRingByMeters(plotRing, 12m) — shrink the plot
+        //      polygon toward its centroid by ~12 metres so we have
+        //      breathing room from the actual plot edge.
+        //   2. Bounding box of the SHRUNK ring → 2×2 grid → small
+        //      rectangles inside each cell. Even if the bounding box
+        //      slightly overshoots the irregular shrunk ring, the
+        //      original 12m breathing room absorbs it.
         if (it.plotNumber === "6854566") {
           const ring = (it.geometry as GeoJSON.Polygon).coordinates[0];
-          const lngs = ring.map((p) => p[0]);
-          const lats = ring.map((p) => p[1]);
+          const safeRing = insetRingByMeters(ring, 12);
+          const lngs = safeRing.map((p) => p[0]);
+          const lats = safeRing.map((p) => p[1]);
           const minLng = Math.min(...lngs);
           const maxLng = Math.max(...lngs);
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
           const dLng = maxLng - minLng;
           const dLat = maxLat - minLat;
-          // 8% margin from the bounding box edges so the four
-          // rectangles never touch the plot boundary.
-          const marginPct = 0.08;
-          const innerMinLng = minLng + dLng * marginPct;
-          const innerMaxLng = maxLng - dLng * marginPct;
-          const innerMinLat = minLat + dLat * marginPct;
-          const innerMaxLat = maxLat - dLat * marginPct;
+          // Use only the centre 70% of the shrunk bounding box, so we
+          // stay well inside even a non-rectangular polygon.
+          const usePct = 0.70;
+          const sideMargin = (1 - usePct) / 2;
+          const innerMinLng = minLng + dLng * sideMargin;
+          const innerMaxLng = maxLng - dLng * sideMargin;
+          const innerMinLat = minLat + dLat * sideMargin;
+          const innerMaxLat = maxLat - dLat * sideMargin;
           const innerW = innerMaxLng - innerMinLng;
           const innerH = innerMaxLat - innerMinLat;
-          // 4% gap between the two columns / rows so the buildings
-          // are visually separated rather than touching.
-          const gapPct = 0.04;
+          // 20% visible gap between the two columns / rows so the
+          // buildings read as four distinct boxes.
+          const gapPct = 0.20;
           const cellW = (innerW - innerW * gapPct) / 2;
           const cellH = (innerH - innerH * gapPct) / 2;
-          // Each building footprint is 60% of its cell, centered.
-          const footW = cellW * 0.6;
-          const footH = cellH * 0.6;
-          const padW = (cellW - footW) / 2;
-          const padH = (cellH - footH) / 2;
           const cells: Array<{ x: number; y: number }> = [
             { x: 0, y: 0 }, // bottom-left
             { x: 1, y: 0 }, // bottom-right
@@ -1903,16 +1907,15 @@ function ParcelsMapPageInner() {
             { x: 1, y: 1 }, // top-right
           ];
           const HOSPITAL_HEIGHT = 24; // m — same for all 4
-          const hospitalHex = ZAAHI_LANDUSE_COLOR.HEALTHCARE ?? ZAAHI_DEFAULT_COLOR;
-          for (let i = 0; i < cells.length; i++) {
-            const c = cells[i];
-            const cellOriginLng = innerMinLng + c.x * (cellW + innerW * gapPct);
-            const cellOriginLat = innerMinLat + c.y * (cellH + innerH * gapPct);
-            const x0 = cellOriginLng + padW;
-            const y0 = cellOriginLat + padH;
-            const x1 = x0 + footW;
-            const y1 = y0 + footH;
-            // Closed ring (first point repeated at the end), CCW.
+          // HARDCODED: not via lookup, so this can NEVER come out blue
+          // even if some other code path tampers with the colour map.
+          const HOSPITAL_HEX = "#E74C3C";
+          for (const c of cells) {
+            const x0 = innerMinLng + c.x * (cellW + innerW * gapPct);
+            const y0 = innerMinLat + c.y * (cellH + innerH * gapPct);
+            const x1 = x0 + cellW;
+            const y1 = y0 + cellH;
+            // Closed CCW ring (first point repeated at the end).
             const rect: number[][] = [
               [x0, y0],
               [x1, y0],
@@ -1926,7 +1929,7 @@ function ParcelsMapPageInner() {
               properties: {
                 parcelId: it.id,
                 landUse: "HEALTHCARE",
-                color: hospitalHex,
+                color: HOSPITAL_HEX,
                 height: HOSPITAL_HEIGHT,
                 base: 0,
               },
