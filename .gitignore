@@ -1,7 +1,10 @@
 node_modules/
 .next/
 tsconfig.tsbuildinfo
-data/
+# data/layers/ is the source of truth for map overlays — must ship to
+# Vercel via git, otherwise every /api/layers/* route 500s with ENOENT.
+# Reference PDFs in data/meydan/ are not needed at runtime, stay ignored.
+data/meydan/
 .env
 .env.local
 .env.*.local

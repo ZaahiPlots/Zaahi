@@ -1,0 +1,1805 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="__01_modified" id="__01_modified">
+	<SimpleField name="fid" type="float"></SimpleField>
+	<SimpleField name="Layer" type="string"></SimpleField>
+	<SimpleField name="PaperSpace" type="int"></SimpleField>
+	<SimpleField name="SubClasses" type="string"></SimpleField>
+	<SimpleField name="Linetype" type="string"></SimpleField>
+	<SimpleField name="EntityHandle" type="string"></SimpleField>
+	<SimpleField name="Text" type="string"></SimpleField>
+</Schema>
+<Folder><name>__01_modified</name>
+  <Placemark id="__01_modified.1">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">1</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">60</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3219259617923,25.1815578212439 55.3224157934579,25.1817827823352 55.3221534149458,25.1822289123807 55.3216517620144,25.1820274255234 55.3219259617923,25.1815578212439</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.2">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">2</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">61</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3216942929305,25.1785219555338 55.3216930723711,25.1785213929611 55.3217080065763,25.1784949334603 55.3216704098331,25.1784757106121 55.3216552569938,25.1785021873075 55.321685042628,25.1785176781192 55.3213488078064,25.1783621425203 55.3216168827089,25.1778932873836 55.3216668844047,25.1779170917415 55.3219387003806,25.1774422456272 55.3221927595268,25.177560536173 55.3219216910099,25.1780349923291 55.3220508419111,25.1780944813025 55.3218264686031,25.1784847685887 55.3217384915155,25.1784447120171 55.3216942929305,25.1785219555338</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.3">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">3</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">62</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3282874196782,25.1827349619533 55.3278891919079,25.1827292986561 55.3278472609487,25.1831959239219 55.3282749134551,25.1832470540433 55.3282874196782,25.1827349619533</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.4">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">4</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">63</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3327145124462,25.1843414782571 55.3327789407347,25.184373717115 55.3329598883944,25.1841192409298 55.3329845018253,25.1840765366352 55.3329230834663,25.1840466774075 55.3327145124462,25.1843414782571</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.5">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">5</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">64</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3194990708436,25.1786188433858 55.3195682897362,25.1785313959146 55.3189811558593,25.1781558399744 55.3189037575224,25.1782399475691 55.3194990708436,25.1786188433858</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.6">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">6</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">65</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3288722424037,25.1802818898934 55.3289932296999,25.1798966816919 55.3288080722765,25.179809887098 55.3286017835972,25.1801503722291 55.3288722424037,25.1802818898934</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.7">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">7</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">66</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3323334812244,25.1820741392265 55.3323636845815,25.1820753805096 55.3323938339534,25.182077662568 55.3324240109856,25.1820799589961 55.3325055566394,25.1820883025679 55.3325871396743,25.1820990116171 55.3326685183102,25.1821120844113 55.3327494396908,25.1821275237079 55.3328296620692,25.1821453227621 55.3329089435599,25.182165479382 55.3329870259688,25.1821879911076 55.3330636674723,25.1822128554199 55.3330924106282,25.1822224697211 55.3331199392026,25.1822320756956 55.3331474579698,25.1822427027336 55.3333347060013,25.182320209541 55.3335217454311,25.1823991321071 55.3337085917699,25.1824790547456 55.3338952725336,25.1825595673627 55.3340817948903,25.1826402558617 55.3342681994357,25.182720721307 55.3344544960058,25.1828005466134 55.3346407171369,25.1828793250761 55.3346668984093,25.1828909723483 55.3346930461062,25.182903649995 55.3347186785052,25.1829165341072 55.3347440814165,25.1829298422315 55.334769205759,25.1829435738979 55.3347940242172,25.1829577287847 55.334818504215,25.1829723018411 55.3348426017853,25.1829873019847 55.3348662899803,25.1830027195069 55.334889525023,25.1830185586272 55.3349131296407,25.1830343474017 55.3349578073306,25.1830679671674 55.3349801250541,25.1830858206227 55.3350949253003,25.1831868285293 55.3351953656075,25.1832944242445 55.3352810031586,25.1834083419081 55.3353513941816,25.1835283102228 55.3354060988987,25.1836540666394 55.3354446768786,25.1837853387878 55.3354667029994,25.1839218540853 55.3354717506323,25.1840633536801 55.3354525520552,25.1841823904868 55.3353043601726,25.1841769913206 55.335307916205,25.1840862324889 55.3353061566842,25.1839291712539 55.335279567132,25.1837770127544 55.3352295907799,25.1836312454568 55.3351576927513,25.1834933485671 55.3350653431347,25.183364818803 55.334954018157,25.1832471459018 55.3348252213391,25.1831418301015 55.3346804461403,25.1830503616774 55.3346472394494,25.1830324390879 55.3346128444806,25.1830145015988 55.3345783714718,25.1829986413091 55.334542678066,25.1829827664134 55.3331861683635,25.1824029310287 55.3331599288449,25.1823912601964 55.3331324436642,25.1823806288945 55.3331061648173,25.1823700004909 55.3330511669377,25.1823487212255 55.3330236511085,25.182339146012 55.3329949221035,25.1823295388617 55.3329738291315,25.1823229312939 55.3329528250092,25.1823164323599 55.3329318495266,25.1823100557816 55.332910869674,25.1823038154645 55.3328898310996,25.1822977110618 55.3328686843505,25.1822917610772 55.3328473859608,25.1822859652389 55.3328258920631,25.1822803373862 55.3327970813993,25.182272812077 55.3327394146931,25.1822598921686 55.3326810961936,25.1822478758635 55.3326224216181,25.1822371087695 55.332563423253,25.1822276383198 55.3325041444383,25.1822195072772 55.3324446121177,25.182212762959 55.3323848640306,25.1822074574124 55.3323249327791,25.1822036331864 55.332264850881,25.1822013374771 55.332234694485,25.1822000948087 55.3297544596242,25.1821838065266 55.329756516078,25.1820543143802 55.3306035916044,25.1820597950875 55.3308158467908,25.1820618695223 55.3310282738802,25.1820633146621 55.3312408424314,25.1820643606504 55.3314535210488,25.1820652424753 55.3316662611703,25.1820661951658 55.3318790404071,25.1820674587826 55.3320918085542,25.1820692639385 55.3323045361656,25.1820718462296 55.3323334812244,25.1820741392265</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.8">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">8</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">67</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.333107264163,25.1821853744354 55.3332608288494,25.182180493146 55.3332109452012,25.1822688166392 55.3331558345517,25.1822456246569 55.3331021729993,25.1822247560324 55.3330492633824,25.1822059103936 55.3329964136834,25.1821887872054 55.3329429206202,25.1821730904063 55.332888097042,25.1821585239108 55.332831244889,25.1821447867488 55.3327716605217,25.1821315778319 55.3326898848754,25.1821153557573 55.3326842661414,25.1819024529307 55.333107264163,25.1821853744354</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.9">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">9</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">68</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3326819128058,25.1818434403679 55.3320692565835,25.1818385341223 55.3320783277568,25.1814817938709 55.3325505516765,25.1814731080531 55.332682188004,25.181579244392 55.3326819128058,25.1818434403679</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.10">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">10</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">69</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3332100007066,25.1822687303829 55.3332598894005,25.1821804069239 55.3336820338882,25.1821720040207 55.3335413690808,25.1824085464377 55.3332100007066,25.1822687303829</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.11">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">11</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3341486055132,25.182196080661 55.33418716211,25.1822026155885 55.334239278087,25.1822127080156 55.3342915974268,25.1822243238247 55.334343858615,25.1822374280704 55.334395795182,25.1822519715832 55.3344471406868,25.1822679051434 55.334497628399,25.182285188903 55.3345469918104,25.1823037782565 55.3345949646569,25.1823236238454 55.3346619460645,25.1823544152106 55.3344089559941,25.182780925095 55.3338036067998,25.182521130539 55.3335423301693,25.1824086187249 55.3336829960809,25.1821720762804 55.3337896428093,25.1821706860699 55.3338297854697,25.1821698269079 55.3338698765613,25.182170121964 55.3339098976003,25.1821714533988 55.3339498519792,25.1821737034767 55.3339897322695,25.1821767543621 55.3340295258273,25.1821804834512 55.3340692303545,25.1821847870459 55.3341088445803,25.1821895331693 55.3341486055132,25.182196080661</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.12">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">12</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3306441469288,25.1815081908341 55.3314200853436,25.181492984342 55.3314071075896,25.1820643960984 55.3306333931919,25.182059390395 55.3306441469288,25.1815081908341</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.13">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">13</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3326818837701,25.181844478791 55.3326842714553,25.1819024576831 55.332689947135,25.1821172120589 55.3326223460197,25.1821057502588 55.332569158715,25.1820977031309 55.332515788783,25.1820905970944 55.3324622414206,25.1820844652057 55.3324085486754,25.1820793548045 55.332354726692,25.182075298969 55.3323007965845,25.182072349623 55.3322467801274,25.1820705351083 55.3321926878735,25.1820698977896 55.3320639221387,25.182069064673 55.3320697576009,25.181839594292 55.3326818837701,25.181844478791</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.14">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">14</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3314200959105,25.1814929985952 55.3320788805142,25.1814802069958 55.332063916366,25.1820686501668 55.331407118346,25.1820644008755 55.3314200959105,25.1814929985952</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.15">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">15</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3299459345769,25.1815217410952 55.3306441415832,25.1815081860754 55.3306333878583,25.1820593856557 55.3297565256345,25.1820537126196 55.3297636861614,25.1816742496377 55.3299459345769,25.1815217410952</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.16">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">16</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3297426892468,25.1827426023459 55.3303564239055,25.182746890012 55.3303469316445,25.1832623252552 55.329955306462,25.183259438016 55.3297363877037,25.1830642130426 55.3297426892468,25.1827426023459</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.17">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">17</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">70</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.330356413004,25.182746894613 55.330753136838,25.182749666202 55.3307427930679,25.1832652437259 55.3303469208523,25.1832623251757 55.330356413004,25.182746894613</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.18">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">18</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">71</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3308026306346,25.1832656895345 55.3317063908884,25.1832753500678 55.331718667914,25.1827578817065 55.3308131031737,25.1827500898171 55.3308026306346,25.1832656895345</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.19">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">19</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">72</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3324290036259,25.1833917843308 55.3326528144654,25.1828239471969 55.3325991874748,25.1828107810766 55.3325461493682,25.1827992345458 55.3324936858974,25.1827892702763 55.3324417936113,25.1827808509513 55.332390447311,25.1827739390417 55.3323396377729,25.1827685064431 55.3322893616521,25.1827645063056 55.3322395987874,25.1827619103498 55.3317186734454,25.1827578770632 55.3317063801866,25.1832753453271 55.3317345400995,25.1832762429623 55.3317680252078,25.1832774922534 55.3318070328217,25.1832794536625 55.3318517440094,25.1832824828983 55.3319023448088,25.1832869450494 55.3319590322515,25.1832931866379 55.3320219809035,25.1833015726415 55.3320913867397,25.1833124588072 55.3324290036259,25.1833917843308</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.20">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">20</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">73</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3330705708318,25.1836758723763 55.3336959114411,25.1839883081161 55.334045747168,25.1833994838721 55.3333986435901,25.1831237081961 55.3330705708318,25.1836758723763</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.21">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">21</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">74</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3324290036259,25.1833917843308 55.3325684976408,25.1834389926208 55.3328749939006,25.1835763070228 55.3330705658381,25.1836758583835 55.3333986657236,25.1831236943344 55.3332832527792,25.1830724132072 55.3331712789387,25.18302327721 55.3330641966933,25.1829771872723 55.3329634547624,25.1829350403357 55.3328704918268,25.1828977478487 55.3327867643819,25.182866198301 55.3327137233673,25.1828412989046 55.3326528144654,25.1828239471969 55.3324290036259,25.1833917843308</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.22">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">22</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">75</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3353533063039,25.1835352345579 55.3353314167028,25.1834860250102 55.3360545426561,25.1831739124831 55.3360772812678,25.1832084126207 55.3360767545672,25.1832208827742 55.3353533063039,25.1835352345579</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.23">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">23</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">76</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3322133257453,25.1822023353609 55.3322495689194,25.1822025734428 55.3323098939342,25.1822050731044 55.3323661532744,25.1822076826625 55.332422268934,25.182211726666 55.332478203617,25.1822171390392 55.3325339419631,25.1822238490954 55.3325894466691,25.182231795373 55.3326446970635,25.182240907073 55.3326996614019,25.1822511227054 55.3327543137034,25.1822623713847 55.3328119803597,25.1822752912893 55.3328407691782,25.1822828164429 55.3328622685813,25.1822884396195 55.33288356689,25.1822942354473 55.3329047134106,25.182300190123 55.3329257573201,25.1823062945479 55.3329467424989,25.1823125348862 55.3329677178603,25.1823189114481 55.3329887218544,25.1823254103647 55.3330098092536,25.1823320178782 55.3330385278547,25.1823416014155 55.3330660481963,25.1823512001433 55.3331210401799,25.1823724745877 55.3331473241526,25.1823831029841 55.3331748034553,25.1823937389086 55.3332010534736,25.1824054097607 55.3345575559423,25.1829852426771 55.3345932381283,25.1830011127405 55.334627705002,25.1830169775986 55.3346621212307,25.1830349104693 55.3346953053323,25.1830528374882 55.3348386500812,25.1831428960747 55.3349638725279,25.1832444317297 55.335070529486,25.1833566312524 55.3351581813725,25.183478666025 55.3352263960911,25.1836097255151 55.3352747499355,25.1837489853098 55.3353028373501,25.1838956265472 55.3353102381551,25.1840488316141 55.3348104780819,25.1840315897558 55.3348052456436,25.1839383134278 55.3347882092301,25.1838520881734 55.3347595335321,25.1837720110985 55.3347193797593,25.1836971847975 55.3346679220871,25.1836266993872 55.3346053300476,25.1835596561037 55.3345317634724,25.1834951443598 55.334447404395,25.1834322469379 55.3343977042569,25.1834049077889 55.3343455204402,25.1833796093323 55.3343265138225,25.1833711824969 55.3329733255992,25.1827928839833 55.3329530662383,25.1827844161592 55.3329256309111,25.182773807966 55.3328993884524,25.1827632123229 55.3328719507965,25.1827525984813 55.3328543777752,25.1827464959068 55.3328369604727,25.182740628618 55.3328196242836,25.1827349492482 55.332802316169,25.1827294152622 55.3327849613654,25.1827239839685 55.3327675068115,25.1827186128219 55.3327498887111,25.1827132545111 55.332732037563,25.1827078710553 55.3326745403221,25.1826928976415 55.3326457782704,25.1826864490821 55.332598795504,25.1826759314463 55.3325514375215,25.1826667942044 55.3325037508969,25.1826589534444 55.3324557935053,25.1826523065215 55.33240762276,25.1826467648073 55.3323592797193,25.1826422395241 55.33231082732,25.1826386326393 55.33226231731,25.1826358554007 55.3322321877516,25.1826356477132 55.3322020648499,25.1826344039217 55.329896901293,25.1826155812354 55.329905211323,25.1821858158423 55.3322133257453,25.1822023353609</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.24">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">24</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">77</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3329875591244,25.1827864943872 55.333106467839,25.1828382294522 55.333129752015,25.1827991624434 55.333009582821,25.1827484639952 55.3329875591244,25.1827864943872</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.25">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">25</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">78</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3328134520032,25.1823433636352 55.3329403635517,25.1823814578739 55.3329575650221,25.182340059788 55.3328306113137,25.1823030284311 55.3328134520032,25.1823433636352</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.26">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">26</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">79</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3360550307239,25.1831743514744 55.3353340052155,25.1834883314583 55.3353082405924,25.1834482312314 55.3352807902027,25.1834080881299 55.3352518039396,25.183367945439 55.3352214312586,25.183327860494 55.3351898061404,25.1832878718691 55.335157078428,25.1832480323112 55.3351233926345,25.1832083945719 55.3350888937329,25.1831690020914 55.33540424017,25.1826486445254 55.3358245937851,25.1828299943321 55.3360550307239,25.1831743514744</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.27">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">27</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3346719597167,25.1823464158289 55.3353937099649,25.1826503156894 55.3350813730201,25.1831706831445 55.3350622001985,25.1831482529481 55.3350169421378,25.183107133091 55.3349688509558,25.183067381835 55.3349182669381,25.1830292138369 55.3348655255198,25.1829928391515 55.334810957609,25.1829584538279 55.3347549044953,25.1829262774643 55.3346977029005,25.1828965155914 55.3346396900356,25.1828693690358 55.3344169437964,25.182774004962 55.3346719597167,25.1823464158289</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.28">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">28</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3346728791824,25.1841589890038 55.3346717575496,25.1840435487624 55.3346543217386,25.18393866191 55.3346221468821,25.1838439302469 55.334576826082,25.1837589458839 55.3345199527479,25.1836832962593 55.3344531192709,25.1836165692849 55.3343779273038,25.1835583399253 55.3342959861331,25.1835081892652 55.3340457580152,25.1833994839529 55.3336959060336,25.1839883080734 55.3338050312468,25.1840291653592 55.333917856328,25.1840644359919 55.3340343894441,25.1840941237022 55.3341546337722,25.184118235942 55.3342785986281,25.1841367746961 55.3344062883344,25.1841497456731 55.3345377133612,25.1841571491185 55.3346728791824,25.1841589890038</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.29">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">29</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3324259198062,25.1826475943916 55.3324559988683,25.1826509388176 55.3324848187835,25.182655292069 55.3325148543262,25.1826596678227 55.3325518582776,25.1826664970464 55.3325882681363,25.1826738050742 55.3326242126052,25.1826816396255 55.3326598095228,25.1826900483331 55.3326951875712,25.1826990788914 55.3327304751533,25.1827087883529 55.3327657903245,25.1827192149296 55.3328012614448,25.1827304156362 55.3328287316599,25.1827399854313 55.332857406367,25.1827495492279 55.3328848716625,25.182760158656 55.3329110872176,25.1827707588797 55.3329385500484,25.1827813673451 55.3329588098517,25.1827898305545 55.3343120192636,25.1833681339148 55.3343310260337,25.1833765654891 55.334383210846,25.1834018641735 55.334432912953,25.1834291802598 55.3344800335558,25.1834606483824 55.3345024020905,25.1834763783109 55.3345247100433,25.1834931324012 55.3345917129639,25.1835501265591 55.3346496860396,25.1836090118525 55.3346986289027,25.1836703154985 55.3347385524863,25.183734563582 55.3347694788664,25.183802290209 55.3347914150306,25.1838740184988 55.3348043742507,25.1839502745164 55.3348083710234,25.1840315823517 55.334807297501,25.184159361617 55.3346728632861,25.1841589795983 55.3346759643948,25.184107454232 55.3346759902567,25.1840734080713 55.3346748354398,25.1840393522248 55.3346705175559,25.1840018570773 55.334663529453,25.1839639996198 55.3346539714971,25.183926115203 55.3346419440187,25.1838885442251 55.3346275312583,25.183851627353 55.3346108393174,25.1838157057987 55.3345919638488,25.1837811163848 55.3345710004087,25.1837482055447 55.3345503138633,25.183720112086 55.3345284358035,25.1836920085475 55.3344995091379,25.1836599519007 55.3344685139671,25.1836292933566 55.3344355148852,25.1836002022653 55.3344005881951,25.1835728294896 55.3343637882199,25.1835473397374 55.334325191514,25.1835238885744 55.3342848638383,25.1835026361272 55.3342428711746,25.183483742478 55.334050373237,25.1834014500208 55.3333986435901,25.1831237081961 55.3328902945544,25.1829059203038 55.3328545509366,25.1828911144169 55.3328092021807,25.1828735946193 55.3327632128826,25.182857300392 55.3327166320463,25.1828422511925 55.3326694975963,25.1828284757289 55.3326218587368,25.182815988703 55.3325737755464,25.1828048048512 55.3325252751918,25.1827949526857 55.3324764230986,25.1827864515776 55.3324368110586,25.1827799308469 55.3323983700652,25.1827744581651 55.3323587082419,25.1827700308877 55.3323190204202,25.182766619923 55.3322395828872,25.1827618961876 55.3297434881424,25.1827436738255 55.3297455379663,25.1826145289562 55.3321875363052,25.182631354727 55.3322139040828,25.1826319630706 55.3322400445719,25.1826327902317 55.3322660273507,25.1826338695203 55.3322919165678,25.1826352342088 55.332317770941,25.1826369175316 55.3323436707636,25.1826389575597 55.3323696691889,25.1826413921748 55.3323958411932,25.1826442547176 55.3324259198062,25.1826475943916</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.30">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">30</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3360115597571,25.1840773260375 55.3358327168703,25.1841852300953 55.33547009588,25.1841709466796 55.3354705778958,25.1841618481586 55.3354716504557,25.1841369876102 55.3354727720707,25.1841000199294 55.3354734007508,25.1840546047119 55.3354729835211,25.1840043953916 55.3354709773355,25.1839530600048 55.3354668335152,25.1839042680041 55.3354599978736,25.1838616946343 55.3354480243286,25.1837935827514 55.3354304018221,25.18372806897 55.3354097556647,25.1836677557823 55.3353887149829,25.1836152449688 55.3353699123089,25.1835731316273 55.3353559870418,25.1835440257709 55.3353495741778,25.1835305220724 55.3353533064871,25.1835352298937 55.3360767817892,25.1832208829732 55.3360115597571,25.1840773260375</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.31">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">31</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3218284992691,25.1784856952882 55.3217827545137,25.1785646033934 55.3216939345287,25.1785225841717 55.3217384915155,25.1784447120171 55.3218284992691,25.1784856952882</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.32">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">32</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3216552569938,25.1785021873075 55.3216704098331,25.1784757106121 55.3217080065763,25.1784949334603 55.321692872155,25.17852174808 55.3216552569938,25.1785021873075</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.33">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">33</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">80</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3216517957753,25.1809957705231 55.3218663752097,25.1810950958124 55.3220298562608,25.1810491323618 55.3222790154456,25.1806199534611 55.3220640686055,25.1805213546766 55.3218112699166,25.180953268289 55.3216517957753,25.1809957705231</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.34">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">34</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">81</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3224223994521,25.1799034548772 55.3226196240683,25.1795642786328 55.3225446326774,25.1793622795588 55.3227618148561,25.1794627460499 55.3228354757083,25.1796639930165 55.3226379025853,25.1800046872374 55.3224223994521,25.1799034548772</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.35">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">35</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">82</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3241295246302,25.182476650185 55.324198861805,25.18250614089 55.3239642239599,25.1829565141211 55.3238961955618,25.1829271184541 55.3241295246302,25.182476650185 55.32371103475,25.1823078754258 55.3241295246302,25.182476650185</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.36">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">36</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">83</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.322415618766,25.1817825704296 55.3225118917446,25.1818260456116 55.322254006611,25.1822665760222 55.322153240491,25.1822287059074 55.322415618766,25.1817825704296</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.37">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">37</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">84</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3204703607632,25.179788633796 55.3205841421105,25.1798409601337 55.3205938372229,25.1798452327708 55.3202910059326,25.1803738253716 55.320167812604,25.1803174354506 55.3204703607632,25.179788633796</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.38">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">38</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">85</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3211607281862,25.1787217949745 55.321298102359,25.1787863342703 55.3210257833995,25.17926185954 55.3208874838188,25.179198590725 55.3211607281862,25.1787217949745</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.39">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">39</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">86</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3244763038042,25.1802004618008 55.3245617966979,25.1802061797598 55.3245647629391,25.1807385876669 55.3244794879674,25.1807381182057 55.3244763038042,25.1802004618008</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.40">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">40</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">87</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.327889345694,25.1827276237168 55.3278472609487,25.1831959239219 55.3277923577462,25.1831887782282 55.327845671437,25.1827269498593 55.327889345694,25.1827276237168</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.41">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">41</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">88</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3267516176325,25.1822804053659 55.326769527675,25.1822961322571 55.3267850477945,25.1823076805351 55.3264312042074,25.1826334998104 55.3264121126941,25.1826178080035 55.326391825307,25.1826021017181 55.3267516176325,25.1822804053659</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.42">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">42</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">89</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3275125644289,25.1812674490885 55.3275497104284,25.1812960130568 55.3275880216125,25.1813235306366 55.3271554859068,25.1816603768512 55.3271172243928,25.1816245730372 55.3270897210808,25.1815971862953 55.3275125644289,25.1812674490885</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.43">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">43</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3240326598418,25.1820142043422 55.3240467100134,25.1819875643101 55.3241237313858,25.1819541276017 55.3246643496482,25.1820573520828 55.3246799243772,25.182060576421 55.3246951463457,25.1820642151774 55.3247100746753,25.1820682827579 55.3247247630436,25.1820727794812 55.3247392759078,25.1820777104137 55.324753661575,25.1820830758303 55.3247679845054,25.1820888807884 55.3247822930512,25.1820951349171 55.3250146955436,25.1822014586205 55.3250243035952,25.1822251303921 55.3249794005551,25.1822997646408 55.3248464235413,25.1823399234651 55.3240326598418,25.1820142043422</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.44">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">44</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3216155006368,25.1767589444864 55.3216539143287,25.1767308483567 55.3216792364096,25.1767147918868 55.3217046380335,25.1766986547849 55.3217301540643,25.1766825542683 55.3217558301936,25.1766666027666 55.3217817120847,25.176650912774 55.3218078290336,25.1766356016922 55.3218342320299,25.1766207772695 55.3218609613272,25.1766065619387 55.3218935570809,25.1765892604509 55.322146089253,25.1771079686254 55.3221672917901,25.1771494621056 55.3221893160629,25.1771900698163 55.3222122727097,25.1772298902241 55.3222362779056,25.1772690314069 55.3222614365364,25.1773075818415 55.3222878701666,25.1773456542402 55.3223156782231,25.1773833465545 55.3223449819066,25.1774207566948 55.322383274621,25.1774672608595 55.3213658978699,25.1769944052347 55.3213606030265,25.1769705922236 55.3213939929417,25.1769382178407 55.3214155780065,25.1769185468754 55.3214375905448,25.176899014523 55.3214599767195,25.1768796596839 55.3214826936723,25.1768605261911 55.3215056930426,25.1768416578957 55.3215289208767,25.1768230937902 55.3215523394964,25.1768048680596 55.3215758896643,25.1767870343663 55.3216155006368,25.1767589444864</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.45">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">45</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3252172226935,25.178967419983 55.3253724115007,25.1790417444603 55.3251856783412,25.1793532342009 55.3252861820854,25.1794005359471 55.3250386268313,25.1798136721123 55.3248359424612,25.1798126977089 55.3250362093672,25.1794781068071 55.3249406067778,25.1794340811048 55.3252172226935,25.178967419983</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.46">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">46</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3257551654227,25.1831283159764 55.3257921131061,25.1831430451666 55.3258266669056,25.1831567063112 55.3255985526478,25.1836082482534 55.3255640485642,25.1835956509067 55.3255259981311,25.1835809530832 55.3257551654227,25.1831283159764</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.47">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">47</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3263584795654,25.1827146880969 55.3263954620158,25.1827429284323 55.3264753510252,25.182801975963 55.3265583560672,25.1828584294789 55.3266441946132,25.1829120995682 55.3267325847778,25.1829627875305 55.3268232291243,25.1830103038467 55.3269158576409,25.1830544591213 55.3270101740029,25.1830950589982 55.3271059038775,25.1831319091142 55.3271416750057,25.1831445665968 55.3270927539061,25.1831359562662 55.326958906196,25.1831074990528 55.3268264835069,25.1830762235907 55.3266953843039,25.1830420905409 55.3265655178015,25.1830050743628 55.326436766444,25.1829651397831 55.3263090341757,25.1829222607482 55.3261822249882,25.1828764016498 55.3260562267681,25.1828275265079 55.3254999046888,25.1826040326796 55.3254651048175,25.1825135710212 55.3256274529576,25.1824669614705 55.3257304575135,25.1822906881804 55.3257782879288,25.1823146590381 55.3257977306648,25.1822838300928 55.3259022622471,25.1823317254598 55.3259189841699,25.1823401425946 55.3259337363036,25.1823475501815 55.3259483586631,25.182355653293 55.3259627543009,25.1823643716779 55.3259768209139,25.1823736390801 55.3259904562313,25.1823833705504 55.3260035633878,25.1823934998867 55.3260160347938,25.1824039468035 55.3260277790274,25.182414640489 55.3260421089122,25.1824272155663 55.3260445171983,25.1824303348698 55.3260734071044,25.1824593796051 55.3261029208894,25.1824880819566 55.3261329509433,25.1825164834808 55.3261633789262,25.1825446162747 55.3261940972728,25.1825725124694 55.3262249984338,25.1826002041581 55.3262559694899,25.1826277280263 55.3262868975481,25.1826551113884 55.326322680359,25.1826854202497 55.3263584795654,25.1827146880969</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.48">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">48</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3219334158879,25.1796805887785 55.3222074238047,25.1792064677874 55.3223226011893,25.1792590695324 55.3220484287975,25.1797340699894 55.3219334158879,25.1796805887785</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.49">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">49</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">90</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.330802636129,25.1832656849163 55.3307427930679,25.1832652437259 55.330753136838,25.182749666202 55.3308131086801,25.1827500851768 55.330802636129,25.1832656849163</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.50">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">50</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">91</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3284565595287,25.1811828334233 55.3284551788234,25.1811996465228 55.3284520423356,25.1812146876566 55.3284476333518,25.1812295113306 55.3284420017355,25.1812440422216 55.3284351973777,25.1812582003184 55.3284272809437,25.1812719104407 55.3284183021691,25.1812851021065 55.3284083108064,25.1812977001393 55.3283973674684,25.1813096247316 55.3283949325154,25.1813127716529 55.3282635604172,25.1813119938895 55.3282078894505,25.1813100342564 55.3281531386672,25.1813051366808 55.3280992892975,25.1812973388716 55.3280463118356,25.1812866782556 55.3279941824211,25.1812731779078 55.3279428825035,25.1812568843592 55.3278923829842,25.181237820259 55.3278426601135,25.1812160270069 55.3278330519297,25.1812107331226 55.3281358208072,25.1809168602309 55.3281574008122,25.1809317123589 55.3282365455468,25.1809848278346 55.328277316717,25.1810113743507 55.3283169030845,25.1810368491875 55.3283588879758,25.1810613112645 55.3283996567539,25.1810857441126 55.328441630523,25.1811091297425 55.3284488445361,25.1811133793791 55.3284534782359,25.1811302415772 55.3284557176092,25.1811481334679 55.3284579459469,25.1811649723612 55.3284565595287,25.1811828334233</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.51">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">51</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">92</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3191867538026,25.1803005937389 55.3193089328503,25.1803559484042 55.3189723311665,25.180948079734 55.3188326179572,25.1808938979129 55.3191867538026,25.1803005937389</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.52">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">52</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">93</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3279876221711,25.1799889523813 55.3280462403106,25.1800412330135 55.3283320929162,25.1795954045147 55.3282519792988,25.1795539213405 55.3279876221711,25.1799889523813</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.53">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">53</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">94</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3240142121637,25.1818270223279 55.3239723517802,25.1818194709886 55.3240718711555,25.1814012630572 55.3241170018054,25.1814045646106 55.3240142121637,25.1818270223279</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.54">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">54</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">95</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3196550048381,25.1803864239592 55.3196650183719,25.1803864766271 55.3196671366514,25.180378188893 55.3196597161993,25.1803603445204 55.3192723830134,25.1801850555746 55.3192532699304,25.180173361717 55.3192044885691,25.1801383094426 55.3191388640595,25.180079957643 55.3190692130077,25.1799983375746 55.3190083756463,25.1798934649204 55.318969196773,25.1797653516086 55.3189645671674,25.1796139751903 55.3190074205515,25.1794392953717 55.3190857902121,25.1793225157726 55.3190916165219,25.1793093717928 55.3190958479983,25.1792962334992 55.3190939915499,25.1792878600588 55.3187107265361,25.1797719725341 55.3187065204867,25.1797773897669 55.3186968351901,25.1797924146695 55.3186860803598,25.1798151989403 55.3186786698508,25.1798439084434 55.3186789925747,25.1798766863531 55.3186914677002,25.1799117064818 55.3187204740823,25.1799471211742 55.3187704283272,25.1799810949368 55.3196550048381,25.1803864239592</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.55">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">55</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">96</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3192909895659,25.1777607012643 55.3198760414145,25.1781346174284 55.3199247200474,25.1780762540961 55.3193411921691,25.1777163551919 55.3192909895659,25.1777607012643</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.56">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">56</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">97</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3271960027981,25.1807504079255 55.3274678361068,25.1803019497281 55.3272029998044,25.1800716028295 55.3270803565877,25.1799683974276 55.3268745410922,25.1800008623696 55.3267952500783,25.1801332057512 55.3266244048752,25.1804170342547 55.3266603509154,25.1804953830748 55.3270817218015,25.1806907269251 55.32709857384,25.180699268993 55.3271094119528,25.1807045991857 55.3271960027981,25.1807504079255</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.57">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">57</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">98</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3189811507154,25.178155849583 55.3192909894358,25.1777606964337 55.319376411623,25.1778165583452 55.3190708157305,25.1782174633155 55.3189811507154,25.178155849583</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.58">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">58</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">99</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3313070849568,25.1841034099461 55.3317874340191,25.1841072512636 55.3318932352331,25.1841080973485 55.3319035040046,25.1841094389531 55.33194006871,25.1841173160206 55.3319795384524,25.1841252162925 55.3320175422615,25.1841343594975 55.3320540575553,25.1841434952445 55.3320920163762,25.1841539155179 55.3321284643837,25.1841655871312 55.3321663665182,25.1841785058801 55.3322013065354,25.1841914325545 55.332220211558,25.1841991707114 55.3322725798354,25.184221057402 55.3322943975834,25.1842300720904 55.3323277523418,25.1842467540232 55.3323625810369,25.1842634511176 55.3326568469382,25.1844147666587 55.3327058734046,25.1843445199857 55.3328565732572,25.1844214515105 55.3329579516237,25.1844248138218 55.3331130566354,25.1842063698272 55.3331407580971,25.1841661360016 55.3332204591487,25.1842084909961 55.3334467394414,25.184318997958 55.3334569311353,25.1843228483001 55.3335005171786,25.1843409005529 55.3335455900747,25.1843589450045 55.3335615823141,25.1843653961823 55.3335223050267,25.1844433289247 55.3336124841597,25.1844768793963 55.3336203611949,25.1844605417024 55.3336975625452,25.1844851546687 55.3337134402515,25.1844499485395 55.3337556574978,25.1844641917669 55.3337684694725,25.1844327403078 55.3337742756655,25.1844353225932 55.3338224437875,25.1844483357388 55.3338691680381,25.1844600648629 55.3339174063509,25.184470566944 55.3339641707252,25.1844810428542 55.3340124665886,25.1844902875065 55.3340607357086,25.1844995226787 55.3341090970493,25.1845062203238 55.3341589435921,25.1845129488946 55.3342073339272,25.1845196470381 55.3342572045026,25.184525127784 55.3343056857377,25.1845292980067 55.3343556438469,25.1845322415669 55.3344188860316,25.1845352955335 55.3322266054598,25.184459134377 55.3299687327138,25.1843813328133 55.3297156017774,25.1841903022481 55.3297227126969,25.1838343470686 55.3298842589482,25.1836457731712 55.3298918171738,25.1841640032889 55.3304941707974,25.1841688527361 55.3304926026174,25.1840968965884 55.3308887217256,25.1841000643249 55.3313070849568,25.1841034099461</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.59">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">59</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3284716781255,25.180366681635 55.3284969060448,25.1803869146112 55.3285188100383,25.1804024853877 55.3285406790694,25.1804195922661 55.3285625569824,25.180435164593 55.3285844328396,25.1804507354565 55.3286063066412,25.180466304857 55.3286298660353,25.1804818817321 55.3286517631083,25.1804974293392 55.3286660024199,25.1805073206775 55.3288398340041,25.1804442649074 55.3288320740965,25.1804763892226 55.3286656541073,25.1805381550615 55.3286345478302,25.1805189663009 55.3286126741606,25.1805034023696 55.3285890943902,25.1804878469769 55.3285672274475,25.1804722802001 55.3285453697072,25.1804551652267 55.3285218054045,25.180439586439 55.3284999211472,25.1804224821923 55.3284780402106,25.1804069092123 55.3284578775323,25.1803897962481 55.3284716781255,25.180366681635</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.60">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">60</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3337130779894,25.1844471478944 55.3337244874002,25.1844202837003 55.3337685612496,25.1844319178018 55.3337554024158,25.1844611009311 55.3337130779894,25.1844471478944</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.61">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">61</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3284559128061,25.1803897097918 55.3288097660759,25.1798102684912 55.3283354592871,25.1795935463299 55.3280462347365,25.1800412473069 55.3284559128061,25.1803897097918</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.62">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">62</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.333520812318,25.18443917834 55.3336104985243,25.1844748474519 55.3336524756731,25.1843964807713 55.3335628688912,25.184361797702 55.333520812318,25.18443917834</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.63">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">63</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3336226373757,25.1844592520438 55.3336956252606,25.1844829798034 55.3337244874002,25.1844202837003 55.3336516380331,25.1843973389598 55.3336226373757,25.1844592520438</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.64">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">64</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3256274637075,25.1824669615436 55.3254651155627,25.1825135710947 55.3254291058888,25.1824240987396 55.3255649436489,25.1821974215685 55.3255936484699,25.1821892981977 55.3257479853651,25.1822610342554 55.3256274637075,25.1824669615436</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.65">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">65</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.319569056142,25.1785306883375 55.3198760468383,25.1781346174477 55.3193748602264,25.1778200440302 55.3190742573405,25.1782115576357 55.319569056142,25.1785306883375</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.66">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">66</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.32164801036,25.1761208847061 55.321579502781,25.1760357131317 55.3206423687445,25.1761830802759 55.3204842190623,25.1763480729227 55.3203994902812,25.1764532276603 55.3209138492446,25.1767990963201 55.3209996165207,25.1767066995963 55.3213973773432,25.1763537497649 55.3215512506191,25.1762307223718 55.3215866214251,25.1762340504847 55.3216325071497,25.1762112746879 55.32164801036,25.1761208847061</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.67">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">67</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3327789244284,25.184373721605 55.3329844802267,25.1840765364631 55.3331407796928,25.184166136175 55.3329699833169,25.1844215199698 55.3328652237582,25.1844206583352 55.3327789244284,25.184373721605</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.68">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">68</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3199247252376,25.178076244474 55.3193411972102,25.1777163407117 55.3201913443077,25.1767035073697 55.3207259362055,25.1770322743671 55.3199247252376,25.178076244474</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.69">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">69</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3191219063891,25.1791019320133 55.3194990597724,25.1786188337479 55.3188873386412,25.1782294885742 55.3185080454803,25.1787379958728 55.3184201125531,25.1788440096119 55.3178959544937,25.179535326368 55.3182790092671,25.1806726042101 55.3183099368749,25.1806864573181 55.3186738029983,25.1800643875482 55.3184519165548,25.1799624656628 55.3187614580125,25.1795643629277 55.3191219063891,25.1791019320133</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.70">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">70</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3201913388495,25.1767035073562 55.3204016202217,25.176452426312 55.3209147180075,25.1767991131565 55.3207259525714,25.1770322744117 55.3201913388495,25.1767035073562</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.71">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">71</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3274689522578,25.1803017555182 55.3280062180917,25.1808189874732 55.3281369141025,25.1809166673065 55.3278341703703,25.1812105269348 55.3277043777881,25.1811317982511 55.3275956324459,25.1810373998004 55.3273485322923,25.180842716294 55.3271971162609,25.1807502053707 55.3274689522578,25.1803017555182</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.72">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">72</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3288744185686,25.1802772956894 55.3286024316796,25.1801514204582 55.3284731187487,25.1803643221172 55.3286662442646,25.1805022976077 55.3288376458688,25.1804395971103 55.3288744185686,25.1802772956894</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.73">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">73</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3199924650901,25.1789321189637 55.3223548003963,25.1800224720642 55.3221309717016,25.1804079547011 55.3197116521225,25.1792909695576 55.3199924650901,25.1789321189637</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.74">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">74</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3205466880822,25.1796561715539 55.3206663476954,25.1797119717463 55.3206887115032,25.179673297211 55.3205690404111,25.1796177819118 55.3205466880822,25.1796561715539</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.75">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">75</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3229721592653,25.1803071959174 55.3239855806897,25.1807735221548 55.3240349450053,25.1807937728931 55.3240786887317,25.180810273877 55.324123197033,25.1808247070479 55.3241683792485,25.180837067715 55.3242141502182,25.1808473605585 55.3242604354723,25.1808555712924 55.3243071336651,25.1808616995508 55.3243541703952,25.1808657355499 55.3244014605297,25.1808676787886 55.3250540647453,25.1808714347257 55.3251268161932,25.1808724951343 55.3251987613824,25.180876256869 55.325270005722,25.180882682887 55.3253406656236,25.1808917596733 55.3254108467263,25.180903449824 55.3254806656233,25.1809177347486 55.3255502389649,25.1809345862359 55.3256196726468,25.1809539711326 55.3253861116716,25.1813442739414 55.3253387910714,25.1813334258327 55.3252964887645,25.1813243984163 55.3252574940185,25.1813170920994 55.3252201123681,25.1813114167945 55.3251826386817,25.181307287036 55.3251433680102,25.1813046078937 55.3251006011503,25.1813032891374 55.3250526286007,25.1813032404209 55.3243957638308,25.1812993465107 55.3243225645308,25.1812970236354 55.3242504540949,25.1812913723472 55.3241793109979,25.1812824344216 55.3241090301586,25.1812702655837 55.3240395065876,25.1812549118746 55.3239706301202,25.1812364284804 55.3239022960339,25.1812148609662 55.3238343944035,25.1811902640757 55.3237658910345,25.1811605374782 55.3227494324525,25.1806898606665 55.3229721592653,25.1803071959174</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.76">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">76</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3244576951015,25.1809294686996 55.3245920293904,25.1809305206109 55.3245919015116,25.1808863528594 55.3244574311413,25.1808855976265 55.3244576951015,25.1809294686996</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.77">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">77</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3277978733161,25.1821612019734 55.3278506118812,25.1821698965072 55.327903371324,25.1821754583626 55.3279561503949,25.1821789193903 55.3280173649976,25.1821803629638 55.3285208665501,25.1821767281613 55.3285162296889,25.1826071248664 55.3280076912738,25.182604270208 55.3279298224615,25.1826029157064 55.3278171486834,25.1825943067908 55.3277053949139,25.1825795032714 55.3275950970309,25.1825584380828 55.3274867962924,25.1825310291095 55.3273810447399,25.1824971978462 55.3272783784608,25.1824568644714 55.3271793392985,25.182409952601 55.3270844805044,25.1823563752203 55.3270362819388,25.1823217302613 55.3269796057272,25.182279557898 55.3269259480579,25.1822416709814 55.3268754265328,25.1822010506468 55.3268048024158,25.1821413484637 55.3267424374253,25.1820855177169 55.3266695999675,25.1820166276307 55.3265582762203,25.1819033910842 55.3265406238721,25.1818863268532 55.326508923706,25.1818563537018 55.3264759550137,25.181828499589 55.3264417351277,25.1818025263568 55.3264062543533,25.1817781859898 55.3263695352727,25.181755239821 55.3263315734016,25.1817334440953 55.3262923803315,25.1817125596682 55.3262519567556,25.1816923377561 55.3260825795385,25.1816156541106 55.326311584513,25.1812361707197 55.3263826474204,25.1812688548372 55.3265253293593,25.1813361168255 55.3266435806071,25.1814021964145 55.3267439927935,25.1814691908629 55.3268331636389,25.1815391995591 55.3269176907328,25.1816143329204 55.3270041434048,25.1816966786236 55.3270991095934,25.1817883246977 55.3272091504167,25.1818913630244 55.3272473795808,25.1819218799459 55.327285635238,25.1819492680902 55.327331217794,25.1819803565746 55.3273788652983,25.1820096640651 55.3274283419041,25.1820370353778 55.3274794011432,25.182062329329 55.3275318185105,25.1820853860668 55.3275853480133,25.1821060643106 55.3276397655598,25.1821242087585 55.3276948310205,25.1821396685832 55.327746347094,25.1821514929739 55.3277978733161,25.1821612019734</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.78">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">78</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3268335700311,25.1821454975986 55.3269308794537,25.1822252436845 55.3269639555569,25.1821940812283 55.3268666411793,25.1821138835506 55.3268335700311,25.1821454975986</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.79">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">79</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3205466880822,25.1796561715539 55.3206663476954,25.1797119717463 55.3206887115032,25.179673297211 55.3205690404111,25.1796177819118 55.3205466880822,25.1796561715539</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.80">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">80</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3244576951015,25.1809294686996 55.3245920293904,25.1809305206109 55.3245919015116,25.1808863528594 55.3244574311413,25.1808855976265 55.3244576951015,25.1809294686996</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.81">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">81</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3268335700311,25.1821454975986 55.3269308794537,25.1822252436845 55.3269639555569,25.1821940812283 55.3268666411793,25.1821138835506 55.3268335700311,25.1821454975986</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.82">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">82</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3328134520032,25.1823433636352 55.3329403635517,25.1823814578739 55.3329575650221,25.182340059788 55.3328306113137,25.1823030284311 55.3328134520032,25.1823433636352</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.83">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">83</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3329875591244,25.1827864943872 55.333106467839,25.1828382294522 55.333129752015,25.1827991624434 55.333009582821,25.1827484639952 55.3329875591244,25.1827864943872</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.84">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">84</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3193092065845,25.1803559451096 55.3193140378986,25.1803580887209 55.3197005262384,25.1805355104864 55.3193747571555,25.1811053507409 55.3193242423536,25.1810852204894 55.3189778308259,25.1809494610593 55.3189730115379,25.1809473497747 55.3193092065845,25.1803559451096</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.85">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">85</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3186737870259,25.1800643922054 55.318783358914,25.1801151190681 55.3191902705129,25.1803015580294 55.3188305319258,25.1808923050462 55.3187744504572,25.1808701390671 55.3183076949555,25.1806844425163 55.3184107949172,25.1805085890446 55.3186737870259,25.1800643922054</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.86">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">86</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3201252705036,25.1807308316842 55.3205520322892,25.1809270262357 55.3202449746545,25.1814610411663 55.3201429092165,25.1814208397088 55.3200961951354,25.1814069984488 55.3199290618431,25.1813340466377 55.3198088718276,25.1812843182774 55.3201252705036,25.1807308316842</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.87">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">87</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3228989322411,25.1819814363729 55.3233072557264,25.1821451866759 55.3230742738347,25.1825976722159 55.3228292744748,25.1824987097839 55.3226666883985,25.182433405866 55.3228989322411,25.1819814363729</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.88">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">88</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3233072503128,25.1821451819665 55.3237152890772,25.1823098508829 55.3234827346964,25.1827618366221 55.3230742683738,25.1825976628673 55.3233072503128,25.1821451819665</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.89">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">89</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3209916074777,25.1811283319607 55.3214488147592,25.1813389588013 55.3211628516448,25.1818310449708 55.3206951186902,25.1816429415104 55.3209916074777,25.1811283319607</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.90">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">90</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3219259617923,25.1815578212439 55.3216517620144,25.1820274255234 55.3211628784066,25.1818310451406 55.3214488147592,25.1813389588013 55.3219259617923,25.1815578212439</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.91">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">91</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3225118862491,25.1818260362103 55.3228989161512,25.1819814362691 55.3226667044525,25.182433405975 55.3222528446265,25.1822668761761 55.3225118862491,25.1818260362103</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.92">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">92</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3241988564427,25.1825061408533 55.3242359051121,25.1825209150083 55.3248677736504,25.1827893099003 55.3248701578376,25.1827914027293 55.3246426536287,25.1832440345419 55.3246307341117,25.1832387907284 55.3240012068367,25.182972251262 55.3239642186096,25.1829565140828 55.3241988564427,25.1825061408533</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.93">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">93</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3248802750342,25.1827914740405 55.3249172838376,25.1828051774855 55.3253169387425,25.1829589743815 55.325089774514,25.1834121326024 55.3246908481153,25.1832588234378 55.3246527482512,25.1832441045082 55.3248802750342,25.1827914740405</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.94">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">94</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3253169494653,25.1829589744584 55.3253551149055,25.1829737276429 55.3257550637798,25.1831286403879 55.32552716575,25.183578583841 55.3251278577441,25.1834268410784 55.3250897852449,25.1834121419462 55.3253169494653,25.1829589744584</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.95">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">95</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3271446660941,25.1835300462995 55.3273840052844,25.1835813058956 55.3275639723705,25.1835960620086 55.3275105673889,25.1840951037795 55.3272775277339,25.1840675911469 55.3270089720699,25.1840100582793 55.3271446660941,25.1835300462995</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.96">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">96</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3262556992068,25.1832997170686 55.3266724794617,25.1834265388155 55.3266855962404,25.1834297395499 55.3265508677598,25.1839089696894 55.3265104456268,25.1839004358119 55.3260683524927,25.1837665854381 55.3262556992068,25.1832997170686</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.97">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">97</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3266754725176,25.1834296587976 55.3271446553903,25.1835300415835 55.3270089827948,25.1840100537488 55.3265407609519,25.1839088854359 55.3266754725176,25.1834296587976</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.98">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">98</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3258315829707,25.1831562314198 55.3259912531809,25.1832172613092 55.3262549436503,25.1832994098387 55.3260690065069,25.1837644183423 55.3257842259237,25.1836780272278 55.3256034572766,25.1836077723346 55.3258315829707,25.1831562314198</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.99">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">99</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3215469100158,25.1802861637014 55.3220640686805,25.1805213594093 55.3218140621743,25.1809508278442 55.3216517958581,25.1809957752358 55.3212421355047,25.1808131218681 55.3215469100158,25.1802861637014</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.100">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">100</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3205935070292,25.1798429496116 55.321174429254,25.1801098808643 55.3208704192246,25.1806374985783 55.3202921789103,25.1803706046711 55.3205935070292,25.1798429496116</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.101">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">101</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3211712349792,25.1801091577373 55.3215490087778,25.1802838900722 55.3212457129098,25.1808099241922 55.3208687127032,25.1806358314037 55.3211712349792,25.1801091577373</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.102">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">102</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3201134486927,25.1796256813393 55.3204646814514,25.1797880549325 55.320162148155,25.1803168805877 55.3198116423553,25.1801550793597 55.3201134486927,25.1796256813393</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.103">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">103</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3241136494143,25.1814064173056 55.3241316485405,25.1814107134341 55.3242227071292,25.1814227473086 55.3243149379975,25.181430633936 55.3243987652038,25.1814332237875 55.3246706160215,25.1814348627148 55.3246733040381,25.1819567572786 55.3240140499828,25.1818296376606 55.3241136494143,25.1814064173056 55.3240729030485,25.1813988599472 55.3241136494143,25.1814064173056</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.104">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">104</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.323106560935,25.1797893562088 55.323333823164,25.1797267788789 55.3238177740134,25.1799512814309 55.3235356988982,25.1804205350409 55.3229073982301,25.1801286769072 55.323106560935,25.1797893562088</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.105">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">105</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3231283956059,25.1810153225593 55.3236624109528,25.1812614484856 55.3233720439752,25.1817547265943 55.3228238526101,25.1815333547389 55.3231283956059,25.1810153225593</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.106">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">106</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3246807979513,25.1814349335126 55.3250774251817,25.1814373246916 55.3251216835663,25.1814389521721 55.3251652410505,25.1814416254314 55.3252082269508,25.1814455289062 55.3252507758544,25.1814508329064 55.3252930168869,25.1814577123644 55.3253350845138,25.1814663562953 55.3253771076469,25.1814769300438 55.3254192151373,25.1814896176642 55.3254684161477,25.1815055862481 55.3251084257645,25.1821063701017 55.3250785873909,25.1821144855579 55.3248462618347,25.182006822353 55.3248282531891,25.1819993738523 55.3248100301615,25.1819922235928 55.3247915984813,25.1819854325682 55.3247729746341,25.1819790571626 55.3247541590334,25.1819731630325 55.3247351520927,25.1819678111513 55.3247159704069,25.1819630672825 55.3246966197888,25.1819589877448 55.3246834640324,25.1819568272072 55.3246807979513,25.1814349335126</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.107">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">107</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3236624055234,25.181261443744 55.3237032670442,25.181280517432 55.3237777716129,25.1813123598394 55.3238642044143,25.1813442499373 55.3239517847247,25.1813709330328 55.3240405396458,25.1813923881766 55.3240728976626,25.1813988599149 55.323972179118,25.1818220628868 55.3238813695431,25.1819600035862 55.3233720545716,25.1817547125931 55.3236624055234,25.181261443744</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.108">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">108</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3242040228484,25.1801295499972 55.3242173021143,25.1801359515504 55.3242470393766,25.180147381634 55.3242768552858,25.1801578368273 55.3243068367823,25.1801673082462 55.3243370653709,25.1801757822051 55.3243676171874,25.1801832497241 55.3243985792459,25.1801897066099 55.3244300277198,25.1801951438352 55.3244620441666,25.1801995428662 55.3244764891564,25.180200667167 55.3244796729642,25.1807383322088 55.3244063989955,25.1807379288046 55.3243613531569,25.1807369425256 55.3243160705175,25.180733214862 55.3242708314435,25.1807268846485 55.3242259326246,25.1807181001056 55.3241816383881,25.1807070043992 55.3241382456553,25.1806937502202 55.3240960351399,25.1806784711396 55.3240552824136,25.1806613148228 55.3239251397044,25.1806006119927 55.3242040228484,25.1801295499972</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.109">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">109</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3271099788854,25.1825190161161 55.3271266989606,25.1825284635345 55.3271635453554,25.1825464036278 55.327201156669,25.182563688562 55.327239398765,25.1825802756207 55.3272781591219,25.1825961175623 55.3273173253169,25.1826111578023 55.3273567687053,25.1826253583251 55.3273963715306,25.1826386671691 55.3274360213985,25.1826510417411 55.3274742535385,25.1826616829212 55.3273197398998,25.1830946051515 55.3272720295925,25.1830797757864 55.3272207482372,25.1830629143845 55.3271691959391,25.1830448494111 55.327117640274,25.1830256615377 55.327066343553,25.183005422078 55.3270155734897,25.1829842116852 55.3269655871772,25.1829621016232 55.3269166578677,25.1829391772403 55.3268690482513,25.1829155051897 55.3268475932412,25.1829049983396 55.3271099788854,25.1825190161161</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.110">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">110</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3267852248602,25.182307887667 55.3268258114749,25.1823404051301 55.3268831272224,25.1823813418803 55.3269416342937,25.1824212429774 55.327001316326,25.1824590619615 55.3270634134258,25.1824948137146 55.3271099788854,25.1825190161161 55.3268475932412,25.1829049983396 55.3268058699442,25.1828819276923 55.3267590275845,25.1828562086681 55.3267126126632,25.1828292914328 55.3266667317423,25.182801278588 55.3266214968864,25.1827722681481 55.3265770256247,25.1827423675326 55.3265334248689,25.1827116794785 55.3264908070284,25.1826803068208 55.3264492846245,25.1826483571273 55.3264313866176,25.1826337064091 55.3267852248602,25.182307887667</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.111">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">111</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3274699313346,25.182658739094 55.3275105472606,25.182670437937 55.3275906422881,25.1826886301012 55.3276719244986,25.1827047665554 55.3277544498215,25.1827167566803 55.3278370024623,25.1827256194936 55.3278471697695,25.1827262086998 55.3277923577462,25.1831887782282 55.3277007535327,25.1831761367269 55.3276521155518,25.1831684932173 55.327603634011,25.1831600928646 55.3275553355968,25.1831508939331 55.3275072576817,25.1831408593931 55.3274594321735,25.1831299614526 55.3274118964501,25.1831181537266 55.3273646716189,25.1831054082864 55.3273178056996,25.1830916880627 55.3273154246081,25.1830916707734 55.3274699313346,25.182658739094</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.112">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">112</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3264447297987,25.1819911379337 55.3265546959862,25.182103371748 55.326625190541,25.1821694408231 55.3266968647734,25.1822344493928 55.3267517893171,25.1822806218625 55.3263919969979,25.1826023129533 55.3263705248175,25.1825834971932 55.3263304809197,25.1825500020097 55.3262919097143,25.1825152159399 55.3262543207664,25.1824795830443 55.3262172076446,25.1824435430977 55.326180074782,25.1824075317942 55.3261424159297,25.182371994631 55.3261037410879,25.1823373777375 55.3260635496421,25.1823041183062 55.3260528002101,25.1822967672622 55.3264447297987,25.1819911379337</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.113">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">113</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3282874441129,25.1827341215548 55.3286524142461,25.1827349901502 55.328646140638,25.1832063820572 55.3285954061201,25.1832494168623 55.3282749134551,25.1832470540433 55.3282874441129,25.1827341215548</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.114">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">114</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3271180080422,25.1809582614061 55.3271506650262,25.1809785851048 55.3272054868781,25.1810146697929 55.3272649692043,25.1810585800345 55.3273254098613,25.1811064189868 55.3273831172572,25.1811542845486 55.327434410508,25.1811982794319 55.327475602355,25.1812345200917 55.3275030138332,25.1812591117405 55.3275129713871,25.1812681742293 55.3270880411509,25.1816002323438 55.3269978972613,25.181509845452 55.3269231459707,25.1814418280009 55.3268314530878,25.1813704857407 55.3267843624601,25.1813395727134 55.3271180080422,25.1809582614061</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.115">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">115</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3280887723172,25.1815090058794 55.3281284660562,25.1815134493286 55.3281681500387,25.1815178833902 55.3282078548955,25.1815202140887 55.3282475985461,25.1815215027206 55.3283812491812,25.1815223149974 55.3283758889035,25.1820494911958 55.3280130804302,25.182047142651 55.3279866750611,25.1820459481368 55.3280887723172,25.1815090058794</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.116">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">116</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3278463601217,25.1814493944341 55.3278881474943,25.1814627195273 55.3279265661702,25.181474481109 55.3280034298896,25.1814938099099 55.3280418871369,25.181501372897 55.3280887668583,25.1815090105629 55.327986685949,25.1820459388165 55.3279566523703,25.1820457444254 55.3279162684356,25.1820427551458 55.3278760422634,25.182038489892 55.3278360274111,25.182032925521 55.3277962880779,25.1820260576957 55.3277568885673,25.1820178679474 55.3277178876672,25.1820083518103 55.3276793442734,25.1819974906822 55.3276413172484,25.1819852706039 55.3276077925283,25.1819725341015 55.3278463601217,25.1814493944341</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.117">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">117</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3220510193462,25.178094689509 55.3223798798845,25.1782470656542 55.3224249264561,25.1782675851156 55.32215240732,25.1787305815772 55.321781993951,25.1785626484013 55.3220510193462,25.178094689509</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.118">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">118</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3221929374134,25.1775607549367 55.3226530163822,25.1777743778707 55.322379874373,25.1782470608115 55.3220510191942,25.1780946798535 55.321921863434,25.1780352199075 55.3221929374134,25.1775607549367</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.119">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">119</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3208847579461,25.1775524306381 55.321166793583,25.1776845667717 55.320899397097,25.1781549299792 55.3207092335502,25.1780663786985 55.3206479547829,25.1778548176195 55.3208847579461,25.1775524306381</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.120">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">120</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3230419561568,25.1779552994812 55.3232308142292,25.1780419280667 55.3233270955512,25.1783212698738 55.3231596276363,25.1786086415503 55.3228130950233,25.1784479098023 55.3227693167558,25.1784273935687 55.3230419561568,25.1779552994812</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.121">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">121</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3258041545527,25.1796423656812 55.3259892140714,25.1793304172936 55.3264248025234,25.1795346716048 55.3264992862503,25.1797826771314 55.3263331221779,25.1800586797253 55.3260855445075,25.1801252175203 55.3256388809729,25.1799185557786 55.3258041545527,25.1796423656812</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.122">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">122</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3236975273809,25.1788564063181 55.3241229279125,25.1790548068156 55.3238433885246,25.1795137130221 55.323541001678,25.1793740383837 55.3234845263587,25.1792224849513 55.3236975273809,25.1788564063181</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.123">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">123</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3253726026819,25.1790419517866 55.3259892304163,25.1793304125724 55.3258041599898,25.1796423609258 55.3252863458316,25.1794007425823 55.3251858422362,25.1793534600537 55.3253726026819,25.1790419517866</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.124">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">124</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3308987669198,25.1836503375824 55.3308894717691,25.1840984184822 55.3304936829744,25.1840952538768 55.3304878692081,25.1836471900948 55.3308987669198,25.1836503375824</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.125">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">125</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3258792687323,25.1816754608688 55.3259943697951,25.1817231878623 55.3260570364064,25.1817507546719 55.3261182438096,25.181778261788 55.3261778024253,25.1818065535658 55.3262354949361,25.1818364641318 55.3262911195079,25.1818688316557 55.3263444737091,25.1819044886978 55.3263953492015,25.1819442760431 55.3264435372771,25.1819890283691 55.3264447297987,25.1819911379337 55.3260527786812,25.1822967671186 55.3260372400715,25.1822862491511 55.3260277593726,25.1822797105483 55.326017971341,25.1822735533335 55.3260079406296,25.182267707801 55.3259977157327,25.1822621181603 55.3259873505231,25.182256719286 55.3259768934833,25.1822514413252 55.325966403848,25.1822462285251 55.3259559246973,25.1822410109763 55.3256615767247,25.1821058705318 55.3256435799181,25.1820672240058 55.3258792687323,25.1816754608688</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.126">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">126</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.320709274178,25.1785139530364 55.3211609112866,25.1787220116802 55.3208876667266,25.1791988066066 55.3204323957966,25.1789884999113 55.320709274178,25.1785139530364</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.127">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">127</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3194914216095,25.1793356462069 55.3201134541986,25.1796256861251 55.3198116210792,25.1801550887277 55.3193575898792,25.1799411723421 55.3192638209767,25.1796278099232 55.3194914216095,25.1793356462069</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.128">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">128</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3214236492509,25.1794453036039 55.3211423831081,25.1793156662463 55.3210259602898,25.179262051427 55.3212982853278,25.1787865508935 55.3216517844139,25.1789499728025 55.3216967070486,25.1789704065553 55.3214236492509,25.1794453036039</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.129">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">129</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3226196238748,25.1795642643163 55.3224212043023,25.1799064274033 55.3220485835722,25.1797342850629 55.3223227940929,25.1792592903853 55.3225446324794,25.1793622652194 55.3226196238748,25.1795642643163</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.130">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">130</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3219335923968,25.1796808040232 55.3218888040508,25.1796604655972 55.3215375643828,25.1794977720535 55.3214236544828,25.1794452940837 55.3216967231442,25.1789703970393 55.3222076059088,25.1792066838762 55.3219335923968,25.1796808040232 55.3220486051972,25.1797342851658 55.3219335923968,25.1796808040232</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.131">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">131</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3225490838427,25.1807444753031 55.3231284116574,25.181015313217 55.3228238581628,25.1815333688601 55.3227878400197,25.1815185302898 55.3227361257234,25.1814978510793 55.3226853052669,25.1814764661329 55.322635154163,25.1814544912124 55.322585447959,25.1814320374499 55.3225359622226,25.1814092113508 55.3224864780362,25.1813861242289 55.3224367605061,25.1813628920839 55.3223865907993,25.1813396216952 55.3223396969166,25.1813184419051 55.3222886080997,25.1811748873072 55.3225490838427,25.1807444753031</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.132">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">132</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3249569302442,25.180208410757 55.3252099062031,25.1802097021399 55.3252308297045,25.1802099801819 55.3252529344673,25.1802117387733 55.3252757210634,25.1802148707396 55.3252986900458,25.1802192736177 55.3253213311161,25.1802248448499 55.3253431556949,25.1802314867122 55.325363658967,25.1802390966124 55.325382336175,25.1802475671799 55.3254149018309,25.1802625378347 55.3253377681092,25.1807609478433 55.3252704199948,25.1807521663166 55.3251693909555,25.1807442271826 55.3250756265951,25.1807416131862 55.3249590332282,25.1807409712903 55.3249569302442,25.180208410757</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.133">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">133</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3254149018309,25.1802625378347 55.3258693964152,25.180472951577 55.3259464951301,25.1806895310878 55.3258273976896,25.1808899131197 55.3257636343731,25.1808643218339 55.325667409948,25.1808332686834 55.3255699351603,25.1808053822253 55.3254712827136,25.1807827383338 55.3253714375864,25.1807653481531 55.3253377681092,25.1807609478433 55.3254149018309,25.1802625378347</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.134">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">134</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3264553848051,25.1806999599815 55.3265445912241,25.1806791626548 55.3269380198918,25.1808632890425 55.327007732514,25.1808977139102 55.3270426118037,25.1809159968859 55.3270762572353,25.1809342522155 55.327120704634,25.180961074659 55.3267893262599,25.1813432399823 55.3267377200139,25.1813079724699 55.3266851006966,25.181278233353 55.3266250559956,25.1812463023112 55.3265598857451,25.1812131741992 55.3264918965176,25.1811798445337 55.3264234125545,25.1811473001217 55.3263567378239,25.181116537699 55.3262941829759,25.1810885545691 55.3262380705218,25.1810643485103 55.3264553848051,25.1806999599815</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.135">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">135</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3224249157095,25.1782675947206 55.3227693113146,25.1784273935481 55.3228131059056,25.1784479098435 55.3225427035939,25.1789147213964 55.3221524233867,25.178730567233 55.3224249157095,25.1782675947206</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.136">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">136</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.321198760231,25.1771491428765 55.3212725547251,25.17713285288 55.3216260336023,25.1772980177195 55.3213547574362,25.1777722829958 55.3211667771561,25.1776845618785 55.3208847524019,25.1775524257763 55.321198760231,25.1771491428765</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.137">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">137</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3216260336869,25.1772980225771 55.3219388891874,25.1774424500171 55.3216670733279,25.1779173147008 55.3216170499918,25.1778935151349 55.3213547572566,25.1777722733201 55.3216260336869,25.1772980225771</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.138">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">138</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3226530272918,25.1777743779065 55.3230419725755,25.1779553043739 55.3227693005558,25.1784274031417 55.3224249103362,25.178267599523 55.3223798635584,25.1782470655949 55.3226530272918,25.1777743779065</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.139">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">139</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">EA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.325286345844,25.1794007473707 55.3258041599898,25.1796423609258 55.3256388863992,25.1799185510358 55.3256195376973,25.1799089318238 55.3255691340369,25.1798875361417 55.3255174314414,25.1798687084033 55.325464600103,25.1798525362468 55.3254108157938,25.1798391071757 55.325356254426,25.1798285132883 55.3253010920146,25.1798208417167 55.3252454992201,25.1798161745834 55.3251896522429,25.1798146081235 55.3250388121811,25.1798138829373 55.325286345844,25.1794007473707</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.140">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">140</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">EB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3238877730301,25.1785303373837 55.3241355348627,25.1784616672892 55.3244174727082,25.1785923246033 55.3241411165803,25.1790633993534 55.3241229224387,25.1790548019949 55.3236975218108,25.1788563918841 55.3238877730301,25.1785303373837</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.141">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">141</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">EC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3248170139295,25.1787800741339 55.325217403161,25.1789676417696 55.3249407653081,25.1794342971794 55.3245411265639,25.1792484049141 55.3248170139295,25.1787800741339</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.142">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">142</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">ED</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3304878692081,25.1836471900948 55.3304936829744,25.1840952538768 55.3304947132252,25.1841672021157 55.3298903135262,25.1841623369453 55.3298833589838,25.1836425595303 55.3304878692081,25.1836471900948</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.143">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">143</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">EE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3286626472422,25.1820480167268 55.3283758942149,25.1820495006236 55.3283812545519,25.1815223197472 55.3285896051306,25.181523586022 55.3286772855762,25.1816540651826 55.3286626472422,25.1820480167268</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.144">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">144</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">EF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3238177631813,25.1799512813777 55.3241919527009,25.1801241911257 55.3242040227814,25.1801295404854 55.3239251398208,25.1806006262021 55.3235356880917,25.1804205349839 55.3238177631813,25.1799512813777</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.145">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">145</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3205520322892,25.1809270262357 55.3209916075732,25.1811283366659 55.3206951186902,25.1816429415104 55.3202449800075,25.1814610411987 55.3205520322892,25.1809270262357</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.146">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">146</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3202578401195,25.1783544506974 55.3203311290938,25.1783394822202 55.3207092797024,25.1785139578635 55.3204323796755,25.1789885046297 55.3199414066624,25.1787596939634 55.3202578401195,25.1783544506974</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.147">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">147</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3245619658015,25.1802063945562 55.324956913985,25.180208410674 55.3249590170046,25.180740971201 55.3245649316708,25.1807388015942 55.3245619658015,25.1802063945562</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.148">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">148</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3275988399323,25.1813218523916 55.3276063031915,25.1813259386723 55.3276266259649,25.1813369712616 55.3276566938199,25.1813530939193 55.3276933924182,25.1813724599709 55.3277336137594,25.1813932233122 55.3277742512392,25.1814135338827 55.3278121888625,25.1814315470724 55.3278443227714,25.1814454142533 55.3278565518581,25.1814502767797 55.3276179352228,25.1819768544558 55.3276083681964,25.1819736509306 55.3275688533563,25.1819565352535 55.3275300106203,25.1819378064792 55.3274919465642,25.1819175774239 55.3274547407431,25.1818959795196 55.327418494535,25.1818731302545 55.3273833093804,25.1818491565397 55.3273492706637,25.1818241805225 55.3273164800743,25.1817983292034 55.3271706695051,25.1816616523056 55.3275988399323,25.1813218523916</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.149">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">149</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3228131004034,25.1784479050062 55.323159633185,25.1786086511948 55.3229512328526,25.1789686523582 55.3227672562467,25.1790190299037 55.3225426926707,25.1789147165541 55.3228131004034,25.1784479050062</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.150">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">150</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3211667824136,25.1776845522148 55.3213547627905,25.1777722781758 55.3216170606252,25.1778935006694 55.3213488240095,25.1783621377664 55.3208993864304,25.1781549395826 55.3211667824136,25.1776845522148</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.151">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">151</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3244174782184,25.1785923342584 55.3248170030288,25.17878007409 55.3245411211263,25.1792484048903 55.3244902201724,25.1792247547277 55.3241411057382,25.1790634041046 55.3244174782184,25.1785923342584</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.152">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">152</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3241229224387,25.1790548019949 55.3241411167198,25.179063418543 55.3244902364577,25.1792247500066 55.3242167742119,25.179689066774 55.3238430115326,25.1795134054712 55.3241229224387,25.1790548019949</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.153">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">153</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3326631473998,25.1844128958731 55.3323689471144,25.1842624988439 55.3323346858053,25.184244746608 55.3323003392192,25.1842290604779 55.3322790286381,25.1842196240467 55.3322434815388,25.1842049306401 55.3322268901711,25.1841976000506 55.3324399743728,25.1838098105689 55.3324756283817,25.183823517667 55.3324951250278,25.1838323991471 55.332514516089,25.1838409636979 55.3325337965229,25.1838493970438 55.3325529668851,25.1838578756261 55.3325720220168,25.1838665850874 55.3325909569592,25.1838757017443 55.3326097771126,25.183885415874 55.3326284772777,25.1838959083304 55.3329230831954,25.1840466866787 55.3326631473998,25.1844128958731</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.154">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">154</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">F9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3322268900492,25.1841976046778 55.332225698712,25.1841975950734 55.3321871931213,25.1841824968587 55.3321475116485,25.1841683557097 55.3321069015522,25.1841552201901 55.3320655991258,25.1841431480104 55.3320238680178,25.1841321831856 55.3319819444813,25.1841223880009 55.3319400761593,25.184113801651 55.3318985208958,25.1841064865283 55.3317931169156,25.1841056437506 55.3318542834214,25.1836669610981 55.3318566499944,25.1836680062911 55.3319320632612,25.1836765640715 55.3320068791677,25.183687943081 55.3320810224569,25.1837020216248 55.332154407249,25.1837186777552 55.3322269528816,25.1837378033563 55.3322985901609,25.1837592716919 55.3323692335153,25.183782969737 55.332438803087,25.1838087797848 55.3324399742466,25.183809815212 55.3322268900492,25.1841976046778</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.155">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">155</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3317931168021,25.1841056483798 55.3313094376578,25.1841017810286 55.3313195212795,25.1836535652179 55.3316409411789,25.1836560273041 55.3316634473816,25.1836559022949 55.3316855802089,25.1836562948874 55.3317074662233,25.1836570991903 55.3317292105632,25.1836582044908 55.33175093979,25.183659509528 55.3317727590345,25.1836609082256 55.3317947950737,25.1836622946707 55.3318171584262,25.1836635674704 55.3318542838809,25.1836669425125 55.3317931168021,25.1841056483798</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.156">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">156</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3313094376578,25.1841017810286 55.3308894932006,25.1840984232806 55.3308987883913,25.1836503423912 55.3313195212795,25.1836535652179 55.3313094376578,25.1841017810286</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.157">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">157</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3275639669731,25.1835960666012 55.3279692943988,25.1836259467576 55.3283892797289,25.1836314671477 55.3286363341027,25.1838315293481 55.3286307645749,25.1842143009172 55.3284537250279,25.1842072805605 55.3275105621574,25.1840950852799 55.3275639669731,25.1835960666012</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.158">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">158</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3197005208693,25.1805355104576 55.3201252758718,25.1807308317138 55.3198088767077,25.18128429953 55.3196741833128,25.1812271728333 55.3194192529214,25.1811233579405 55.3193747732168,25.1811053508341 55.3197005208693,25.1805355104576</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.159">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">159</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.32449023102,25.1792247499829 55.3245411265369,25.1792484001225 55.3250364004103,25.1794783181893 55.3248361332719,25.1798128894462 55.3245961492306,25.1798117356904 55.3245705874576,25.1798111835392 55.3245435469727,25.1798089597355 55.3245156517669,25.1798051579211 55.3244875150308,25.1797998907058 55.3244597498521,25.1797932563363 55.3244329748139,25.1797853625771 55.3244078085227,25.1797763123799 55.3243848697039,25.1797662134299 55.3242167850289,25.179689062052 55.32449023102,25.1792247499829</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.160">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">160</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">FF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.323715288992,25.1823098415443 55.3241295246647,25.1824766548494 55.3238954688426,25.182925951797 55.3234827348374,25.182761850575 55.323715288992,25.1823098415443</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.161">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">161</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">100</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3220640740694,25.1805213594382 55.3222790262225,25.1806199535196 55.3226379133955,25.180004687291 55.322422388641,25.1799034548244 55.3220640740694,25.1805213594382</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.162">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">162</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">101</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3195765262354,25.1792280297898 55.3197112506756,25.1792889732381 55.3199920653006,25.1789301212149 55.3198571775799,25.1788688832484 55.3195765262354,25.1792280297898</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.163">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">163</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">102</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3226158143509,25.1806292735736 55.3228403661717,25.1802443925563 55.3229731420518,25.1803062901393 55.3227483931423,25.1806899400852 55.3226158143509,25.1806292735736</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.164">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">164</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">103</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3253871191398,25.1813433892185 55.3256206829582,25.1809530830902 55.3257589626926,25.1810022099841 55.3255288138596,25.1813868674191 55.3253871191398,25.1813433892185</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.165">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">165</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">104</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.328506064401,25.1826070548178 55.3285106828805,25.182176680044 55.3286595862042,25.1821780850875 55.3286550682951,25.1826080815983 55.328506064401,25.1826070548178</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.166">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">166</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">105</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.329747607592,25.182615610248 55.3297544484828,25.1821848491156 55.3299036330968,25.1821862564052 55.3298968892481,25.1826166389426 55.329747607592,25.182615610248</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.167">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">167</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">106</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3348139273476,25.1840342597254 55.3353111798292,25.1840490109719 55.3353018920846,25.18417678588 55.3348053952263,25.1841623295064 55.3348139273476,25.1840342597254</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.168">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">168</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">107</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3259380394115,25.1815583312695 55.3261681596827,25.1811755680353 55.3262975889402,25.181239397535 55.3260747704746,25.1816135640943 55.3259380394115,25.1815583312695</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.169">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">169</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">108</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3224223994521,25.1799034548772 55.3223544150609,25.1800205024228 55.3198571775799,25.1788688832484 55.3199414173664,25.1787596892132 55.3204335624281,25.1789855277661 55.320615783758,25.1790698159794 55.3207980500332,25.1791538454228 55.3209803204426,25.1792377118981 55.3211625373037,25.1793214918087 55.3213446646194,25.1794052757946 55.3215266498228,25.1794891494429 55.3217084455935,25.1795732029324 55.3218899988695,25.1796575214391 55.3224223994521,25.1799034548772</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.170">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">170</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">109</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3280112815748,25.1826043463625 55.3286652413062,25.182608147024 55.3286625642466,25.1827361307659 55.3280089590819,25.1827340992124 55.3278831607224,25.1827288830415 55.3277591437521,25.1827165373304 55.3276371281385,25.1826970495149 55.327517328759,25.1826703963071 55.327399966023,25.1826365764311 55.3272852554952,25.1825955638378 55.3271734184922,25.1825473451116 55.3270646715311,25.1824918960207 55.3270025844764,25.1824561529339 55.3269428910518,25.1824183283868 55.3268843887359,25.1823784311347 55.326850525218,25.182354477836 55.3268169305134,25.1823293528962 55.3267837111164,25.1823032857364 55.3267509521595,25.1822764964093 55.3267187497174,25.1822492005048 55.3266871999532,25.1822216325024 55.3266563992705,25.1821939989531 55.3266264387363,25.182166534645 55.326555938147,25.182100464041 55.3264459656285,25.1819882182484 55.3264447784729,25.1819861180519 55.3264292394266,25.1819724673407 55.3263873559592,25.1819336035028 55.3263406775494,25.181897840176 55.3262927918379,25.1818651841515 55.3262412825006,25.1818366745151 55.326176587256,25.1818028721528 55.3260878920436,25.1817605347337 55.3259956060795,25.1817202672041 55.3258813395235,25.1816705226173 55.3259482196545,25.1815583888238 55.3260604186639,25.1816035997724 55.3261563619734,25.1816460248193 55.326249865069,25.1816905095623 55.3263193928928,25.1817264711524 55.3263781089579,25.181759232528 55.3264356030959,25.1817982210106 55.3264906643156,25.1818403467144 55.3265385351018,25.1818845008629 55.326556463547,25.1819012947128 55.3266676319713,25.1820146632328 55.3267345601088,25.1820786998763 55.3268026467317,25.1821395672573 55.3268731201743,25.1821994049945 55.3269244808303,25.1822393053025 55.3269770245016,25.1822781500151 55.3270319527653,25.1823149463466 55.327124353639,25.1823715385087 55.3272203343194,25.182422289505 55.3273196324199,25.1824670730368 55.3274219917167,25.182505766668 55.3275271406463,25.1825382329214 55.3276348243075,25.1825643615183 55.3277447886285,25.1825840084414 55.3278567691456,25.1825970518953 55.3279334088161,25.1826027721703 55.3280112815748,25.1826043463625</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.171">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">171</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.324400369634,25.181300560938 55.3246112485092,25.1813018112215 55.3247367467327,25.1813041479287 55.3248547564519,25.1813036460885 55.3249673378588,25.1813028479235 55.3250765317077,25.1813043059087 55.3251843972414,25.1813105638663 55.32529297439,25.1813241842883 55.3254043047294,25.1813477048544 55.3255204307458,25.181383674496 55.3255288246408,25.1813868580603 55.3254594602634,25.1815026041375 55.3254102803016,25.1814866261014 55.3253551038157,25.181470596777 55.3252999111601,25.1814576928226 55.3252435339744,25.1814479454367 55.3251859853202,25.1814413221004 55.3251284239071,25.1814367893803 55.3250684674,25.1814343422809 55.3243999861234,25.1814303136258 55.3243161522202,25.1814277003383 55.3242239256176,25.1814198325778 55.3241328656814,25.1814077797851 55.3240690948094,25.1813952559809 55.3240081748435,25.1813816526801 55.3239494179501,25.1813666313126 55.32389212538,25.1813498531127 55.3238355928957,25.1813309885264 55.3237791321476,25.181309703175 55.3237220382493,25.1812856528993 55.3236636168364,25.1812585074044 55.3231295954381,25.1810123953551 55.3225490944875,25.1807444659109 55.3226158197419,25.1806292736028 55.3237704711844,25.1811617520496 55.3238349477323,25.1811894425439 55.3239016287278,25.1812143151427 55.3239700952387,25.1812362510025 55.324039939448,25.1812551405643 55.3241107483503,25.1812708740129 55.3241821144413,25.1812833366097 55.3242536249556,25.1812924180313 55.324324867129,25.181298002959 55.324400369634,25.181300560938</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.172">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">172</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3239263527696,25.1805976772887 55.3240564968483,25.1806583624087 55.3240998610231,25.1806764801176 55.3241481467788,25.1806936529406 55.3241948928513,25.1807074557244 55.3242407729816,25.1807181768648 55.3242864714266,25.1807260950792 55.324332650728,25.1807314934803 55.3243800003458,25.1807346504256 55.3244291881905,25.1807358534932 55.3244808929751,25.1807353807695 55.324960254556,25.180738018791 55.3250513277126,25.1807376487158 55.3251414334295,25.1807401997135 55.3252306985882,25.1807459097014 55.3253192390648,25.1807550305201 55.3254071866644,25.180767790134 55.3254946567636,25.1807844350053 55.3255817698633,25.1808052017277 55.3256686461943,25.1808303311273 55.3257648772124,25.1808613706708 55.3258286358891,25.180886976624 55.3257589464666,25.1810022098916 55.3257084691277,25.1809830160842 55.325620672141,25.180953083029 55.3255512651838,25.1809336745287 55.3254817617386,25.1809167618586 55.3254120342664,25.1809023922341 55.3253419661232,25.1808906080588 55.3252714245016,25.1808814372983 55.3252002767494,25.1808749266734 55.3251284119468,25.1808711133877 55.3250556922794,25.1808700343049 55.3244060427784,25.1808663948931 55.3243587635321,25.1808645510179 55.324311728159,25.180860793946 55.3242650322789,25.1808550627892 55.3242187553621,25.1808473106508 55.3241729821822,25.1808374810978 55.3241277974846,25.1808255175748 55.3240832914316,25.1808113681517 55.3240395379465,25.180794975935 55.3239901794567,25.180774744229 55.3228403501474,25.1802444067121 55.3229074034585,25.1801286626811 55.3235369182737,25.1804176014976 55.3239263527696,25.1805976772887</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.173">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">173</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3221305850049,25.1804059725791 55.3220640795333,25.1805213641997 55.3215553463963,25.1802859751325 55.321376450151,25.1802034689007 55.3211974245899,25.1801210335373 55.321018290594,25.1800386265802 55.3208390796076,25.1799562007731 55.3206598069729,25.179873718176 55.3204805038883,25.1797911313301 55.3203011908538,25.1797084021306 55.3201218880364,25.1796254828632 55.319491426878,25.1793356414614 55.3195765154412,25.1792280297424 55.3221305850049,25.1804059725791</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.174">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">174</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3286689447922,25.182178141865 55.3280096222139,25.1821738112153 55.3279484228466,25.1821723679906 55.3278764274961,25.1821669564151 55.327804484786,25.1821574978088 55.3277330549591,25.1821440606062 55.3276626036713,25.1821267128692 55.3275935913697,25.1821055081505 55.3275264839007,25.1820805230987 55.3274617420947,25.1820518151765 55.327399832477,25.1820194461923 55.3273579829821,25.1819963421013 55.3273173335198,25.181971181428 55.3272778564116,25.18194392527 55.3272396202474,25.1819166913933 55.3272013726968,25.1818863331457 55.3270125427648,25.1817105634631 55.3268917262935,25.1815943225988 55.3268235018161,25.1815324795939 55.3267408217426,25.1814684364527 55.3266520854712,25.1814095559507 55.3265693141414,25.181363209013 55.3264840997665,25.1813188977005 55.32617750077,25.1811746071549 55.3262474486339,25.181060143309 55.3263466062368,25.1811023685477 55.3264435863471,25.1811516975134 55.3265577062271,25.181206644444 55.3265956594068,25.1812257558442 55.3266318512282,25.1812445859102 55.3266667138403,25.1812634346263 55.3267006736995,25.1812826254164 55.3267341679299,25.1813024627428 55.3267676171988,25.1813232555401 55.3268014581612,25.1813453173857 55.3268361164215,25.1813689568769 55.3269272018739,25.1814393676908 55.3270014435086,25.1815064928198 55.3270947465923,25.1815966096333 55.3271222450063,25.181623836483 55.3271605124681,25.1816594712101 55.3273063371119,25.1817945222276 55.3273374314621,25.1818186284253 55.3273720973113,25.1818437784005 55.3274067641328,25.1818678999321 55.327442665425,25.1818899487376 55.3274797574861,25.1819109592721 55.3275180352548,25.1819309367076 55.3275364469108,25.1819407837586 55.3275563133435,25.1819502685131 55.3275772567643,25.181959341678 55.3275988830572,25.1819679773347 55.3276208036324,25.1819761354987 55.327642635255,25.1819837856049 55.3276639893635,25.1819908876514 55.3276844773664,25.1819974063242 55.3277288170965,25.1820091078487 55.3277731689251,25.1820197761119 55.3278034987807,25.182025653502 55.32783335969,25.1820307014692 55.3278629354374,25.1820349447172 55.3278924205395,25.1820384173955 55.3279219933467,25.1820411488407 55.3279518430277,25.1820431684467 55.3279821587289,25.1820445102909 55.3280131242559,25.1820452037097 55.3286716055331,25.1820494652558 55.3286689447922,25.182178141865</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.175">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">175</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.33374574965,25.1844249450479 55.3337685272108,25.1843743446547 55.3338432639654,25.1843953759969</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.176">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">176</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">10F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3337324355635,25.1844052323153 55.3337371668351,25.1844035502713 55.333746449305,25.1844233643252 55.3337690584814,25.1844136329356 55.3337712745967,25.1844175182379 55.3337437415426,25.1844293871978 55.3337324355635,25.1844052323153</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.177">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">177</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">110</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3336886000522,25.1844039242166 55.3337484606645,25.1842852401495 55.3338769639421,25.1843274003824</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.178">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">178</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">111</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3336762357845,25.184383749677 55.3336810480962,25.1843822206741 55.3336893737033,25.1844023808947 55.3337123872576,25.1843934238091 55.3337144235665,25.1843973867198 55.3336863794852,25.1844082912129 55.3336762357845,25.184383749677</coordinates></LineString>
+  </Placemark>
+  <Placemark id="__01_modified.179">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#__01_modified">
+		<SimpleData name="fid">179</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">112</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3257390708817,25.1822840193331 55.3257537802581,25.1822611335847 55.3257889520969,25.1822779054434 55.3257742397921,25.1823011064935 55.3257390708817,25.1822840193331</coordinates></LineString>
+  </Placemark>
+</Folder>
+</Document></kml>
