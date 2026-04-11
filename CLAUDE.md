@@ -156,12 +156,13 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 
 ### Цвета по Land Use (легенда)
 - RESIDENTIAL: #FFD700 (жёлтый)
-- MIXED USE: #9333EA (фиолетовый)
+- MIXED USE: #16A34A (зелёный)
 - COMMERCIAL/OFFICE: #3B82F6 (синий)
-- HOTEL/HOSPITALITY: #F97316 (оранжевый)
+- HOTEL/HOSPITALITY: #9333EA (фиолетовый)
 - RETAIL: #EC4899 (розовый)
-- INDUSTRIAL: #00FF80 (неоновый зелёный)
+- INDUSTRIAL/WAREHOUSE: #6B7280 (серый)
 - FUTURE DEVELOPMENT: #84CC16 (лайм)
+- DDA district outlines on the map use the brand gold #C8A96E (NOT a land-use category — it's the layer-outline colour)
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.

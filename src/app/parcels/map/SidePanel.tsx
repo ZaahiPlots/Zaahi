@@ -10,13 +10,21 @@ const TXT = "#1A1A2E";
 const SUBTLE = "#6B7280";
 const LINE = "#E5E7EB";
 
+// Mirrors ZAAHI_LANDUSE_COLOR in src/app/parcels/map/page.tsx so the small
+// indicator dot in the side panel matches the colour of the 3D extrusion on
+// the map. Updated per founder spec on 2026-04-11: Hotel = purple,
+// Mixed Use = green, Industrial = gray.
 const LANDUSE_COLORS: Record<string, string> = {
   RESIDENTIAL: "#FFD700",
+  MIXED_USE: "#16A34A",
+  "MIXED USE": "#16A34A",
   COMMERCIAL: "#3B82F6",
-  HOTEL: "#F97316",
-  HOSPITALITY: "#F97316",
+  OFFICE: "#3B82F6",
+  HOTEL: "#9333EA",
+  HOSPITALITY: "#9333EA",
   RETAIL: "#EC4899",
-  INDUSTRIAL: "#00FF80",
+  INDUSTRIAL: "#6B7280",
+  WAREHOUSE: "#6B7280",
   "FUTURE DEVELOPMENT": "#84CC16",
 };
 
@@ -44,6 +52,7 @@ interface Plan {
   landUseMix: Array<{ category: string; sub: string; areaSqm: number | null }> | null;
   sitePlanIssue: string | null;
   sitePlanExpiry: string | null;
+  notes: string | null;
   source: string;
   fetchedAt: string;
 }
@@ -110,7 +119,7 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
         borderLeft: `1px solid ${LINE}`,
         color: TXT,
       }}
-      className={`absolute top-0 right-0 h-full w-[350px] z-20 overflow-y-auto transition-transform duration-300 ${
+      className={`absolute top-0 right-0 h-full w-full sm:w-[350px] z-20 overflow-y-auto transition-transform duration-300 ease-out ${
         open ? "translate-x-0" : "translate-x-full"
       }`}
     >
@@ -197,13 +206,27 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 </Section>
               )}
 
-              {/* Affection Plan dates */}
+              {/* Affection Plan dates — issue / expiry on separate rows */}
               {(plan.sitePlanIssue || plan.sitePlanExpiry) && (
                 <Section title="Affection Plan">
-                  <div style={{ fontSize: 11, color: TXT }}>
-                    {fmtMonthYear(plan.sitePlanIssue)}
-                    {plan.sitePlanIssue && plan.sitePlanExpiry && " → "}
-                    {fmtMonthYear(plan.sitePlanExpiry)}
+                  <Row label="Issued" v={fmtMonthYear(plan.sitePlanIssue) || null} />
+                  <Row label="Expires" v={fmtMonthYear(plan.sitePlanExpiry) || null} />
+                </Section>
+              )}
+
+              {/* General notes — straight from DDA's affection plan, raw text */}
+              {plan.notes && plan.notes.trim().length > 0 && (
+                <Section title="Notes">
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: TXT,
+                      lineHeight: 1.5,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {plan.notes.trim()}
                   </div>
                 </Section>
               )}

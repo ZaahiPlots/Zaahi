@@ -144,15 +144,21 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
+// Land-use color legend for the ZAAHI Signature 3D extrusion. Updated per
+// founder spec on 2026-04-11: Hotel = purple, Mixed Use = green,
+// Industrial = gray (was orange / purple / neon-green respectively).
+// CLAUDE.md "Цвета по Land Use" was updated to match in the same commit.
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
-  RESIDENTIAL: "#FFD700",
-  MIXED_USE: "#9333EA",
-  COMMERCIAL: "#3B82F6",
-  HOTEL: "#F97316",
-  HOSPITALITY: "#F97316",
-  RETAIL: "#EC4899",
-  INDUSTRIAL: "#00FF80",
-  FUTURE_DEVELOPMENT: "#84CC16",
+  RESIDENTIAL: "#FFD700",        // yellow — unchanged
+  MIXED_USE: "#16A34A",          // green
+  COMMERCIAL: "#3B82F6",         // blue — unchanged
+  OFFICE: "#3B82F6",             // blue
+  HOTEL: "#9333EA",              // purple
+  HOSPITALITY: "#9333EA",        // purple
+  RETAIL: "#EC4899",             // pink — unchanged
+  INDUSTRIAL: "#6B7280",         // gray
+  WAREHOUSE: "#6B7280",          // gray
+  FUTURE_DEVELOPMENT: "#84CC16", // lime — unchanged
   "FUTURE DEVELOPMENT": "#84CC16",
 };
 const ZAAHI_DEFAULT_COLOR = "#FFD700";
@@ -806,6 +812,9 @@ const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 
 type LayersState = {
   communities: boolean; roads: boolean;
+  // Plot-number labels for DDA districts (zoom > 15). Off by default;
+  // user toggles via "Plot Numbers" button in the layers panel.
+  plotLabels: boolean;
   islands: boolean; meydan: boolean; d11: boolean;
   alFurjan: boolean; intlCity23: boolean; residential12: boolean;
   dubaiHills: boolean; damacHills2: boolean; damacLagoons: boolean; damacIslands: boolean;
@@ -1187,6 +1196,7 @@ function ParcelsMapPageInner() {
   const [layers, setLayers] = useState<LayersState>({
     communities: true,
     roads: true,
+    plotLabels: false,
     islands: false,
     meydan: false,
     alFurjan: false,
@@ -1472,10 +1482,12 @@ function ParcelsMapPageInner() {
     }
 
     // ── Master plans (purple dashed) ───────────────────────────────
+    // ZAAHI brand gold for ALL master-plan / DDA-district outlines.
+    // Reads well on light, dark, and satellite basemaps.
     const masterPlanPaint: maplibregl.LineLayerSpecification["paint"] = {
-      "line-color": "#9333EA",
+      "line-color": "#C8A96E",
       "line-width": 1.5,
-      "line-opacity": 0.7,
+      "line-opacity": 0.85,
       "line-dasharray": [3, 2],
     };
 
@@ -2169,14 +2181,14 @@ function ParcelsMapPageInner() {
           id: BARSHA_HEIGHTS_FILL,
           type: "fill",
           source: BARSHA_HEIGHTS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BARSHA_HEIGHTS_LINE,
           type: "line",
           source: BARSHA_HEIGHTS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2197,14 +2209,14 @@ function ParcelsMapPageInner() {
           id: DIFC_ZABEEL_FILL,
           type: "fill",
           source: DIFC_ZABEEL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DIFC_ZABEEL_LINE,
           type: "line",
           source: DIFC_ZABEEL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2225,14 +2237,14 @@ function ParcelsMapPageInner() {
           id: JADDAF_WF_FILL,
           type: "fill",
           source: JADDAF_WF_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JADDAF_WF_LINE,
           type: "line",
           source: JADDAF_WF_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2253,14 +2265,14 @@ function ParcelsMapPageInner() {
           id: DHCC1_FILL,
           type: "fill",
           source: DHCC1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DHCC1_LINE,
           type: "line",
           source: DHCC1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2281,14 +2293,14 @@ function ParcelsMapPageInner() {
           id: DIFC_FILL,
           type: "fill",
           source: DIFC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DIFC_LINE,
           type: "line",
           source: DIFC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2309,14 +2321,14 @@ function ParcelsMapPageInner() {
           id: TILAL_AL_GHAF_FILL,
           type: "fill",
           source: TILAL_AL_GHAF_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TILAL_AL_GHAF_LINE,
           type: "line",
           source: TILAL_AL_GHAF_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2337,14 +2349,14 @@ function ParcelsMapPageInner() {
           id: AR2_FILL,
           type: "fill",
           source: AR2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: AR2_LINE,
           type: "line",
           source: AR2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2365,14 +2377,14 @@ function ParcelsMapPageInner() {
           id: THE_VILLA_FILL,
           type: "fill",
           source: THE_VILLA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: THE_VILLA_LINE,
           type: "line",
           source: THE_VILLA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2393,14 +2405,14 @@ function ParcelsMapPageInner() {
           id: AR3_FILL,
           type: "fill",
           source: AR3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: AR3_LINE,
           type: "line",
           source: AR3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2421,14 +2433,14 @@ function ParcelsMapPageInner() {
           id: DSC_FILL,
           type: "fill",
           source: DSC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DSC_LINE,
           type: "line",
           source: DSC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2449,14 +2461,14 @@ function ParcelsMapPageInner() {
           id: VILLANOVA_FILL,
           type: "fill",
           source: VILLANOVA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: VILLANOVA_LINE,
           type: "line",
           source: VILLANOVA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2477,14 +2489,14 @@ function ParcelsMapPageInner() {
           id: ACRES_FILL,
           type: "fill",
           source: ACRES_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ACRES_LINE,
           type: "line",
           source: ACRES_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2505,14 +2517,14 @@ function ParcelsMapPageInner() {
           id: FALCON_FILL,
           type: "fill",
           source: FALCON_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: FALCON_LINE,
           type: "line",
           source: FALCON_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2533,14 +2545,14 @@ function ParcelsMapPageInner() {
           id: AL_ARYAM_FILL,
           type: "fill",
           source: AL_ARYAM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: AL_ARYAM_LINE,
           type: "line",
           source: AL_ARYAM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2561,14 +2573,14 @@ function ParcelsMapPageInner() {
           id: DIC_FILL,
           type: "fill",
           source: DIC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DIC_LINE,
           type: "line",
           source: DIC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2589,14 +2601,14 @@ function ParcelsMapPageInner() {
           id: DI2_FILL,
           type: "fill",
           source: DI2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DI2_LINE,
           type: "line",
           source: DI2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2617,14 +2629,14 @@ function ParcelsMapPageInner() {
           id: WILDS_FILL,
           type: "fill",
           source: WILDS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WILDS_LINE,
           type: "line",
           source: WILDS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2645,14 +2657,14 @@ function ParcelsMapPageInner() {
           id: TOWN_SQ_FILL,
           type: "fill",
           source: TOWN_SQ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TOWN_SQ_LINE,
           type: "line",
           source: TOWN_SQ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2673,14 +2685,14 @@ function ParcelsMapPageInner() {
           id: ATHLON_FILL,
           type: "fill",
           source: ATHLON_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ATHLON_LINE,
           type: "line",
           source: ATHLON_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2701,14 +2713,14 @@ function ParcelsMapPageInner() {
           id: CHERRY_FILL,
           type: "fill",
           source: CHERRY_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: CHERRY_LINE,
           type: "line",
           source: CHERRY_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2729,14 +2741,14 @@ function ParcelsMapPageInner() {
           id: PORTOFINO_FILL,
           type: "fill",
           source: PORTOFINO_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: PORTOFINO_LINE,
           type: "line",
           source: PORTOFINO_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2757,14 +2769,14 @@ function ParcelsMapPageInner() {
           id: HAVEN_FILL,
           type: "fill",
           source: HAVEN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: HAVEN_LINE,
           type: "line",
           source: HAVEN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2785,14 +2797,14 @@ function ParcelsMapPageInner() {
           id: AL_BARARI_FILL,
           type: "fill",
           source: AL_BARARI_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: AL_BARARI_LINE,
           type: "line",
           source: AL_BARARI_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2813,14 +2825,14 @@ function ParcelsMapPageInner() {
           id: JAI_FILL,
           type: "fill",
           source: JAI_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JAI_LINE,
           type: "line",
           source: JAI_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2841,14 +2853,14 @@ function ParcelsMapPageInner() {
           id: LL_FILL,
           type: "fill",
           source: LL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LL_LINE,
           type: "line",
           source: LL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2869,14 +2881,14 @@ function ParcelsMapPageInner() {
           id: SHOROOQ_FILL,
           type: "fill",
           source: SHOROOQ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHOROOQ_LINE,
           type: "line",
           source: SHOROOQ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2897,14 +2909,14 @@ function ParcelsMapPageInner() {
           id: COA_FILL,
           type: "fill",
           source: COA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: COA_LINE,
           type: "line",
           source: COA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2925,14 +2937,14 @@ function ParcelsMapPageInner() {
           id: SERENA_FILL,
           type: "fill",
           source: SERENA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SERENA_LINE,
           type: "line",
           source: SERENA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2953,14 +2965,14 @@ function ParcelsMapPageInner() {
           id: DCH_FILL,
           type: "fill",
           source: DCH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DCH_LINE,
           type: "line",
           source: DCH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -2981,14 +2993,14 @@ function ParcelsMapPageInner() {
           id: DPC_FILL,
           type: "fill",
           source: DPC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPC_LINE,
           type: "line",
           source: DPC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3009,14 +3021,14 @@ function ParcelsMapPageInner() {
           id: SOBHA_R_FILL,
           type: "fill",
           source: SOBHA_R_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SOBHA_R_LINE,
           type: "line",
           source: SOBHA_R_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3037,14 +3049,14 @@ function ParcelsMapPageInner() {
           id: JGC_FILL,
           type: "fill",
           source: JGC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JGC_LINE,
           type: "line",
           source: JGC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3065,14 +3077,14 @@ function ParcelsMapPageInner() {
           id: SOBHA_E_FILL,
           type: "fill",
           source: SOBHA_E_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SOBHA_E_LINE,
           type: "line",
           source: SOBHA_E_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3093,14 +3105,14 @@ function ParcelsMapPageInner() {
           id: DLRC_FILL,
           type: "fill",
           source: DLRC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DLRC_LINE,
           type: "line",
           source: DLRC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3121,14 +3133,14 @@ function ParcelsMapPageInner() {
           id: PEARL_J_FILL,
           type: "fill",
           source: PEARL_J_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: PEARL_J_LINE,
           type: "line",
           source: PEARL_J_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3149,14 +3161,14 @@ function ParcelsMapPageInner() {
           id: KHAWANEEJ_FILL,
           type: "fill",
           source: KHAWANEEJ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KHAWANEEJ_LINE,
           type: "line",
           source: KHAWANEEJ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3177,14 +3189,14 @@ function ParcelsMapPageInner() {
           id: MAJAN_FILL,
           type: "fill",
           source: MAJAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MAJAN_LINE,
           type: "line",
           source: MAJAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3205,14 +3217,14 @@ function ParcelsMapPageInner() {
           id: LA_MER_FILL,
           type: "fill",
           source: LA_MER_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LA_MER_LINE,
           type: "line",
           source: LA_MER_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3233,14 +3245,14 @@ function ParcelsMapPageInner() {
           id: DUBAI_LAND_FILL,
           type: "fill",
           source: DUBAI_LAND_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DUBAI_LAND_LINE,
           type: "line",
           source: DUBAI_LAND_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3261,14 +3273,14 @@ function ParcelsMapPageInner() {
           id: DGC_FILL,
           type: "fill",
           source: DGC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DGC_LINE,
           type: "line",
           source: DGC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3289,14 +3301,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_UAS_FILL,
           type: "fill",
           source: MERAAS_UAS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_UAS_LINE,
           type: "line",
           source: MERAAS_UAS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3317,14 +3329,14 @@ function ParcelsMapPageInner() {
           id: MAMZAR_FILL,
           type: "fill",
           source: MAMZAR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MAMZAR_LINE,
           type: "line",
           source: MAMZAR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3345,14 +3357,14 @@ function ParcelsMapPageInner() {
           id: ASMARAN_FILL,
           type: "fill",
           source: ASMARAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ASMARAN_LINE,
           type: "line",
           source: ASMARAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3373,14 +3385,14 @@ function ParcelsMapPageInner() {
           id: JBAY_FILL,
           type: "fill",
           source: JBAY_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JBAY_LINE,
           type: "line",
           source: JBAY_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3401,14 +3413,14 @@ function ParcelsMapPageInner() {
           id: REPORTAGE_FILL,
           type: "fill",
           source: REPORTAGE_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: REPORTAGE_LINE,
           type: "line",
           source: REPORTAGE_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3429,14 +3441,14 @@ function ParcelsMapPageInner() {
           id: LIWAN_FILL,
           type: "fill",
           source: LIWAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LIWAN_LINE,
           type: "line",
           source: LIWAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3457,14 +3469,14 @@ function ParcelsMapPageInner() {
           id: DSTUDIO_FILL,
           type: "fill",
           source: DSTUDIO_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DSTUDIO_LINE,
           type: "line",
           source: DSTUDIO_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3485,14 +3497,14 @@ function ParcelsMapPageInner() {
           id: LIWAN2_FILL,
           type: "fill",
           source: LIWAN2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LIWAN2_LINE,
           type: "line",
           source: LIWAN2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3513,14 +3525,14 @@ function ParcelsMapPageInner() {
           id: NAIA_FILL,
           type: "fill",
           source: NAIA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: NAIA_LINE,
           type: "line",
           source: NAIA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3541,14 +3553,14 @@ function ParcelsMapPageInner() {
           id: ARDH_FILL,
           type: "fill",
           source: ARDH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ARDH_LINE,
           type: "line",
           source: ARDH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3569,14 +3581,14 @@ function ParcelsMapPageInner() {
           id: TIJARA_FILL,
           type: "fill",
           source: TIJARA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TIJARA_LINE,
           type: "line",
           source: TIJARA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3597,14 +3609,14 @@ function ParcelsMapPageInner() {
           id: WARSAN_FILL,
           type: "fill",
           source: WARSAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WARSAN_LINE,
           type: "line",
           source: WARSAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3625,14 +3637,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_MIRDIF_FILL,
           type: "fill",
           source: MERAAS_MIRDIF_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_MIRDIF_LINE,
           type: "line",
           source: MERAAS_MIRDIF_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3653,14 +3665,14 @@ function ParcelsMapPageInner() {
           id: HABTOOR_FILL,
           type: "fill",
           source: HABTOOR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: HABTOOR_LINE,
           type: "line",
           source: HABTOOR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3681,14 +3693,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_UMA_FILL,
           type: "fill",
           source: MERAAS_UMA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_UMA_LINE,
           type: "line",
           source: MERAAS_UMA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3709,14 +3721,14 @@ function ParcelsMapPageInner() {
           id: D3_DDA_FILL,
           type: "fill",
           source: D3_DDA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: D3_DDA_LINE,
           type: "line",
           source: D3_DDA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3737,14 +3749,14 @@ function ParcelsMapPageInner() {
           id: KHAIL_FILL,
           type: "fill",
           source: KHAIL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KHAIL_LINE,
           type: "line",
           source: KHAIL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3765,14 +3777,14 @@ function ParcelsMapPageInner() {
           id: SITE_A_FILL,
           type: "fill",
           source: SITE_A_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SITE_A_LINE,
           type: "line",
           source: SITE_A_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3793,14 +3805,14 @@ function ParcelsMapPageInner() {
           id: RUKAN_FILL,
           type: "fill",
           source: RUKAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: RUKAN_LINE,
           type: "line",
           source: RUKAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3821,14 +3833,14 @@ function ParcelsMapPageInner() {
           id: CALI_FILL,
           type: "fill",
           source: CALI_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: CALI_LINE,
           type: "line",
           source: CALI_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3849,14 +3861,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_NAH_FILL,
           type: "fill",
           source: MERAAS_NAH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_NAH_LINE,
           type: "line",
           source: MERAAS_NAH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3877,14 +3889,14 @@ function ParcelsMapPageInner() {
           id: PALMAROSA_FILL,
           type: "fill",
           source: PALMAROSA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: PALMAROSA_LINE,
           type: "line",
           source: PALMAROSA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3905,14 +3917,14 @@ function ParcelsMapPageInner() {
           id: DIAC_FILL,
           type: "fill",
           source: DIAC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DIAC_LINE,
           type: "line",
           source: DIAC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3933,14 +3945,14 @@ function ParcelsMapPageInner() {
           id: WAHA_FILL,
           type: "fill",
           source: WAHA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WAHA_LINE,
           type: "line",
           source: WAHA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3961,14 +3973,14 @@ function ParcelsMapPageInner() {
           id: HARBOUR_FILL,
           type: "fill",
           source: HARBOUR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: HARBOUR_LINE,
           type: "line",
           source: HARBOUR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -3989,14 +4001,14 @@ function ParcelsMapPageInner() {
           id: KLABOUR_FILL,
           type: "fill",
           source: KLABOUR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KLABOUR_LINE,
           type: "line",
           source: KLABOUR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4017,14 +4029,14 @@ function ParcelsMapPageInner() {
           id: WIND_FILL,
           type: "fill",
           source: WIND_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WIND_LINE,
           type: "line",
           source: WIND_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4045,14 +4057,14 @@ function ParcelsMapPageInner() {
           id: DLC_FILL,
           type: "fill",
           source: DLC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DLC_LINE,
           type: "line",
           source: DLC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4073,14 +4085,14 @@ function ParcelsMapPageInner() {
           id: SUFOUH_FILL,
           type: "fill",
           source: SUFOUH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SUFOUH_LINE,
           type: "line",
           source: SUFOUH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4101,14 +4113,14 @@ function ParcelsMapPageInner() {
           id: MOTOR_FILL,
           type: "fill",
           source: MOTOR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MOTOR_LINE,
           type: "line",
           source: MOTOR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4129,14 +4141,14 @@ function ParcelsMapPageInner() {
           id: TAOR1_FILL,
           type: "fill",
           source: TAOR1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TAOR1_LINE,
           type: "line",
           source: TAOR1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4157,14 +4169,14 @@ function ParcelsMapPageInner() {
           id: DPARKS_FILL,
           type: "fill",
           source: DPARKS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPARKS_LINE,
           type: "line",
           source: DPARKS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4185,14 +4197,14 @@ function ParcelsMapPageInner() {
           id: CWALK_FILL,
           type: "fill",
           source: CWALK_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: CWALK_LINE,
           type: "line",
           source: CWALK_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4213,14 +4225,14 @@ function ParcelsMapPageInner() {
           id: ARPOLO_FILL,
           type: "fill",
           source: ARPOLO_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ARPOLO_LINE,
           type: "line",
           source: ARPOLO_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4241,14 +4253,14 @@ function ParcelsMapPageInner() {
           id: BARSHA3_FILL,
           type: "fill",
           source: BARSHA3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BARSHA3_LINE,
           type: "line",
           source: BARSHA3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4269,14 +4281,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_B2_FILL,
           type: "fill",
           source: MERAAS_B2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_B2_LINE,
           type: "line",
           source: MERAAS_B2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4297,14 +4309,14 @@ function ParcelsMapPageInner() {
           id: DOC_FILL,
           type: "fill",
           source: DOC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DOC_LINE,
           type: "line",
           source: DOC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4325,14 +4337,14 @@ function ParcelsMapPageInner() {
           id: BURJ_FILL,
           type: "fill",
           source: BURJ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BURJ_LINE,
           type: "line",
           source: BURJ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4353,14 +4365,14 @@ function ParcelsMapPageInner() {
           id: GHAF_FILL,
           type: "fill",
           source: GHAF_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: GHAF_LINE,
           type: "line",
           source: GHAF_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4381,14 +4393,14 @@ function ParcelsMapPageInner() {
           id: TAOR2_FILL,
           type: "fill",
           source: TAOR2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TAOR2_LINE,
           type: "line",
           source: TAOR2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4409,14 +4421,14 @@ function ParcelsMapPageInner() {
           id: BIANCA_FILL,
           type: "fill",
           source: BIANCA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BIANCA_LINE,
           type: "line",
           source: BIANCA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4437,14 +4449,14 @@ function ParcelsMapPageInner() {
           id: MJL_FILL,
           type: "fill",
           source: MJL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MJL_LINE,
           type: "line",
           source: MJL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4465,14 +4477,14 @@ function ParcelsMapPageInner() {
           id: DHK1_FILL,
           type: "fill",
           source: DHK1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DHK1_LINE,
           type: "line",
           source: DHK1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4493,14 +4505,14 @@ function ParcelsMapPageInner() {
           id: REMRAAM_FILL,
           type: "fill",
           source: REMRAAM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: REMRAAM_LINE,
           type: "line",
           source: REMRAAM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4521,14 +4533,14 @@ function ParcelsMapPageInner() {
           id: ECHO_FILL,
           type: "fill",
           source: ECHO_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ECHO_LINE,
           type: "line",
           source: ECHO_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4549,14 +4561,14 @@ function ParcelsMapPageInner() {
           id: SUSCITY_FILL,
           type: "fill",
           source: SUSCITY_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SUSCITY_LINE,
           type: "line",
           source: SUSCITY_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4577,14 +4589,14 @@ function ParcelsMapPageInner() {
           id: JBR_FILL,
           type: "fill",
           source: JBR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JBR_LINE,
           type: "line",
           source: JBR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4605,14 +4617,14 @@ function ParcelsMapPageInner() {
           id: GHOROOB_FILL,
           type: "fill",
           source: GHOROOB_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: GHOROOB_LINE,
           type: "line",
           source: GHOROOB_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4633,14 +4645,14 @@ function ParcelsMapPageInner() {
           id: DPB3_FILL,
           type: "fill",
           source: DPB3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPB3_LINE,
           type: "line",
           source: DPB3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4661,14 +4673,14 @@ function ParcelsMapPageInner() {
           id: MARSA_FILL,
           type: "fill",
           source: MARSA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MARSA_LINE,
           type: "line",
           source: MARSA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4689,14 +4701,14 @@ function ParcelsMapPageInner() {
           id: BLUE_FILL,
           type: "fill",
           source: BLUE_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BLUE_LINE,
           type: "line",
           source: BLUE_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4717,14 +4729,14 @@ function ParcelsMapPageInner() {
           id: SITE_D_FILL,
           type: "fill",
           source: SITE_D_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SITE_D_LINE,
           type: "line",
           source: SITE_D_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4745,14 +4757,14 @@ function ParcelsMapPageInner() {
           id: KHEIGHTS_FILL,
           type: "fill",
           source: KHEIGHTS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KHEIGHTS_LINE,
           type: "line",
           source: KHEIGHTS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4773,14 +4785,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_UAD_FILL,
           type: "fill",
           source: MERAAS_UAD_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_UAD_LINE,
           type: "line",
           source: MERAAS_UAD_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4801,14 +4813,14 @@ function ParcelsMapPageInner() {
           id: DLAND673_FILL,
           type: "fill",
           source: DLAND673_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DLAND673_LINE,
           type: "line",
           source: DLAND673_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4829,14 +4841,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_Y1_FILL,
           type: "fill",
           source: SHAMAL_Y1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_Y1_LINE,
           type: "line",
           source: SHAMAL_Y1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4857,14 +4869,14 @@ function ParcelsMapPageInner() {
           id: TECOM_Q2_FILL,
           type: "fill",
           source: TECOM_Q2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TECOM_Q2_LINE,
           type: "line",
           source: TECOM_Q2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4885,14 +4897,14 @@ function ParcelsMapPageInner() {
           id: GV_FILL,
           type: "fill",
           source: GV_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: GV_LINE,
           type: "line",
           source: GV_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4913,14 +4925,14 @@ function ParcelsMapPageInner() {
           id: LAYAN_FILL,
           type: "fill",
           source: LAYAN_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LAYAN_LINE,
           type: "line",
           source: LAYAN_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4941,14 +4953,14 @@ function ParcelsMapPageInner() {
           id: DPGMBR_FILL,
           type: "fill",
           source: DPGMBR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPGMBR_LINE,
           type: "line",
           source: DPGMBR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4969,14 +4981,14 @@ function ParcelsMapPageInner() {
           id: DWC_FILL,
           type: "fill",
           source: DWC_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DWC_LINE,
           type: "line",
           source: DWC_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -4997,14 +5009,14 @@ function ParcelsMapPageInner() {
           id: LQUOZ_FILL,
           type: "fill",
           source: LQUOZ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LQUOZ_LINE,
           type: "line",
           source: LQUOZ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5025,14 +5037,14 @@ function ParcelsMapPageInner() {
           id: SCHFZ_FILL,
           type: "fill",
           source: SCHFZ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SCHFZ_LINE,
           type: "line",
           source: SCHFZ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5053,14 +5065,14 @@ function ParcelsMapPageInner() {
           id: DWCNFZ_FILL,
           type: "fill",
           source: DWCNFZ_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DWCNFZ_LINE,
           type: "line",
           source: DWCNFZ_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5081,14 +5093,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_JAI1_FILL,
           type: "fill",
           source: SHAMAL_JAI1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_JAI1_LINE,
           type: "line",
           source: SHAMAL_JAI1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5109,14 +5121,14 @@ function ParcelsMapPageInner() {
           id: JAI_STAFF_FILL,
           type: "fill",
           source: JAI_STAFF_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JAI_STAFF_LINE,
           type: "line",
           source: JAI_STAFF_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5137,14 +5149,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_TC2_FILL,
           type: "fill",
           source: SHAMAL_TC2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_TC2_LINE,
           type: "line",
           source: SHAMAL_TC2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5165,14 +5177,14 @@ function ParcelsMapPageInner() {
           id: NUZUL_FILL,
           type: "fill",
           source: NUZUL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: NUZUL_LINE,
           type: "line",
           source: NUZUL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5193,14 +5205,14 @@ function ParcelsMapPageInner() {
           id: KOA_FILL,
           type: "fill",
           source: KOA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KOA_LINE,
           type: "line",
           source: KOA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5221,14 +5233,14 @@ function ParcelsMapPageInner() {
           id: SOBHA_S_FILL,
           type: "fill",
           source: SOBHA_S_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SOBHA_S_LINE,
           type: "line",
           source: SOBHA_S_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5249,14 +5261,14 @@ function ParcelsMapPageInner() {
           id: BOX_FILL,
           type: "fill",
           source: BOX_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BOX_LINE,
           type: "line",
           source: BOX_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5277,14 +5289,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_NAS1_FILL,
           type: "fill",
           source: SHAMAL_NAS1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_NAS1_LINE,
           type: "line",
           source: SHAMAL_NAS1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5305,14 +5317,14 @@ function ParcelsMapPageInner() {
           id: LASTEXIT_FILL,
           type: "fill",
           source: LASTEXIT_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LASTEXIT_LINE,
           type: "line",
           source: LASTEXIT_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5333,14 +5345,14 @@ function ParcelsMapPageInner() {
           id: SCARA_FILL,
           type: "fill",
           source: SCARA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SCARA_LINE,
           type: "line",
           source: SCARA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5361,14 +5373,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_W3_FILL,
           type: "fill",
           source: MERAAS_W3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_W3_LINE,
           type: "line",
           source: MERAAS_W3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5389,14 +5401,14 @@ function ParcelsMapPageInner() {
           id: JCENTRAL_FILL,
           type: "fill",
           source: JCENTRAL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JCENTRAL_LINE,
           type: "line",
           source: JCENTRAL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5417,14 +5429,14 @@ function ParcelsMapPageInner() {
           id: OASIS_FILL,
           type: "fill",
           source: OASIS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: OASIS_LINE,
           type: "line",
           source: OASIS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5445,14 +5457,14 @@ function ParcelsMapPageInner() {
           id: ETD_FILL,
           type: "fill",
           source: ETD_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ETD_LINE,
           type: "line",
           source: ETD_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5473,14 +5485,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_Q3_FILL,
           type: "fill",
           source: MERAAS_Q3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_Q3_LINE,
           type: "line",
           source: MERAAS_Q3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5501,14 +5513,14 @@ function ParcelsMapPageInner() {
           id: MARSA_S_FILL,
           type: "fill",
           source: MARSA_S_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MARSA_S_LINE,
           type: "line",
           source: MARSA_S_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5529,14 +5541,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_WAS_FILL,
           type: "fill",
           source: MERAAS_WAS_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_WAS_LINE,
           type: "line",
           source: MERAAS_WAS_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5557,14 +5569,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_B2_FILL,
           type: "fill",
           source: SHAMAL_B2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_B2_LINE,
           type: "line",
           source: SHAMAL_B2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5585,14 +5597,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_N2_FILL,
           type: "fill",
           source: SHAMAL_N2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_N2_LINE,
           type: "line",
           source: SHAMAL_N2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5613,14 +5625,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_SAIH1_FILL,
           type: "fill",
           source: MERAAS_SAIH1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_SAIH1_LINE,
           type: "line",
           source: MERAAS_SAIH1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5641,14 +5653,14 @@ function ParcelsMapPageInner() {
           id: DPOL_UAD_FILL,
           type: "fill",
           source: DPOL_UAD_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPOL_UAD_LINE,
           type: "line",
           source: DPOL_UAD_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5669,14 +5681,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_RAK3_FILL,
           type: "fill",
           source: MERAAS_RAK3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_RAK3_LINE,
           type: "line",
           source: MERAAS_RAK3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5697,14 +5709,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_MD_FILL,
           type: "fill",
           source: MERAAS_MD_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_MD_LINE,
           type: "line",
           source: MERAAS_MD_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5725,14 +5737,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_HAD_FILL,
           type: "fill",
           source: SHAMAL_HAD_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_HAD_LINE,
           type: "line",
           source: SHAMAL_HAD_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5753,14 +5765,14 @@ function ParcelsMapPageInner() {
           id: JBH_FILL,
           type: "fill",
           source: JBH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JBH_LINE,
           type: "line",
           source: JBH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5781,14 +5793,14 @@ function ParcelsMapPageInner() {
           id: MJUM_FILL,
           type: "fill",
           source: MJUM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MJUM_LINE,
           type: "line",
           source: MJUM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5809,14 +5821,14 @@ function ParcelsMapPageInner() {
           id: TECOM_SAIH_FILL,
           type: "fill",
           source: TECOM_SAIH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: TECOM_SAIH_LINE,
           type: "line",
           source: TECOM_SAIH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5837,14 +5849,14 @@ function ParcelsMapPageInner() {
           id: CV2_FILL,
           type: "fill",
           source: CV2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: CV2_LINE,
           type: "line",
           source: CV2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5865,14 +5877,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_BS2_FILL,
           type: "fill",
           source: MERAAS_BS2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_BS2_LINE,
           type: "line",
           source: MERAAS_BS2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5893,14 +5905,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MUH2_FILL,
           type: "fill",
           source: SHAMAL_MUH2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MUH2_LINE,
           type: "line",
           source: SHAMAL_MUH2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5921,14 +5933,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_Q2_FILL,
           type: "fill",
           source: SHAMAL_Q2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_Q2_LINE,
           type: "line",
           source: SHAMAL_Q2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5949,14 +5961,14 @@ function ParcelsMapPageInner() {
           id: CV3_FILL,
           type: "fill",
           source: CV3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: CV3_LINE,
           type: "line",
           source: CV3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -5977,14 +5989,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_SATWA_FILL,
           type: "fill",
           source: MERAAS_SATWA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_SATWA_LINE,
           type: "line",
           source: MERAAS_SATWA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6005,14 +6017,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MAMZAR_FILL,
           type: "fill",
           source: SHAMAL_MAMZAR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MAMZAR_LINE,
           type: "line",
           source: SHAMAL_MAMZAR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6033,14 +6045,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_RAFFA_FILL,
           type: "fill",
           source: SHAMAL_RAFFA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_RAFFA_LINE,
           type: "line",
           source: SHAMAL_RAFFA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6061,14 +6073,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_MAMZAR_FILL,
           type: "fill",
           source: MERAAS_MAMZAR_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_MAMZAR_LINE,
           type: "line",
           source: MERAAS_MAMZAR_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6089,14 +6101,14 @@ function ParcelsMapPageInner() {
           id: DH_SAFOUH1_FILL,
           type: "fill",
           source: DH_SAFOUH1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DH_SAFOUH1_LINE,
           type: "line",
           source: DH_SAFOUH1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6117,14 +6129,14 @@ function ParcelsMapPageInner() {
           id: DL_B104_FILL,
           type: "fill",
           source: DL_B104_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_B104_LINE,
           type: "line",
           source: DL_B104_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6145,14 +6157,14 @@ function ParcelsMapPageInner() {
           id: DHAM_ROW1_FILL,
           type: "fill",
           source: DHAM_ROW1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DHAM_ROW1_LINE,
           type: "line",
           source: DHAM_ROW1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6173,14 +6185,14 @@ function ParcelsMapPageInner() {
           id: DL_B208_FILL,
           type: "fill",
           source: DL_B208_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_B208_LINE,
           type: "line",
           source: DL_B208_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6201,14 +6213,14 @@ function ParcelsMapPageInner() {
           id: BEACH_FILL,
           type: "fill",
           source: BEACH_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BEACH_LINE,
           type: "line",
           source: BEACH_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6229,14 +6241,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_US3_FILL,
           type: "fill",
           source: SHAMAL_US3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_US3_LINE,
           type: "line",
           source: SHAMAL_US3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6257,14 +6269,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_HEMAIRA_FILL,
           type: "fill",
           source: MERAAS_HEMAIRA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_HEMAIRA_LINE,
           type: "line",
           source: MERAAS_HEMAIRA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6285,14 +6297,14 @@ function ParcelsMapPageInner() {
           id: DP_QUOZ2_FILL,
           type: "fill",
           source: DP_QUOZ2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DP_QUOZ2_LINE,
           type: "line",
           source: DP_QUOZ2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6313,14 +6325,14 @@ function ParcelsMapPageInner() {
           id: DL_B103_FILL,
           type: "fill",
           source: DL_B103_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_B103_LINE,
           type: "line",
           source: DL_B103_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6341,14 +6353,14 @@ function ParcelsMapPageInner() {
           id: JG_J2_FILL,
           type: "fill",
           source: JG_J2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: JG_J2_LINE,
           type: "line",
           source: JG_J2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6369,14 +6381,14 @@ function ParcelsMapPageInner() {
           id: DL_T15_FILL,
           type: "fill",
           source: DL_T15_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_T15_LINE,
           type: "line",
           source: DL_T15_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6397,14 +6409,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_WASL_FILL,
           type: "fill",
           source: SHAMAL_WASL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_WASL_LINE,
           type: "line",
           source: SHAMAL_WASL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6425,14 +6437,14 @@ function ParcelsMapPageInner() {
           id: DL_A304_FILL,
           type: "fill",
           source: DL_A304_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_A304_LINE,
           type: "line",
           source: DL_A304_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6453,14 +6465,14 @@ function ParcelsMapPageInner() {
           id: EAHM_FILL,
           type: "fill",
           source: EAHM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: EAHM_LINE,
           type: "line",
           source: EAHM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6481,14 +6493,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_ZABEEL2_FILL,
           type: "fill",
           source: MERAAS_ZABEEL2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_ZABEEL2_LINE,
           type: "line",
           source: MERAAS_ZABEEL2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6509,14 +6521,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_JAFILIYA_FILL,
           type: "fill",
           source: MERAAS_JAFILIYA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_JAFILIYA_LINE,
           type: "line",
           source: MERAAS_JAFILIYA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6537,14 +6549,14 @@ function ParcelsMapPageInner() {
           id: KITE_FILL,
           type: "fill",
           source: KITE_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: KITE_LINE,
           type: "line",
           source: KITE_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6565,14 +6577,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_ALAMARDI_FILL,
           type: "fill",
           source: MERAAS_ALAMARDI_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_ALAMARDI_LINE,
           type: "line",
           source: MERAAS_ALAMARDI_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6593,14 +6605,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_PORTSAEED_FILL,
           type: "fill",
           source: MERAAS_PORTSAEED_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_PORTSAEED_LINE,
           type: "line",
           source: MERAAS_PORTSAEED_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6621,14 +6633,14 @@ function ParcelsMapPageInner() {
           id: DL_6461281_FILL,
           type: "fill",
           source: DL_6461281_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_6461281_LINE,
           type: "line",
           source: DL_6461281_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6649,14 +6661,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_OUDM_FILL,
           type: "fill",
           source: SHAMAL_OUDM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_OUDM_LINE,
           type: "line",
           source: SHAMAL_OUDM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6677,14 +6689,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_Q3_FILL,
           type: "fill",
           source: SHAMAL_Q3_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_Q3_LINE,
           type: "line",
           source: SHAMAL_Q3_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6705,14 +6717,14 @@ function ParcelsMapPageInner() {
           id: DL_A307_FILL,
           type: "fill",
           source: DL_A307_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_A307_LINE,
           type: "line",
           source: DL_A307_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6733,14 +6745,14 @@ function ParcelsMapPageInner() {
           id: WAS3_6456408_FILL,
           type: "fill",
           source: WAS3_6456408_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WAS3_6456408_LINE,
           type: "line",
           source: WAS3_6456408_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6761,14 +6773,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_Q1_FILL,
           type: "fill",
           source: SHAMAL_Q1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_Q1_LINE,
           type: "line",
           source: SHAMAL_Q1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6789,14 +6801,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_NAS4_FILL,
           type: "fill",
           source: MERAAS_NAS4_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_NAS4_LINE,
           type: "line",
           source: MERAAS_NAS4_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6817,14 +6829,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MUH1_FILL,
           type: "fill",
           source: SHAMAL_MUH1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MUH1_LINE,
           type: "line",
           source: SHAMAL_MUH1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6845,14 +6857,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_J1_FILL,
           type: "fill",
           source: SHAMAL_J1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_J1_LINE,
           type: "line",
           source: SHAMAL_J1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6873,14 +6885,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_QUSAIS2_FILL,
           type: "fill",
           source: MERAAS_QUSAIS2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_QUSAIS2_LINE,
           type: "line",
           source: MERAAS_QUSAIS2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6901,14 +6913,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MAHA_FILL,
           type: "fill",
           source: SHAMAL_MAHA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MAHA_LINE,
           type: "line",
           source: SHAMAL_MAHA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6929,14 +6941,14 @@ function ParcelsMapPageInner() {
           id: LUNAYA_FILL,
           type: "fill",
           source: LUNAYA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: LUNAYA_LINE,
           type: "line",
           source: LUNAYA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6957,14 +6969,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_US1_FILL,
           type: "fill",
           source: MERAAS_US1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_US1_LINE,
           type: "line",
           source: MERAAS_US1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -6985,14 +6997,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_NAHDA1_FILL,
           type: "fill",
           source: SHAMAL_NAHDA1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_NAHDA1_LINE,
           type: "line",
           source: SHAMAL_NAHDA1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7013,14 +7025,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_SAFOUH1_FILL,
           type: "fill",
           source: SHAMAL_SAFOUH1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_SAFOUH1_LINE,
           type: "line",
           source: SHAMAL_SAFOUH1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7041,14 +7053,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MARGHAM_FILL,
           type: "fill",
           source: SHAMAL_MARGHAM_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MARGHAM_LINE,
           type: "line",
           source: SHAMAL_MARGHAM_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7069,14 +7081,14 @@ function ParcelsMapPageInner() {
           id: WILD_WADI_FILL,
           type: "fill",
           source: WILD_WADI_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WILD_WADI_LINE,
           type: "line",
           source: WILD_WADI_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7097,14 +7109,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_BS1_FILL,
           type: "fill",
           source: MERAAS_BS1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_BS1_LINE,
           type: "line",
           source: MERAAS_BS1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7125,14 +7137,14 @@ function ParcelsMapPageInner() {
           id: DL_A409_FILL,
           type: "fill",
           source: DL_A409_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_A409_LINE,
           type: "line",
           source: DL_A409_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7153,14 +7165,14 @@ function ParcelsMapPageInner() {
           id: ZABEEL1_FILL,
           type: "fill",
           source: ZABEEL1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: ZABEEL1_LINE,
           type: "line",
           source: ZABEEL1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7181,14 +7193,14 @@ function ParcelsMapPageInner() {
           id: WAS3_6454931_FILL,
           type: "fill",
           source: WAS3_6454931_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: WAS3_6454931_LINE,
           type: "line",
           source: WAS3_6454931_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7209,14 +7221,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_3460266_FILL,
           type: "fill",
           source: MERAAS_3460266_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_3460266_LINE,
           type: "line",
           source: MERAAS_3460266_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7237,14 +7249,14 @@ function ParcelsMapPageInner() {
           id: MUSEUM_FUTURE_FILL,
           type: "fill",
           source: MUSEUM_FUTURE_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MUSEUM_FUTURE_LINE,
           type: "line",
           source: MUSEUM_FUTURE_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7265,14 +7277,14 @@ function ParcelsMapPageInner() {
           id: AL_JALILA_FILL,
           type: "fill",
           source: AL_JALILA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: AL_JALILA_LINE,
           type: "line",
           source: AL_JALILA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7293,14 +7305,14 @@ function ParcelsMapPageInner() {
           id: DL_A102_FILL,
           type: "fill",
           source: DL_A102_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DL_A102_LINE,
           type: "line",
           source: DL_A102_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7321,14 +7333,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_WARQA2_FILL,
           type: "fill",
           source: MERAAS_WARQA2_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_WARQA2_LINE,
           type: "line",
           source: MERAAS_WARQA2_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7349,14 +7361,14 @@ function ParcelsMapPageInner() {
           id: MERAAS_J1_FILL,
           type: "fill",
           source: MERAAS_J1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: MERAAS_J1_LINE,
           type: "line",
           source: MERAAS_J1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7377,14 +7389,14 @@ function ParcelsMapPageInner() {
           id: DP_JAFILIYA_FILL,
           type: "fill",
           source: DP_JAFILIYA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DP_JAFILIYA_LINE,
           type: "line",
           source: DP_JAFILIYA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7405,14 +7417,14 @@ function ParcelsMapPageInner() {
           id: BURJ_AA_FILL,
           type: "fill",
           source: BURJ_AA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: BURJ_AA_LINE,
           type: "line",
           source: BURJ_AA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7433,14 +7445,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_BS1_FILL,
           type: "fill",
           source: SHAMAL_BS1_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_BS1_LINE,
           type: "line",
           source: SHAMAL_BS1_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7461,14 +7473,14 @@ function ParcelsMapPageInner() {
           id: DPA_FILL,
           type: "fill",
           source: DPA_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: DPA_LINE,
           type: "line",
           source: DPA_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -7489,14 +7501,14 @@ function ParcelsMapPageInner() {
           id: SHAMAL_MANKHOOL_FILL,
           type: "fill",
           source: SHAMAL_MANKHOOL_SRC,
-          paint: { "fill-color": "#9333EA", "fill-opacity": 0.05 },
+          paint: { "fill-color": "#C8A96E", "fill-opacity": 0.05 },
         });
         map.addLayer({
           id: SHAMAL_MANKHOOL_LINE,
           type: "line",
           source: SHAMAL_MANKHOOL_SRC,
           paint: {
-            "line-color": "#9333EA",
+            "line-color": "#C8A96E",
             "line-width": 1.5,
             "line-dasharray": [2, 2],
           },
@@ -8377,7 +8389,13 @@ function ParcelsMapPageInner() {
     for (const d of DDA_LAYERS) {
       const labelId = ddaLabelId(d.srcId);
       if (map.getLayer(labelId)) {
-        map.setLayoutProperty(labelId, "visibility", v(layersRef.current[d.key]));
+        // Plot-number labels are visible only if BOTH the parent district
+        // is on AND the global "Plot Numbers" toggle is on.
+        map.setLayoutProperty(
+          labelId,
+          "visibility",
+          v(!!layersRef.current[d.key] && layersRef.current.plotLabels),
+        );
       }
     }
   }
@@ -8504,7 +8522,7 @@ function ParcelsMapPageInner() {
           popup
             .setLngLat(e.lngLat)
             .setHTML(
-              `<div><div style="font-family:Georgia,serif;font-weight:700;color:#9333EA">${clean}</div>
+              `<div><div style="font-family:Georgia,serif;font-weight:700;color:#C8A96E">${clean}</div>
                <div style="font-size:10px;opacity:0.7;margin-top:2px">${planLabel}</div></div>`,
             )
             .addTo(map);
@@ -9812,7 +9830,13 @@ function ParcelsMapPageInner() {
     for (const d of DDA_LAYERS) {
       const labelId = ddaLabelId(d.srcId);
       if (map.getLayer(labelId)) {
-        map.setLayoutProperty(labelId, "visibility", v(layers[d.key]));
+        // Plot-number labels are visible only if BOTH the parent district
+        // is on AND the global "Plot Numbers" toggle is on.
+        map.setLayoutProperty(
+          labelId,
+          "visibility",
+          v(!!layers[d.key] && layers.plotLabels),
+        );
       }
     }
   }, [layers]);
@@ -9843,11 +9867,11 @@ function ParcelsMapPageInner() {
 
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
     { color: "#FFD700", name: "Residential", desc: "Жилое" },
-    { color: "#9333EA", name: "Mixed Use", desc: "Смешанное" },
+    { color: "#16A34A", name: "Mixed Use", desc: "Смешанное" },
     { color: "#3B82F6", name: "Commercial / Office", desc: "Коммерческое" },
-    { color: "#F97316", name: "Hotel / Hospitality", desc: "Отельное" },
+    { color: "#9333EA", name: "Hotel / Hospitality", desc: "Отельное" },
     { color: "#EC4899", name: "Retail", desc: "Торговое" },
-    { color: "#00FF80", name: "Industrial", desc: "Промышленное" },
+    { color: "#6B7280", name: "Industrial", desc: "Промышленное" },
     { color: "#10B981", name: "Community Facilities", desc: "Школы, мечети, больницы" },
     { color: "#22C55E", name: "Open Space / Parks", desc: "Парки" },
     { color: "#94A3B8", name: "Utility", desc: "Инфраструктура" },
@@ -10263,6 +10287,7 @@ function ParcelsMapPageInner() {
           items={[
             { key: "communities", label: "Communities" },
             { key: "roads", label: "Major Roads" },
+            { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
           onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
@@ -10690,7 +10715,7 @@ function HeaderBar({
     setFindError(null);
     setFindBusy(true);
     try {
-      const r = await fetch("/api/parcels/map");
+      const r = await apiFetch("/api/parcels/map");
       const data = (await r.json()) as {
         items: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
       };
@@ -10743,6 +10768,12 @@ function HeaderBar({
         zIndex: 10,
         boxShadow: c.headerShadow,
         gap: 14,
+        // Mobile fallback: horizontal scroll instead of squishing the
+        // search inputs together. Touch users can swipe to reach the
+        // remaining controls. A proper mobile redesign (collapse into a
+        // hamburger) is still TODO.
+        overflowX: "auto",
+        whiteSpace: "nowrap",
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
