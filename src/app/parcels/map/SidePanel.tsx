@@ -12,19 +12,22 @@ const LINE = "#E5E7EB";
 
 // Mirrors ZAAHI_LANDUSE_COLOR in src/app/parcels/map/page.tsx so the small
 // indicator dot in the side panel matches the colour of the 3D extrusion on
-// the map. Updated per founder spec on 2026-04-11: Hotel = purple,
-// Mixed Use = green, Industrial = gray.
+// the map. Updated per founder spec on 2026-04-11 (second iteration):
+// Residential = brand gold, Office split off from Commercial,
+// Educational gets its own teal, full repaint of the rest.
 const LANDUSE_COLORS: Record<string, string> = {
-  RESIDENTIAL: "#FFD700",
-  MIXED_USE: "#16A34A",
-  "MIXED USE": "#16A34A",
-  COMMERCIAL: "#3B82F6",
-  OFFICE: "#3B82F6",
-  HOTEL: "#9333EA",
-  HOSPITALITY: "#9333EA",
-  RETAIL: "#EC4899",
-  INDUSTRIAL: "#6B7280",
-  WAREHOUSE: "#6B7280",
+  RESIDENTIAL: "#C8A96E",
+  MIXED_USE: "#27AE60",
+  "MIXED USE": "#27AE60",
+  COMMERCIAL: "#4A90D9",
+  OFFICE: "#2C3E50",
+  HOTEL: "#9B59B6",
+  HOSPITALITY: "#9B59B6",
+  RETAIL: "#E67E22",
+  INDUSTRIAL: "#7F8C8D",
+  WAREHOUSE: "#7F8C8D",
+  EDUCATIONAL: "#1ABC9C",
+  EDUCATION: "#1ABC9C",
   "FUTURE DEVELOPMENT": "#84CC16",
 };
 
@@ -175,14 +178,47 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
               </Section>
 
               <Section title="Dimensions">
-                <Row label="Plot" v={plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft²` : null} />
-                <Row label="Max GFA" v={plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null} />
+                <Row
+                  label="Plot Area"
+                  v={
+                    plan.plotAreaSqft || plan.plotAreaSqm
+                      ? [
+                          plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft²` : null,
+                          plan.plotAreaSqm ? `${Math.round(plan.plotAreaSqm).toLocaleString()} m²` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : null
+                  }
+                />
+                <Row
+                  label="Max GFA"
+                  v={
+                    plan.maxGfaSqft || plan.maxGfaSqm
+                      ? [
+                          plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null,
+                          plan.maxGfaSqm ? `${Math.round(plan.maxGfaSqm).toLocaleString()} m²` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : null
+                  }
+                />
                 <Row label="FAR" v={plan.far?.toString()} />
-                <Row label="Height" v={plan.maxHeightCode ? [
-                  plan.maxHeightCode,
-                  plan.maxFloors != null ? `${plan.maxFloors}f` : null,
-                  plan.maxHeightMeters != null ? `~${plan.maxHeightMeters}m` : null,
-                ].filter(Boolean).join(" · ") : null} />
+                <Row
+                  label="Max Height"
+                  v={
+                    plan.maxHeightCode || plan.maxFloors != null || plan.maxHeightMeters != null
+                      ? [
+                          plan.maxHeightCode,
+                          plan.maxFloors != null ? `${plan.maxFloors} floors` : null,
+                          plan.maxHeightMeters != null ? `~${plan.maxHeightMeters} m` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : null
+                  }
+                />
               </Section>
 
               {/* Land Use with colored indicator */}

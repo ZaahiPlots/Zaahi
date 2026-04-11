@@ -154,15 +154,18 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
 - Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
 
-### Цвета по Land Use (легенда)
-- RESIDENTIAL: #FFD700 (жёлтый)
-- MIXED USE: #16A34A (зелёный)
-- COMMERCIAL/OFFICE: #3B82F6 (синий)
-- HOTEL/HOSPITALITY: #9333EA (фиолетовый)
-- RETAIL: #EC4899 (розовый)
-- INDUSTRIAL/WAREHOUSE: #6B7280 (серый)
+### Цвета по Land Use (легенда — обновлено 2026-04-11 second iteration)
+- RESIDENTIAL: #C8A96E (брендовый золотой — заменил #FFD700)
+- MIXED USE: #27AE60 (зелёный)
+- COMMERCIAL: #4A90D9 (синий)
+- OFFICE: #2C3E50 (тёмно-синий — отдельно от Commercial)
+- HOTEL/HOSPITALITY: #9B59B6 (фиолетовый)
+- RETAIL: #E67E22 (оранжевый)
+- INDUSTRIAL/WAREHOUSE: #7F8C8D (серый)
+- EDUCATIONAL: #1ABC9C (бирюзовый)
 - FUTURE DEVELOPMENT: #84CC16 (лайм)
 - DDA district outlines on the map use the brand gold #C8A96E (NOT a land-use category — it's the layer-outline colour)
+- Source-of-truth in code: `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx`. The 3D `fill-extrusion-color` expression in `loadZaahiPlots` AND the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx` AND the `LAND_USE_LEGEND` array in the map page MUST stay in sync with each other.
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
@@ -218,6 +221,13 @@ FUTURE DEVELOPMENT (земля без зданий):
 - Цена участка = Max GFA sqft × цена за GFA sqft (цена за GFA предоставляется вручную)
 - 3D модель ZAAHI Signature по land use автоматически
 - После добавления жди подтверждение "yes" перед следующим
+
+### NEVER delete parcels — ever
+- A parcel row in `Parcel` table is **never** deleted by the agent. Not even VACANT stubs, not even rows the agent itself created in a previous batch, not even rows that "look broken".
+- The only acceptable mutations on an existing parcel are: update `currentValuation`, update `status`, refresh the `affectionPlans` history (which appends a new row, never removes the old one).
+- "Reseed" a parcel = a literal `prisma.parcel.delete` followed by a fresh `create`. This is a destructive operation. **NEVER** do it without an explicit, plot-number-specific instruction from the founder in the current conversation. A blanket "fix the database" is not enough.
+- If a parcel needs to be removed for any reason (e.g. wrong plot number, bad data, accidentally added), the agent MUST stop and ask the founder explicitly, listing the row's id / plotNumber / district / status / currentValuation / createdAt before proceeding.
+- The same rule applies to `affectionPlans`: never `deleteMany`, only `create`.
 
 ### NEVER add duplicate parcels
 - **Before adding ANY parcel**, ALWAYS check if `plotNumber` already exists in the `Parcel` table.

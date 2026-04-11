@@ -145,23 +145,26 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 // Land-use color legend for the ZAAHI Signature 3D extrusion. Updated per
-// founder spec on 2026-04-11: Hotel = purple, Mixed Use = green,
-// Industrial = gray (was orange / purple / neon-green respectively).
-// CLAUDE.md "Цвета по Land Use" was updated to match in the same commit.
+// founder spec on 2026-04-11 (second iteration): Residential is now the
+// brand gold #C8A96E (was bright yellow), Office is dark navy distinct
+// from Commercial, Educational gets its own teal, and the rest are slightly
+// re-balanced. CLAUDE.md "Цвета по Land Use" updated to match.
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
-  RESIDENTIAL: "#FFD700",        // yellow — unchanged
-  MIXED_USE: "#16A34A",          // green
-  COMMERCIAL: "#3B82F6",         // blue — unchanged
-  OFFICE: "#3B82F6",             // blue
-  HOTEL: "#9333EA",              // purple
-  HOSPITALITY: "#9333EA",        // purple
-  RETAIL: "#EC4899",             // pink — unchanged
-  INDUSTRIAL: "#6B7280",         // gray
-  WAREHOUSE: "#6B7280",          // gray
-  FUTURE_DEVELOPMENT: "#84CC16", // lime — unchanged
+  RESIDENTIAL: "#C8A96E",         // brand gold
+  MIXED_USE: "#27AE60",           // green
+  COMMERCIAL: "#4A90D9",          // blue
+  OFFICE: "#2C3E50",              // dark navy
+  HOTEL: "#9B59B6",               // purple
+  HOSPITALITY: "#9B59B6",         // purple
+  RETAIL: "#E67E22",              // orange
+  INDUSTRIAL: "#7F8C8D",          // gray
+  WAREHOUSE: "#7F8C8D",           // gray
+  EDUCATIONAL: "#1ABC9C",         // teal
+  EDUCATION: "#1ABC9C",           // teal (alt spelling)
+  FUTURE_DEVELOPMENT: "#84CC16",  // lime — unchanged
   "FUTURE DEVELOPMENT": "#84CC16",
 };
-const ZAAHI_DEFAULT_COLOR = "#FFD700";
+const ZAAHI_DEFAULT_COLOR = "#C8A96E";
 
 // Apply / clear selection highlight on the ZAAHI plot + building layers.
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
@@ -1197,14 +1200,15 @@ function ParcelsMapPageInner() {
     communities: true,
     roads: true,
     plotLabels: false,
-    // Master plans default ON — they idle-load 2 seconds after the
-    // map first becomes interactive (see map.on("load") body).
-    islands: true,
-    meydan: true,
-    alFurjan: true,
-    intlCity23: true,
-    residential12: true,
-    d11: true,
+    // Master plans default OFF — same lazy semantics as DDA. The user
+    // clicks the checkbox (or the section checkbox) to load them.
+    // No idle pre-fetch, no auto-load on map init.
+    islands: false,
+    meydan: false,
+    alFurjan: false,
+    intlCity23: false,
+    residential12: false,
+    d11: false,
     dubaiHills: false,
     damacHills2: false,
     damacLagoons: false,
@@ -1643,6 +1647,315 @@ function ParcelsMapPageInner() {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  //  ZAAHI Plots — the real listings layer.
+  //
+  //  Always loads at map start. Reads /api/parcels/map (auth-required —
+  //  served only to approved users via apiFetch). For each parcel:
+  //   - the polygon goes into ZAAHI_PLOTS_SRC and feeds 4 layers
+  //     (fill / line / glow halo / crisp pulsing outline)
+  //   - one or more 3D extrusion polygons (podium / body / crown) go
+  //     into ZAAHI_BUILDINGS_SRC and feed 4 fill-extrusion layers
+  //
+  //  Building footprint generation:
+  //   - if the affection plan has buildingLimitGeometry → use it
+  //   - otherwise inset the plot polygon by the average DDA setback
+  //   - for MIXED_USE: stepped tower with 3 visible tiers
+  //   - for FUTURE_DEVELOPMENT: polygon only, no extrusion
+  //
+  //  All 3D heights come from maxHeightMeters in the affection plan,
+  //  with a fallback derived from GFA / plot area / coverage when DDA
+  //  doesn't have it. Idempotent on map.getSource — safe to call after
+  //  a basemap swap.
+  // ─────────────────────────────────────────────────────────────────────
+  async function loadZaahiPlots(map: MLMap) {
+    if (map.getSource(ZAAHI_PLOTS_SRC)) return;
+    try {
+      const r = await apiFetch("/api/parcels/map");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const payload = (await r.json()) as {
+        items: Array<{
+          id: string;
+          plotNumber: string;
+          district: string;
+          emirate: string;
+          status: string;
+          area: number;
+          geometry: GeoJSON.Polygon | null;
+          currentValuation: string | null;
+          plan: {
+            projectName?: string | null;
+            community?: string | null;
+            maxFloors?: number | null;
+            maxHeightMeters?: number | null;
+            maxHeightCode?: string | null;
+            plotAreaSqm?: number | null;
+            maxGfaSqm?: number | null;
+            maxGfaSqft?: number | null;
+            far?: number | null;
+            buildingLimitGeometry?: GeoJSON.Polygon | null;
+            setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
+            landUseMix?: Array<{ category: string }> | null;
+          } | null;
+        }>;
+      };
+
+      const plotFeatures: GeoJSON.Feature[] = [];
+      const buildingFeatures: GeoJSON.Feature[] = [];
+      for (const it of payload.items) {
+        if (!it.geometry || it.geometry.type !== "Polygon") continue;
+        const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
+        const landUse = deriveLandUse(it.plan?.landUseMix);
+        plotFeatures.push({
+          type: "Feature",
+          id: it.id,
+          geometry: it.geometry,
+          properties: {
+            id: it.id,
+            plotNumber: it.plotNumber,
+            district: it.district,
+            area: it.area,
+            priceAed: aed,
+            landUse,
+            color: ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR,
+          },
+        });
+
+        // Footprint helper — pushes podium / body / crown features into
+        // buildingFeatures for the 3D fill-extrusion layers.
+        const pushSignature = (ring: number[][], totalH: number, useGold: boolean, tag: string) => {
+          const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+          const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+          const scaleRing = (s: number): number[][] =>
+            ring.map(([lng, lat]) => [
+              cLng + (lng - cLng) * s,
+              cLat + (lat - cLat) * s,
+            ]);
+          const podiumTop = Math.min(8, totalH * 0.3);
+          const crownH = Math.min(6, totalH * 0.2);
+          const crownBase = Math.max(podiumTop, totalH - crownH);
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
+            properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag },
+          });
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
+            properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag },
+          });
+          if (useGold) {
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
+              properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag },
+            });
+          }
+        };
+
+        const blg = it.plan?.buildingLimitGeometry;
+        const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+
+        if (landUse === "MIXED_USE") {
+          let footprintRing: number[][];
+          if (blg && blg.type === "Polygon") {
+            footprintRing = blg.coordinates[0];
+          } else {
+            const lngs = plotRing.map((p) => p[0]);
+            const lats = plotRing.map((p) => p[1]);
+            const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+            const dLng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos((midLat * Math.PI) / 180);
+            const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+            const halfW = Math.min(dLng, dLat) / 2;
+            const insetScale = halfW > 0 ? Math.max(0.5, 1 - 5 / halfW) : 0.85;
+            const pcLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
+            const pcLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
+            footprintRing = plotRing.map(([lng, lat]) => [
+              pcLng + (lng - pcLng) * insetScale,
+              pcLat + (lat - pcLat) * insetScale,
+            ]);
+          }
+          const totalH = it.plan?.maxHeightMeters ?? 44;
+          const cLng = footprintRing.reduce((s, p) => s + p[0], 0) / footprintRing.length;
+          const cLat = footprintRing.reduce((s, p) => s + p[1], 0) / footprintRing.length;
+          const scaleRing = (s: number): number[][] =>
+            footprintRing.map(([lng, lat]) => [
+              cLng + (lng - cLng) * s,
+              cLat + (lat - cLat) * s,
+            ]);
+          const podiumTop = Math.max(12, totalH * 0.2);
+          const crownH = Math.max(8, totalH * 0.2);
+          const crownBase = Math.max(podiumTop + 4, totalH - crownH);
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
+            properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag: "mixed-podium" },
+          });
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
+            properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag: "mixed-body" },
+          });
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
+            properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag: "mixed-crown" },
+          });
+        } else if (landUse === "FUTURE DEVELOPMENT" || landUse === "FUTURE_DEVELOPMENT") {
+          // No 3D for future development — fill polygon only.
+        } else {
+          let footprintRing: number[][];
+          if (blg && blg.type === "Polygon") {
+            footprintRing = blg.coordinates[0];
+          } else {
+            const setbacks = it.plan?.setbacks;
+            let avgSetbackM = 5;
+            if (setbacks && setbacks.length > 0) {
+              const vals = setbacks.map((s) => s.building ?? s.podium ?? 5).filter((v) => v > 0);
+              if (vals.length > 0) avgSetbackM = vals.reduce((a, b) => a + b, 0) / vals.length;
+            }
+            const lngs = plotRing.map((p) => p[0]);
+            const lats = plotRing.map((p) => p[1]);
+            const dLng =
+              (Math.max(...lngs) - Math.min(...lngs)) *
+              111000 *
+              Math.cos(((Math.max(...lats) + Math.min(...lats)) / 2) * Math.PI / 180);
+            const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+            const plotHalfWidth = Math.min(dLng, dLat) / 2;
+            const scaleFactor = plotHalfWidth > 0 ? Math.max(0.5, 1 - avgSetbackM / plotHalfWidth) : 0.85;
+            const cLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
+            const cLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
+            footprintRing = plotRing.map(([lng, lat]) => [
+              cLng + (lng - cLng) * scaleFactor,
+              cLat + (lat - cLat) * scaleFactor,
+            ]);
+          }
+          let totalH = it.plan?.maxHeightMeters ?? 0;
+          if (totalH <= 0 && it.plan?.maxGfaSqm && it.plan?.plotAreaSqm) {
+            const coverage = 0.6;
+            const footprintArea = it.plan.plotAreaSqm * coverage;
+            const floors = Math.ceil(it.plan.maxGfaSqm / footprintArea);
+            totalH = floors * 3.5;
+          }
+          if (totalH <= 0) totalH = 44;
+          const useGold = landUse === "RESIDENTIAL" || landUse === "HOSPITALITY" || landUse === "HOTEL";
+          pushSignature(footprintRing, totalH, useGold, "tower");
+        }
+      }
+
+      map.addSource(ZAAHI_PLOTS_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: plotFeatures },
+      });
+      map.addLayer({
+        id: ZAAHI_PLOTS_FILL,
+        type: "fill",
+        source: ZAAHI_PLOTS_SRC,
+        paint: {
+          "fill-color": ["get", "color"],
+          "fill-opacity": 0.4,
+          "fill-opacity-transition": { duration: 300 },
+          "fill-color-transition": { duration: 300 },
+        },
+      });
+      map.addLayer({
+        id: ZAAHI_PLOTS_LINE,
+        type: "line",
+        source: ZAAHI_PLOTS_SRC,
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 2,
+          "line-opacity-transition": { duration: 300 },
+        },
+      });
+      map.addLayer({
+        id: ZAAHI_PLOTS_GLOW,
+        type: "line",
+        source: ZAAHI_PLOTS_SRC,
+        filter: ["==", ["id"], "__none__"],
+        paint: { "line-color": "#FFD700", "line-width": 6, "line-blur": 8, "line-opacity": 0.9 },
+      });
+      map.addLayer({
+        id: ZAAHI_PLOTS_GLOW_CRISP,
+        type: "line",
+        source: ZAAHI_PLOTS_SRC,
+        filter: ["==", ["id"], "__none__"],
+        paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
+      });
+
+      map.addSource(ZAAHI_BUILDINGS_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: buildingFeatures },
+      });
+      // Per-landUse 3D color expression. Updated 2026-04-11 to the
+      // latest founder palette (matches ZAAHI_LANDUSE_COLOR).
+      const buildingColor: maplibregl.ExpressionSpecification = [
+        "match",
+        ["get", "landUse"],
+        "RESIDENTIAL",  "#C8A96E",
+        "MIXED_USE",    "#27AE60",
+        "COMMERCIAL",   "#4A90D9",
+        "OFFICE",       "#2C3E50",
+        "HOTEL",        "#9B59B6",
+        "HOSPITALITY",  "#9B59B6",
+        "RETAIL",       "#E67E22",
+        "INDUSTRIAL",   "#7F8C8D",
+        "WAREHOUSE",    "#7F8C8D",
+        "EDUCATIONAL",  "#1ABC9C",
+        "EDUCATION",    "#1ABC9C",
+        "#C8A96E", // default
+      ];
+
+      map.addLayer({
+        id: `${ZAAHI_BUILDINGS_3D}-podium`,
+        type: "fill-extrusion",
+        source: ZAAHI_BUILDINGS_SRC,
+        filter: ["==", ["get", "kind"], "podium"],
+        paint: {
+          "fill-extrusion-color": buildingColor,
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": ["get", "base"],
+          "fill-extrusion-opacity": 0.45,
+          "fill-extrusion-opacity-transition": { duration: 300 },
+        },
+      });
+      map.addLayer({
+        id: ZAAHI_BUILDINGS_3D,
+        type: "fill-extrusion",
+        source: ZAAHI_BUILDINGS_SRC,
+        filter: ["==", ["get", "kind"], "body"],
+        paint: {
+          "fill-extrusion-color": buildingColor,
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": ["get", "base"],
+          "fill-extrusion-opacity": 0.35,
+          "fill-extrusion-opacity-transition": { duration: 300 },
+        },
+      });
+      map.addLayer({
+        id: `${ZAAHI_BUILDINGS_3D}-crown`,
+        type: "fill-extrusion",
+        source: ZAAHI_BUILDINGS_SRC,
+        filter: ["==", ["get", "kind"], "crown"],
+        paint: {
+          "fill-extrusion-color": buildingColor,
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": ["get", "base"],
+          "fill-extrusion-opacity": 0.3,
+          "fill-extrusion-opacity-transition": { duration: 300 },
+        },
+      });
+      map.addLayer({
+        id: `${ZAAHI_BUILDINGS_3D}-outline`,
+        type: "line",
+        source: ZAAHI_BUILDINGS_SRC,
+        paint: { "line-color": buildingColor, "line-width": 1, "line-opacity": 0.8 },
+      });
+    } catch (e) {
+      console.error("[zaahi-plots] load failed", e);
+    }
+  }
+
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
   async function attachOverlays(map: MLMap) {
@@ -1744,18 +2057,11 @@ function ParcelsMapPageInner() {
 
       await attachOverlays(map);
 
-      // ── Idle-load master plans (2 seconds after the map is interactive) ──
-      // The user has the master-plan section ON by default but we don't
-      // block first paint on those fetches.
-      setTimeout(() => {
-        const m = mapRef.current;
-        if (!m) return;
-        for (const def of LAYER_REGISTRY) {
-          if (def.kind === "masterplan" && layersRef.current[def.key]) {
-            void setLayerVisibility(m, def, true);
-          }
-        }
-      }, 2000);
+      // ── ZAAHI Plots — real listings from /api/parcels/map.
+      // Always loaded; this is the platform's primary content. Builds
+      // both the polygon source (fill / line / glow) and the building
+      // source (3D extrusions colored by land use).
+      await loadZaahiPlots(map);
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
@@ -1847,6 +2153,10 @@ function ParcelsMapPageInner() {
       map.touchZoomRotate.enableRotation();
       map.keyboard.enable();
       await attachOverlays(map);
+      // ZAAHI plots also need to be re-attached after a basemap swap
+      // (maplibre's source registry was wiped). The loader is idempotent
+      // on map.getSource so it's safe to call.
+      await loadZaahiPlots(map);
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
@@ -1888,12 +2198,14 @@ function ParcelsMapPageInner() {
   }, [legendOpen]);
 
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
-    { color: "#FFD700", name: "Residential", desc: "Жилое" },
-    { color: "#16A34A", name: "Mixed Use", desc: "Смешанное" },
-    { color: "#3B82F6", name: "Commercial / Office", desc: "Коммерческое" },
-    { color: "#9333EA", name: "Hotel / Hospitality", desc: "Отельное" },
-    { color: "#EC4899", name: "Retail", desc: "Торговое" },
-    { color: "#6B7280", name: "Industrial", desc: "Промышленное" },
+    { color: "#C8A96E", name: "Residential", desc: "Жилое" },
+    { color: "#27AE60", name: "Mixed Use", desc: "Смешанное" },
+    { color: "#4A90D9", name: "Commercial", desc: "Коммерческое" },
+    { color: "#2C3E50", name: "Office", desc: "Офисное" },
+    { color: "#9B59B6", name: "Hotel / Hospitality", desc: "Отельное" },
+    { color: "#E67E22", name: "Retail", desc: "Торговое" },
+    { color: "#7F8C8D", name: "Industrial", desc: "Промышленное" },
+    { color: "#1ABC9C", name: "Educational", desc: "Образовательное" },
     { color: "#10B981", name: "Community Facilities", desc: "Школы, мечети, больницы" },
     { color: "#22C55E", name: "Open Space / Parks", desc: "Парки" },
     { color: "#94A3B8", name: "Utility", desc: "Инфраструктура" },
