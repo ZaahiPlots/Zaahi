@@ -218,6 +218,13 @@ FUTURE DEVELOPMENT (земля без зданий):
 - 3D модель ZAAHI Signature по land use автоматически
 - После добавления жди подтверждение "yes" перед следующим
 
+### NEVER add duplicate parcels
+- **Before adding ANY parcel**, ALWAYS check if `plotNumber` already exists in the `Parcel` table.
+- Duplicates are **permanently forbidden** — not "skipped quietly", not "overwritten silently". If a row with that `plotNumber` already exists, abort the add for that plot, log the existing `id` / `district` / `status`, and surface it in the batch report.
+- The check is by `plotNumber` alone (not by the composite `(emirate, district, plotNumber)` key) — the same plot must never appear twice, even under a different district label.
+- If the founder wants to **update** an existing parcel (price change, status change, affection plan refresh), that is a different operation and requires an explicit "update plot X" instruction — never a "batch add".
+- A batch seeder MUST run a pre-flight duplicate check, list all duplicates with current state (status, $/sqft), and only add the plots that are genuinely new.
+
 ## SECURITY RULES - DO NOT MODIFY
 - Sign Up is allowed but every new account is created with `user_metadata.approved = false`
 - After signup the client is signed out immediately and the "REQUEST SUBMITTED" pending screen is shown
