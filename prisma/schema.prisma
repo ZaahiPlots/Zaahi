@@ -219,6 +219,13 @@ model AffectionPlan {
   buildingLimitGeometry Json? // GeoJSON Polygon from MAIN_MAP layer 8
   raw             Json?       // full parsed bundle for debugging
 
+  // Optional Salesforce URL for the "Plot Guidelines" PDF that DDA's
+  // plot info page surfaces alongside the existing "Plot Details PDF".
+  // Format: https://dcca.my.salesforce-sites.com/services/apexrest/GIS?GetPlotSitePlan=<id>
+  // Null when DDA didn't expose the link for this plot. Set by
+  // scripts/seed-dda + the backfill script. Public URL — no DDA auth.
+  plotGuidelinesUrl String?
+
   @@index([parcelId])
   @@index([fetchedAt])
 }

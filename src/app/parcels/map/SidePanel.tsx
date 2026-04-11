@@ -60,6 +60,10 @@ interface Plan {
   sitePlanExpiry: string | null;
   notes: string | null;          // plain-language rewritten by /api/parcels/[id]
   notesOriginal: string | null;  // raw DDA text
+  // Optional Salesforce URL for the "Plot Guidelines" PDF that DDA
+  // surfaces alongside the existing "Plot Details" download. When
+  // present, the SidePanel renders a second download button.
+  plotGuidelinesUrl: string | null;
   source: string;
   fetchedAt: string;
 }
@@ -363,7 +367,11 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                   <span style={{ color: SUBTLE }}>{docsOpen ? "▾" : "▸"}</span>
                 </button>
                 {docsOpen && (
-                  <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}` }}>
+                  <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}`, display: "flex", flexDirection: "column" }}>
+                    {/* Existing "Affection Plan" download — DDA's
+                        title="Download Plot Details" PDF, fetched via
+                        the /pdf proxy. ALWAYS shown when a parcel is
+                        loaded. */}
                     <button
                       type="button"
                       onClick={() => {
@@ -394,6 +402,41 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                     >
                       📄 Affection Plan (PDF)
                     </button>
+                    {/* New "Plot Details" button — DDA's
+                        title="Download Plot Guidelines" Salesforce PDF.
+                        Only rendered when the URL exists for THIS plot
+                        (backfilled by scripts/backfill-plot-guidelines.ts).
+                        Routed through /api/parcels/[id]/plot-guidelines so
+                        the same Bearer-token + downloadFile flow works. */}
+                    {plan.plotGuidelinesUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!data) return;
+                          downloadFile(
+                            `/api/parcels/${data.id}/plot-guidelines`,
+                            `${data.plotNumber}-plot-details.pdf`,
+                          ).catch((e) => {
+                            console.error("[plot-guidelines-download]", e);
+                            alert("Could not download Plot Details. Try again or contact support.");
+                          });
+                        }}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          fontSize: 10,
+                          color: GOLD,
+                          padding: "4px 8px",
+                          background: "transparent",
+                          border: 0,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        📑 Plot Details (PDF)
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
