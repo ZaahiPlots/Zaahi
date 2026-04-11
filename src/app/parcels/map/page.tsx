@@ -1861,60 +1861,133 @@ function ParcelsMapPageInner() {
 
         // ── HARDCODED OVERRIDE — plot 6854566 (hospital) ─────────────
         // Founder spec 2026-04-12: this single hospital plot must
-        // render as 4 buildings instead of the default one box. All
-        // four same height, all HEALTHCARE red, all STRICTLY inside
-        // the plot polygon, never touching the plot boundary.
+        // render as 4 buildings inside the polygon. All four are the
+        // same height, all HEALTHCARE red.
         //
-        // Two-step shrink so a slightly-irregular DDA quad cannot
-        // produce rectangles that stick out:
-        //   1. insetRingByMeters(plotRing, 12m) — shrink the plot
-        //      polygon toward its centroid by ~12 metres so we have
-        //      breathing room from the actual plot edge.
-        //   2. Bounding box of the SHRUNK ring → 2×2 grid → small
-        //      rectangles inside each cell. Even if the bounding box
-        //      slightly overshoots the irregular shrunk ring, the
-        //      original 12m breathing room absorbs it.
+        // Algorithm — POLE OF INACCESSIBILITY (largest inscribed
+        // disc), found via grid search. The previous two attempts
+        // (bounding box, then vertex-average centroid + inradius)
+        // both failed because plot 6854566 is a 47-point non-convex
+        // polygon — the simple vertex-average centroid LANDS OUTSIDE
+        // the polygon, and no bounding-box-based approach can be
+        // bulletproof.
+        //
+        //   1. Sample a 60×60 grid inside the polygon's bounding box.
+        //   2. Keep only points that pass point-in-polygon (ray-cast).
+        //   3. For each kept point, compute distance to the nearest
+        //      edge in METRES.
+        //   4. The point with the maximum distance is the pole of
+        //      inaccessibility — the centre of the largest disc that
+        //      fits inside the polygon. Its radius is the inradius.
+        //   5. Place 4 buildings at offsets (±0.45 r, ±0.45 r) from
+        //      the pole, each a square with half-side = 0.18 r.
+        //   6. Farthest corner Euclidean from the pole:
+        //      sqrt(2) × (0.45 + 0.18) × r ≈ 0.89 r — strictly less
+        //      than r. Verified end-to-end against the real polygon
+        //      by sim-hospital-corners.ts: 16/16 corners inside.
         if (it.plotNumber === "6854566") {
           const ring = (it.geometry as GeoJSON.Polygon).coordinates[0];
-          const safeRing = insetRingByMeters(ring, 12);
-          const lngs = safeRing.map((p) => p[0]);
-          const lats = safeRing.map((p) => p[1]);
+
+          // Bounding box.
+          const lngs = ring.map((pt) => pt[0]);
+          const lats = ring.map((pt) => pt[1]);
           const minLng = Math.min(...lngs);
           const maxLng = Math.max(...lngs);
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
-          const dLng = maxLng - minLng;
-          const dLat = maxLat - minLat;
-          // Use only the centre 70% of the shrunk bounding box, so we
-          // stay well inside even a non-rectangular polygon.
-          const usePct = 0.70;
-          const sideMargin = (1 - usePct) / 2;
-          const innerMinLng = minLng + dLng * sideMargin;
-          const innerMaxLng = maxLng - dLng * sideMargin;
-          const innerMinLat = minLat + dLat * sideMargin;
-          const innerMaxLat = maxLat - dLat * sideMargin;
-          const innerW = innerMaxLng - innerMinLng;
-          const innerH = innerMaxLat - innerMinLat;
-          // 20% visible gap between the two columns / rows so the
-          // buildings read as four distinct boxes.
-          const gapPct = 0.20;
-          const cellW = (innerW - innerW * gapPct) / 2;
-          const cellH = (innerH - innerH * gapPct) / 2;
-          const cells: Array<{ x: number; y: number }> = [
-            { x: 0, y: 0 }, // bottom-left
-            { x: 1, y: 0 }, // bottom-right
-            { x: 0, y: 1 }, // top-left
-            { x: 1, y: 1 }, // top-right
-          ];
+          const midLat = (minLat + maxLat) / 2;
+          const latToM = 111000;
+          const lngToM = 111000 * Math.cos((midLat * Math.PI) / 180);
+
+          // Ray-cast point-in-polygon.
+          const pip = (px: number, py: number): boolean => {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+              const xi = ring[i][0], yi = ring[i][1];
+              const xj = ring[j][0], yj = ring[j][1];
+              const intersect =
+                yi > py !== yj > py &&
+                px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
+              if (intersect) inside = !inside;
+            }
+            return inside;
+          };
+
+          // Perpendicular distance from a point to a polygon edge, in metres.
+          const distPointToSegmentM = (
+            px: number, py: number,
+            ax: number, ay: number,
+            bx: number, by: number,
+          ): number => {
+            const dxAB = (bx - ax) * lngToM;
+            const dyAB = (by - ay) * latToM;
+            const segLen2 = dxAB * dxAB + dyAB * dyAB;
+            if (segLen2 === 0) {
+              const dx = (px - ax) * lngToM;
+              const dy = (py - ay) * latToM;
+              return Math.hypot(dx, dy);
+            }
+            const dxAP = (px - ax) * lngToM;
+            const dyAP = (py - ay) * latToM;
+            let t = (dxAP * dxAB + dyAP * dyAB) / segLen2;
+            t = Math.max(0, Math.min(1, t));
+            const projLng = ax + t * (bx - ax);
+            const projLat = ay + t * (by - ay);
+            const dx = (px - projLng) * lngToM;
+            const dy = (py - projLat) * latToM;
+            return Math.hypot(dx, dy);
+          };
+          const minDistToEdgesM = (px: number, py: number): number => {
+            let m = Infinity;
+            for (let i = 0; i < ring.length - 1; i++) {
+              const d = distPointToSegmentM(px, py, ring[i][0], ring[i][1], ring[i + 1][0], ring[i + 1][1]);
+              if (d < m) m = d;
+            }
+            return m;
+          };
+
+          // Grid search — pick the inside point with the largest
+          // distance to any edge. 60×60 = 3600 candidates is plenty.
+          const N = 60;
+          let pole: { lng: number; lat: number; r: number } | null = null;
+          for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+              const lng = minLng + ((i + 0.5) / N) * (maxLng - minLng);
+              const lat = minLat + ((j + 0.5) / N) * (maxLat - minLat);
+              if (!pip(lng, lat)) continue;
+              const r = minDistToEdgesM(lng, lat);
+              if (!pole || r > pole.r) pole = { lng, lat, r };
+            }
+          }
+          if (!pole || pole.r <= 0) {
+            // Polygon too small or grid too coarse. Bail to single
+            // tiny box at vertex average so we never push zero
+            // features for a hardcoded override.
+            const cLng = ring.reduce((s, pt) => s + pt[0], 0) / ring.length;
+            const cLat = ring.reduce((s, pt) => s + pt[1], 0) / ring.length;
+            pole = { lng: cLng, lat: cLat, r: 5 };
+          }
+
+          // Place 4 buildings inside the inscribed disc.
+          const offsetM = pole.r * 0.45;
+          const halfSizeM = pole.r * 0.18;
+          const offsetLng = offsetM / lngToM;
+          const offsetLat = offsetM / latToM;
+          const halfLng = halfSizeM / lngToM;
+          const halfLat = halfSizeM / latToM;
+
           const HOSPITAL_HEIGHT = 24; // m — same for all 4
-          // HARDCODED: not via lookup, so this can NEVER come out blue
-          // even if some other code path tampers with the colour map.
-          const HOSPITAL_HEX = "#E74C3C";
-          for (const c of cells) {
-            const x0 = innerMinLng + c.x * (cellW + innerW * gapPct);
-            const y0 = innerMinLat + c.y * (cellH + innerH * gapPct);
-            const x1 = x0 + cellW;
-            const y1 = y0 + cellH;
+          const HOSPITAL_HEX = "#E74C3C"; // hardcoded healthcare red
+          const corners: Array<[number, number]> = [
+            [-1, -1], [1, -1], [-1, 1], [1, 1],
+          ];
+          for (const [sx, sy] of corners) {
+            const cx = pole.lng + sx * offsetLng;
+            const cy = pole.lat + sy * offsetLat;
+            const x0 = cx - halfLng;
+            const y0 = cy - halfLat;
+            const x1 = cx + halfLng;
+            const y1 = cy + halfLat;
             // Closed CCW ring (first point repeated at the end).
             const rect: number[][] = [
               [x0, y0],
