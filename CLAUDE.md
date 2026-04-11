@@ -276,6 +276,39 @@ FUTURE DEVELOPMENT (земля без зданий):
 - If you discover unfamiliar files, branches, or in-progress changes — investigate first, never delete or overwrite as a shortcut
 - Risky / hard-to-reverse actions (destructive git, schema changes, infra edits) require explicit founder approval before execution
 
+## SMOKE TEST — ОБЯЗАТЕЛЬНО ПОСЛЕ КАЖДОГО ИЗМЕНЕНИЯ
+После ЛЮБОГО изменения кода ПЕРЕД `git push` выполни этот чеклист.
+
+### Билд
+- [ ] `pnpm build` проходит без ошибок
+
+### Карта (`/parcels/map`)
+- [ ] Карта загружается
+- [ ] Участки (ZAAHI Plots) видны как 3D здания на карте
+- [ ] Цвета 3D зданий соответствуют land use
+- [ ] Клик на участок открывает side panel с данными
+- [ ] Слои (Layers) панель открывается
+- [ ] Communities и Roads видны по умолчанию
+- [ ] DDA Districts НЕ загружаются автоматически
+- [ ] Toggle отдельного слоя работает (вкл/выкл)
+- [ ] Чекбокс секции (ALL) работает
+- [ ] Archibald (кот) иконка видна
+
+### Auth (`/`)
+- [ ] Страница входа отображается
+- [ ] Sign In работает для approved пользователей
+- [ ] Sign Up показывает REQUEST SUBMITTED после регистрации
+- [ ] Неавторизованный пользователь не видит карту
+
+### API
+- [ ] `GET /api/layers/dda/dubai-hills` → 200 (без auth)
+- [ ] `GET /api/parcels/map` → 401 (без auth, это правильно)
+
+### Правила smoke-теста (в дополнение к AGENT RULES выше)
+- **ПРАВИЛО:** Если ЛЮБОЙ пункт чеклиста не проходит — НЕ пушить. Исправить сначала.
+- **ПРАВИЛО:** НИКОГДА не удалять функционал при рефакторинге. Оптимизировать — да. Удалять рабочий код — нет.
+- **ПРАВИЛО:** При рефакторинге крупных файлов (>500 строк) — сначала составь список ВСЕХ функций в файле, после рефакторинга проверь что ВСЕ функции сохранены. Это правило существует потому, что на одном из коммитов агент случайно удалил `loadZaahiPlots` (~270 строк) внутри bulk-replace `attachOverlays`, и на проде пропали все участки на карте. Список функций ДО рефакторинга — единственная защита от такой регрессии.
+
 ## FOUNDER CONTACTS
 - **Founder:** Dmytro Tsvyk (Dymo) — `d.tsvyk@gmail.com`
 - **Technical lead:** Zharkyn Ryspayev (Jean) — `zhanrysbayev@gmail.com`
