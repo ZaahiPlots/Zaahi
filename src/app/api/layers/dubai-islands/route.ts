@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { parseKml } from '@/lib/kml-parser';
 
 const KML_PATH = join(
-  homedir(),
-  'zaahi',
-  'data',
+  process.cwd(), 'data',
   'layers',
   '03_DUBAI_ISLAND_master_plan.kml',
 );

@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-
-const PATH = join(homedir(), 'zaahi', 'data', 'layers', 'dda', 'arabian_ranches_3.geojson');
+const PATH = join(process.cwd(), 'data', 'layers', 'dda', 'arabian_ranches_3.geojson');
 
 let cached: GeoJSON.FeatureCollection | null = null;
 

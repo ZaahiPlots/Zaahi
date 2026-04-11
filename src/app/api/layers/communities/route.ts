@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { parseCommunitiesKml } from '@/lib/kml-parser';
 
-const KML_PATH = join(homedir(), 'zaahi', 'data', 'layers', 'Community__1_.kml');
+const KML_PATH = join(process.cwd(), 'data', 'layers', 'Community__1_.kml');
 
 // Cache parsed FeatureCollection across requests in dev/runtime.
 let cached: GeoJSON.FeatureCollection | null = null;
