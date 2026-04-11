@@ -1968,26 +1968,45 @@ function ParcelsMapPageInner() {
             pole = { lng: cLng, lat: cLat, r: 5 };
           }
 
-          // Place 4 buildings inside the inscribed disc.
-          const offsetM = pole.r * 0.45;
-          const halfSizeM = pole.r * 0.18;
-          const offsetLng = offsetM / lngToM;
-          const offsetLat = offsetM / latToM;
-          const halfLng = halfSizeM / lngToM;
-          const halfLat = halfSizeM / latToM;
+          // Layout — 4 buildings in a SINGLE HORIZONTAL ROW centred
+          // on the pole (founder spec 2026-04-12).
+          //
+          //   building full width  = 0.30 × r  (along the lng axis)
+          //   building full height = 0.40 × r  (along the lat axis)
+          //   gap between          = 0.08 × r
+          //
+          //   total row width = 4 × 0.30 + 3 × 0.08 = 1.44 r
+          //   row half-width  = 0.72 r
+          //   building half-height = 0.20 r
+          //   farthest corner Euclidean from pole:
+          //     sqrt(0.72² + 0.20²) ≈ 0.747 r — strictly inside the
+          //     inscribed disc, therefore inside the polygon.
+          //
+          //   Verified end-to-end against the real 47-point polygon
+          //   by sim-hospital-row.ts (see commit message): 16/16
+          //   corners inside.
+          const buildingHalfW_m = pole.r * 0.15;
+          const buildingHalfH_m = pole.r * 0.20;
+          const gap_m = pole.r * 0.08;
+          const stepX_m = buildingHalfW_m * 2 + gap_m;
+
+          const buildingHalfW = buildingHalfW_m / lngToM;
+          const buildingHalfH = buildingHalfH_m / latToM;
+          const stepX = stepX_m / lngToM;
+
+          // Centre the row on the pole. Offsets in stepX units:
+          //   [-1.5, -0.5, +0.5, +1.5]  (4 buildings, 3 gaps)
+          const offsetsX: number[] = [-1.5, -0.5, 0.5, 1.5];
 
           const HOSPITAL_HEIGHT = 24; // m — same for all 4
           const HOSPITAL_HEX = "#E74C3C"; // hardcoded healthcare red
-          const corners: Array<[number, number]> = [
-            [-1, -1], [1, -1], [-1, 1], [1, 1],
-          ];
-          for (const [sx, sy] of corners) {
-            const cx = pole.lng + sx * offsetLng;
-            const cy = pole.lat + sy * offsetLat;
-            const x0 = cx - halfLng;
-            const y0 = cy - halfLat;
-            const x1 = cx + halfLng;
-            const y1 = cy + halfLat;
+          for (const ox of offsetsX) {
+            const cx = pole.lng + ox * stepX;
+            const cy = pole.lat;
+            const x0 = cx - buildingHalfW;
+            const y0 = cy - buildingHalfH;
+            const x1 = cx + buildingHalfW;
+            const y1 = cy + buildingHalfH;
             // Closed CCW ring (first point repeated at the end).
             const rect: number[][] = [
               [x0, y0],
