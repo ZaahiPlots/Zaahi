@@ -1169,11 +1169,9 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
-  const [soundOn, setSoundOn] = useState(false);
-  useEffect(() => {
-    sound.init();
-    return sound.subscribe(setSoundOn);
-  }, []);
+  // sound.init() is called from inside HeaderBar's local useEffect now
+  // (the music toggle button lives there). The page-level state used
+  // to live here for the old floating button which was removed.
 
   // ── Selection highlight: glow + dim others + 3D building boost ──
   useEffect(() => {
@@ -2197,8 +2195,10 @@ function ParcelsMapPageInner() {
           if (!f) return;
           const id = (f.properties as { id?: string })?.id;
           if (id) {
+            // Founder spec 2026-04-12: a single combined cyberpunk
+            // click effect (sweep + noise burst) — sound.click() now
+            // emits both layers itself, so we no longer chain swooshOpen.
             sound.click();
-            sound.swooshOpen();
             setSelectedParcelId(id);
           }
         });
@@ -2838,28 +2838,9 @@ function ParcelsMapPageInner() {
           </div>
         </div>
       )}
-      <button
-        onClick={() => sound.toggle()}
-        title={soundOn ? "Mute" : "Unmute"}
-        aria-label="Toggle sound"
-        style={{
-          position: "absolute",
-          right: 16,
-          top: 56, // just below the 48px header
-          width: 28,
-          height: 28,
-          borderRadius: 6,
-          border: `1px solid ${c.border}`,
-          background: "white",
-          color: GOLD,
-          cursor: "pointer",
-          fontSize: 13,
-          zIndex: 25,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-        }}
-      >
-        {soundOn ? "🔊" : "🔇"}
-      </button>
+      {/* The music / sound toggle moved into the HeaderBar (next to
+          Profile) per founder spec 2026-04-12. The old floating
+          button at top:56 right:16 is gone. */}
       <ArchibaldChat />
       <SidePanel
         parcelId={selectedParcelId}
@@ -3150,6 +3131,14 @@ function HeaderBar({
   const [check, setCheck] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Music / SFX master switch — local subscription so the button icon
+  // updates when the user toggles. The sound module is a singleton.
+  const [soundOn, setSoundOn] = useState(false);
+  useEffect(() => {
+    sound.init();
+    return sound.subscribe(setSoundOn);
+  }, []);
+
   const flash = (m: string) => {
     setMsg(m);
     setTimeout(() => setMsg(null), 3000);
@@ -3289,6 +3278,18 @@ function HeaderBar({
           busy={false}
           tooltip="Open DLD property status check"
         />
+        <button
+          type="button"
+          onClick={() => sound.toggle()}
+          title={soundOn ? "Mute music & UI sounds" : "Play music & UI sounds"}
+          aria-label={soundOn ? "Mute" : "Unmute"}
+          style={hdrBtnStyle(c)}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+        >
+          <span style={{ fontSize: 14 }}>{soundOn ? "🎵" : "🔇"}</span>
+          {soundOn ? "Music" : "Muted"}
+        </button>
         <a
           href="/dashboard"
           title="Profile / Dashboard"

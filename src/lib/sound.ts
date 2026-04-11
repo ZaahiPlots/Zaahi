@@ -1,17 +1,26 @@
 /**
- * ZAAHI sound system — singleton on top of Web Audio API + a single
- * <audio> element for ambient music. One master switch turns everything
+ * ZAAHI sound system — singleton on top of Web Audio API + an <audio>
+ * element playlist for ambient music. One master switch turns everything
  * on/off; preference is persisted to localStorage.
  *
- * SFX are generated programmatically (no asset files). Background music
- * loads from /audio/ambient.mp3 (placeholder file may be empty — call
- * sites are guarded against playback failure).
+ * SFX are generated programmatically (no asset files needed — they're
+ * synthesised live with OscillatorNode + AudioBufferSource white noise).
+ *
+ * Background music tracks live in /public/audio/. The playlist is the
+ * MUSIC_TRACKS array below — when one track ends, the next starts;
+ * after the last, we loop back to the first. Tracks that 404 or fail
+ * to play (e.g. zero-byte placeholders) are silently skipped.
  */
 "use client";
 
 const STORAGE_KEY = "zaahi:sound:enabled";
-const MUSIC_TARGET = 0.15;
+// Founder spec 2026-04-12: 30% volume on the music master.
+const MUSIC_TARGET = 0.30;
 const CITY_TARGET = 0.08;
+
+// Playlist — drop real MP3s into public/audio/ matching these names.
+// Files that fail to load (404 / 0 bytes) are silently skipped.
+const MUSIC_TRACKS = ["/audio/ambient.mp3", "/audio/ambient2.mp3"];
 
 type Listener = (enabled: boolean) => void;
 
@@ -19,10 +28,10 @@ class SoundManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
 
-  // Music
-  private musicEl: HTMLAudioElement | null = null;
-  private musicSrc: MediaElementAudioSourceNode | null = null;
-  private musicGain: GainNode | null = null;
+  // Music — playlist of <audio> elements, played sequentially in a loop.
+  private musicEls: HTMLAudioElement[] = [];
+  private musicIdx = 0;
+  private musicPlaying = false;
 
   // City ambient (white noise → bandpass)
   private cityNoise: AudioBufferSourceNode | null = null;
@@ -70,22 +79,74 @@ class SoundManager {
 
   private ensureMusic() {
     if (typeof window === "undefined") return;
-    if (this.musicEl) return;
-    const el = new Audio("/audio/ambient.mp3");
-    el.loop = true;
-    el.preload = "auto";
-    el.volume = 0;
-    this.musicEl = el;
-    const ctx = this.ensureCtx();
-    if (!ctx || !this.master) return;
-    try {
-      this.musicSrc = ctx.createMediaElementSource(el);
-      this.musicGain = ctx.createGain();
-      this.musicGain.gain.value = 1;
-      this.musicSrc.connect(this.musicGain).connect(this.master);
-    } catch {
-      // MediaElementSource can fail on some browsers — fall back to <audio>'s own volume.
+    if (this.musicEls.length > 0) return;
+    for (const src of MUSIC_TRACKS) {
+      const el = new Audio(src);
+      el.preload = "auto";
+      el.volume = 0;
+      // No `loop` — we manually advance to the next track when one
+      // ends, so the playlist progresses sequentially.
+      el.addEventListener("ended", () => {
+        if (!this.enabled) return;
+        this.advanceTrack();
+      });
+      // If a file errors out (404 / 0 bytes / decode fail), advance.
+      el.addEventListener("error", () => {
+        if (!this.enabled) return;
+        this.advanceTrack();
+      });
+      this.musicEls.push(el);
     }
+  }
+
+  private advanceTrack() {
+    if (this.musicEls.length === 0) return;
+    this.musicIdx = (this.musicIdx + 1) % this.musicEls.length;
+    void this.playCurrent();
+  }
+
+  private async playCurrent(): Promise<void> {
+    const el = this.musicEls[this.musicIdx];
+    if (!el) return;
+    el.volume = MUSIC_TARGET;
+    try {
+      el.currentTime = 0;
+      await el.play();
+      this.musicPlaying = true;
+    } catch {
+      // 0-byte placeholder, autoplay block, or decode fail — try the
+      // next track in the playlist. Bail after a full loop so we don't
+      // spin forever on an all-empty playlist.
+      const start = this.musicIdx;
+      do {
+        this.musicIdx = (this.musicIdx + 1) % this.musicEls.length;
+        if (this.musicIdx === start) {
+          this.musicPlaying = false;
+          return;
+        }
+        const next = this.musicEls[this.musicIdx];
+        try {
+          next.volume = MUSIC_TARGET;
+          next.currentTime = 0;
+          await next.play();
+          this.musicPlaying = true;
+          return;
+        } catch {
+          /* keep trying */
+        }
+      } while (true);
+    }
+  }
+
+  private stopMusic() {
+    for (const el of this.musicEls) {
+      try {
+        el.pause();
+      } catch {
+        /* noop */
+      }
+    }
+    this.musicPlaying = false;
   }
 
   async toggle(): Promise<void> {
@@ -95,32 +156,12 @@ class SoundManager {
     this.ensureCtx();
     if (this.enabled) {
       this.ensureMusic();
-      if (this.musicEl) {
-        try {
-          await this.musicEl.play();
-          this.fadeMusic(MUSIC_TARGET, 2000);
-        } catch {
-          // 0-byte placeholder or autoplay block — ignore
-        }
-      }
+      this.musicIdx = 0;
+      void this.playCurrent();
     } else {
-      this.fadeMusic(0, 1000, () => this.musicEl?.pause());
+      this.stopMusic();
       this.stopCity();
     }
-  }
-
-  private fadeMusic(target: number, ms: number, done?: () => void) {
-    const el = this.musicEl;
-    if (!el) return;
-    const start = el.volume;
-    const t0 = performance.now();
-    const step = () => {
-      const k = Math.min(1, (performance.now() - t0) / ms);
-      el.volume = start + (target - start) * k;
-      if (k < 1) requestAnimationFrame(step);
-      else done?.();
-    };
-    requestAnimationFrame(step);
   }
 
   // ───────── City ambient ─────────
@@ -233,26 +274,84 @@ class SoundManager {
     src.stop(ctx.currentTime + dur + 0.05);
   }
 
-  // ───────── Public SFX ─────────
+  // ───────── Public SFX (founder spec 2026-04-12) ─────────
+
+  /**
+   * Click on a parcel — cyberpunk "whoosh + click", ~150 ms total.
+   *
+   *   Layer 1: oscillator sweep 800 Hz → 200 Hz over 100 ms
+   *   Layer 2: white-noise burst 50 ms (fires simultaneously)
+   *
+   * Both go through the master gain so the toggle button mutes them.
+   */
   click() {
-    this.blip({ freq: 800, durationMs: 50, type: "sine", gain: 0.18 });
+    if (!this.enabled) return;
+    const ctx = this.ensureCtx();
+    if (!ctx || !this.master) return;
+    const t0 = ctx.currentTime;
+
+    // Layer 1 — oscillator sweep
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(800, t0);
+    osc.frequency.exponentialRampToValueAtTime(200, t0 + 0.1);
+    oscGain.gain.value = 0;
+    oscGain.gain.linearRampToValueAtTime(0.18, t0 + 0.005);
+    oscGain.gain.linearRampToValueAtTime(0, t0 + 0.1);
+    osc.connect(oscGain).connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + 0.12);
+
+    // Layer 2 — white-noise burst (50 ms)
+    const burstLen = Math.max(1, Math.floor(ctx.sampleRate * 0.05));
+    const buf = ctx.createBuffer(1, burstLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < burstLen; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = buf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 1000;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0;
+    noiseGain.gain.linearRampToValueAtTime(0.14, t0 + 0.003);
+    noiseGain.gain.linearRampToValueAtTime(0, t0 + 0.05);
+    noiseSrc.connect(hp).connect(noiseGain).connect(this.master);
+    noiseSrc.start(t0);
+    noiseSrc.stop(t0 + 0.08);
   }
+
+  /**
+   * Hover on a parcel — light cyberpunk blip.
+   *   Single tone 600 Hz, 50 ms, fade out.
+   * Throttled to once every 80 ms so dragging across plots doesn't spam.
+   */
   hover() {
+    if (!this.enabled) return;
     const now = performance.now();
     if (now - this.lastHoverAt < 80) return;
     this.lastHoverAt = now;
-    this.blip({ freq: 1200, durationMs: 20, type: "sine", gain: 0.05 });
+    this.blip({ freq: 600, durationMs: 50, type: "sine", gain: 0.08 });
   }
+
+  /** Swoosh — kept for the side panel close transition. */
   swooshOpen() {
     this.noiseSweep({ durationMs: 120, fromFreq: 400, toFreq: 1600 });
   }
   swooshClose() {
     this.noiseSweep({ durationMs: 120, fromFreq: 1600, toFreq: 400 });
   }
+
+  /**
+   * Layer toggle (checkbox in the layers panel) — soft switch click.
+   *   Single tone 400 Hz, 30 ms, sine.
+   */
   toggleSfx() {
-    this.blip({ freq: 600, durationMs: 30, type: "sine", gain: 0.14 });
-    setTimeout(() => this.blip({ freq: 900, durationMs: 30, type: "sine", gain: 0.14 }), 35);
+    this.blip({ freq: 400, durationMs: 30, type: "sine", gain: 0.12 });
   }
+
+  /** Generic loud whoosh — kept for legacy callers. */
   whoosh() {
     this.noiseSweep({ durationMs: 200, fromFreq: 200, toFreq: 600, gain: 0.22 });
   }
