@@ -19,6 +19,7 @@ export default function AuthPage() {
   const [role, setRole] = useState<Role>('Owner');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Auto-redirect if already signed in
@@ -52,6 +53,15 @@ export default function AuthPage() {
           options: { data: { name, phone, role } },
         });
         if (error) throw error;
+        // Send notification to admin
+        fetch('/api/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, role }),
+        }).catch(() => {});
+        setPending(true);
+        setBusy(false);
+        return;
       }
       router.replace('/parcels/map');
     } catch (err) {
@@ -103,7 +113,29 @@ export default function AuthPage() {
           zIndex: 10,
         }}
       >
-        {!checkingSession && (
+        {pending && (
+          <div style={{
+            width: '100%', maxWidth: 400, padding: 40,
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid #C8A96E',
+            borderRadius: 12,
+            boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+            textAlign: 'center',
+            fontFamily: 'system-ui, sans-serif',
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+            <h2 style={{ fontSize: 22, color: '#1A1A2E', marginBottom: 12, letterSpacing: 2 }}>REQUEST SUBMITTED</h2>
+            <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              Thank you for your interest in ZAAHI.<br/>
+              Our team will review your application and contact you shortly.
+            </p>
+            <p style={{ color: '#C8A96E', fontSize: 13 }}>
+              You will receive an email once your account is approved.
+            </p>
+          </div>
+        )}
+        {!checkingSession && !pending && (
           <div
             style={{
               width: '100%',
