@@ -117,43 +117,111 @@ export default function AuthPage() {
         position: 'fixed',
         inset: 0,
         overflow: 'hidden',
-        // Sandy "Dubai map" gradient. We used to render `/parcels/map` in an
-        // iframe, but that page is now AuthGuard'd and would just recurse back
-        // into the auth page — so a static gradient + subtle grid is both
-        // faster and safer.
+        // Base sand-tone gradient — the "satellite ground" of Dubai.
         background:
-          'linear-gradient(135deg, #e8e0d0 0%, #d4cfc5 50%, #c8bfaf 100%)',
+          'linear-gradient(135deg, #e8e0d0 0%, #d4cfc5 40%, #c8bfaf 80%, #b8ad96 100%)',
       }}
     >
-      {/* Subtle plot-grid pattern, evokes the cadastral lines on the map. */}
+      {/* Layer 1 — fine cadastral grid (small streets), heavily blurred so
+          it reads as texture rather than a hard pattern. */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          inset: 0,
+          inset: '-40px',
           backgroundImage:
-            'linear-gradient(rgba(26,26,46,0.06) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(26,26,46,0.06) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-          maskImage:
-            'radial-gradient(ellipse at center, #000 40%, transparent 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse at center, #000 40%, transparent 75%)',
+            'linear-gradient(rgba(26,26,46,0.07) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(26,26,46,0.07) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+          filter: 'blur(1.5px)',
+          opacity: 0.6,
           pointerEvents: 'none',
         }}
       />
-      {/* Soft golden glow behind the card. */}
+
+      {/* Layer 2 — coarser block grid (city blocks), at a different scale. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '-40px',
+          backgroundImage:
+            'linear-gradient(rgba(26,26,46,0.10) 1.5px, transparent 1.5px),' +
+            'linear-gradient(90deg, rgba(26,26,46,0.10) 1.5px, transparent 1.5px)',
+          backgroundSize: '160px 160px',
+          filter: 'blur(2px)',
+          opacity: 0.5,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Layer 3 — diagonal arterial roads (Sheikh Zayed Road runs the
+          length of Dubai at roughly this angle). Two crossing diagonals. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '-80px',
+          backgroundImage:
+            'repeating-linear-gradient(63deg,' +
+            'transparent 0px, transparent 220px,' +
+            'rgba(26,26,46,0.14) 220px, rgba(26,26,46,0.14) 226px,' +
+            'transparent 226px, transparent 440px),' +
+            'repeating-linear-gradient(-30deg,' +
+            'transparent 0px, transparent 320px,' +
+            'rgba(26,26,46,0.10) 320px, rgba(26,26,46,0.10) 324px,' +
+            'transparent 324px, transparent 640px)',
+          filter: 'blur(2.5px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Layer 4 — coastline curve hint (the Persian Gulf is to the
+          northwest in Dubai). Soft cyan crescent in the upper-left. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: '-15%',
+          top: '-25%',
+          width: '70%',
+          height: '70%',
+          background:
+            'radial-gradient(circle at 60% 70%, rgba(140,180,200,0.35) 0%,' +
+            ' rgba(140,180,200,0.18) 30%, transparent 60%)',
+          filter: 'blur(40px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Layer 5 — golden glow behind the auth card (the Burj area /
+          downtown Dubai centre). */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           left: '50%',
           top: '50%',
-          width: 720,
-          height: 720,
+          width: 900,
+          height: 900,
           transform: 'translate(-50%, -50%)',
           background:
-            'radial-gradient(circle, rgba(200,169,110,0.18) 0%, rgba(200,169,110,0) 65%)',
+            'radial-gradient(circle, rgba(200,169,110,0.28) 0%,' +
+            ' rgba(200,169,110,0.10) 35%, rgba(200,169,110,0) 65%)',
+          filter: 'blur(20px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Layer 6 — vignette darkening around the edges, so the centre
+          (where the card sits) reads as the focal point. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'radial-gradient(ellipse at center, transparent 35%, rgba(26,26,46,0.18) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -237,7 +305,9 @@ export default function AuthPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(200,169,110,0.25)', marginBottom: 22 }}>
-              {(['signin', 'signup'] as Mode[]).map((m) => (
+              {/* Sign Up is INVITE-ONLY — admin adds users from the
+                  Supabase dashboard. Only the Sign In tab renders. */}
+              {(['signin'] as Mode[]).map((m) => (
                 <button
                   key={m}
                   type="button"

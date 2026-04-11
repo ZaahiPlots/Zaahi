@@ -4,6 +4,7 @@ import FeasibilityCalculator from "./FeasibilityCalculator";
 import OfferModal from "./OfferModal";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
+import { downloadFile } from "@/lib/download";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -337,14 +338,36 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 </button>
                 {docsOpen && (
                   <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}` }}>
-                    <a
-                      href={`/api/parcels/${data.id}/pdf`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ display: "block", fontSize: 10, color: GOLD, padding: "4px 8px", textDecoration: "none" }}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!data) return;
+                        // Plain <a href="/api/..."> would 401 because the
+                        // PDF endpoint goes through getApprovedUserId.
+                        // downloadFile attaches the Bearer token via apiFetch.
+                        downloadFile(
+                          `/api/parcels/${data.id}/pdf`,
+                          `${data.plotNumber}-affection-plan.pdf`,
+                        ).catch((e) => {
+                          console.error("[pdf-download]", e);
+                          alert("Could not download the PDF. Try again or contact support.");
+                        });
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        fontSize: 10,
+                        color: GOLD,
+                        padding: "4px 8px",
+                        background: "transparent",
+                        border: 0,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
                     >
                       📄 Affection Plan (PDF)
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
