@@ -57,7 +57,8 @@ interface Plan {
   landUseMix: Array<{ category: string; sub: string; areaSqm: number | null }> | null;
   sitePlanIssue: string | null;
   sitePlanExpiry: string | null;
-  notes: string | null;
+  notes: string | null;          // plain-language rewritten by /api/parcels/[id]
+  notesOriginal: string | null;  // raw DDA text
   source: string;
   fetchedAt: string;
 }
@@ -118,16 +119,27 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
   return (
     <aside
       style={{
-        maxHeight: "100vh",
         background: "rgba(255,255,255,0.95)",
         backdropFilter: "blur(8px)",
-        borderLeft: `1px solid ${LINE}`,
         color: TXT,
       }}
-      className={`absolute top-0 right-0 h-full w-full sm:w-[350px] z-20 overflow-y-auto transition-transform duration-300 ease-out ${
-        open ? "translate-x-0" : "translate-x-full"
+      // Mobile (< sm): bottom sheet — slides up from the bottom, takes
+      // the bottom 85% of the viewport, rounded top corners + a small
+      // drag handle. Desktop (sm+): the original right-side panel.
+      // The transform classes are layered so the sm: variant overrides
+      // the mobile y-translate with a horizontal slide. `border-gray-200`
+      // matches the LINE constant (#E5E7EB) — Tailwind JIT can't see
+      // arbitrary `[${LINE}]` interpolations, so we use a static class.
+      className={`absolute z-20 overflow-y-auto transition-transform duration-300 ease-out bottom-0 left-0 right-0 max-h-[85vh] h-[85vh] rounded-t-2xl border-t border-gray-200 sm:top-0 sm:bottom-auto sm:left-auto sm:right-0 sm:h-full sm:max-h-screen sm:w-[350px] sm:rounded-none sm:border-t-0 sm:border-l ${
+        open
+          ? "translate-y-0 sm:translate-y-0 sm:translate-x-0"
+          : "translate-y-full sm:translate-y-0 sm:translate-x-full"
       }`}
     >
+      {/* Mobile drag handle — hidden on sm+ */}
+      <div className="sm:hidden flex justify-center pt-2 pb-1">
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: LINE }} />
+      </div>
       <div
         className="sticky top-0 px-4 py-2 flex items-center gap-2"
         style={{
@@ -254,19 +266,7 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 
               {/* General notes — straight from DDA's affection plan, raw text */}
               {plan.notes && plan.notes.trim().length > 0 && (
-                <Section title="Notes">
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: TXT,
-                      lineHeight: 1.5,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {plan.notes.trim()}
-                  </div>
-                </Section>
+                <NotesBlock rewritten={plan.notes} original={plan.notesOriginal} />
               )}
 
               {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
@@ -427,5 +427,55 @@ function Row({ label, v }: { label: string; v: string | null | undefined }) {
       <span style={{ color: SUBTLE }}>{label}</span>
       <span style={{ color: TXT, textAlign: "right" }}>{v}</span>
     </div>
+  );
+}
+
+// General Notes block. The API returns BOTH a plain-language rewrite
+// and the raw DDA original; we render the rewrite by default and let
+// the user reveal the raw text if they want to verify.
+function NotesBlock({
+  rewritten,
+  original,
+}: {
+  rewritten: string | null;
+  original: string | null;
+}) {
+  const [showOriginal, setShowOriginal] = useState(false);
+  const showToggle = !!original && !!rewritten && original.trim() !== rewritten.trim();
+  const body = (showOriginal ? original : rewritten) ?? "";
+  return (
+    <Section title="General Notes">
+      <div
+        style={{
+          fontSize: 11,
+          color: TXT,
+          lineHeight: 1.55,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
+        {body.trim()}
+      </div>
+      {showToggle && (
+        <button
+          type="button"
+          onClick={() => setShowOriginal((v) => !v)}
+          style={{
+            marginTop: 4,
+            background: "transparent",
+            border: 0,
+            padding: 0,
+            color: GOLD,
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: 0.6,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          {showOriginal ? "← plain language" : "show original DDA wording"}
+        </button>
+      )}
+    </Section>
   );
 }

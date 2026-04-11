@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getApprovedUserId } from '@/lib/auth';
+import { rewriteNotes } from '@/lib/notes-rewriter';
 
 function serialize<T>(value: T): T {
   return JSON.parse(
@@ -12,6 +13,15 @@ function serialize<T>(value: T): T {
 type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/parcels/:id  → parcel + latest affection plan
+//
+// The DDA "General Notes" are rewritten into plain English on the way
+// out (jargon expansion, abbreviation expansion, terms like "subject to"
+// → "must follow"). The DB still stores the raw DDA string verbatim;
+// the response carries both:
+//   plan.notes         → rewritten, plain-English version
+//   plan.notesOriginal → raw DDA string
+// Side panel renders the friendly version. Source-of-truth for the
+// transform is `src/lib/notes-rewriter.ts`.
 export async function GET(req: NextRequest, { params }: Ctx) {
   const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -22,7 +32,19 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     include: { affectionPlans: { orderBy: { fetchedAt: 'desc' }, take: 1 } },
   });
   if (!parcel) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  return NextResponse.json(serialize(parcel));
+
+  // Apply the plain-language rewriter to every affection plan note.
+  // The serialiser handles BigInts; we attach `notesOriginal` and
+  // overwrite `notes` per plan in place before serialising.
+  const decorated = {
+    ...parcel,
+    affectionPlans: parcel.affectionPlans.map((p) => ({
+      ...p,
+      notesOriginal: p.notes,
+      notes: rewriteNotes(p.notes),
+    })),
+  };
+  return NextResponse.json(serialize(decorated));
 }
 
 // PATCH /api/parcels/:id  — only the owner can update.
