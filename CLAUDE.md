@@ -225,6 +225,27 @@ FUTURE DEVELOPMENT (земля без зданий) — только fill polygo
 - НЕ менять дефолтные setbacks по land use без явного согласия основателя.
 - НЕ менять `computeSetbackM` или `insetRingByMeters` без явного согласия основателя.
 
+#### Ступенчатый 3D — podium / body / crown (founder spec 2026-04-12)
+**Каждое здание состоит из 1, 2 или 3 ярусов** в зависимости от количества этажей. Все ярусы — features в **одном** GeoJSON source и **одном** fill-extrusion layer (`ZAAHI_BUILDINGS_3D`). Без фильтров по `kind`. Цвет одинаковый для всех ярусов одного здания (по легенде land use). Opacity 0.4 единая на весь layer. Ступенчатость видна через **разницу в ширине**, не через цвет или прозрачность.
+
+| Этажей | Что рисуется | Footprint scale | base → top |
+|---|---|---|---|
+| ≤ 4 | **podium only** | 1.00 (100%) | 0 → totalH |
+| 5–10 | podium + **body** | 1.00 / 0.70 (70%) | 0 → 14 / 14 → totalH |
+| > 10 | podium + body + **crown** | 1.00 / 0.70 / 0.50 (50%) | 0 → 14 / 14 → totalH−7 / totalH−7 → totalH |
+
+Константы:
+- `FLOOR_H = 3.5` метра на этаж
+- `PODIUM_TOP = 14` метра (4 этажа подиума)
+- `CROWN_H = 7` метра (последние 2 этажа)
+- `floors = round(totalH / FLOOR_H)` — определяет, сколько ярусов рисовать
+
+Footprint каждого верхнего яруса получается через `scaleRingFromCentroid(footprintRing, scale)` — равномерное центрированное сужение к центроиду исходного footprint. Все ярусы остаются внутри plot polygon потому что они геометрически вложены в footprint, а footprint уже учитывает setback.
+
+Реализация: внутри `loadZaahiPlots` в `src/app/parcels/map/page.tsx`, прямо после блока вычисления `totalH` и `buildingHex`. **НЕ менять без явного согласия основателя.**
+
+**Все будущие участки (новые seed-ы, ручные добавления, импорт из Excel) автоматически получают этот стиль через тот же loadZaahiPlots — отдельные hardcoded override-ы для конкретных участков ЗАПРЕЩЕНЫ.**
+
 ### Слои по умолчанию
 - ВСЕГДА включены: Communities, Major Roads, ZAAHI Plots
 - ВЫКЛЮЧЕНЫ: все DDA районы, мастер-планы

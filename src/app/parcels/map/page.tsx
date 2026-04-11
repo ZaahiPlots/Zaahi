@@ -1915,17 +1915,57 @@ function ParcelsMapPageInner() {
         }
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
-        buildingFeatures.push({
-          type: "Feature",
-          geometry: { type: "Polygon", coordinates: [footprintRing] },
-          properties: {
-            parcelId: it.id,
-            landUse,
-            color: buildingHex,
-            height: totalH,
-            base: 0,
-          },
-        });
+
+        // ── ZAAHI Signature stepped 3D ──
+        // Each building is 1, 2, or 3 features depending on height:
+        //   floors ≤ 4   → podium only (full footprint, full height)
+        //   floors 5-10  → podium (0–14 m) + body (14–top, 70% footprint)
+        //   floors > 10  → podium + body (14–top-7) + crown (top-7→top, 50%)
+        // All features go into the SAME source and SAME fill-extrusion
+        // layer below — no kind filters, no separate layers. Stepped
+        // look comes from the ring being scaled toward its centroid.
+        const FLOOR_H = 3.5;
+        const PODIUM_TOP = 14; // 4 floors
+        const CROWN_H = 7;     // top 2 floors
+        const floors = Math.max(1, Math.round(totalH / FLOOR_H));
+
+        // Centroid scale of a ring (uniform inset toward its centroid).
+        const scaleRingFromCentroid = (ring: number[][], scale: number): number[][] => {
+          const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+          const cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+          return ring.map(([lng, lat]) => [
+            cx + (lng - cx) * scale,
+            cy + (lat - cy) * scale,
+          ]);
+        };
+
+        const pushTier = (ring: number[][], baseM: number, topM: number) => {
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [ring] },
+            properties: {
+              parcelId: it.id,
+              landUse,
+              color: buildingHex,
+              height: topM,
+              base: baseM,
+            },
+          });
+        };
+
+        if (floors <= 4) {
+          // Podium only — short building, no taper.
+          pushTier(footprintRing, 0, totalH);
+        } else if (floors <= 10) {
+          // Podium + body. No crown — body extends to the very top.
+          pushTier(footprintRing, 0, PODIUM_TOP);
+          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH);
+        } else {
+          // Full ZAAHI Signature — podium + body + crown.
+          pushTier(footprintRing, 0, PODIUM_TOP);
+          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H);
+          pushTier(scaleRingFromCentroid(footprintRing, 0.5), totalH - CROWN_H, totalH);
+        }
       }
 
       console.log(
@@ -2001,7 +2041,10 @@ function ParcelsMapPageInner() {
           "fill-extrusion-color": ["get", "color"],
           "fill-extrusion-height": ["get", "height"],
           "fill-extrusion-base": ["get", "base"],
-          "fill-extrusion-opacity": 0.6,
+          // Founder-spec ZAAHI Signature opacity. Single value across
+          // the layer so podium / body / crown blend visually rather
+          // than each tier having a different transparency.
+          "fill-extrusion-opacity": 0.4,
         },
       });
     } catch (e) {
