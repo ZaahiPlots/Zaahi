@@ -115,7 +115,19 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
   const open = parcelId != null;
   const plan = data?.affectionPlans?.[0] ?? null;
   const aed = aedFromFils(data?.currentValuation ?? null);
-  const pricePerSqft = aed != null && data?.area ? aed / data.area : null;
+  // Per CLAUDE.md "Цена участка": currentValuation is the SOURCE OF
+  // TRUTH (set manually from the founder's Excel, the Add Plot flow,
+  // or the owner's profile). Per-sqft values are computed for display
+  // only — never written back to the DB, never used to derive the
+  // total price.
+  const plotAreaSqft = plan?.plotAreaSqft ?? data?.area ?? null;
+  const gfaSqft = plan?.maxGfaSqft ?? null;
+  const pricePerSqftPlot =
+    aed != null && plotAreaSqft && plotAreaSqft > 0 ? aed / plotAreaSqft : null;
+  const pricePerSqftGfa =
+    aed != null && gfaSqft && gfaSqft > 0 ? aed / gfaSqft : null;
+  const fmtPerSqft = (n: number | null): string =>
+    n == null ? "—" : `${Math.round(n).toLocaleString("en-US")} AED`;
 
   return (
     <aside
@@ -172,16 +184,30 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
 
       {data && (
         <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
-          {/* Price block */}
-          <div style={{ paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+          {/* Price block — total + per-sqft computed for display only */}
+          <div style={{ paddingBottom: 10, borderBottom: `1px solid ${LINE}` }}>
+            <div style={{ color: SUBTLE, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
+              Total Price
+            </div>
             <div style={{ color: GOLD, fontWeight: 800, fontSize: 22, lineHeight: 1.1 }}>
               {fmtBigAed(aed)}
             </div>
-            {pricePerSqft != null && (
-              <div style={{ color: SUBTLE, fontSize: 10, marginTop: 2 }}>
-                {pricePerSqft.toLocaleString("en-US", { maximumFractionDigits: 0 })} AED/sqft
-              </div>
-            )}
+            {/* Per-sqft rows. Plot is always shown when we have an area;
+                GFA is only shown when DDA gave us a Max GFA. */}
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+              {pricePerSqftPlot != null && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+                  <span style={{ color: SUBTLE }}>Per sqft (Plot)</span>
+                  <span style={{ color: TXT, fontWeight: 600 }}>{fmtPerSqft(pricePerSqftPlot)}</span>
+                </div>
+              )}
+              {pricePerSqftGfa != null && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+                  <span style={{ color: SUBTLE }}>Per sqft (Max GFA)</span>
+                  <span style={{ color: TXT, fontWeight: 600 }}>{fmtPerSqft(pricePerSqftGfa)}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {plan ? (

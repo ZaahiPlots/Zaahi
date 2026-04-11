@@ -250,9 +250,18 @@ FUTURE DEVELOPMENT (земля без зданий) — только fill polygo
 ## Правило добавления участков (batch)
 - Все участки из DDA (7-значные номера)
 - Для каждого: запроси полигон, affection plan, building limit из DDA API
-- Цена участка = Max GFA sqft × цена за GFA sqft (цена за GFA предоставляется вручную)
 - 3D модель ZAAHI Signature по land use автоматически
 - После добавления жди подтверждение "yes" перед следующим
+
+### Цена участка — ТОЛЬКО ВРУЧНУЮ
+Общая цена участка (`currentValuation` в `Parcel`, хранится в fils как `BigInt`) устанавливается **ТОЛЬКО вручную**. Источники цены:
+1. **Excel файл от основателя** (batch загрузка через `scripts/update-prices-from-excel.ts`-style скрипты — общая цена в формате `50M` / `1.2B` парсится в fils).
+2. **Пользователь, добавляющий участок через Add Plot** — устанавливает цену в форме при добавлении.
+3. **Собственник участка** может изменить цену через свой профиль (`/api/parcels/[id]` PATCH с проверкой `ownerId === userId`).
+
+**Автоматически рассчитывать или менять общую цену системой ЗАПРЕЩЕНО.** Никаких "GFA × per-sqft" вычислений на стороне сервера или скриптов, никаких автоматических переоценок при обновлении affection plan. `currentValuation` меняется только когда явная инструкция от founder/owner.
+
+`Price per sqft GFA` и `Price per sqft Plot` рассчитываются автоматически из общей цены **только для отображения в карточке** (в `SidePanel.tsx`). Эти производные значения никогда не записываются обратно в БД.
 
 ### NEVER delete parcels — ever
 - A parcel row in `Parcel` table is **never** deleted by the agent. Not even VACANT stubs, not even rows the agent itself created in a previous batch, not even rows that "look broken".
