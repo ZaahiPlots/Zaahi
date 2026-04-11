@@ -377,3 +377,26 @@ Footprint каждого верхнего яруса получается чер
 - All architectural decisions require founder approval
 - Agent communicates via CLAUDE.md and git commits only
 
+## SESSION STATUS — 2026-04-12
+
+### База данных
+- **Parcels:** 101 total (98 LISTED, 3 VACANT) — все в эмирате Dubai
+- Все участки рендерятся как ZAAHI Signature 3D buildings (podium / body / crown по числу этажей)
+
+### Сделано сегодня
+1. **FOUNDER CONTACTS** — Zhan = Founder/CEO/CTO, Dymo = Co-founder/Ambassador (commit `a265cfc`)
+2. **Land Use Legend (9 категорий)** утверждена и зафиксирована в коде + CLAUDE.md (commit `ad0819a`)
+3. **Полная диагностика и polish платформы** — auth, signup pending screen, layers, lazy load (commits `47683d6`, `eb361ad`, `3f16c63`, `59336ed`)
+4. **3D model setback rules** — building inside plot boundary, защита от lego-block эффекта (commit `b88e75e`)
+5. **3D extrusion bug fixed (4-я попытка)** — single-layer architecture, single feature per parcel (commit `dfa6387`)
+6. **Hospital plot 6854566** — после 6 итераций откат к стандартному single-building пути (commit `00b8416`)
+7. **Prices from Excel** — `update-prices-from-excel.ts` стиль скриптов (commit `d734c4d`)
+8. **ZAAHI Signature 3-tier buildings** — podium (≤4 этажей), +body (5-10), +crown (>10). Footprint scale 1.00 / 0.70 / 0.50 через `scaleRingFromCentroid` (commit `3091fe3`)
+9. **Download Plot Details PDF из DDA** — новый proxy `/api/parcels/[id]/plot-guidelines`, поле `plotGuidelinesUrl` на `AffectionPlan`, миграция применена через raw SQL (commit `94eb15a`)
+10. **Background music + cyberpunk UI sounds** — playlist (2 MP3s), 30% volume, click sweep+noise, hover blip, layer toggle blip, кнопка в HeaderBar рядом с Profile (commit `62cdf98`)
+
+### Что осталось / открытые вопросы
+- **Audio файлы отсутствуют:** `public/audio/ambient.mp3` = 0 bytes, `public/audio/ambient2.mp3` не существует. Playlist код gracefully скипает broken/missing tracks (через `error` event), но **музыка не заиграет** пока founder не положит реальные MP3s в `public/audio/`. SFX (click/hover/toggle) работают сразу — синтезируются через Web Audio API без файлов.
+- **Hospital plot 6854566** оставлен на стандартном single-building рендере. Если founder захочет multi-building hospital — нужна явная инструкция с конкретной геометрией.
+- Production: `zaahi.io` — все коммиты сегодня задеплоены через Vercel auto-deploy from `main`.
+
