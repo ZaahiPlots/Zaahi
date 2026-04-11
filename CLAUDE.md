@@ -3,8 +3,8 @@
 ## Идентификация
 
 Ты — Senior Engineer и единственный разработчик-агент платформы ZAAHI.
-Founder: **Dmytro Tsvyk (Dymo)** — финальное слово по продукту и архитектуре.
-Technical lead: **Zharkyn Ryspayev (Jean)** — день-в-день инженерные решения.
+Founder & CEO/CTO: **Zharkyn (Zhan) Ryspayev** — построил всю платформу ZAAHI, день-в-день инженерные и продуктовые решения.
+Co-founder, Ambassador, Guardian Partner: **Dmytro (Dymo) Tsvyk** — стратегия, ambassador for Dubai market, право вето на стратегические решения. См. `FOUNDER CONTACTS` ниже.
 Единственная метрика: **платящий пользователь**.
 
 ## Стек
@@ -203,7 +203,7 @@ FUTURE DEVELOPMENT (земля без зданий):
 - Карточка компактная, без пустых мест
 
 ### Вопросы и предложения
-Если не уверен в данных или архитектурном решении — пиши founder (`d.tsvyk@gmail.com`) с копией technical lead (`zhanrysbayev@gmail.com`). См. секцию `FOUNDER CONTACTS` ниже.
+Если не уверен в данных или архитектурном решении — пиши founder Zhan (`zhanrysbayev@gmail.com`) с копией co-founder Dymo (`d.tsvyk@gmail.com`) на стратегические вопросы. См. секцию `FOUNDER CONTACTS` ниже.
 
 ## Sovereignty Readiness Rules
 - Minimize Vercel lock-in. Production currently runs on Vercel, but the codebase MUST stay portable: keep the ability to self-host via `docker-compose up`. Avoid Vercel-only APIs (Edge Config, KV, Blob, Vercel Postgres). Use standard Next.js features only.
@@ -310,8 +310,8 @@ FUTURE DEVELOPMENT (земля без зданий):
 - **ПРАВИЛО:** При рефакторинге крупных файлов (>500 строк) — сначала составь список ВСЕХ функций в файле, после рефакторинга проверь что ВСЕ функции сохранены. Это правило существует потому, что на одном из коммитов агент случайно удалил `loadZaahiPlots` (~270 строк) внутри bulk-replace `attachOverlays`, и на проде пропали все участки на карте. Список функций ДО рефакторинга — единственная защита от такой регрессии.
 
 ## FOUNDER CONTACTS
-- **Founder:** Dmytro Tsvyk (Dymo) — `d.tsvyk@gmail.com`
-- **Technical lead:** Zharkyn Ryspayev (Jean) — `zhanrysbayev@gmail.com`
+- **Founder & CEO/CTO:** Zharkyn (Zhan) Ryspayev — `zhanrysbayev@gmail.com` — 17 лет в недвижимости, Full-stack инженер, построил всю платформу ZAAHI
+- **Co-founder, Ambassador, Guardian Partner:** Dmytro (Dymo) Tsvyk — `d.tsvyk@gmail.com` — 18+ лет глобального управления операциями (Stolt-Nielsen, Bahri), рынок недвижимости Дубая с 2018, партнёр Equilibrium Advisory Group, право вето на стратегические решения
 - All architectural decisions require founder approval
-- The agent communicates with the founders via `CLAUDE.md` and git commits only — no direct messages, no email, no Slack
+- Agent communicates via CLAUDE.md and git commits only
 
