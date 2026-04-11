@@ -148,7 +148,7 @@ export default function AuthPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(200,169,110,0.25)', marginBottom: 22 }}>
-              {(['signin', 'signup'] as Mode[]).map((m) => (
+              ({['signin'] as Mode[]).map((m) => (
                 <button
                   key={m}
                   type="button"
