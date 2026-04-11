@@ -1968,53 +1968,96 @@ function ParcelsMapPageInner() {
             pole = { lng: cLng, lat: cLat, r: 5 };
           }
 
-          // Layout — 4 buildings in a SINGLE HORIZONTAL ROW centred
-          // on the pole (founder spec 2026-04-12).
-          //
-          //   building full width  = 0.30 × r  (along the lng axis)
-          //   building full height = 0.40 × r  (along the lat axis)
-          //   gap between          = 0.08 × r
-          //
-          //   total row width = 4 × 0.30 + 3 × 0.08 = 1.44 r
-          //   row half-width  = 0.72 r
-          //   building half-height = 0.20 r
-          //   farthest corner Euclidean from pole:
-          //     sqrt(0.72² + 0.20²) ≈ 0.747 r — strictly inside the
-          //     inscribed disc, therefore inside the polygon.
-          //
-          //   Verified end-to-end against the real 47-point polygon
-          //   by sim-hospital-row.ts (see commit message): 16/16
-          //   corners inside.
-          const buildingHalfW_m = pole.r * 0.15;
-          const buildingHalfH_m = pole.r * 0.20;
-          const gap_m = pole.r * 0.08;
-          const stepX_m = buildingHalfW_m * 2 + gap_m;
-
-          const buildingHalfW = buildingHalfW_m / lngToM;
-          const buildingHalfH = buildingHalfH_m / latToM;
-          const stepX = stepX_m / lngToM;
-
-          // Centre the row on the pole. Offsets in stepX units:
-          //   [-1.5, -0.5, +0.5, +1.5]  (4 buildings, 3 gaps)
-          const offsetsX: number[] = [-1.5, -0.5, 0.5, 1.5];
-
+          // Layout — 4 buildings in a 2×2 grid centred on the pole
+          // (left column = 2 stacked, right column = 2 stacked) per
+          // founder spec 2026-04-12. Bulletproof: place at the
+          // largest candidate size, then ITERATIVELY SHRINK the whole
+          // layout (multiply all dimensions by 0.85) until every
+          // corner of every building passes point-in-polygon against
+          // the actual plot ring. Up to 20 shrink steps. The shrink
+          // factor 0.85^20 ≈ 0.04 — at the worst case the buildings
+          // collapse to ~4% of their starting size, which is still
+          // visible but tiny. In practice it converges in 0-3 steps.
           const HOSPITAL_HEIGHT = 24; // m — same for all 4
           const HOSPITAL_HEX = "#E74C3C"; // hardcoded healthcare red
-          for (const ox of offsetsX) {
-            const cx = pole.lng + ox * stepX;
-            const cy = pole.lat;
-            const x0 = cx - buildingHalfW;
-            const y0 = cy - buildingHalfH;
-            const x1 = cx + buildingHalfW;
-            const y1 = cy + buildingHalfH;
-            // Closed CCW ring (first point repeated at the end).
-            const rect: number[][] = [
-              [x0, y0],
-              [x1, y0],
-              [x1, y1],
-              [x0, y1],
-              [x0, y0],
-            ];
+
+          // Starting dimensions (relative to the inscribed disc r).
+          //   half-side = 0.20 r
+          //   centre offset from pole = 0.45 r
+          //   farthest corner per axis = 0.65 r
+          //   farthest corner Euclidean = sqrt(2) × 0.65 r ≈ 0.92 r
+          // The disc-of-radius-r geometry says these MUST be inside,
+          // but we still verify against the real polygon below in
+          // case the disc-touching point lies on a polygon concavity.
+          let halfSizeM = pole.r * 0.20;
+          let offsetM = pole.r * 0.45;
+          const cornerOffsetsXY: Array<[number, number]> = [
+            [-1, -1], [1, -1], [-1, 1], [1, 1],
+          ];
+
+          // Iteratively shrink until all 16 corners pass point-in-polygon.
+          let attempts = 0;
+          let allInside = false;
+          let finalRects: number[][][] = [];
+          while (attempts < 20 && !allInside) {
+            const offsetLng = offsetM / lngToM;
+            const offsetLat = offsetM / latToM;
+            const halfLng = halfSizeM / lngToM;
+            const halfLat = halfSizeM / latToM;
+            const candidate: number[][][] = [];
+            let ok = true;
+            for (const [sx, sy] of cornerOffsetsXY) {
+              const cx = pole.lng + sx * offsetLng;
+              const cy = pole.lat + sy * offsetLat;
+              const x0 = cx - halfLng;
+              const y0 = cy - halfLat;
+              const x1 = cx + halfLng;
+              const y1 = cy + halfLat;
+              const rect: number[][] = [
+                [x0, y0],
+                [x1, y0],
+                [x1, y1],
+                [x0, y1],
+                [x0, y0],
+              ];
+              // 4 distinct corners (skip the closing repeat).
+              for (let k = 0; k < 4 && ok; k++) {
+                if (!pip(rect[k][0], rect[k][1])) ok = false;
+              }
+              candidate.push(rect);
+              if (!ok) break;
+            }
+            if (ok) {
+              allInside = true;
+              finalRects = candidate;
+            } else {
+              halfSizeM *= 0.85;
+              offsetM *= 0.85;
+              attempts++;
+            }
+          }
+          // Failsafe — if even the smallest size somehow fails, drop
+          // a single 1m × 1m marker at the pole. Should never happen
+          // because the pole is inside the polygon by construction.
+          if (!allInside) {
+            const tiny = 1 / lngToM;
+            const tinyLat = 1 / latToM;
+            finalRects = [[
+              [pole.lng - tiny, pole.lat - tinyLat],
+              [pole.lng + tiny, pole.lat - tinyLat],
+              [pole.lng + tiny, pole.lat + tinyLat],
+              [pole.lng - tiny, pole.lat + tinyLat],
+              [pole.lng - tiny, pole.lat - tinyLat],
+            ]];
+          }
+          console.log(
+            "[ZAAHI hospital 6854566]",
+            "pole r =", pole.r.toFixed(2), "m",
+            "shrink attempts =", attempts,
+            "final halfSize =", halfSizeM.toFixed(2), "m",
+            "rectangles =", finalRects.length,
+          );
+          for (const rect of finalRects) {
             buildingFeatures.push({
               type: "Feature",
               geometry: { type: "Polygon", coordinates: [rect] },
