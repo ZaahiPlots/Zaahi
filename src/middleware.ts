@@ -22,7 +22,8 @@ const PUBLIC_API = [
   '/api/notify-admin',
 ];
 
-const PUBLIC_READS = new Set(['GET']);
+// HEAD is included so browser preflights / link checkers don't 401.
+const PUBLIC_READS = new Set(['GET', 'HEAD']);
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -31,8 +32,11 @@ export function middleware(req: NextRequest) {
   if (PUBLIC_API.some((p) => pathname.startsWith(p))) return NextResponse.next();
 
   // Public basemap / overlay layers (community boundaries, road network,
-  // master plans). These are public-domain geographic data — no PII, no prices.
-  if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/layers')) {
+  // master plans, all 206 DDA districts). These are public-domain geographic
+  // data — no PII, no prices — so the map can render them before the user
+  // is signed in (and unauthenticated link previews work too). Anything that
+  // serves prices, documents, or PII MUST live outside /api/layers.
+  if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/layers/')) {
     return NextResponse.next();
   }
 

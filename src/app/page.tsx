@@ -112,19 +112,48 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#f5f5f5' }}>
-      {/* Live ZAAHI map as background */}
-      <iframe
-        src="/parcels/map"
-        title="ZAAHI Platform"
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        overflow: 'hidden',
+        // Sandy "Dubai map" gradient. We used to render `/parcels/map` in an
+        // iframe, but that page is now AuthGuard'd and would just recurse back
+        // into the auth page — so a static gradient + subtle grid is both
+        // faster and safer.
+        background:
+          'linear-gradient(135deg, #e8e0d0 0%, #d4cfc5 50%, #c8bfaf 100%)',
+      }}
+    >
+      {/* Subtle plot-grid pattern, evokes the cadastral lines on the map. */}
+      <div
+        aria-hidden
         style={{
           position: 'absolute',
           inset: 0,
-          width: '100%',
-          height: '100%',
-          border: 0,
-          filter: 'blur(8px) brightness(0.7)',
-          transform: 'scale(1.05)',
+          backgroundImage:
+            'linear-gradient(rgba(26,26,46,0.06) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(26,26,46,0.06) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage:
+            'radial-gradient(ellipse at center, #000 40%, transparent 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse at center, #000 40%, transparent 75%)',
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Soft golden glow behind the card. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 720,
+          height: 720,
+          transform: 'translate(-50%, -50%)',
+          background:
+            'radial-gradient(circle, rgba(200,169,110,0.18) 0%, rgba(200,169,110,0) 65%)',
           pointerEvents: 'none',
         }}
       />
