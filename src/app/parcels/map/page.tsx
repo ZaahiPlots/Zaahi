@@ -1854,119 +1854,85 @@ function ParcelsMapPageInner() {
           },
         });
         // Skip 3D building generation for parcels without a land use —
-        // founder spec: "Если land use пустое или неизвестное —
-        // показывать участок только как контур (outline) без 3D модели."
+        // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
+        // Skip 3D for future-development land — flat polygon only.
+        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
 
-        // Footprint helper — pushes podium / body / crown features into
-        // buildingFeatures for the 3D fill-extrusion layers.
-        const pushSignature = (ring: number[][], totalH: number, useGold: boolean, tag: string) => {
-          const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-          const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-          const scaleRing = (s: number): number[][] =>
-            ring.map(([lng, lat]) => [
-              cLng + (lng - cLng) * s,
-              cLat + (lat - cLat) * s,
-            ]);
-          const podiumTop = Math.min(8, totalH * 0.3);
-          const crownH = Math.min(6, totalH * 0.2);
-          const crownBase = Math.max(podiumTop, totalH - crownH);
-          buildingFeatures.push({
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
-            properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag },
-          });
-          buildingFeatures.push({
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
-            properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag },
-          });
-          if (useGold) {
-            buildingFeatures.push({
-              type: "Feature",
-              geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
-              properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag },
-            });
-          }
-        };
-
+        // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
+        // ONE feature per parcel. ONE fill-extrusion layer below. The
+        // feature carries its own `color` (hex string) and `height`
+        // (number > 0) so the layer paint can use plain ["get", "color"]
+        // and ["get", "height"] — no match expressions, no kind filters.
         const blg = it.plan?.buildingLimitGeometry;
         const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
 
-        if (landUse === "MIXED_USE") {
-          // Same ZAAHI Signature setback rules as the single-tower
-          // branch below — building limit if available, otherwise inset.
-          let footprintRing: number[][];
-          if (blg && blg.type === "Polygon") {
-            footprintRing = blg.coordinates[0];
-          } else {
-            const setbackM = computeSetbackM(
-              it.area,
-              "MIXED_USE",
-              it.plan?.setbacks ?? null,
-              it.plan?.landUseMix?.[0]?.sub ?? null,
-            );
-            footprintRing = insetRingByMeters(plotRing, setbackM);
-          }
-          const totalH = it.plan?.maxHeightMeters ?? 44;
-          const cLng = footprintRing.reduce((s, p) => s + p[0], 0) / footprintRing.length;
-          const cLat = footprintRing.reduce((s, p) => s + p[1], 0) / footprintRing.length;
-          const scaleRing = (s: number): number[][] =>
-            footprintRing.map(([lng, lat]) => [
-              cLng + (lng - cLng) * s,
-              cLat + (lat - cLat) * s,
-            ]);
-          const podiumTop = Math.max(12, totalH * 0.2);
-          const crownH = Math.max(8, totalH * 0.2);
-          const crownBase = Math.max(podiumTop + 4, totalH - crownH);
-          buildingFeatures.push({
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [scaleRing(1.0)] },
-            properties: { parcelId: it.id, landUse, kind: "podium", base: 0, height: podiumTop, tag: "mixed-podium" },
-          });
-          buildingFeatures.push({
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [scaleRing(0.85)] },
-            properties: { parcelId: it.id, landUse, kind: "body", base: podiumTop, height: crownBase, tag: "mixed-body" },
-          });
-          buildingFeatures.push({
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [scaleRing(0.7)] },
-            properties: { parcelId: it.id, landUse, kind: "crown", base: crownBase, height: totalH, tag: "mixed-crown" },
-          });
-        } else if (landUse === "FUTURE DEVELOPMENT" || landUse === "FUTURE_DEVELOPMENT") {
-          // No 3D for future development — fill polygon only.
+        // Footprint: building-limit polygon if DDA has it, else the
+        // plot polygon insetted by the founder-spec setback in metres.
+        let footprintRing: number[][];
+        if (blg && blg.type === "Polygon") {
+          footprintRing = blg.coordinates[0];
         } else {
-          // ZAAHI Signature 3D rules (CLAUDE.md "Правила 3D моделей"):
-          //   1. Use the DDA building-limit polygon when present.
-          //   2. Otherwise inset the plot polygon by a setback in metres.
-          //      Setback comes from the affection plan, OR from a
-          //      land-use default, OR from "no setback" for tiny plots.
-          let footprintRing: number[][];
-          if (blg && blg.type === "Polygon") {
-            footprintRing = blg.coordinates[0];
-          } else {
-            const setbackM = computeSetbackM(
-              it.area,
-              landUse,
-              it.plan?.setbacks ?? null,
-              it.plan?.landUseMix?.[0]?.sub ?? null,
-            );
-            footprintRing = insetRingByMeters(plotRing, setbackM);
-          }
-          let totalH = it.plan?.maxHeightMeters ?? 0;
-          if (totalH <= 0 && it.plan?.maxGfaSqm && it.plan?.plotAreaSqm) {
-            const coverage = 0.6;
-            const footprintArea = it.plan.plotAreaSqm * coverage;
-            const floors = Math.ceil(it.plan.maxGfaSqm / footprintArea);
-            totalH = floors * 3.5;
-          }
-          if (totalH <= 0) totalH = 44;
-          const useGold = landUse === "RESIDENTIAL" || landUse === "HOSPITALITY" || landUse === "HOTEL";
-          pushSignature(footprintRing, totalH, useGold, "tower");
+          const setbackM = computeSetbackM(
+            it.area,
+            landUse,
+            it.plan?.setbacks ?? null,
+            it.plan?.landUseMix?.[0]?.sub ?? null,
+          );
+          footprintRing = insetRingByMeters(plotRing, setbackM);
         }
+
+        // Height: prefer maxHeightMeters from DDA, else floors × 3.5,
+        // else a per-land-use default. ALWAYS > 0 so the extrusion
+        // is visible.
+        let totalH = it.plan?.maxHeightMeters ?? 0;
+        if (totalH <= 0 && it.plan?.maxFloors) {
+          totalH = it.plan.maxFloors * 3.5;
+        }
+        if (totalH <= 0 && it.plan?.maxGfaSqm && it.plan?.plotAreaSqm) {
+          const footprintArea = it.plan.plotAreaSqm * 0.6;
+          const floors = Math.ceil(it.plan.maxGfaSqm / footprintArea);
+          totalH = floors * 3.5;
+        }
+        if (totalH <= 0) {
+          // Per-land-use fallback heights (metres) so every 3D-eligible
+          // parcel renders SOMETHING even when DDA has no height data.
+          totalH =
+            landUse === "RESIDENTIAL"  ? 15 :
+            landUse === "COMMERCIAL"   ? 30 :
+            landUse === "MIXED_USE"    ? 40 :
+            landUse === "HOTEL"        ? 50 :
+            landUse === "HOSPITALITY"  ? 50 :
+            landUse === "INDUSTRIAL"   ? 12 :
+            landUse === "WAREHOUSE"    ? 12 :
+            landUse === "EDUCATIONAL"  ? 12 :
+            landUse === "EDUCATION"    ? 12 :
+            landUse === "HEALTHCARE"   ? 18 :
+            landUse === "AGRICULTURAL" ?  6 :
+            landUse === "AGRICULTURE"  ?  6 :
+            20;
+        }
+
+        const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
+        buildingFeatures.push({
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [footprintRing] },
+          properties: {
+            parcelId: it.id,
+            landUse,
+            color: buildingHex,
+            height: totalH,
+            base: 0,
+          },
+        });
       }
 
+      console.log(
+        "[ZAAHI]",
+        "plotFeatures:", plotFeatures.length,
+        "buildingFeatures:", buildingFeatures.length,
+        "(of", payload.items.length, "parcels)",
+      );
       map.addSource(ZAAHI_PLOTS_SRC, {
         type: "geojson",
         data: { type: "FeatureCollection", features: plotFeatures },
@@ -2013,78 +1979,29 @@ function ParcelsMapPageInner() {
         paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
       });
 
+      // ── 3D BUILDING EXTRUSION — single layer, single source ──
+      // Founder spec (4th attempt fix): one fill-extrusion layer, no
+      // per-kind filters, no match expressions, no podium/body/crown
+      // tiers. Each feature carries its own `color` (hex string from
+      // ZAAHI_LANDUSE_COLOR) and `height` (metres) so the paint can
+      // use plain `["get", "color"]` and `["get", "height"]`.
+      console.log("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
+      console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
       map.addSource(ZAAHI_BUILDINGS_SRC, {
         type: "geojson",
         data: { type: "FeatureCollection", features: buildingFeatures },
       });
-      // Per-landUse 3D extrusion color. APPROVED by founder 2026-04-11.
-      // 9 canonical categories. MUST stay in sync with ZAAHI_LANDUSE_COLOR
-      // and SidePanel LANDUSE_COLORS. Default branch is the brand gold,
-      // but in practice it's never hit because parcels with no land use
-      // are filtered out of buildingFeatures earlier in the loop.
-      const buildingColor: maplibregl.ExpressionSpecification = [
-        "match",
-        ["get", "landUse"],
-        "RESIDENTIAL",         "#FFD700",
-        "COMMERCIAL",          "#4A90D9",
-        "MIXED_USE",           "#9B59B6",
-        "HOTEL",               "#E67E22",
-        "HOSPITALITY",         "#E67E22",
-        "INDUSTRIAL",          "#708090",
-        "WAREHOUSE",           "#708090",
-        "EDUCATIONAL",         "#1ABC9C",
-        "EDUCATION",           "#1ABC9C",
-        "HEALTHCARE",          "#E74C3C",
-        "AGRICULTURAL",        "#6B8E23",
-        "AGRICULTURE",         "#6B8E23",
-        "FUTURE_DEVELOPMENT",  "#84CC16",
-        "#C8A96E", // default — unreachable in practice
-      ];
-
-      map.addLayer({
-        id: `${ZAAHI_BUILDINGS_3D}-podium`,
-        type: "fill-extrusion",
-        source: ZAAHI_BUILDINGS_SRC,
-        filter: ["==", ["get", "kind"], "podium"],
-        paint: {
-          "fill-extrusion-color": buildingColor,
-          "fill-extrusion-height": ["get", "height"],
-          "fill-extrusion-base": ["get", "base"],
-          "fill-extrusion-opacity": 0.45,
-          "fill-extrusion-opacity-transition": { duration: 300 },
-        },
-      });
+      console.log("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
       map.addLayer({
         id: ZAAHI_BUILDINGS_3D,
         type: "fill-extrusion",
         source: ZAAHI_BUILDINGS_SRC,
-        filter: ["==", ["get", "kind"], "body"],
         paint: {
-          "fill-extrusion-color": buildingColor,
+          "fill-extrusion-color": ["get", "color"],
           "fill-extrusion-height": ["get", "height"],
           "fill-extrusion-base": ["get", "base"],
-          "fill-extrusion-opacity": 0.35,
-          "fill-extrusion-opacity-transition": { duration: 300 },
+          "fill-extrusion-opacity": 0.6,
         },
-      });
-      map.addLayer({
-        id: `${ZAAHI_BUILDINGS_3D}-crown`,
-        type: "fill-extrusion",
-        source: ZAAHI_BUILDINGS_SRC,
-        filter: ["==", ["get", "kind"], "crown"],
-        paint: {
-          "fill-extrusion-color": buildingColor,
-          "fill-extrusion-height": ["get", "height"],
-          "fill-extrusion-base": ["get", "base"],
-          "fill-extrusion-opacity": 0.3,
-          "fill-extrusion-opacity-transition": { duration: 300 },
-        },
-      });
-      map.addLayer({
-        id: `${ZAAHI_BUILDINGS_3D}-outline`,
-        type: "line",
-        source: ZAAHI_BUILDINGS_SRC,
-        paint: { "line-color": buildingColor, "line-width": 1, "line-opacity": 0.8 },
       });
     } catch (e) {
       console.error("[zaahi-plots] load failed", e);
