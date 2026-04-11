@@ -27,7 +27,7 @@ export default function AuthPage() {
     let cancelled = false;
     supabaseBrowser.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session && !pending) {
+      if (data.session && !(window as any).__zaahiPending) {
         router.replace('/parcels/map');
       } else {
         setCheckingSession(false);
