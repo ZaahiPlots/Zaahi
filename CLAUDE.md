@@ -259,6 +259,7 @@ FUTURE DEVELOPMENT (земля без зданий):
 - NEVER modify `prisma/schema.prisma` without explicit permission from the founder
 - NEVER change environment variables or `.env.local` (and never commit `.env.local` — it is in `.gitignore` for a reason)
 - After every change, run `pnpm build` to verify there are no errors before committing. A red build NEVER reaches `main`
+- **NEVER run `pnpm build` while `pnpm dev` is running on the same checkout.** Both write to `.next/` and `pnpm build` will replace chunks the dev server still references, after which every API route returns `500 Cannot find module './XXXX.js'` until you `rm -rf .next && pnpm dev` again. If a verify-build is needed mid-session, stop the dev server first, build, then `rm -rf .next && pnpm dev` to restart cleanly.
 - Commit messages MUST be descriptive and use the conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
 - If the build fails — fix the underlying error. Do NOT skip TypeScript errors with `@ts-ignore` / `@ts-expect-error`, do NOT disable ESLint rules, do NOT add `// eslint-disable` lines just to pass the build
 - If you discover unfamiliar files, branches, or in-progress changes — investigate first, never delete or overwrite as a shortcut
