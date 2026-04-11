@@ -190,29 +190,40 @@ DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
-Для каждого land use свой 3D стиль:
+Для каждого land use свой 3D стиль (цвета — секция выше "Цвета по Land Use").
 
-RESIDENTIAL:
-- Подиум (×1.05 building limit): rgba(170,160,150,0.4)
-- Тело (×0.9): rgba(190,200,210,0.3) стекло
-- Crown (×0.85): rgba(200,180,140,0.35) gold
-- Outline: white 1px
+FUTURE DEVELOPMENT (земля без зданий) — только fill polygon, без 3D extrusion.
 
-MIXED USE:
-- Несколько зданий разной высоты внутри участка
-- Подиумы: rgba(140,100,180,0.35) фиолетовый
-- Башни: rgba(170,140,210,0.25)
-- Crown gold на самом высоком
+### Правила 3D моделей (ZAAHI Signature) — НАВСЕГДА
+Утверждено основателем 2026-04-11. Реализация: `loadZaahiPlots` →
+`computeSetbackM` + `insetRingByMeters` в `src/app/parcels/map/page.tsx`.
 
-COMMERCIAL:
-- Строгая форма без сужения
-- Цвет: rgba(150,170,200,0.35) синеватое стекло
+Каждая 3D модель состоит из трёх слоёв:
+1. **PLOT BOUNDARY** — polygon из DDA, рендерится как `ZAAHI_PLOTS_FILL` + `ZAAHI_PLOTS_LINE`. Fill-opacity 0.35-0.45 (когда есть land use), 0 (outline-only когда нет).
+2. **BUILDING FOOTPRINT** — polygon с отступами (setbacks) от границ участка. НЕ виден на карте напрямую, используется как основание для extrusion.
+3. **FILL-EXTRUSION** — 3D здание, поднимается от building footprint, **НЕ от plot boundary**. Между зданием и границей участка видна "земля" — это setback.
 
-HOTEL:
-- Цвет: rgba(220,180,140,0.3) тёплый песочный
+#### Источник setbacks (по приоритету)
+1. **`affectionPlan.buildingLimitGeometry`** — если DDA отдаёт явный полигон building limit, используем его как footprint as-is.
+2. **`affectionPlan.setbacks[]`** — если есть массив сторон с `building` / `podium`, берём среднее ненулевое значение в метрах и инсетим plot polygon на эту дельту.
+3. **Land-use defaults** — если в affection plan нет setback данных:
+   - Residential **villa / townhouse**: 3 м со всех сторон
+   - Residential **apartment** (всё остальное residential): ~4 м (5 м от дороги + 3 м от соседей, усреднённо)
+   - Commercial / Office / Retail: **0 м** (строят от края до края)
+   - Hotel / Hospitality: 3 м
+   - Industrial / Warehouse: 4 м
+   - Educational / Healthcare: 5 м
+   - Agricultural / Farm: 10 м
+   - Mixed Use: 4 м
 
-FUTURE DEVELOPMENT (земля без зданий):
-- Только fill polygon, без 3D extrusion
+#### Bypass для маленьких участков
+Если `plotAreaSqft < 5000` — building footprint **=** plot boundary (без отступов). Здание занимает весь участок, чтобы тонкий villa-plot не превратился в коробку посреди земли.
+
+#### Что не делать
+- НЕ строить extrusion прямо от plot polygon (без setback) на нормальных участках. Без отступов 3D выглядит как лего-блок, который занимает весь участок — это противоречит ZAAHI Signature.
+- НЕ строить extrusion за пределами plot polygon. Все ярусы (podium / body / crown) должны быть **внутри** building footprint.
+- НЕ менять дефолтные setbacks по land use без явного согласия основателя.
+- НЕ менять `computeSetbackM` или `insetRingByMeters` без явного согласия основателя.
 
 ### Слои по умолчанию
 - ВСЕГДА включены: Communities, Major Roads, ZAAHI Plots

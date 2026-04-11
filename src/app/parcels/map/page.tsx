@@ -239,7 +239,7 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
  * Multiple distinct categories in `mix` always collapse to MIXED_USE.
  */
 function deriveLandUse(
-  mix: Array<{ category: string; sub?: string }> | null | undefined,
+  mix: Array<{ category: string; sub?: string | null }> | null | undefined,
   mainLandUse?: string | null,
 ): string | null {
   // Multiple categories in the mix → mixed use, regardless of strings.
@@ -1705,6 +1705,96 @@ function ParcelsMapPageInner() {
   //  doesn't have it. Idempotent on map.getSource — safe to call after
   //  a basemap swap.
   // ─────────────────────────────────────────────────────────────────────
+  // ── ZAAHI Signature 3D — setback helpers ───────────────────────────
+  // Spec lives in CLAUDE.md "Правила 3D моделей (ZAAHI Signature)".
+  // The DB still stores the raw DDA setbacks per plan; these helpers
+  // pick a single representative metres-value to inset the polygon by.
+
+  /** Land-use defaults when DDA has no per-plot setback data. */
+  function defaultSetbackM(landUse: string | null, sub: string | null): number {
+    if (!landUse) return 5;
+    switch (landUse) {
+      case "RESIDENTIAL":
+        // Villas / townhouses: 3m all around. Apartments: 5m road
+        // + 3m sides → ~4m representative for a uniform inset.
+        if (sub && /villa|townhouse|town\s*house/i.test(sub)) return 3;
+        return 4;
+      case "COMMERCIAL":
+      case "OFFICE":
+      case "RETAIL":
+        return 0; // commercial fills the plot edge to edge
+      case "HOTEL":
+      case "HOSPITALITY":
+        return 3;
+      case "INDUSTRIAL":
+      case "WAREHOUSE":
+        return 4;
+      case "EDUCATIONAL":
+      case "EDUCATION":
+      case "HEALTHCARE":
+        return 5;
+      case "AGRICULTURAL":
+      case "AGRICULTURE":
+        return 10;
+      case "MIXED_USE":
+        return 4;
+      default:
+        return 5;
+    }
+  }
+
+  /**
+   * Pick the metres value to use for inset. Prefer DDA's affection-plan
+   * setbacks (most specific), fall back to land-use defaults, and bypass
+   * inset entirely for very small plots.
+   */
+  function computeSetbackM(
+    plotSqft: number,
+    landUse: string | null,
+    setbacks: Array<{ side: number; building: number | null; podium: number | null }> | null,
+    sub: string | null,
+  ): number {
+    // Tiny plots — building fills the boundary, no setback.
+    if (plotSqft > 0 && plotSqft < 5000) return 0;
+
+    if (setbacks && setbacks.length > 0) {
+      const vals = setbacks
+        .map((s) => s.building ?? s.podium ?? 0)
+        .filter((v) => v > 0);
+      if (vals.length > 0) {
+        return vals.reduce((a, b) => a + b, 0) / vals.length;
+      }
+    }
+    return defaultSetbackM(landUse, sub);
+  }
+
+  /**
+   * Inset a polygon ring uniformly toward its centroid by `setbackM`
+   * metres. Caps the resulting scale at 0.5 so very deep setbacks on
+   * small plots still produce a visible building. setbackM <= 0 returns
+   * the ring unchanged (used for the small-plot bypass + commercial).
+   */
+  function insetRingByMeters(ring: number[][], setbackM: number): number[][] {
+    if (setbackM <= 0) return ring;
+    const lngs = ring.map((p) => p[0]);
+    const lats = ring.map((p) => p[1]);
+    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+    const dLng =
+      (Math.max(...lngs) - Math.min(...lngs)) *
+      111000 *
+      Math.cos((midLat * Math.PI) / 180);
+    const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+    const halfWidth = Math.min(dLng, dLat) / 2;
+    if (halfWidth <= 0) return ring;
+    const scale = Math.max(0.5, 1 - setbackM / halfWidth);
+    const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+    const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+    return ring.map(([lng, lat]) => [
+      cLng + (lng - cLng) * scale,
+      cLat + (lat - cLat) * scale,
+    ]);
+  }
+
   async function loadZaahiPlots(map: MLMap) {
     if (map.getSource(ZAAHI_PLOTS_SRC)) return;
     try {
@@ -1732,7 +1822,7 @@ function ParcelsMapPageInner() {
             far?: number | null;
             buildingLimitGeometry?: GeoJSON.Polygon | null;
             setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
-            landUseMix?: Array<{ category: string }> | null;
+            landUseMix?: Array<{ category: string; sub?: string | null }> | null;
           } | null;
         }>;
       };
@@ -1804,23 +1894,19 @@ function ParcelsMapPageInner() {
         const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
 
         if (landUse === "MIXED_USE") {
+          // Same ZAAHI Signature setback rules as the single-tower
+          // branch below — building limit if available, otherwise inset.
           let footprintRing: number[][];
           if (blg && blg.type === "Polygon") {
             footprintRing = blg.coordinates[0];
           } else {
-            const lngs = plotRing.map((p) => p[0]);
-            const lats = plotRing.map((p) => p[1]);
-            const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-            const dLng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos((midLat * Math.PI) / 180);
-            const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
-            const halfW = Math.min(dLng, dLat) / 2;
-            const insetScale = halfW > 0 ? Math.max(0.5, 1 - 5 / halfW) : 0.85;
-            const pcLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
-            const pcLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
-            footprintRing = plotRing.map(([lng, lat]) => [
-              pcLng + (lng - pcLng) * insetScale,
-              pcLat + (lat - pcLat) * insetScale,
-            ]);
+            const setbackM = computeSetbackM(
+              it.area,
+              "MIXED_USE",
+              it.plan?.setbacks ?? null,
+              it.plan?.landUseMix?.[0]?.sub ?? null,
+            );
+            footprintRing = insetRingByMeters(plotRing, setbackM);
           }
           const totalH = it.plan?.maxHeightMeters ?? 44;
           const cLng = footprintRing.reduce((s, p) => s + p[0], 0) / footprintRing.length;
@@ -1851,31 +1937,22 @@ function ParcelsMapPageInner() {
         } else if (landUse === "FUTURE DEVELOPMENT" || landUse === "FUTURE_DEVELOPMENT") {
           // No 3D for future development — fill polygon only.
         } else {
+          // ZAAHI Signature 3D rules (CLAUDE.md "Правила 3D моделей"):
+          //   1. Use the DDA building-limit polygon when present.
+          //   2. Otherwise inset the plot polygon by a setback in metres.
+          //      Setback comes from the affection plan, OR from a
+          //      land-use default, OR from "no setback" for tiny plots.
           let footprintRing: number[][];
           if (blg && blg.type === "Polygon") {
             footprintRing = blg.coordinates[0];
           } else {
-            const setbacks = it.plan?.setbacks;
-            let avgSetbackM = 5;
-            if (setbacks && setbacks.length > 0) {
-              const vals = setbacks.map((s) => s.building ?? s.podium ?? 5).filter((v) => v > 0);
-              if (vals.length > 0) avgSetbackM = vals.reduce((a, b) => a + b, 0) / vals.length;
-            }
-            const lngs = plotRing.map((p) => p[0]);
-            const lats = plotRing.map((p) => p[1]);
-            const dLng =
-              (Math.max(...lngs) - Math.min(...lngs)) *
-              111000 *
-              Math.cos(((Math.max(...lats) + Math.min(...lats)) / 2) * Math.PI / 180);
-            const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
-            const plotHalfWidth = Math.min(dLng, dLat) / 2;
-            const scaleFactor = plotHalfWidth > 0 ? Math.max(0.5, 1 - avgSetbackM / plotHalfWidth) : 0.85;
-            const cLng = plotRing.reduce((s, p) => s + p[0], 0) / plotRing.length;
-            const cLat = plotRing.reduce((s, p) => s + p[1], 0) / plotRing.length;
-            footprintRing = plotRing.map(([lng, lat]) => [
-              cLng + (lng - cLng) * scaleFactor,
-              cLat + (lat - cLat) * scaleFactor,
-            ]);
+            const setbackM = computeSetbackM(
+              it.area,
+              landUse,
+              it.plan?.setbacks ?? null,
+              it.plan?.landUseMix?.[0]?.sub ?? null,
+            );
+            footprintRing = insetRingByMeters(plotRing, setbackM);
           }
           let totalH = it.plan?.maxHeightMeters ?? 0;
           if (totalH <= 0 && it.plan?.maxGfaSqm && it.plan?.plotAreaSqm) {
