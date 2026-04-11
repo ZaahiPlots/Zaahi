@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import FeasibilityCalculator from "./FeasibilityCalculator";
 import OfferModal from "./OfferModal";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -89,7 +90,7 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
     setData(null);
     setDocsOpen(false);
     setFeasOpen(false);
-    fetch(`/api/parcels/${parcelId}`)
+    apiFetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
       .then((d) => setData(d))
       .finally(() => setLoading(false));

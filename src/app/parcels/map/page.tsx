@@ -6,6 +6,8 @@ import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
 import AddPlotModal from "./AddPlotModal";
 import { sound } from "@/lib/sound";
+import AuthGuard from "@/components/AuthGuard";
+import { apiFetch } from "@/lib/api-fetch";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1115,7 +1117,7 @@ const DDA_LAYERS: { key: keyof LayersState; srcId: string; lineId: string; label
 
 const ddaLabelId = (srcId: string) => `${srcId}-label`;
 
-export default function ParcelsMapPage() {
+function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
   const [soundOn, setSoundOn] = useState(false);
@@ -1813,7 +1815,7 @@ export default function ParcelsMapPage() {
     // ── ZAAHI Plots (real listings from our DB) ────────────────────
     if (!map.getSource(ZAAHI_PLOTS_SRC)) {
       try {
-        const r = await fetch("/api/parcels/map");
+        const r = await apiFetch("/api/parcels/map");
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const payload = (await r.json()) as {
           items: Array<{
@@ -11022,5 +11024,13 @@ function HdrField({
         }}
       />
     </label>
+  );
+}
+
+export default function ParcelsMapPage() {
+  return (
+    <AuthGuard>
+      <ParcelsMapPageInner />
+    </AuthGuard>
   );
 }

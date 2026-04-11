@@ -8,13 +8,18 @@ import { NextRequest, NextResponse } from 'next/server';
  * We only enforce its presence; route handlers call getSessionUserId() to
  * actually verify and extract the user id.
  */
+/**
+ * Routes that do NOT require an Authorization header. Keep this list minimal —
+ * everything else under /api/ is forced to carry a Bearer token (the handler
+ * still has to verify it via getSessionUserId / getApprovedUserId).
+ *
+ * - /api/auth      — reserved for future server-side auth callbacks.
+ * - /api/notify-admin — anonymous "request access" notification posted from
+ *                       the public sign-up form. Body is logged only.
+ */
 const PUBLIC_API = [
-  '/api/auth',          // not used yet — Supabase handles auth on the client
-  '/api/users/sync',    // requires auth, but checks token in handler
-  '/api/chat',          // Archibald AI assistant — public for now (TODO: rate-limit by IP)
-  '/api/parcels/seed-dda', // Add Plot launcher — public until admin auth lands
-  '/api/parcels/submit',   // Listing submission (broker/owner)
-  '/api/parcels/parse-title-deed', // Claude Vision — public until admin auth lands
+  '/api/auth',
+  '/api/notify-admin',
 ];
 
 const PUBLIC_READS = new Set(['GET']);
@@ -25,11 +30,8 @@ export function middleware(req: NextRequest) {
   if (!pathname.startsWith('/api/')) return NextResponse.next();
   if (PUBLIC_API.some((p) => pathname.startsWith(p))) return NextResponse.next();
 
-  // Allow unauthenticated GETs on parcels list / detail (browsing).
-  if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/parcels')) {
-    return NextResponse.next();
-  }
-  // Public basemap / overlay layers (community boundaries, etc.).
+  // Public basemap / overlay layers (community boundaries, road network,
+  // master plans). These are public-domain geographic data — no PII, no prices.
   if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/layers')) {
     return NextResponse.next();
   }

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUserId } from "@/lib/auth";
+import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { recordDealEvent } from "@/lib/blockchain";
 
 /**
  * GET /api/deals — list deals where the current user is buyer, seller, or broker.
  */
-export async function GET(_req: NextRequest) {
-  const userId = await getSessionUserId();
+export async function GET(req: NextRequest) {
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const deals = await prisma.deal.findMany({
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest) {
  * body: { parcelId, offerPriceAed, paymentType, closingDays?, conditions?, message?, mortgageBank?, mortgageAmountAed? }
  */
 export async function POST(req: NextRequest) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body: any;

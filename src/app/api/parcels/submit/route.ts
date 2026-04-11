@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { getApprovedUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +26,9 @@ interface PolyFeature {
  *   owner?:  { fullName, phone, email, titleDeedNumber? }
  */
 export async function POST(req: NextRequest) {
+  const callerId = await getApprovedUserId(req);
+  if (!callerId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   let body: {
     plotNumber?: string;
     askingPriceAed?: number;

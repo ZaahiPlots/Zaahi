@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { getApprovedUserId } from '@/lib/auth';
 
 /** Compact payload for the main map: parcel + latest affection plan only. */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const userId = await getApprovedUserId(req);
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const parcels = await prisma.parcel.findMany({
     where: {
       geometry: { not: undefined },

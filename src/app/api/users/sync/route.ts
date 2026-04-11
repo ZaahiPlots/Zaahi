@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
-import { getSessionUserId } from '@/lib/auth';
+import { getApprovedUserId } from '@/lib/auth';
 
 /**
  * POST /api/users/sync
@@ -13,7 +13,7 @@ import { getSessionUserId } from '@/lib/auth';
  * Auth: Bearer <supabase access_token>
  */
 export async function POST(req: NextRequest) {
-  const userId = await getSessionUserId(req);
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const auth = req.headers.get('authorization')!;

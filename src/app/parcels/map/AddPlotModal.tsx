@@ -11,6 +11,7 @@
  * submissions stay hidden until an admin approves.
  */
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -203,7 +204,7 @@ function BrokerFlow({
     if (price <= 0) return setErr("Asking price required");
     setBusy(true);
     try {
-      const r = await fetch("/api/parcels/submit", {
+      const r = await apiFetch("/api/parcels/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -305,7 +306,7 @@ function OwnerFlow({
     setParsing(true);
     try {
       const base64 = await fileToBase64(file);
-      const r = await fetch("/api/parcels/parse-title-deed", {
+      const r = await apiFetch("/api/parcels/parse-title-deed", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
@@ -333,7 +334,7 @@ function OwnerFlow({
     if (price <= 0) return setErr("Asking price required");
     setBusy(true);
     try {
-      const r = await fetch("/api/parcels/submit", {
+      const r = await apiFetch("/api/parcels/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

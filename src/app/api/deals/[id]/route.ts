@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUserId } from "@/lib/auth";
+import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { recordDealEvent } from "@/lib/blockchain";
 import { validateAction, DealAction, getRole } from "@/lib/deal-flow";
@@ -10,8 +10,8 @@ type Ctx = { params: Promise<{ id: string }> };
 /**
  * GET /api/deals/:id — full deal data, only for participants.
  */
-export async function GET(_req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+export async function GET(req: NextRequest, { params }: Ctx) {
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
  * body: { action: DealAction, counterPriceAed?, conditions?, documentHash?, dldReference?, rating? }
  */
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 

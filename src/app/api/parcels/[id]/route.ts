@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionUserId } from '@/lib/auth';
+import { getApprovedUserId } from '@/lib/auth';
 
 function serialize<T>(value: T): T {
   return JSON.parse(
@@ -12,7 +12,10 @@ function serialize<T>(value: T): T {
 type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/parcels/:id  → parcel + latest affection plan
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
+  const userId = await getApprovedUserId(req);
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const { id } = await params;
   const parcel = await prisma.parcel.findUnique({
     where: { id },
@@ -24,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
 // PATCH /api/parcels/:id  — only the owner can update.
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;
@@ -66,8 +69,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/parcels/:id  — only the owner.
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+export async function DELETE(req: NextRequest, { params }: Ctx) {
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;

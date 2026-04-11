@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getApprovedUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +43,9 @@ interface Msg {
 }
 
 export async function POST(req: NextRequest) {
+  const callerId = await getApprovedUserId(req);
+  if (!callerId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey || apiKey.includes('REPLACE_ME')) {
     return NextResponse.json(

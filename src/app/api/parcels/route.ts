@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionUserId } from '@/lib/auth';
+import { getApprovedUserId } from '@/lib/auth';
 
 // BigInt isn't JSON-serializable by default.
 function serialize<T>(value: T): T {
@@ -15,6 +15,9 @@ const DEFAULT_PAGE_SIZE = 20;
 
 // GET /api/parcels?emirate=Dubai&district=Marina&page=1&pageSize=20
 export async function GET(req: NextRequest) {
+  const userId = await getApprovedUserId(req);
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const sp = req.nextUrl.searchParams;
   const emirate = sp.get('emirate') ?? undefined;
   const district = sp.get('district') ?? undefined;
@@ -51,7 +54,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/parcels
 export async function POST(req: NextRequest) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;

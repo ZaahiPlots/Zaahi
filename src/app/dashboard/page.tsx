@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import AuthGuard from "@/components/AuthGuard";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -43,7 +44,7 @@ const NAV: Array<{ key: SectionKey; icon: string; label: string; rolesOnly?: Rol
   { key: "settings", icon: "⚙️", label: "Settings" },
 ];
 
-export default function Dashboard() {
+function DashboardInner() {
   const [section, setSection] = useState<SectionKey>("overview");
   const visibleNav = useMemo(
     () => NAV.filter((n) => !n.rolesOnly || n.rolesOnly.includes(USER.role)),
@@ -890,5 +891,13 @@ function Settings() {
         </button>
       </Card>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <AuthGuard>
+      <DashboardInner />
+    </AuthGuard>
   );
 }

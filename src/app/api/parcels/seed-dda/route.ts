@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit } from '@/lib/dda';
+import { getApprovedUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,9 @@ interface PolyFeature {
  * real owner is assigned.
  */
 export async function POST(req: NextRequest) {
+  const callerId = await getApprovedUserId(req);
+  if (!callerId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   let body: { plotNumber?: string; priceAed?: number };
   try {
     body = await req.json();

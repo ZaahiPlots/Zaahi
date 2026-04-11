@@ -211,7 +211,13 @@ FUTURE DEVELOPMENT (земля без зданий):
 - После добавления жди подтверждение "yes" перед следующим
 
 ## SECURITY RULES - DO NOT MODIFY
-- Sign Up is DISABLED. Never add signup back to the Mode array in page.tsx
-- Only signin is allowed: ({["signin"] as Mode[]).map
+- Sign Up is allowed but every new account is created with `user_metadata.approved = false`
+- After signup the client is signed out immediately and the "REQUEST SUBMITTED" pending screen is shown
+- A user can only enter the app after an admin sets `user_metadata.approved = true` (Supabase dashboard)
+- The auth page at `src/app/page.tsx` MUST keep both tabs as `(['signin', 'signup'] as Mode[]).map(...)` — no extra brackets, no JSX-text glitches
+- All protected pages MUST be wrapped in `<AuthGuard>` from `src/components/AuthGuard.tsx`
+- All sensitive API routes MUST call `getApprovedUserId(req)` from `src/lib/auth.ts` (NOT plain `getSessionUserId`)
+- Browser code MUST call protected APIs through `apiFetch` from `src/lib/api-fetch.ts` so the Bearer token is attached automatically
+- Middleware `PUBLIC_API` allow-list is intentionally tiny: only `/api/auth` and `/api/notify-admin`. Do NOT add to it without a written reason
 - Do NOT modify auth pages without explicit permission
 

@@ -22,12 +22,13 @@ export default function AuthPage() {
   const [pending, setPending] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
-  // Auto-redirect if already signed in
+  // Auto-redirect if already signed in AND admin-approved.
   useEffect(() => {
     let cancelled = false;
     supabaseBrowser.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session && !(window as any).__zaahiPending) {
+      const approved = data.session?.user?.user_metadata?.approved === true;
+      if (data.session && approved && !(window as any).__zaahiPending) {
         router.replace('/parcels/map');
       } else {
         setCheckingSession(false);
@@ -44,15 +45,41 @@ export default function AuthPage() {
     setBusy(true);
     try {
       if (mode === 'signin') {
-        const { error } = await supabaseBrowser.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseBrowser.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const approved = data.user?.user_metadata?.approved === true;
+        if (!approved) {
+          await supabaseBrowser.auth.signOut();
+          (window as any).__zaahiPending = true;
+          setPending(true);
+          setBusy(false);
+          return;
+        }
+        // Approved user — make sure a matching Prisma User row exists.
+        // Best-effort: failure here should not block the redirect, the next
+        // protected request will surface any real error.
+        const meta = data.user?.user_metadata ?? {};
+        const token = data.session?.access_token;
+        if (token && meta.role && meta.name) {
+          fetch('/api/users/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ role: meta.role, name: meta.name, phone: meta.phone }),
+          }).catch(() => {});
+        }
       } else {
         const { error } = await supabaseBrowser.auth.signUp({
           email,
           password,
-          options: { data: { name, phone, role } },
+          options: { data: { name, phone, role, approved: false } },
         });
         if (error) throw error;
+        // Immediately sign out so the new account cannot enter the app
+        // until an admin flips approved -> true.
+        await supabaseBrowser.auth.signOut();
         // Send notification to admin
         fetch('/api/notify-admin', {
           method: 'POST',
@@ -181,7 +208,7 @@ export default function AuthPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(200,169,110,0.25)', marginBottom: 22 }}>
-              ({['signin'] as Mode[]).map((m) => (
+              {(['signin', 'signup'] as Mode[]).map((m) => (
                 <button
                   key={m}
                   type="button"

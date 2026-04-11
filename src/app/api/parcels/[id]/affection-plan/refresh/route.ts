@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionUserId } from '@/lib/auth';
+import { getApprovedUserId } from '@/lib/auth';
 import { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit } from '@/lib/dda';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ id: string }> };
 // Pull a fresh affection plan from DDA and store a new AffectionPlan row.
 // Only the parcel owner may refresh.
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId(req);
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;

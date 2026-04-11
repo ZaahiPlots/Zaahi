@@ -4,6 +4,7 @@
  * Inline SVG mascot with CSS-driven idle / hover / open / thinking states.
  */
 import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
 const TXT = "#1A1A2E";
@@ -39,7 +40,7 @@ export default function ArchibaldChat() {
     setMessages(next);
     setThinking(true);
     try {
-      const r = await fetch("/api/chat", {
+      const r = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

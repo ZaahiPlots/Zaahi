@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUserId } from "@/lib/auth";
+import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { getRole } from "@/lib/deal-flow";
 
@@ -18,7 +18,7 @@ async function authorizedDeal(id: string, userId: string) {
 
 /** GET /api/deals/:id/messages?since=ISO  → new messages for chat polling. */
 export async function GET(req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const deal = await authorizedDeal(id, userId);
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
 /** POST /api/deals/:id/messages  body: { content, fileUrl? } */
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const userId = await getSessionUserId();
+  const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const deal = await authorizedDeal(id, userId);
