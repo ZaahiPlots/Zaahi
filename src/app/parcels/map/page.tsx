@@ -1859,6 +1859,82 @@ function ParcelsMapPageInner() {
         // Skip 3D for future-development land — flat polygon only.
         if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
 
+        // ── HARDCODED OVERRIDE — plot 6854566 (hospital) ─────────────
+        // Founder spec 2026-04-12: this single hospital plot must
+        // render as 4 buildings (3 hospital wings + 1 parking) instead
+        // of the default one box. All four are the same height, all
+        // HEALTHCARE-coloured, and laid out as a 2×2 grid strictly
+        // inside the plot bounding box (cell width × 0.6 footprint
+        // with margins on all sides). The default per-parcel building
+        // generation is skipped via `continue`.
+        if (it.plotNumber === "6854566") {
+          const ring = (it.geometry as GeoJSON.Polygon).coordinates[0];
+          const lngs = ring.map((p) => p[0]);
+          const lats = ring.map((p) => p[1]);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const dLng = maxLng - minLng;
+          const dLat = maxLat - minLat;
+          // 8% margin from the bounding box edges so the four
+          // rectangles never touch the plot boundary.
+          const marginPct = 0.08;
+          const innerMinLng = minLng + dLng * marginPct;
+          const innerMaxLng = maxLng - dLng * marginPct;
+          const innerMinLat = minLat + dLat * marginPct;
+          const innerMaxLat = maxLat - dLat * marginPct;
+          const innerW = innerMaxLng - innerMinLng;
+          const innerH = innerMaxLat - innerMinLat;
+          // 4% gap between the two columns / rows so the buildings
+          // are visually separated rather than touching.
+          const gapPct = 0.04;
+          const cellW = (innerW - innerW * gapPct) / 2;
+          const cellH = (innerH - innerH * gapPct) / 2;
+          // Each building footprint is 60% of its cell, centered.
+          const footW = cellW * 0.6;
+          const footH = cellH * 0.6;
+          const padW = (cellW - footW) / 2;
+          const padH = (cellH - footH) / 2;
+          const cells: Array<{ x: number; y: number }> = [
+            { x: 0, y: 0 }, // bottom-left
+            { x: 1, y: 0 }, // bottom-right
+            { x: 0, y: 1 }, // top-left
+            { x: 1, y: 1 }, // top-right
+          ];
+          const HOSPITAL_HEIGHT = 24; // m — same for all 4
+          const hospitalHex = ZAAHI_LANDUSE_COLOR.HEALTHCARE ?? ZAAHI_DEFAULT_COLOR;
+          for (let i = 0; i < cells.length; i++) {
+            const c = cells[i];
+            const cellOriginLng = innerMinLng + c.x * (cellW + innerW * gapPct);
+            const cellOriginLat = innerMinLat + c.y * (cellH + innerH * gapPct);
+            const x0 = cellOriginLng + padW;
+            const y0 = cellOriginLat + padH;
+            const x1 = x0 + footW;
+            const y1 = y0 + footH;
+            // Closed ring (first point repeated at the end), CCW.
+            const rect: number[][] = [
+              [x0, y0],
+              [x1, y0],
+              [x1, y1],
+              [x0, y1],
+              [x0, y0],
+            ];
+            buildingFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [rect] },
+              properties: {
+                parcelId: it.id,
+                landUse: "HEALTHCARE",
+                color: hospitalHex,
+                height: HOSPITAL_HEIGHT,
+                base: 0,
+              },
+            });
+          }
+          continue;
+        }
+
         // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
         // ONE feature per parcel. ONE fill-extrusion layer below. The
         // feature carries its own `color` (hex string) and `height`
