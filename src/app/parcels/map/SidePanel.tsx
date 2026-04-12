@@ -343,6 +343,9 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                       community={plan.community}
                       plotNumber={data.plotNumber}
                       district={data.district}
+                      projectName={plan.projectName}
+                      masterDeveloper={plan.masterDeveloper}
+                      maxHeightCode={plan.maxHeightCode}
                     />
                   </div>
                 )}

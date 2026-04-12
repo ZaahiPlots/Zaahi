@@ -15,11 +15,14 @@ interface Props {
   gfaSqft: number;
   far: number | null;
   landUse: string;
-  landUseMix?: Array<{ category: string; sub: string }> | null;
+  landUseMix?: Array<{ category: string; sub: string; areaSqm?: number | null }> | null;
   maxFloors?: number | null;
   community?: string | null;
   plotNumber?: string | null;
   district?: string | null;
+  projectName?: string | null;
+  masterDeveloper?: string | null;
+  maxHeightCode?: string | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -397,6 +400,24 @@ function matchZone(community: string | null | undefined): string {
   return "Custom";
 }
 
+// ── Auto-split mixed use from DDA landUseMix ──────────────────────
+
+function computeMixedSplit(mix: Props["landUseMix"]): { resPct: number; comPct: number; retPct: number } | null {
+  if (!mix || mix.length < 2) return null;
+  const areas = mix.map((m) => m.areaSqm ?? 0);
+  const total = areas.reduce((s, a) => s + a, 0);
+  if (total <= 0) return null;
+  let res = 0, com = 0, ret = 0;
+  mix.forEach((m, i) => {
+    const cat = m.category.toUpperCase();
+    const sub = (m.sub || "").toUpperCase();
+    if (cat.includes("RESIDENTIAL") || cat.includes("VILLA") || cat.includes("APARTMENT")) res += areas[i];
+    else if (sub.includes("RETAIL") || cat.includes("RETAIL")) ret += areas[i];
+    else com += areas[i];
+  });
+  return { resPct: Math.round((res / total) * 100), comPct: Math.round((com / total) * 100), retPct: Math.round((ret / total) * 100) };
+}
+
 // ── Main component ─────────────────────────────────────────────────
 
 export default function FeasibilityCalculator(props: Props) {
@@ -411,6 +432,8 @@ export default function FeasibilityCalculator(props: Props) {
     d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
     d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
     d.farOverride = props.far && props.far > 0 ? props.far : 0;
+    const ms = computeMixedSplit(props.landUseMix);
+    if (ms && initialLu === "mixed_use") { d.resPct = ms.resPct; d.comPct = ms.comPct; d.retPct = ms.retPct; }
     return d;
   });
   const [tab, setTab] = useState<"inputs" | "results" | "sensitivity">("inputs");
@@ -428,10 +451,12 @@ export default function FeasibilityCalculator(props: Props) {
     d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
     d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
     d.farOverride = props.far && props.far > 0 ? props.far : 0;
+    const ms = computeMixedSplit(props.landUseMix);
+    if (ms && lu === "mixed_use") { d.resPct = ms.resPct; d.comPct = ms.comPct; d.retPct = ms.retPct; }
     setInp(d);
     setTab("inputs");
     setSD(null);
-  }, [lu, props.plotAreaSqft, props.maxFloors, props.community, props.plotPriceAed, props.gfaSqft, props.far]);
+  }, [lu, props.plotAreaSqft, props.maxFloors, props.community, props.plotPriceAed, props.gfaSqft, props.far, props.landUseMix]);
 
   const u = useCallback((k: string, v: number | string) => setInp((p) => ({ ...p, [k]: v })), []);
   const r = useMemo(() => run(lu, inp), [lu, inp]);
@@ -459,7 +484,9 @@ export default function FeasibilityCalculator(props: Props) {
     const gray: [number, number, number] = [107, 114, 128];
 
     const addLine = () => { doc.setDrawColor(...gold); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 4; };
-    const checkPage = (need: number) => { if (y + need > 280) { doc.addPage(); y = 15; } };
+    const addFooter = () => { doc.setFontSize(6.5); doc.setTextColor(...gray); doc.setFont("helvetica", "normal"); doc.text("ZAAHI Real Estate OS \u2014 zaahi.io \u2014 Confidential", W / 2, 290, { align: "center" }); };
+    addFooter();
+    const checkPage = (need: number) => { if (y + need > 275) { doc.addPage(); y = 15; addFooter(); } };
     const heading = (t: string) => { checkPage(12); doc.setFontSize(11); doc.setTextColor(...gold); doc.setFont("helvetica", "bold"); doc.text(t, M, y); y += 6; };
     const row = (l: string, v: string) => { checkPage(6); doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray); doc.text(l, M, y); doc.setTextColor(...dark); doc.text(v, W - M, y, { align: "right" }); y += 5; };
 
@@ -472,10 +499,13 @@ export default function FeasibilityCalculator(props: Props) {
 
     // Plot info
     heading("PLOT INFORMATION");
+    if (props.projectName) row("Project", props.projectName);
+    if (props.masterDeveloper) row("Master Developer", props.masterDeveloper);
     if (props.plotNumber) row("Plot Number", props.plotNumber);
     if (props.district) row("District", props.district);
     row("Land Use", c.label);
     if (props.community) row("Community", props.community);
+    if (props.maxHeightCode) row("Height Code", props.maxHeightCode);
     row("Plot Area", `${Math.round(props.plotAreaSqft).toLocaleString()} sqft`);
     if (props.plotPriceAed > 0) row("Plot Price", F.aed(props.plotPriceAed));
     y += 2;
@@ -573,9 +603,17 @@ export default function FeasibilityCalculator(props: Props) {
     doc.text("It does not constitute investment advice. All assumptions are user-defined and should be independently verified.", M, y); y += 3.5;
     doc.text("ZAAHI assumes no liability for investment decisions made based on this report.", M, y);
 
+    // Page numbers
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7); doc.setTextColor(...gray); doc.setFont("helvetica", "normal");
+      doc.text(`Page ${p} of ${totalPages}`, W - M, 290, { align: "right" });
+    }
+
     const plotLabel = props.plotNumber ? `-Plot-${props.plotNumber}` : "";
     doc.save(`ZAAHI-Feasibility${plotLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
-  }, [r, inp, lu, c, sd, it, props.plotNumber, props.district, props.plotAreaSqft, props.plotPriceAed, props.community]);
+  }, [r, inp, lu, c, sd, it, props.plotNumber, props.district, props.plotAreaSqft, props.plotPriceAed, props.community, props.projectName, props.masterDeveloper, props.maxHeightCode]);
 
   type FieldDef = { k: string; l: string; u?: string; s?: number; t?: string; o?: string[] };
 
@@ -621,6 +659,14 @@ export default function FeasibilityCalculator(props: Props) {
         ))}
       </div>
 
+      {/* Project info from DDA */}
+      {(props.projectName || props.masterDeveloper) && (
+        <div style={{ marginBottom: 6, padding: "4px 8px", background: `${GOLD}0A`, borderRadius: 5, borderLeft: `2px solid ${GOLD}` }}>
+          {props.projectName && <div style={{ fontSize: 10, fontWeight: 700, color: TXT }}>{props.projectName}</div>}
+          {props.masterDeveloper && <div style={{ fontSize: 8.5, color: SUBTLE }}>by {props.masterDeveloper}</div>}
+        </div>
+      )}
+
       {/* Phase timeline */}
       <div style={{ display: "flex", gap: 1, marginBottom: 8 }}>
         {c.ph.map((p, i) => (
@@ -637,7 +683,7 @@ export default function FeasibilityCalculator(props: Props) {
       {/* Tab nav */}
       <div style={{ display: "flex", borderBottom: `1px solid ${LINE}`, marginBottom: 10 }}>
         {([["inputs", "Assumptions"], ["results", "Analysis"], ["sensitivity", "Sensitivity"]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => { setTab(k as typeof tab); if (k === "sensitivity" && !sd) doS(); }}
+          <button key={k} onClick={() => { setTab(k as typeof tab); if (k === "sensitivity") doS(); }}
             style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 10px", fontSize: 10, fontWeight: 600, color: tab === k ? GOLD : SUBTLE, borderBottom: tab === k ? `2px solid ${GOLD}` : "2px solid transparent" }}>
             {l}
           </button>
@@ -738,9 +784,7 @@ export default function FeasibilityCalculator(props: Props) {
       {/* ── SENSITIVITY TAB ── */}
       {tab === "sensitivity" && (<>
         {!sd ? (
-          <div style={{ textAlign: "center", padding: 20 }}>
-            <button onClick={doS} style={{ background: GOLD, color: "#fff", border: "none", borderRadius: 5, padding: "7px 18px", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Run Sensitivity</button>
-          </div>
+          <div style={{ textAlign: "center", padding: 20, fontSize: 10, color: SUBTLE }}>Computing…</div>
         ) : (<>
           <div style={{ fontSize: 8, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 3 }}>IRR Sensitivity &plusmn;20%</div>
           <div style={{ display: "flex", gap: 1.5, marginBottom: 3, paddingLeft: 55 }}>
