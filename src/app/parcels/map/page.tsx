@@ -144,10 +144,6 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
-// ── DLD Land Sales heatmap + circles ──
-const SOLD_SRC = "dld-sold-plots";
-const SOLD_HEATMAP = "dld-sold-heatmap";
-const SOLD_CIRCLES = "dld-sold-circles";
 // Land-use legend — APPROVED by founder 2026-04-11. NEVER change without
 // explicit founder approval. 9 canonical categories. The exact same set
 // is duplicated in three other places that MUST stay in sync:
@@ -862,8 +858,6 @@ type LayersState = {
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
-  // DLD land sale transactions — heatmap + circle markers. Off by default.
-  soldHeatmap: boolean;
   islands: boolean; meydan: boolean; d11: boolean;
   alFurjan: boolean; intlCity23: boolean; residential12: boolean;
   dubaiHills: boolean; damacHills2: boolean; damacLagoons: boolean; damacIslands: boolean;
@@ -1224,11 +1218,6 @@ function ParcelsMapPageInner() {
     landUse: string;
     status: string;
   } | null>(null);
-  const [soldHover, setSoldHover] = useState<{
-    x: number; y: number;
-    date: string; community: string; usage: string;
-    areaSqm: number; priceAed: string; priceSqm: string; freehold: boolean;
-  } | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
@@ -1250,7 +1239,6 @@ function ParcelsMapPageInner() {
     communities: true,
     roads: true,
     plotLabels: false,
-    soldHeatmap: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
     // No idle pre-fetch, no auto-load on map init.
@@ -2072,97 +2060,6 @@ function ParcelsMapPageInner() {
     }
   }
 
-  // ── DLD Land Sales heatmap + circles (lazy-loaded on toggle) ──
-  async function loadSoldHeatmap(map: MLMap) {
-    if (map.getSource(SOLD_SRC)) return;
-    try {
-      const r = await fetch("/api/layers/sold-plots");
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const fc = await r.json();
-
-      map.addSource(SOLD_SRC, { type: "geojson", data: fc });
-
-      // Heatmap layer — visible on zoom < 14, fades out as you zoom in
-      map.addLayer({
-        id: SOLD_HEATMAP,
-        type: "heatmap",
-        source: SOLD_SRC,
-        maxzoom: 16,
-        paint: {
-          "heatmap-weight": [
-            "interpolate", ["linear"], ["get", "priceAed"],
-            1000000, 0.05,
-            10000000, 0.3,
-            50000000, 0.6,
-            200000000, 1,
-          ],
-          "heatmap-intensity": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 1, 15, 3,
-          ],
-          "heatmap-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 15, 15, 40,
-          ],
-          "heatmap-color": [
-            "interpolate", ["linear"], ["heatmap-density"],
-            0, "rgba(0,0,0,0)",
-            0.15, "rgba(74,144,217,0.4)",
-            0.35, "rgba(200,169,110,0.6)",
-            0.6, "rgba(230,126,34,0.8)",
-            1, "rgba(231,76,60,0.9)",
-          ],
-          "heatmap-opacity": [
-            "interpolate", ["linear"], ["zoom"],
-            13, 0.8, 16, 0,
-          ],
-        },
-      });
-
-      // Circle layer — visible on zoom >= 13, fully opaque at 15+
-      map.addLayer({
-        id: SOLD_CIRCLES,
-        type: "circle",
-        source: SOLD_SRC,
-        minzoom: 13,
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 2, 16, 6],
-          "circle-color": "#E74C3C",
-          "circle-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 0.7],
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#fff",
-          "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 0.9],
-        },
-      });
-
-      // Hover on circles
-      map.on("mouseenter", SOLD_CIRCLES, () => { map.getCanvas().style.cursor = "default"; });
-      map.on("mouseleave", SOLD_CIRCLES, () => { map.getCanvas().style.cursor = ""; });
-      map.on("mousemove", SOLD_CIRCLES, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f || f.geometry.type !== "Point") return;
-        const p = f.properties as Record<string, unknown>;
-        const priceAed = Number(p.priceAed) || 0;
-        const areaSqm = Number(p.areaSqm) || 0;
-        const priceFmt = priceAed >= 1e6 ? `${(priceAed / 1e6).toFixed(1)}M` : `${(priceAed / 1e3).toFixed(0)}K`;
-        const psmFmt = areaSqm > 0 ? `${Math.round(priceAed / areaSqm).toLocaleString()}/sqm` : "";
-        setSoldHover({
-          x: e.point.x, y: e.point.y,
-          date: String(p.date || ""),
-          community: String(p.community || ""),
-          usage: String(p.usage || ""),
-          areaSqm,
-          priceAed: priceFmt,
-          priceSqm: psmFmt,
-          freehold: p.freehold === true || p.freehold === "true",
-        });
-      });
-      map.on("mouseleave", SOLD_CIRCLES, () => { setSoldHover(null); });
-    } catch (e) {
-      console.error("[sold-heatmap] load failed", e);
-    }
-  }
-
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
   async function attachOverlays(map: MLMap) {
@@ -2383,17 +2280,6 @@ function ParcelsMapPageInner() {
     const plotLabelsOn = layers.plotLabels;
     for (const def of LAYER_REGISTRY) {
       void setLayerVisibility(map, def, !!layers[def.key], plotLabelsOn);
-    }
-    // ── DLD Sales heatmap toggle ──
-    const showSold = layers.soldHeatmap;
-    if (showSold && !map.getSource(SOLD_SRC)) {
-      // Lazy load on first toggle
-      void loadSoldHeatmap(map);
-    }
-    for (const lid of [SOLD_HEATMAP, SOLD_CIRCLES]) {
-      if (map.getLayer(lid)) {
-        map.setLayoutProperty(lid, "visibility", showSold ? "visible" : "none");
-      }
     }
   }, [layers]);
 
@@ -2845,7 +2731,6 @@ function ParcelsMapPageInner() {
             { key: "communities", label: "Communities" },
             { key: "roads", label: "Major Roads" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
-            { key: "soldHeatmap", label: "Land Sales Heatmap" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
           onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
@@ -2967,42 +2852,6 @@ function ParcelsMapPageInner() {
                 ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
                 : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
             | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
-          </div>
-        </div>
-      )}
-      {soldHover && (
-        <div
-          style={{
-            position: "absolute",
-            left: soldHover.x + 14,
-            top: soldHover.y + 14 + 48,
-            width: 210,
-            background: "#ffffff",
-            color: "#1a1a1a",
-            borderLeft: "3px solid #E74C3C",
-            borderRadius: 4,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-            padding: "8px 10px",
-            fontSize: 11,
-            fontFamily: "Georgia, serif",
-            lineHeight: 1.45,
-            pointerEvents: "none",
-            zIndex: 30,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ background: "#E74C3C", color: "#fff", fontWeight: 700, fontSize: 9, padding: "1px 5px", borderRadius: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>SOLD</span>
-            <span style={{ opacity: 0.6, fontSize: 10 }}>{soldHover.date}</span>
-          </div>
-          <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12, marginTop: 3 }}>
-            {soldHover.community}
-          </div>
-          <div style={{ opacity: 0.85, marginTop: 2 }}>
-            {soldHover.usage} · {Math.round(soldHover.areaSqm).toLocaleString()} sqm
-            {soldHover.freehold ? " · Freehold" : ""}
-          </div>
-          <div style={{ fontWeight: 600, marginTop: 2 }}>
-            AED {soldHover.priceAed}{soldHover.priceSqm ? ` · ${soldHover.priceSqm}` : ""}
           </div>
         </div>
       )}
