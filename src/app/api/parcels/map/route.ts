@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     where: {
       geometry: { not: undefined },
       // Hide unverified submissions from the public map
-      status: { in: [ParcelStatus.LISTED, ParcelStatus.VERIFIED, ParcelStatus.IN_DEAL] },
+      status: { in: [ParcelStatus.LISTED, ParcelStatus.VERIFIED, ParcelStatus.IN_DEAL, ParcelStatus.SOLD] },
     },
     include: {
       affectionPlans: {
