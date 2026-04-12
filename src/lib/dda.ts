@@ -175,21 +175,34 @@ export function parseAffectionPlan(html: string): AffectionPlan {
     });
   }
 
-  // Land use slice between "Land use" and "General Notes"
-  const landBlock = text.match(/Land use\s+(.+?)\s+General Notes/i)?.[1] ?? '';
+  // Land use: parse from raw HTML to preserve <li> structure.
+  // DDA format: <li><b>CATEGORY</b>: SUB1 (area m<sup>2</sup>), SUB2 ...</li>
   const landUseMix: AffectionPlan['landUseMix'] = [];
-  // Pattern: CATEGORY : SUB1 (12 m 2 ), SUB2 (34.5 m 2 ) ...
-  const catRe = /([A-Z][A-Z ]+)\s*:\s*([^A-Z]+?)(?=\s+[A-Z][A-Z ]+\s*:|$)/g;
-  let cm: RegExpExecArray | null;
-  while ((cm = catRe.exec(landBlock))) {
-    const category = cm[1].trim();
-    const subList = cm[2].trim().replace(/\s+m\s*2\s*/g, ' ');
+  const liRe = /<li>\s*<b>([^<]+)<\/b>\s*:\s*(.*?)<\/li>/gi;
+  let lm: RegExpExecArray | null;
+  while ((lm = liRe.exec(html))) {
+    const category = lm[1].trim();
+    // Strip inner tags (e.g. <sup>2</sup>) and normalize whitespace
+    const subRaw = lm[2].replace(/<[^>]+>/g, '').trim().replace(/\s+/g, ' ').replace(/\s+m\s*2\s*/g, ' ');
+    // Split subs by comma: "OFFICES, RETAIL" → ["OFFICES", "RETAIL"]
+    // Each sub may have area: "RETAIL (185.80)"
     const subRe = /([A-Z][A-Z ]+?)(?:\s*\(\s*([\d,.]+)\s*\))?(?:,|$)/g;
     let sm2: RegExpExecArray | null;
-    while ((sm2 = subRe.exec(subList))) {
+    while ((sm2 = subRe.exec(subRaw))) {
       const sub = sm2[1].trim();
       if (!sub) continue;
       landUseMix.push({ category, sub, areaSqm: num(sm2[2]) });
+    }
+    if (subRaw === '' || !/[A-Z]/.test(subRaw)) {
+      landUseMix.push({ category, sub: '', areaSqm: null });
+    }
+  }
+
+  // Fallback: extract from stripped text (handles "FUTURE DEVELOPMENT" without colon)
+  if (landUseMix.length === 0) {
+    const landBlock = text.match(/Land use\s+(.+?)\s+General Notes/i)?.[1]?.trim() ?? '';
+    if (landBlock.length > 0) {
+      landUseMix.push({ category: landBlock, sub: '', areaSqm: null });
     }
   }
 

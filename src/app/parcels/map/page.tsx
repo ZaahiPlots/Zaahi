@@ -240,36 +240,37 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
  */
 function deriveLandUse(
   mix: Array<{ category: string; sub?: string | null }> | null | undefined,
-  mainLandUse?: string | null,
 ): string | null {
-  // Multiple categories in the mix → mixed use, regardless of strings.
-  if (mix && mix.length > 1) {
-    const distinctCats = new Set(mix.map((u) => (u.category || "").toUpperCase().trim()).filter(Boolean));
-    if (distinctCats.size > 1) return "MIXED_USE";
+  if (!mix || mix.length === 0) return null;
+
+  // Map a single string to one of the 9 canonical categories.
+  const categorize = (s: string): string | null => {
+    const l = s.toLowerCase();
+    if (/residential|villa|townhouse|\bapartment\b/.test(l)) return "RESIDENTIAL";
+    if (/commercial|office|retail|showroom|\bcbd\b/.test(l)) return "COMMERCIAL";
+    if (/hotel|hospitality|resort|serviced\s*apartment/.test(l)) return "HOTEL";
+    if (/industrial|warehouse|factory|logistics|storage/.test(l)) return "INDUSTRIAL";
+    if (/educat|school|university|academy|nursery/.test(l)) return "EDUCATIONAL";
+    if (/health|hospital|clinic|medical/.test(l)) return "HEALTHCARE";
+    if (/agricult|\bfarm\b/.test(l)) return "AGRICULTURAL";
+    if (/future\s*development/.test(l)) return "FUTURE_DEVELOPMENT";
+    return null;
+  };
+
+  // Step 1: For each entry, determine its mapped category from category + sub.
+  const uniqueCats = new Set<string>();
+  for (const u of mix) {
+    const fromCat = categorize(u.category || "");
+    const fromSub = categorize(u.sub || "");
+    if (fromCat) uniqueCats.add(fromCat);
+    if (fromSub) uniqueCats.add(fromSub);
   }
 
-  // Build a lowercase haystack from every available field.
-  const tokens: string[] = [];
-  if (mix) for (const u of mix) {
-    if (u.category) tokens.push(u.category);
-    if (u.sub) tokens.push(u.sub);
-  }
-  if (mainLandUse) tokens.push(mainLandUse);
-  if (tokens.length === 0) return null;
-  const hay = tokens.join(" ").toLowerCase();
+  // Step 2: 2+ different mapped categories → Mixed Use.
+  if (uniqueCats.size > 1) return "MIXED_USE";
 
-  // Order matters: more specific patterns first so "mixed use" doesn't
-  // get caught by "residential", and "future development" doesn't get
-  // caught by "development" inside another phrase.
-  if (/mixed[\s-]?use|\bmixed\b/.test(hay)) return "MIXED_USE";
-  if (/\bfuture\b.*\bdevelopment\b|\bfuture\s+development\b/.test(hay)) return "FUTURE_DEVELOPMENT";
-  if (/hotel|hospitality|resort|serviced\s+apartment/.test(hay)) return "HOTEL";
-  if (/health|hospital|clinic|medical/.test(hay)) return "HEALTHCARE";
-  if (/educat|school|university|academy|nursery/.test(hay)) return "EDUCATIONAL";
-  if (/industrial|warehouse|factory|logistics|storage/.test(hay)) return "INDUSTRIAL";
-  if (/agricult|\bfarm\b/.test(hay)) return "AGRICULTURAL";
-  if (/residential|villa|townhouse|apartment/.test(hay)) return "RESIDENTIAL";
-  if (/commercial|office|retail|showroom|\bcbd\b/.test(hay)) return "COMMERCIAL";
+  // Step 3: Exactly 1 category → return it.
+  if (uniqueCats.size === 1) return [...uniqueCats][0];
 
   return null;
 }
