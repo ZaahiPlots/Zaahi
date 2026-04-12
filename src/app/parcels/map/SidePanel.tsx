@@ -339,6 +339,8 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                           ? "MIXED_USE"
                           : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
                       }
+                      maxFloors={plan.maxFloors}
+                      community={plan.community}
                     />
                   </div>
                 )}
