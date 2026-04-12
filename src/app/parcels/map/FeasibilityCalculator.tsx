@@ -320,11 +320,18 @@ const F = {
 // ── Sub-components ─────────────────────────────────────────────────
 
 function NumInput({ l, v, onChange: o, u, s = 1 }: { l: string; v: number; onChange: (v: number) => void; u?: string; s?: number }) {
+  const [local, setLocal] = useState(String(v));
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setLocal(String(v)); }, [v, focused]);
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ fontSize: 9.5, color: SUBTLE, letterSpacing: ".04em", marginBottom: 2 }}>{l}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <input type="number" value={v} onChange={(e) => o(+e.target.value || 0)} step={s}
+        <input type="number" value={local}
+          onChange={(e) => { setLocal(e.target.value); const n = +e.target.value; if (!isNaN(n)) o(n); }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setFocused(false); const n = +local; setLocal(String(isNaN(n) ? 0 : n)); if (isNaN(n)) o(0); }}
+          step={s}
           style={{ flex: 1, background: BG, border: `1px solid ${LINE}`, borderRadius: 5, padding: "5px 7px", fontSize: 12, color: TXT, outline: "none", width: "100%", fontFamily: "inherit" }} />
         {u && <span style={{ fontSize: 8, color: SUBTLE, minWidth: 20 }}>{u}</span>}
       </div>
