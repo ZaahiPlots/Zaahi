@@ -104,6 +104,15 @@ const SAUDI_GOV_FILL = "saudi-governorates-fill";
 const RIYADH_ZONES_SRC = "riyadh-zones";
 const RIYADH_ZONES_LINE = "riyadh-zones-line";
 const RIYADH_ZONES_FILL = "riyadh-zones-fill";
+const AD_MUN_SRC = "ad-municipalities";
+const AD_MUN_LINE = "ad-municipalities-line";
+const AD_MUN_FILL = "ad-municipalities-fill";
+const AD_DIST_SRC = "ad-districts";
+const AD_DIST_LINE = "ad-districts-line";
+const AD_DIST_FILL = "ad-districts-fill";
+const AD_COMM_SRC = "ad-communities";
+const AD_COMM_LINE = "ad-communities-line";
+const AD_COMM_FILL = "ad-communities-fill";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 const MEYDAN_SRC = "meydan-horizon";
@@ -862,6 +871,7 @@ const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
   saudiGovernorates: boolean; riyadhZones: boolean;
+  adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1247,6 +1257,9 @@ function ParcelsMapPageInner() {
     metro: false,
     saudiGovernorates: false,
     riyadhZones: false,
+    adMunicipalities: false,
+    adDistricts: false,
+    adCommunities: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -1584,13 +1597,13 @@ function ParcelsMapPageInner() {
         fillId: SAUDI_GOV_FILL,
         lineId: SAUDI_GOV_LINE,
         fillPaint: {
-          "fill-color": "#2ECC71",
-          "fill-opacity": 0.15,
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.06,
         },
         linePaint: {
-          "line-color": "#2ECC71",
+          "line-color": "#B8975E",
           "line-width": 2,
-          "line-opacity": 0.8,
+          "line-opacity": 0.7,
         },
       },
       {
@@ -1602,13 +1615,68 @@ function ParcelsMapPageInner() {
         fillId: RIYADH_ZONES_FILL,
         lineId: RIYADH_ZONES_LINE,
         fillPaint: {
-          "fill-color": "#E67E22",
-          "fill-opacity": 0.2,
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.1,
         },
         linePaint: {
-          "line-color": "#E67E22",
+          "line-color": "#C8A96E",
           "line-width": 1.5,
+          "line-opacity": 0.7,
+        },
+      },
+      // ── Abu Dhabi boundaries ──
+      {
+        key: "adMunicipalities",
+        kind: "base",
+        label: "AD Municipalities",
+        url: "/api/layers/abu-dhabi-municipalities",
+        srcId: AD_MUN_SRC,
+        fillId: AD_MUN_FILL,
+        lineId: AD_MUN_LINE,
+        fillPaint: {
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.04,
+        },
+        linePaint: {
+          "line-color": "#B8975E",
+          "line-width": 3,
           "line-opacity": 0.8,
+        },
+      },
+      {
+        key: "adDistricts",
+        kind: "base",
+        label: "AD Districts",
+        url: "/api/layers/abu-dhabi-districts",
+        srcId: AD_DIST_SRC,
+        fillId: AD_DIST_FILL,
+        lineId: AD_DIST_LINE,
+        fillPaint: {
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.06,
+        },
+        linePaint: {
+          "line-color": "#C8A96E",
+          "line-width": 2,
+          "line-opacity": 0.75,
+        },
+      },
+      {
+        key: "adCommunities",
+        kind: "base",
+        label: "AD Communities",
+        url: "/api/layers/abu-dhabi-communities",
+        srcId: AD_COMM_SRC,
+        fillId: AD_COMM_FILL,
+        lineId: AD_COMM_LINE,
+        fillPaint: {
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.04,
+        },
+        linePaint: {
+          "line-color": "#C8A96E",
+          "line-width": 1,
+          "line-opacity": 0.6,
         },
       },
       // ── Master plans (idle-load) ──
@@ -2785,6 +2853,9 @@ function ParcelsMapPageInner() {
             { key: "metro", label: "Metro Lines" },
             { key: "saudiGovernorates", label: "Saudi Arabia Governorates" },
             { key: "riyadhZones", label: "Riyadh Zones" },
+            { key: "adMunicipalities", label: "AD Municipalities" },
+            { key: "adDistricts", label: "AD Districts" },
+            { key: "adCommunities", label: "AD Communities" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
