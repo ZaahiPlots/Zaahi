@@ -96,6 +96,8 @@ const COMMUNITIES_LINE = "communities-line";
 const COMMUNITIES_FILL = "communities-fill"; // invisible, only for hit-testing
 const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
+const METRO_SRC = "metro";
+const METRO_LINE = "metro-line";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 const MEYDAN_SRC = "meydan-horizon";
@@ -852,7 +854,7 @@ const SHAMAL_MANKHOOL_LINE = "dda-shamal-mankhool-line";
 const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 
 type LayersState = {
-  communities: boolean; roads: boolean;
+  communities: boolean; roads: boolean; metro: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1235,6 +1237,7 @@ function ParcelsMapPageInner() {
   const [layers, setLayers] = useState<LayersState>({
     communities: true,
     roads: true,
+    metro: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -1543,6 +1546,24 @@ function ParcelsMapPageInner() {
           "line-color": isDark ? "#888888" : "#666666",
           "line-width": 2,
           "line-opacity": 0.7,
+        },
+      },
+      {
+        key: "metro",
+        kind: "base",
+        label: "Metro Lines",
+        url: "/api/layers/metro",
+        srcId: METRO_SRC,
+        lineId: METRO_LINE,
+        linePaint: {
+          "line-color": [
+            "match", ["get", "RAIL_ROUTE_ID"],
+            "2029508", "#E74C3C",  // Red Line
+            "2029509", "#27AE60",  // Green Line
+            "#9B59B6",             // Route 2020 / other
+          ],
+          "line-width": 3,
+          "line-opacity": 0.85,
         },
       },
       // ── Master plans (idle-load) ──
@@ -2716,6 +2737,7 @@ function ParcelsMapPageInner() {
           items={[
             { key: "communities", label: "Communities" },
             { key: "roads", label: "Major Roads" },
+            { key: "metro", label: "Metro Lines" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
