@@ -98,6 +98,12 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
 const METRO_LINE = "metro-line";
+const SAUDI_GOV_SRC = "saudi-governorates";
+const SAUDI_GOV_LINE = "saudi-governorates-line";
+const SAUDI_GOV_FILL = "saudi-governorates-fill";
+const RIYADH_ZONES_SRC = "riyadh-zones";
+const RIYADH_ZONES_LINE = "riyadh-zones-line";
+const RIYADH_ZONES_FILL = "riyadh-zones-fill";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 const MEYDAN_SRC = "meydan-horizon";
@@ -855,6 +861,7 @@ const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 
 type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
+  saudiGovernorates: boolean; riyadhZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1238,6 +1245,8 @@ function ParcelsMapPageInner() {
     communities: true,
     roads: true,
     metro: false,
+    saudiGovernorates: false,
+    riyadhZones: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -1564,6 +1573,42 @@ function ParcelsMapPageInner() {
           ],
           "line-width": 3,
           "line-opacity": 0.85,
+        },
+      },
+      {
+        key: "saudiGovernorates",
+        kind: "base",
+        label: "Saudi Arabia Governorates",
+        url: "/api/layers/saudi-governorates",
+        srcId: SAUDI_GOV_SRC,
+        fillId: SAUDI_GOV_FILL,
+        lineId: SAUDI_GOV_LINE,
+        fillPaint: {
+          "fill-color": "#2ECC71",
+          "fill-opacity": 0.15,
+        },
+        linePaint: {
+          "line-color": "#2ECC71",
+          "line-width": 2,
+          "line-opacity": 0.8,
+        },
+      },
+      {
+        key: "riyadhZones",
+        kind: "base",
+        label: "Riyadh Zones",
+        url: "/api/layers/riyadh-zones",
+        srcId: RIYADH_ZONES_SRC,
+        fillId: RIYADH_ZONES_FILL,
+        lineId: RIYADH_ZONES_LINE,
+        fillPaint: {
+          "fill-color": "#E67E22",
+          "fill-opacity": 0.2,
+        },
+        linePaint: {
+          "line-color": "#E67E22",
+          "line-width": 1.5,
+          "line-opacity": 0.8,
         },
       },
       // ── Master plans (idle-load) ──
@@ -2738,6 +2783,8 @@ function ParcelsMapPageInner() {
             { key: "communities", label: "Communities" },
             { key: "roads", label: "Major Roads" },
             { key: "metro", label: "Metro Lines" },
+            { key: "saudiGovernorates", label: "Saudi Arabia Governorates" },
+            { key: "riyadhZones", label: "Riyadh Zones" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
