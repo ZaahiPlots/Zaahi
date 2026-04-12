@@ -113,6 +113,12 @@ const AD_DIST_FILL = "ad-districts-fill";
 const AD_COMM_SRC = "ad-communities";
 const AD_COMM_LINE = "ad-communities-line";
 const AD_COMM_FILL = "ad-communities-fill";
+const DDA_PROJ_SRC = "dda-projects";
+const DDA_PROJ_LINE = "dda-projects-line";
+const DDA_PROJ_FILL = "dda-projects-fill";
+const DDA_FZ_SRC = "dda-freezones";
+const DDA_FZ_LINE = "dda-freezones-line";
+const DDA_FZ_FILL = "dda-freezones-fill";
 const ISLANDS_SRC = "dubai-islands";
 const ISLANDS_LINE = "dubai-islands-line";
 const MEYDAN_SRC = "meydan-horizon";
@@ -872,6 +878,7 @@ type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
   saudiGovernorates: boolean; riyadhZones: boolean;
   adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
+  ddaProjects: boolean; ddaFreeZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1260,6 +1267,8 @@ function ParcelsMapPageInner() {
     adMunicipalities: false,
     adDistricts: false,
     adCommunities: false,
+    ddaProjects: false,
+    ddaFreeZones: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -1677,6 +1686,43 @@ function ParcelsMapPageInner() {
           "line-color": "#C8A96E",
           "line-width": 1,
           "line-opacity": 0.6,
+        },
+      },
+      // ── DDA Project Boundaries & Free Zones ──
+      {
+        key: "ddaProjects",
+        kind: "base",
+        label: "DDA Project Boundaries",
+        url: "/api/layers/dda-projects",
+        srcId: DDA_PROJ_SRC,
+        fillId: DDA_PROJ_FILL,
+        lineId: DDA_PROJ_LINE,
+        fillPaint: {
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.04,
+        },
+        linePaint: {
+          "line-color": "#C8A96E",
+          "line-width": 2,
+          "line-opacity": 0.75,
+        },
+      },
+      {
+        key: "ddaFreeZones",
+        kind: "base",
+        label: "DDA Free Zones",
+        url: "/api/layers/dda-freezones",
+        srcId: DDA_FZ_SRC,
+        fillId: DDA_FZ_FILL,
+        lineId: DDA_FZ_LINE,
+        fillPaint: {
+          "fill-color": "#C8A96E",
+          "fill-opacity": 0.04,
+        },
+        linePaint: {
+          "line-color": "#B8975E",
+          "line-width": 2,
+          "line-opacity": 0.7,
         },
       },
       // ── Master plans (idle-load) ──
@@ -2358,6 +2404,133 @@ function ParcelsMapPageInner() {
         popup.remove();
       });
 
+      // ── AD Municipalities hover ──
+      map.on("mousemove", AD_MUN_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.NAMEENGLISH as string) ?? "—";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", AD_MUN_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── AD Districts hover ──
+      map.on("mousemove", AD_DIST_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.NAMEENGLISH as string) ?? "—";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", AD_DIST_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── AD Communities hover ──
+      map.on("mousemove", AD_COMM_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.COMMUNITYNAMEENG as string) ?? "—";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", AD_COMM_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── Saudi Governorates hover ──
+      map.on("mousemove", SAUDI_GOV_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = `Governorate ${(f.properties?.OBJECTID as string) ?? "—"}`;
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", SAUDI_GOV_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── Riyadh Zones hover ──
+      map.on("mousemove", RIYADH_ZONES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const zone = (f.properties?.zone as string) ?? "—";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">Zone ${zone}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", RIYADH_ZONES_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── DDA Project Boundaries hover ──
+      map.on("mousemove", DDA_PROJ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.ProjectName as string) ?? "—";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", DDA_PROJ_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
+      // ── DDA Free Zones hover ──
+      map.on("mousemove", DDA_FZ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const name = (f.properties?.ProjectName as string) ?? "—";
+        const fz = f.properties?.IsFreeZone ? " (Free Zone)" : "";
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}${fz}</div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseleave", DDA_FZ_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+
       // ── Master plan hover (shared handler for islands + meydan) ──
 // Hover handlers — the LAYER_REGISTRY loader registers per-layer
       // mouse listeners on demand when each layer is first loaded.
@@ -2856,6 +3029,8 @@ function ParcelsMapPageInner() {
             { key: "adMunicipalities", label: "AD Municipalities" },
             { key: "adDistricts", label: "AD Districts" },
             { key: "adCommunities", label: "AD Communities" },
+            { key: "ddaProjects", label: "DDA Project Boundaries" },
+            { key: "ddaFreeZones", label: "DDA Free Zones" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
