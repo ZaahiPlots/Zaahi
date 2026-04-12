@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 const GOLD = '#C8A96E';
 
@@ -10,6 +12,8 @@ type Role = 'Owner' | 'Buyer' | 'Broker' | 'Investor' | 'Developer';
 
 export default function AuthPage() {
   const router = useRouter();
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
 
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
@@ -39,6 +43,39 @@ export default function AuthPage() {
     };
   }, [router]);
 
+  // Initialize MapLibre satellite map
+  useEffect(() => {
+    if (!mapContainer.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
+      style: {
+        version: 8,
+        sources: {
+          esri: {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution: '© Esri World Imagery',
+          },
+        },
+        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+        layers: [{ id: 'esri', type: 'raster', source: 'esri' }],
+      },
+      center: [55.27, 25.20], // Dubai center
+      zoom: 12,
+      pitch: 45,
+      attributionControl: false,
+    });
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -56,8 +93,6 @@ export default function AuthPage() {
           return;
         }
         // Approved user — make sure a matching Prisma User row exists.
-        // Best-effort: failure here should not block the redirect, the next
-        // protected request will surface any real error.
         const meta = data.user?.user_metadata ?? {};
         const token = data.session?.access_token;
         if (token && meta.role && meta.name) {
@@ -77,10 +112,7 @@ export default function AuthPage() {
           options: { data: { name, phone, role, approved: false } },
         });
         if (error) throw error;
-        // Immediately sign out so the new account cannot enter the app
-        // until an admin flips approved -> true.
         await supabaseBrowser.auth.signOut();
-        // Send notification to admin
         fetch('/api/notify-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -102,131 +134,38 @@ export default function AuthPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '11px 14px',
-    background: 'rgba(255,255,255,0.7)',
-    border: '1px solid rgba(200,169,110,0.3)',
-    borderRadius: 6,
-    color: '#1A1A2E',
+    background: 'rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    color: '#FFFFFF',
     fontSize: 13,
     outline: 'none',
     fontFamily: 'inherit',
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        overflow: 'hidden',
-        // Base sand-tone gradient — the "satellite ground" of Dubai.
-        background:
-          'linear-gradient(135deg, #e8e0d0 0%, #d4cfc5 40%, #c8bfaf 80%, #b8ad96 100%)',
-      }}
-    >
-      {/* Layer 1 — fine cadastral grid (small streets), heavily blurred so
-          it reads as texture rather than a hard pattern. */}
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      {/* Layer 1 — Live satellite map (interactive) */}
       <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: '-40px',
-          backgroundImage:
-            'linear-gradient(rgba(26,26,46,0.07) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(26,26,46,0.07) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-          filter: 'blur(1.5px)',
-          opacity: 0.6,
-          pointerEvents: 'none',
-        }}
+        ref={mapContainer}
+        style={{ position: 'absolute', inset: 0, zIndex: 0 }}
       />
 
-      {/* Layer 2 — coarser block grid (city blocks), at a different scale. */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: '-40px',
-          backgroundImage:
-            'linear-gradient(rgba(26,26,46,0.10) 1.5px, transparent 1.5px),' +
-            'linear-gradient(90deg, rgba(26,26,46,0.10) 1.5px, transparent 1.5px)',
-          backgroundSize: '160px 160px',
-          filter: 'blur(2px)',
-          opacity: 0.5,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Layer 3 — diagonal arterial roads (Sheikh Zayed Road runs the
-          length of Dubai at roughly this angle). Two crossing diagonals. */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: '-80px',
-          backgroundImage:
-            'repeating-linear-gradient(63deg,' +
-            'transparent 0px, transparent 220px,' +
-            'rgba(26,26,46,0.14) 220px, rgba(26,26,46,0.14) 226px,' +
-            'transparent 226px, transparent 440px),' +
-            'repeating-linear-gradient(-30deg,' +
-            'transparent 0px, transparent 320px,' +
-            'rgba(26,26,46,0.10) 320px, rgba(26,26,46,0.10) 324px,' +
-            'transparent 324px, transparent 640px)',
-          filter: 'blur(2.5px)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Layer 4 — coastline curve hint (the Persian Gulf is to the
-          northwest in Dubai). Soft cyan crescent in the upper-left. */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          left: '-15%',
-          top: '-25%',
-          width: '70%',
-          height: '70%',
-          background:
-            'radial-gradient(circle at 60% 70%, rgba(140,180,200,0.35) 0%,' +
-            ' rgba(140,180,200,0.18) 30%, transparent 60%)',
-          filter: 'blur(40px)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Layer 5 — golden glow behind the auth card (the Burj area /
-          downtown Dubai centre). */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          width: 900,
-          height: 900,
-          transform: 'translate(-50%, -50%)',
-          background:
-            'radial-gradient(circle, rgba(200,169,110,0.28) 0%,' +
-            ' rgba(200,169,110,0.10) 35%, rgba(200,169,110,0) 65%)',
-          filter: 'blur(20px)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Layer 6 — vignette darkening around the edges, so the centre
-          (where the card sits) reads as the focal point. */}
+      {/* Layer 2 — Full-screen blur overlay */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(ellipse at center, transparent 35%, rgba(26,26,46,0.18) 100%)',
+          zIndex: 1,
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          background: 'rgba(10, 15, 30, 0.35)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Centered auth card */}
+      {/* Layer 3 — Auth card */}
       <div
         style={{
           position: 'absolute',
@@ -236,26 +175,29 @@ export default function AuthPage() {
           justifyContent: 'center',
           padding: 16,
           zIndex: 10,
+          pointerEvents: 'none',
         }}
       >
         {pending && (
           <div style={{
             width: '100%', maxWidth: 400, padding: 40,
-            background: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid #C8A96E',
-            borderRadius: 12,
-            boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+            background: 'rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 16,
+            boxShadow: '0 16px 64px rgba(0,0,0,0.4)',
             textAlign: 'center',
             fontFamily: 'system-ui, sans-serif',
+            pointerEvents: 'auto',
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-            <h2 style={{ fontSize: 22, color: '#1A1A2E', marginBottom: 12, letterSpacing: 2 }}>REQUEST SUBMITTED</h2>
-            <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+            <h2 style={{ fontSize: 22, color: '#FFFFFF', marginBottom: 12, letterSpacing: 2 }}>REQUEST SUBMITTED</h2>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
               Thank you for your interest in ZAAHI.<br/>
               Our team will review your application and contact you shortly.
             </p>
-            <p style={{ color: '#C8A96E', fontSize: 13 }}>
+            <p style={{ color: GOLD, fontSize: 13 }}>
               You will receive an email once your account is approved.
             </p>
           </div>
@@ -266,14 +208,15 @@ export default function AuthPage() {
               width: '100%',
               maxWidth: 400,
               padding: 40,
-              background: 'rgba(255,255,255,0.9)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: `1px solid ${GOLD}`,
-              borderRadius: 12,
-              boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-              color: '#1A1A2E',
+              background: 'rgba(0, 0, 0, 0.3)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 16,
+              boxShadow: '0 16px 64px rgba(0,0,0,0.4)',
+              color: '#FFFFFF',
               fontFamily: 'system-ui, -apple-system, sans-serif',
+              pointerEvents: 'auto',
             }}
           >
             {/* Logo */}
@@ -295,7 +238,7 @@ export default function AuthPage() {
                   marginTop: 10,
                   fontSize: 11,
                   letterSpacing: '0.2em',
-                  color: '#8892a0',
+                  color: 'rgba(255,255,255,0.5)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -303,35 +246,11 @@ export default function AuthPage() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(200,169,110,0.25)', marginBottom: 22 }}>
-              {/* Sign Up is INVITE-ONLY — admin adds users from the
-                  Supabase dashboard. Only the Sign In tab renders. */}
-              {(['signin'] as Mode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => {
-                    setMode(m);
-                    setError(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: mode === m ? `2px solid ${GOLD}` : '2px solid transparent',
-                    color: mode === m ? GOLD : '#8892a0',
-                    fontSize: 12,
-                    letterSpacing: '0.1em',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontWeight: 600,
-                  }}
-                >
-                  {m === 'signin' ? 'SIGN IN' : 'SIGN UP'}
-                </button>
-              ))}
+            {/* Sign In only — no tabs needed */}
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: 22, paddingBottom: 10, textAlign: 'center' }}>
+              <span style={{ fontSize: 12, letterSpacing: '0.1em', color: GOLD, fontWeight: 600 }}>
+                SIGN IN
+              </span>
             </div>
 
             <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -390,10 +309,10 @@ export default function AuthPage() {
                 <div
                   style={{
                     fontSize: 12,
-                    color: '#c43d3d',
-                    background: 'rgba(196,61,61,0.08)',
-                    border: '1px solid rgba(196,61,61,0.2)',
-                    borderRadius: 6,
+                    color: '#ff6b6b',
+                    background: 'rgba(255,107,107,0.1)',
+                    border: '1px solid rgba(255,107,107,0.25)',
+                    borderRadius: 8,
                     padding: '8px 10px',
                   }}
                 >
@@ -410,7 +329,7 @@ export default function AuthPage() {
                   background: GOLD,
                   color: '#1A1A2E',
                   border: 'none',
-                  borderRadius: 6,
+                  borderRadius: 8,
                   fontSize: 13,
                   fontWeight: 700,
                   letterSpacing: '0.1em',
@@ -419,7 +338,7 @@ export default function AuthPage() {
                   fontFamily: 'inherit',
                 }}
               >
-                {busy ? '...' : mode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}
+                {busy ? '...' : 'SIGN IN'}
               </button>
             </form>
 
@@ -428,7 +347,7 @@ export default function AuthPage() {
                 marginTop: 24,
                 textAlign: 'center',
                 fontSize: 11,
-                color: '#8892a0',
+                color: 'rgba(255,255,255,0.4)',
                 lineHeight: 1.6,
               }}
             >
