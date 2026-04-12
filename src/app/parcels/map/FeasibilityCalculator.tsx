@@ -157,12 +157,13 @@ interface RunResult {
 function run(type: string, inp: Record<string, number | string>): RunResult {
   const c = LU[type as LuKey] || LU.residential;
   const z = ZONES[inp.zone as string] || ZONES.Custom;
-  const far = z.far;
+  const far = (inp.farOverride as number) > 0 ? (inp.farOverride as number) : z.far;
   const la = inp.landArea as number;
-  const gba = la * far, nsa = gba * (inp.eff as number);
+  const gba = (inp.gfa as number) > 0 ? (inp.gfa as number) : la * far;
+  const nsa = gba * (inp.eff as number);
   const fl = (inp.floors as number) > 0 ? (inp.floors as number) : estFloors(gba, la, far);
   const hb = getHB(fl);
-  const landC = la * z.lpsf;
+  const landC = (inp.landCost as number) > 0 ? (inp.landCost as number) : la * z.lpsf;
   const baseHC = gba * (inp.hcPSF as number), hPrem_ = baseHC * hb.premium, hc = baseHC + hPrem_;
   const sc = hc * ((inp.softPct as number) / 100);
   const cont = hc * ((inp.contPct as number) / 100);
@@ -407,6 +408,9 @@ export default function FeasibilityCalculator(props: Props) {
     if (props.maxFloors && props.maxFloors > 0) d.floors = props.maxFloors;
     const zone = matchZone(props.community);
     d.zone = zone;
+    d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
+    d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
+    d.farOverride = props.far && props.far > 0 ? props.far : 0;
     return d;
   });
   const [tab, setTab] = useState<"inputs" | "results" | "sensitivity">("inputs");
@@ -421,10 +425,13 @@ export default function FeasibilityCalculator(props: Props) {
     if (props.maxFloors && props.maxFloors > 0) d.floors = props.maxFloors;
     const zone = matchZone(props.community);
     d.zone = zone;
+    d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
+    d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
+    d.farOverride = props.far && props.far > 0 ? props.far : 0;
     setInp(d);
     setTab("inputs");
     setSD(null);
-  }, [lu, props.plotAreaSqft, props.maxFloors, props.community]);
+  }, [lu, props.plotAreaSqft, props.maxFloors, props.community, props.plotPriceAed, props.gfaSqft, props.far]);
 
   const u = useCallback((k: string, v: number | string) => setInp((p) => ({ ...p, [k]: v })), []);
   const r = useMemo(() => run(lu, inp), [lu, inp]);
@@ -476,6 +483,10 @@ export default function FeasibilityCalculator(props: Props) {
     // Assumptions
     heading("ASSUMPTIONS");
     row("Zone", inp.zone as string);
+    row("Land Cost", F.aed(r.landC));
+    if (props.plotPriceAed > 0 && r.landC !== props.plotPriceAed) row("Listed Price", F.aed(props.plotPriceAed));
+    row("GFA", `${F.n(r.gba)} sqft`);
+    row("FAR", `${r.far}x`);
     row("Efficiency", `${((inp.eff as number) * 100).toFixed(0)}%`);
     row("Hard Cost / sqft", `AED ${inp.hcPSF}`);
     row("Soft Costs", `${inp.softPct}%`);
@@ -635,9 +646,13 @@ export default function FeasibilityCalculator(props: Props) {
 
       {/* ── INPUTS TAB ── */}
       {tab === "inputs" && (<>
-        {sec("SITE & ZONING", [{ k: "zone", l: "Zone", t: "s", o: Object.keys(ZONES) }, { k: "landArea", l: "Plot Area", u: "sqft" }, { k: "eff", l: "Net/Gross", u: "ratio", s: .01 }, { k: "floors", l: "Floors (0=auto)", u: "fl" }])}
+        {sec("SITE & ZONING", [{ k: "zone", l: "Zone", t: "s", o: Object.keys(ZONES) }, { k: "landArea", l: "Plot Area", u: "sqft" }, { k: "landCost", l: "Land Cost", u: "AED", s: 100000 }, { k: "gfa", l: "GFA (0=auto)", u: "sqft", s: 100 }, { k: "farOverride", l: "FAR (0=zone)", u: "x", s: .1 }, { k: "eff", l: "Net/Gross", u: "ratio", s: .01 }, { k: "floors", l: "Floors (0=auto)", u: "fl" }])}
+        {/* Contextual hints from DDA / listing */}
         <div style={{ background: `${GOLD}11`, borderRadius: 5, padding: "5px 7px", marginBottom: 8, fontSize: 8.5, color: SUBTLE, display: "flex", flexWrap: "wrap", gap: "3px 12px" }}>
-          <span>FAR: <b style={{ color: GOLD }}>{r.far}x</b></span>
+          {props.plotPriceAed > 0 && <span>Listed: <b style={{ color: GOLD }}>{F.aed(props.plotPriceAed)}</b></span>}
+          {props.gfaSqft > 0 && <span>DDA GFA: <b>{F.n(props.gfaSqft)} sqft</b></span>}
+          {props.far && props.far > 0 && <span>DDA FAR: <b style={{ color: GOLD }}>{props.far}x</b></span>}
+          <span>Calc FAR: <b style={{ color: GOLD }}>{r.far}x</b></span>
           <span>GBA: <b>{F.n(r.gba)}</b></span>
           <span>Floors: <b style={{ color: GOLD }}>{r.fl}</b></span>
           <span>Class: <b style={{ color: r.pm.hPrem > .3 ? RED : GOLD }}>{r.pm.hLabel}</b></span>
