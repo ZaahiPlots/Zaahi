@@ -188,8 +188,9 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   } else {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
-      ["==", ["get", "hasLandUse"], true], 0.4,
-      0,
+      ["==", ["get", "hasLandUse"], false], 0,
+      ["==", ["get", "status"], "SOLD"], 0.2,
+      0.4,
     ]);
   }
   // Glow filters
@@ -954,6 +955,7 @@ type LayersState = {
   shamalBs1: boolean;
   dubaiPoliceAcademy: boolean;
   shamalMankhool: boolean;
+  soldPlots: boolean;
 };
 
 const DDA_LAYERS: { key: keyof LayersState; srcId: string; lineId: string; label: string }[] = [
@@ -1214,6 +1216,9 @@ function ParcelsMapPageInner() {
     area: number;
     priceAed: number | null;
     landUse: string;
+    status: string;
+    saleDate: string;
+    areaSqm: number;
   } | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -1451,6 +1456,7 @@ function ParcelsMapPageInner() {
     shamalBs1: false,
     dubaiPoliceAcademy: false,
     shamalMankhool: false,
+    soldPlots: true,
   });
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -1822,6 +1828,7 @@ function ParcelsMapPageInner() {
             buildingLimitGeometry?: GeoJSON.Polygon | null;
             setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
             landUseMix?: Array<{ category: string; sub?: string | null }> | null;
+            dldSale?: { transactionNumber: string; date: string; amount: number } | null;
           } | null;
         }>;
       };
@@ -1831,10 +1838,14 @@ function ParcelsMapPageInner() {
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
+        const isSold = it.status === "SOLD";
         // landUse is null when DDA has no land-use info — those parcels
         // render as outline-only (no fill, no 3D extrusion).
         const landUse = deriveLandUse(it.plan?.landUseMix);
         const hasLandUse = landUse != null;
+        const luColor = hasLandUse
+          ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
+          : ZAAHI_DEFAULT_COLOR;
         plotFeatures.push({
           type: "Feature",
           id: it.id,
@@ -1847,9 +1858,12 @@ function ParcelsMapPageInner() {
             priceAed: aed,
             landUse: landUse ?? "",
             hasLandUse,
-            color: hasLandUse
-              ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
-              : ZAAHI_DEFAULT_COLOR,
+            color: luColor,
+            // SOLD plots: red outline, data for hover card
+            status: it.status,
+            outlineColor: isSold ? "#E74C3C" : luColor,
+            saleDate: it.plan?.dldSale?.date ?? "",
+            areaSqm: it.plan?.plotAreaSqm ?? 0,
           },
         });
         // Skip 3D building generation for parcels without a land use —
@@ -1948,6 +1962,7 @@ function ParcelsMapPageInner() {
               color: buildingHex,
               height: topM,
               base: baseM,
+              status: it.status,
             },
           });
         };
@@ -1983,12 +1998,12 @@ function ParcelsMapPageInner() {
         source: ZAAHI_PLOTS_SRC,
         paint: {
           "fill-color": ["get", "color"],
-          // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
+          // 0.4 when DDA has assigned a land use, 0.2 for SOLD, 0 for outline-only.
           "fill-opacity": [
             "case",
-            ["==", ["get", "hasLandUse"], true],
+            ["==", ["get", "hasLandUse"], false], 0,
+            ["==", ["get", "status"], "SOLD"], 0.2,
             0.4,
-            0,
           ],
           "fill-opacity-transition": { duration: 300 },
           "fill-color-transition": { duration: 300 },
@@ -1999,8 +2014,12 @@ function ParcelsMapPageInner() {
         type: "line",
         source: ZAAHI_PLOTS_SRC,
         paint: {
-          "line-color": ["get", "color"],
-          "line-width": 2,
+          "line-color": ["get", "outlineColor"],
+          "line-width": [
+            "case",
+            ["==", ["get", "status"], "SOLD"], 3,
+            2,
+          ],
           "line-opacity-transition": { duration: 300 },
         },
       });
@@ -2040,10 +2059,13 @@ function ParcelsMapPageInner() {
           "fill-extrusion-color": ["get", "color"],
           "fill-extrusion-height": ["get", "height"],
           "fill-extrusion-base": ["get", "base"],
-          // Founder-spec ZAAHI Signature opacity. Single value across
-          // the layer so podium / body / crown blend visually rather
-          // than each tier having a different transparency.
-          "fill-extrusion-opacity": 0.4,
+          // Founder-spec ZAAHI Signature opacity. SOLD plots render
+          // at lower opacity (0.25) to visually distinguish from active listings.
+          "fill-extrusion-opacity": [
+            "case",
+            ["==", ["get", "status"], "SOLD"], 0.25,
+            0.4,
+          ] as any,
         },
       });
     } catch (e) {
@@ -2168,14 +2190,18 @@ function ParcelsMapPageInner() {
         map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
-          map.getCanvas().style.cursor = "pointer";
           const p = f.properties as {
             plotNumber: string;
             district: string;
             area: number;
             priceAed: number | null;
             landUse: string;
+            status: string;
+            saleDate: string;
+            areaSqm: number;
           };
+          // SOLD plots: show cursor but no pointer (not clickable)
+          map.getCanvas().style.cursor = p.status === "SOLD" ? "default" : "pointer";
           setZaahiHover({
             x: e.point.x,
             y: e.point.y,
@@ -2184,6 +2210,9 @@ function ParcelsMapPageInner() {
             area: p.area,
             priceAed: p.priceAed,
             landUse: p.landUse,
+            status: p.status,
+            saleDate: p.saleDate,
+            areaSqm: typeof p.areaSqm === "string" ? parseFloat(p.areaSqm) : p.areaSqm,
           });
           sound.hover();
         });
@@ -2194,11 +2223,11 @@ function ParcelsMapPageInner() {
         map.on("click", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          // SOLD plots are NOT clickable — no side panel
+          const status = (f.properties as { status?: string })?.status;
+          if (status === "SOLD") return;
           const id = (f.properties as { id?: string })?.id;
           if (id) {
-            // Founder spec 2026-04-12: a single combined cyberpunk
-            // click effect (sweep + noise burst) — sound.click() now
-            // emits both layers itself, so we no longer chain swooshOpen.
             sound.click();
             setSelectedParcelId(id);
           }
@@ -2268,6 +2297,23 @@ function ParcelsMapPageInner() {
     for (const def of LAYER_REGISTRY) {
       void setLayerVisibility(map, def, !!layers[def.key], plotLabelsOn);
     }
+    // Sold Plots toggle: filter SOLD features from plot + building layers
+    const showSold = layers.soldPlots;
+    for (const layerId of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE]) {
+      if (!map.getLayer(layerId)) continue;
+      if (showSold) {
+        map.setFilter(layerId, null);
+      } else {
+        map.setFilter(layerId, ["!=", ["get", "status"], "SOLD"]);
+      }
+    }
+    if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+      if (showSold) {
+        map.setFilter(ZAAHI_BUILDINGS_3D, null);
+      } else {
+        map.setFilter(ZAAHI_BUILDINGS_3D, ["!=", ["get", "status"], "SOLD"]);
+      }
+    }
   }, [layers]);
 
   useEffect(() => {
@@ -2308,6 +2354,7 @@ function ParcelsMapPageInner() {
     { color: "#E74C3C", name: "Healthcare",           desc: "Медицина" },
     { color: "#6B8E23", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
     { color: "#84CC16", name: "Future Development",   desc: "Под застройку" },
+    { color: "#E74C3C", name: "Sold (DLD)",           desc: "Продано" },
   ];
 
   const c = PALETTE[theme];
@@ -2486,8 +2533,10 @@ function ParcelsMapPageInner() {
                   style={{
                     width: 16,
                     height: 16,
-                    background: item.color,
-                    border: `1px solid ${c.borderSubtle}`,
+                    background: item.name === "Sold (DLD)" ? "transparent" : item.color,
+                    border: item.name === "Sold (DLD)"
+                      ? `2px solid ${item.color}`
+                      : `1px solid ${c.borderSubtle}`,
                     borderRadius: 3,
                     flexShrink: 0,
                   }}
@@ -2718,6 +2767,7 @@ function ParcelsMapPageInner() {
             { key: "communities", label: "Communities" },
             { key: "roads", label: "Major Roads" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
+            { key: "soldPlots", label: "Sold Plots" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
           onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
@@ -2811,10 +2861,10 @@ function ParcelsMapPageInner() {
             position: "absolute",
             left: zaahiHover.x + 14,
             top: zaahiHover.y + 14 + 48, // +48 = top toolbar offset (matches container)
-            width: 200,
+            width: 210,
             background: "#ffffff",
             color: "#1a1a1a",
-            borderLeft: `3px solid ${GOLD}`,
+            borderLeft: `3px solid ${zaahiHover.status === "SOLD" ? "#E74C3C" : GOLD}`,
             borderRadius: 4,
             boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
             padding: "8px 10px",
@@ -2825,18 +2875,44 @@ function ParcelsMapPageInner() {
             zIndex: 30,
           }}
         >
-          <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>
-            {zaahiHover.plotNumber}
-          </div>
-          <div style={{ opacity: 0.85, marginTop: 2 }}>
-            {zaahiHover.district} | {Math.round(zaahiHover.area).toLocaleString("en-US")} sqft |{" "}
-            {zaahiHover.priceAed == null
-              ? "—"
-              : zaahiHover.priceAed >= 1_000_000
-                ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
-                : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
-            | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
-          </div>
+          {zaahiHover.status === "SOLD" ? (
+            <>
+              <div style={{ fontWeight: 700, color: "#E74C3C", fontSize: 13, marginBottom: 3 }}>
+                SOLD
+              </div>
+              <div style={{ opacity: 0.85 }}>
+                {zaahiHover.priceAed == null
+                  ? "—"
+                  : zaahiHover.priceAed >= 1_000_000
+                    ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
+                    : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}
+              </div>
+              {zaahiHover.saleDate && (
+                <div style={{ opacity: 0.7, marginTop: 1 }}>
+                  {new Date(zaahiHover.saleDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </div>
+              )}
+              <div style={{ opacity: 0.7, marginTop: 1 }}>
+                {zaahiHover.areaSqm > 0 ? `${Math.round(zaahiHover.areaSqm).toLocaleString()} sqm` : `${Math.round(zaahiHover.area).toLocaleString()} sqft`}
+              </div>
+              <div style={{ opacity: 0.7, marginTop: 1 }}>{zaahiHover.district}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>
+                {zaahiHover.plotNumber}
+              </div>
+              <div style={{ opacity: 0.85, marginTop: 2 }}>
+                {zaahiHover.district} | {Math.round(zaahiHover.area).toLocaleString("en-US")} sqft |{" "}
+                {zaahiHover.priceAed == null
+                  ? "—"
+                  : zaahiHover.priceAed >= 1_000_000
+                    ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
+                    : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
+                | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
+              </div>
+            </>
+          )}
         </div>
       )}
       {/* The music / sound toggle moved into the HeaderBar (next to

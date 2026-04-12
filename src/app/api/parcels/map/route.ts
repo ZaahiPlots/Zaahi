@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     where: {
       geometry: { not: undefined },
       // Hide unverified submissions from the public map
-      status: { in: [ParcelStatus.LISTED, ParcelStatus.VERIFIED, ParcelStatus.IN_DEAL] },
+      status: { in: [ParcelStatus.LISTED, ParcelStatus.VERIFIED, ParcelStatus.IN_DEAL, ParcelStatus.SOLD] },
     },
     include: {
       affectionPlans: {
@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
           far: true,
           landUseMix: true,
           setbacks: true,
+          raw: true,
+          notes: true,
         },
       },
     },
@@ -61,6 +63,7 @@ export async function GET(req: NextRequest) {
             landUseMix: plan.landUseMix,
             buildingLimitGeometry: plan.buildingLimitGeometry,
             setbacks: plan.setbacks,
+            dldSale: (plan.raw as any)?.dldSale ?? null,
           }
         : null,
     };
