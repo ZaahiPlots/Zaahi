@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { jsPDF } from "jspdf";
 
 /* ═══════════════════════════════════════════════════════════════════
    ZAAHI FEASIBILITY CALCULATOR v3.1 — INSTITUTIONAL GRADE
@@ -17,6 +18,8 @@ interface Props {
   landUseMix?: Array<{ category: string; sub: string }> | null;
   maxFloors?: number | null;
   community?: string | null;
+  plotNumber?: string | null;
+  district?: string | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -439,6 +442,130 @@ export default function FeasibilityCalculator(props: Props) {
   const ic = r.irr > 18 ? GREEN : r.irr > 12 ? GOLD : RED;
   const it = r.irr > 18 ? "STRONG" : r.irr > 12 ? "MODERATE" : "BELOW TARGET";
 
+  const downloadPDF = useCallback(() => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210, M = 15;
+    const cw = W - 2 * M;
+    let y = 15;
+    const gold: [number, number, number] = [200, 169, 110];
+    const dark: [number, number, number] = [26, 26, 46];
+    const gray: [number, number, number] = [107, 114, 128];
+
+    const addLine = () => { doc.setDrawColor(...gold); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 4; };
+    const checkPage = (need: number) => { if (y + need > 280) { doc.addPage(); y = 15; } };
+    const heading = (t: string) => { checkPage(12); doc.setFontSize(11); doc.setTextColor(...gold); doc.setFont("helvetica", "bold"); doc.text(t, M, y); y += 6; };
+    const row = (l: string, v: string) => { checkPage(6); doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray); doc.text(l, M, y); doc.setTextColor(...dark); doc.text(v, W - M, y, { align: "right" }); y += 5; };
+
+    // Header
+    doc.setFontSize(18); doc.setTextColor(...gold); doc.setFont("helvetica", "bold");
+    doc.text("ZAAHI Feasibility Report", M, y); y += 8;
+    doc.setFontSize(9); doc.setTextColor(...gray); doc.setFont("helvetica", "normal");
+    doc.text(`Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, M, y); y += 4;
+    addLine();
+
+    // Plot info
+    heading("PLOT INFORMATION");
+    if (props.plotNumber) row("Plot Number", props.plotNumber);
+    if (props.district) row("District", props.district);
+    row("Land Use", c.label);
+    if (props.community) row("Community", props.community);
+    row("Plot Area", `${Math.round(props.plotAreaSqft).toLocaleString()} sqft`);
+    if (props.plotPriceAed > 0) row("Plot Price", F.aed(props.plotPriceAed));
+    y += 2;
+
+    // Assumptions
+    heading("ASSUMPTIONS");
+    row("Zone", inp.zone as string);
+    row("Efficiency", `${((inp.eff as number) * 100).toFixed(0)}%`);
+    row("Hard Cost / sqft", `AED ${inp.hcPSF}`);
+    row("Soft Costs", `${inp.softPct}%`);
+    row("Contingency", `${inp.contPct}%`);
+    row("Construction", `${inp.constMo} months`);
+    row("LTV", `${inp.ltv}%`);
+    row("Interest Rate", `${inp.ir}%`);
+    row("WACC", `${inp.dr}%`);
+    row("Exit Cap Rate", `${inp.ecr}%`);
+    const revFields = rf();
+    for (const f of revFields) {
+      const v = inp[f.k];
+      row(f.l, `${v}${f.u ? " " + f.u : ""}`);
+    }
+    y += 2;
+
+    // Key metrics
+    heading("KEY METRICS");
+    row("Levered IRR", `${F.pct(r.irr)} (${it})`);
+    row("NPV", F.aed(r.npv));
+    row("Equity Multiple", `${r.em.toFixed(2)}x`);
+    if (r.dscr > 0) row("DSCR", r.dscr.toFixed(2));
+    if (r.dy > 0) row("Debt Yield", F.pct(r.dy));
+    row("GBA", `${F.n(r.gba)} sqft`);
+    row("NSA", `${F.n(r.nsa)} sqft`);
+    row("Floors", `${r.fl} (${r.pm.hLabel})`);
+    row("Cost / sqft (GBA)", `AED ${r.cpsf.toFixed(0)}`);
+    for (const [k, v] of Object.entries(r.met)) {
+      const label = k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+      row(label, typeof v === "number" ? (Math.abs(v) > 1000 ? F.aed(v) : F.n(v)) : String(v));
+    }
+    y += 2;
+
+    // Cost stack
+    heading("FULL COST STACK");
+    const costs: [string, number][] = [["Land", r.landC], ["Base Hard Cost", r.baseHC], [`Height Premium +${(r.pm.hPrem * 100).toFixed(0)}%`, r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["Permits & Infra", r.pm.total]];
+    for (const [l, v] of costs) { if (v > 0) row(l, F.aed(v)); }
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...gold);
+    row("TOTAL DEVELOPMENT COST", F.aed(r.tdc));
+    doc.setFont("helvetica", "normal");
+    row("Equity Required", F.aed(r.eq));
+    row("Debt", F.aed(r.debt));
+    row("Annual Debt Service", F.aed(r.ds));
+    y += 2;
+
+    // Cash flow table
+    heading("CASH FLOW PROJECTION");
+    checkPage(10 + r.cf.length * 5);
+    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
+    doc.text("Year", M, y); doc.text("Cash Flow (AED)", W - M, y, { align: "right" }); y += 4;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    r.cf.forEach((v, i) => {
+      checkPage(5);
+      doc.setTextColor(...gray); doc.text(`Year ${i}`, M, y);
+      doc.setTextColor(v >= 0 ? 45 : 230, v >= 0 ? 106 : 57, v >= 0 ? 79 : 70);
+      doc.text(F.aed(v), W - M, y, { align: "right" }); y += 4.5;
+    });
+    y += 2;
+
+    // Sensitivity
+    if (sd && sd.length > 0) {
+      heading("SENSITIVITY ANALYSIS (IRR +/-20%)");
+      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
+      doc.text("Parameter", M, y);
+      [-20, -10, 0, 10, 20].forEach((d, i) => {
+        doc.text(`${d > 0 ? "+" : ""}${d}%`, M + 35 + i * 22, y, { align: "center" });
+      }); y += 4;
+      doc.setFont("helvetica", "normal");
+      for (const s of sd) {
+        checkPage(5);
+        doc.setTextColor(...gray); doc.text(s.l, M, y);
+        s.d.forEach((d, i) => {
+          doc.setTextColor(...dark); doc.text(F.pct(d.irr, 1), M + 35 + i * 22, y, { align: "center" });
+        }); y += 4.5;
+      }
+      y += 2;
+    }
+
+    // Disclaimer
+    checkPage(15);
+    addLine();
+    doc.setFontSize(7); doc.setTextColor(...gray); doc.setFont("helvetica", "italic");
+    doc.text("DISCLAIMER: This report is generated by ZAAHI Feasibility Calculator v3.1 for informational purposes only.", M, y); y += 3.5;
+    doc.text("It does not constitute investment advice. All assumptions are user-defined and should be independently verified.", M, y); y += 3.5;
+    doc.text("ZAAHI assumes no liability for investment decisions made based on this report.", M, y);
+
+    const plotLabel = props.plotNumber ? `-Plot-${props.plotNumber}` : "";
+    doc.save(`ZAAHI-Feasibility${plotLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }, [r, inp, lu, c, sd, it, props.plotNumber, props.district, props.plotAreaSqft, props.plotPriceAed, props.community]);
+
   type FieldDef = { k: string; l: string; u?: string; s?: number; t?: string; o?: string[] };
 
   const sec = (t: string, fs: FieldDef[]) => (
@@ -583,6 +710,14 @@ export default function FeasibilityCalculator(props: Props) {
             ))}
           </div>
         )}
+        <button onClick={downloadPDF} style={{
+          width: "100%", marginTop: 10, padding: "8px 12px", borderRadius: 6,
+          border: `1px solid ${GOLD}`, background: "rgba(200,169,110,0.08)",
+          color: GOLD, fontWeight: 700, fontSize: 10, cursor: "pointer",
+          textTransform: "uppercase", letterSpacing: 1,
+        }}>
+          Download Report (PDF)
+        </button>
       </>)}
 
       {/* ── SENSITIVITY TAB ── */}
