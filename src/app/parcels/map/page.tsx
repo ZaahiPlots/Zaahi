@@ -183,15 +183,13 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
       "case",
       ["!=", ["get", "hasLandUse"], true], 0,
       ["==", ["get", "id"], sel], 0.7,
-      ["==", ["get", "status"], "SOLD"], 0.15,
       0.2,
     ]);
   } else {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
-      ["==", ["get", "hasLandUse"], false], 0,
-      ["==", ["get", "status"], "SOLD"], 0.15,
-      0.4,
+      ["==", ["get", "hasLandUse"], true], 0.4,
+      0,
     ]);
   }
   // Glow filters
@@ -1216,7 +1214,6 @@ function ParcelsMapPageInner() {
     area: number;
     priceAed: number | null;
     landUse: string;
-    status: string;
   } | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -1834,14 +1831,10 @@ function ParcelsMapPageInner() {
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
-        const isSold = it.status === "SOLD";
         // landUse is null when DDA has no land-use info — those parcels
         // render as outline-only (no fill, no 3D extrusion).
         const landUse = deriveLandUse(it.plan?.landUseMix);
         const hasLandUse = landUse != null;
-        const luColor = hasLandUse
-          ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
-          : ZAAHI_DEFAULT_COLOR;
         plotFeatures.push({
           type: "Feature",
           id: it.id,
@@ -1854,9 +1847,9 @@ function ParcelsMapPageInner() {
             priceAed: aed,
             landUse: landUse ?? "",
             hasLandUse,
-            status: it.status,
-            color: luColor,
-            outlineColor: isSold ? "#E74C3C" : luColor,
+            color: hasLandUse
+              ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
+              : ZAAHI_DEFAULT_COLOR,
           },
         });
         // Skip 3D building generation for parcels without a land use —
@@ -1864,8 +1857,6 @@ function ParcelsMapPageInner() {
         if (!hasLandUse) continue;
         // Skip 3D for future-development land — flat polygon only.
         if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
-        // SOLD parcels: polygon only (red outline), no 3D extrusion.
-        if (isSold) continue;
 
 
         // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
@@ -2008,8 +1999,8 @@ function ParcelsMapPageInner() {
         type: "line",
         source: ZAAHI_PLOTS_SRC,
         paint: {
-          "line-color": ["get", "outlineColor"],
-          "line-width": ["case", ["==", ["get", "status"], "SOLD"], 3, 2],
+          "line-color": ["get", "color"],
+          "line-width": 2,
           "line-opacity-transition": { duration: 300 },
         },
       });
@@ -2177,15 +2168,14 @@ function ParcelsMapPageInner() {
         map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          map.getCanvas().style.cursor = "pointer";
           const p = f.properties as {
             plotNumber: string;
             district: string;
             area: number;
             priceAed: number | null;
             landUse: string;
-            status: string;
           };
-          map.getCanvas().style.cursor = p.status === "SOLD" ? "default" : "pointer";
           setZaahiHover({
             x: e.point.x,
             y: e.point.y,
@@ -2194,9 +2184,7 @@ function ParcelsMapPageInner() {
             area: p.area,
             priceAed: p.priceAed,
             landUse: p.landUse,
-            status: p.status,
           });
-          sound.hover();
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
@@ -2205,8 +2193,6 @@ function ParcelsMapPageInner() {
         map.on("click", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
-          // SOLD plots are not clickable — no side panel
-          if ((f.properties as { status?: string })?.status === "SOLD") return;
           const id = (f.properties as { id?: string })?.id;
           if (id) {
             // Founder spec 2026-04-12: a single combined cyberpunk
@@ -2838,11 +2824,8 @@ function ParcelsMapPageInner() {
             zIndex: 30,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>{zaahiHover.plotNumber}</span>
-            {zaahiHover.status === "SOLD" && (
-              <span style={{ background: "#E74C3C", color: "#fff", fontWeight: 700, fontSize: 8, padding: "1px 4px", borderRadius: 2, textTransform: "uppercase" }}>SOLD</span>
-            )}
+          <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>
+            {zaahiHover.plotNumber}
           </div>
           <div style={{ opacity: 0.85, marginTop: 2 }}>
             {zaahiHover.district} | {Math.round(zaahiHover.area).toLocaleString("en-US")} sqft |{" "}

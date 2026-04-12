@@ -38,8 +38,6 @@ class SoundManager {
   private cityGain: GainNode | null = null;
   private cityActive = false;
 
-  // Hover throttle
-  private lastHoverAt = 0;
 
   enabled = false;
   private listeners = new Set<Listener>();
@@ -320,19 +318,6 @@ class SoundManager {
     noiseSrc.connect(hp).connect(noiseGain).connect(this.master);
     noiseSrc.start(t0);
     noiseSrc.stop(t0 + 0.08);
-  }
-
-  /**
-   * Hover on a parcel — light cyberpunk blip.
-   *   Single tone 600 Hz, 50 ms, fade out.
-   * Throttled to once every 80 ms so dragging across plots doesn't spam.
-   */
-  hover() {
-    if (!this.enabled) return;
-    const now = performance.now();
-    if (now - this.lastHoverAt < 80) return;
-    this.lastHoverAt = now;
-    this.blip({ freq: 600, durationMs: 50, type: "sine", gain: 0.08 });
   }
 
   /** Swoosh — kept for the side panel close transition. */
