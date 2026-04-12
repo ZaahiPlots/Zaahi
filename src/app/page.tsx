@@ -242,7 +242,17 @@ export default function AuthPage() {
                   textTransform: 'uppercase',
                 }}
               >
-                Dubai Real Estate OS
+                Real Estate OS
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  color: 'rgba(255,255,255,0.35)',
+                }}
+              >
+                Land Intelligence Platform for UAE &amp; Saudi Arabia
               </div>
             </div>
 
@@ -358,6 +368,35 @@ export default function AuthPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: '12px 24px',
+          fontSize: 10,
+          color: 'rgba(255,255,255,0.3)',
+          fontFamily: 'system-ui, sans-serif',
+          pointerEvents: 'auto',
+        }}
+      >
+        <span>&copy; 2026 ZAAHI Real Estate OS. All rights reserved.</span>
+        <span>|</span>
+        <a href="/terms" style={{ color: GOLD, textDecoration: 'none' }}>Terms</a>
+        <span>|</span>
+        <a href="/privacy" style={{ color: GOLD, textDecoration: 'none' }}>Privacy</a>
+        <span>|</span>
+        <a href="/disclaimer" style={{ color: GOLD, textDecoration: 'none' }}>Disclaimer</a>
       </div>
     </div>
   );

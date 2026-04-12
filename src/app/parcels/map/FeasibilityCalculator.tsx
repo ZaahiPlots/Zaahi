@@ -445,6 +445,7 @@ export default function FeasibilityCalculator(props: Props) {
   });
   const [tab, setTab] = useState<"inputs" | "results" | "sensitivity">("inputs");
   const [sd, setSD] = useState<Array<{ l: string; d: Array<{ d: number; irr: number }> }> | null>(null);
+  const [disclaimerVisible, setDisclaimerVisible] = useState(true);
 
   const c = LU[lu];
 
@@ -648,6 +649,43 @@ export default function FeasibilityCalculator(props: Props) {
 
   return (
     <div style={{ color: TXT, fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif', fontSize: 11 }}>
+      {/* Disclaimer banner */}
+      {disclaimerVisible && (
+        <div
+          style={{
+            marginBottom: 8,
+            padding: "6px 10px",
+            background: `${GOLD}0D`,
+            border: `1px solid ${GOLD}33`,
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 9, color: SUBTLE, lineHeight: 1.4 }}>
+            This analysis is for informational purposes only and does not constitute investment advice.
+          </span>
+          <button
+            onClick={() => setDisclaimerVisible(false)}
+            style={{
+              background: "none",
+              border: "none",
+              color: SUBTLE,
+              fontSize: 13,
+              cursor: "pointer",
+              padding: "0 2px",
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+            aria-label="Dismiss disclaimer"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Land Use type selector */}
       <div style={{ marginBottom: 8, display: "flex", gap: 2, flexWrap: "wrap" }}>
         {(Object.entries(LU) as [LuKey, LuConfig][]).map(([k, v]) => (

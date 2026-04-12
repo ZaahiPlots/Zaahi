@@ -27,7 +27,7 @@ DUBAI RE KNOWLEDGE:
 - Service charges AED 15-30/sqft/year by community
 
 PLATFORM:
-- ZAAHI is Dubai Real Estate OS
+- ZAAHI is Real Estate OS for UAE & Saudi Arabia
 - Map shows communities, DDA districts, master plans, plots for sale with 3D buildings and feasibility calculator
 
 RULES:
