@@ -160,6 +160,15 @@ const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
 const ARJAN_SRC = "dda-arjan";
 const ARJAN_LINE = "dda-arjan-line";
 // ── ZAAHI Plots (real listings from /api/parcels/map) ──
+// DDA Land layer — Dubai Design District (d3). Toggleable reference
+// layer showing all 151 DDA plots with 3D extrusions, same visual style
+// as ZAAHI listings but no price data.
+const DDA_LAND_D3_SRC = "dda-land-d3";
+const DDA_LAND_D3_FILL = "dda-land-d3-fill";
+const DDA_LAND_D3_LINE = "dda-land-d3-line";
+const DDA_LAND_D3_BLDG_SRC = "dda-land-d3-bldg";
+const DDA_LAND_D3_BLDG_3D = "dda-land-d3-bldg-3d";
+
 const ZAAHI_PLOTS_SRC = "zaahi-plots";
 const ZAAHI_PLOTS_FILL = "zaahi-plots-fill";
 const ZAAHI_PLOTS_LINE = "zaahi-plots-line";
@@ -881,6 +890,7 @@ type LayersState = {
   ddaProjects: boolean; ddaFreeZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
+  ddaLandD3: boolean;
   plotLabels: boolean;
   islands: boolean; meydan: boolean; d11: boolean;
   alFurjan: boolean; intlCity23: boolean; residential12: boolean;
@@ -1241,6 +1251,11 @@ function ParcelsMapPageInner() {
     priceAed: number | null;
     landUse: string;
   } | null>(null);
+  const [ddaLandHover, setDdaLandHover] = useState<{
+    x: number; y: number;
+    plotNumber: string; mainLandUse: string;
+    areaSqm: number; gfaSqm: number; status: string;
+  } | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
@@ -1269,6 +1284,7 @@ function ParcelsMapPageInner() {
     adCommunities: false,
     ddaProjects: false,
     ddaFreeZones: false,
+    ddaLandD3: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -2231,6 +2247,231 @@ function ParcelsMapPageInner() {
     }
   }
 
+  // ── DDA Land: Dubai Design District ──────────────────────────────
+  // Toggleable reference layer. Same 3D style as ZAAHI plots (podium /
+  // body / crown) but NO price, NO click→SidePanel with valuation.
+  // Loaded lazily on first toggle of ddaLandD3.
+
+  const ddaLandD3LoadedRef = useRef(false);
+
+  async function loadDdaLandD3(map: MLMap) {
+    if (ddaLandD3LoadedRef.current) return;
+    if (map.getSource(DDA_LAND_D3_SRC)) return;
+    ddaLandD3LoadedRef.current = true;
+    try {
+      const res = await fetch("/api/layers/dda-land/d3");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const fc: GeoJSON.FeatureCollection = await res.json();
+
+      // Parse DDA land use string → canonical category
+      const parseLandUse = (raw: string | null | undefined): string | null => {
+        if (!raw) return null;
+        const parts = raw.split(/\s*-\s*/);
+        const cats = new Set<string>();
+        for (const p of parts) {
+          const l = p.trim().toLowerCase();
+          if (/residential|villa|townhouse|apartment/.test(l)) cats.add("RESIDENTIAL");
+          else if (/commercial|office|retail|showroom/.test(l)) cats.add("COMMERCIAL");
+          else if (/hotel|hospitality|resort/.test(l)) cats.add("HOTEL");
+          else if (/industrial|warehouse|factory|logistics/.test(l)) cats.add("INDUSTRIAL");
+          else if (/educat|school|university/.test(l)) cats.add("EDUCATIONAL");
+          else if (/health|hospital|clinic|medical/.test(l)) cats.add("HEALTHCARE");
+          else if (/agricult|farm/.test(l)) cats.add("AGRICULTURAL");
+          else if (/future.*development/.test(l)) cats.add("FUTURE_DEVELOPMENT");
+        }
+        if (cats.size > 1) return "MIXED_USE";
+        if (cats.size === 1) return [...cats][0];
+        return null;
+      };
+
+      // Parse MAX_HEIGHT_FLOORS like "G+75", "G+M+75", "G+1", "" → number
+      const parseFloors = (raw: string | null | undefined): number => {
+        if (!raw) return 0;
+        const m = raw.match(/\+(\d+)\s*$/);
+        return m ? parseInt(m[1], 10) : 0;
+      };
+
+      const plotFeatures: GeoJSON.Feature[] = [];
+      const buildingFeatures: GeoJSON.Feature[] = [];
+
+      for (const feat of fc.features) {
+        if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
+        const p = feat.properties as Record<string, unknown>;
+        const plotNumber = (p.PLOT_NUMBER as string) ?? "";
+        const mainLandUse = (p.MAIN_LANDUSE as string) ?? "";
+        const subLandUse = (p.SUB_LANDUSE as string) ?? "";
+        const areaSqft = (p.AREA_SQFT as number) ?? 0;
+        const areaSqm = (p.AREA_SQM as number) ?? 0;
+        const gfaSqft = (p.GFA_SQFT as number) ?? 0;
+        const gfaSqm = (p.GFA_SQM as number) ?? 0;
+        const status = (p.CONSTRUCTION_STATUS as string) ?? "";
+        const floorsRaw = (p.MAX_HEIGHT_FLOORS as string) ?? "";
+
+        const landUse = parseLandUse(mainLandUse);
+        const hasLandUse = landUse != null;
+        const color = hasLandUse
+          ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
+          : ZAAHI_DEFAULT_COLOR;
+
+        plotFeatures.push({
+          type: "Feature",
+          geometry: feat.geometry,
+          properties: {
+            plotNumber,
+            mainLandUse,
+            subLandUse,
+            areaSqft,
+            areaSqm,
+            gfaSqft,
+            gfaSqm,
+            status,
+            floorsRaw,
+            landUse: landUse ?? "",
+            hasLandUse,
+            color,
+          },
+        });
+
+        // Skip 3D for utility / open space / transport / facilities / unknown
+        if (!hasLandUse) continue;
+        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
+
+        // Height from floors field, or from GFA/area, or fallback
+        const floors = parseFloors(floorsRaw);
+        let totalH = floors > 0 ? floors * 3.5 : 0;
+        if (totalH <= 0 && gfaSqm > 0 && areaSqm > 0) {
+          const fp = areaSqm * 0.6;
+          totalH = Math.ceil(gfaSqm / fp) * 3.5;
+        }
+        if (totalH <= 0) {
+          totalH =
+            landUse === "RESIDENTIAL"  ? 15 :
+            landUse === "COMMERCIAL"   ? 30 :
+            landUse === "MIXED_USE"    ? 40 :
+            landUse === "HOTEL"        ? 50 :
+            landUse === "HOSPITALITY"  ? 50 :
+            landUse === "INDUSTRIAL"   ? 12 :
+            landUse === "WAREHOUSE"    ? 12 :
+            landUse === "EDUCATIONAL"  ? 12 :
+            landUse === "HEALTHCARE"   ? 18 :
+            landUse === "AGRICULTURAL" ?  6 :
+            20;
+        }
+
+        const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
+        const plotRing = (feat.geometry as GeoJSON.Polygon).coordinates[0];
+
+        // Setback: use DDA setbacks if present, else land-use defaults
+        const setbacks = [1, 2, 3, 4].map(i => {
+          const v = p[`BUILDING_SETBACK_SIDE${i}`] as string;
+          return v && v !== "N/A" ? parseFloat(v) : NaN;
+        }).filter(n => !isNaN(n) && n > 0);
+        const avgSetback = setbacks.length > 0
+          ? setbacks.reduce((a, b) => a + b, 0) / setbacks.length
+          : defaultSetbackM(landUse, subLandUse);
+        const footprintRing = areaSqft < 5000
+          ? plotRing
+          : insetRingByMeters(plotRing, avgSetback);
+
+        // ZAAHI Signature stepped 3D (same as loadZaahiPlots)
+        const FLOOR_H = 3.5;
+        const PODIUM_TOP = 14;
+        const CROWN_H = 7;
+        const fl = Math.max(1, Math.round(totalH / FLOOR_H));
+
+        const scaleRing = (ring: number[][], scale: number): number[][] => {
+          const cx = ring.reduce((s, pt) => s + pt[0], 0) / ring.length;
+          const cy = ring.reduce((s, pt) => s + pt[1], 0) / ring.length;
+          return ring.map(([lng, lat]) => [cx + (lng - cx) * scale, cy + (lat - cy) * scale]);
+        };
+
+        const pushTier = (ring: number[][], baseM: number, topM: number) => {
+          buildingFeatures.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [ring] },
+            properties: { color: buildingHex, height: topM, base: baseM },
+          });
+        };
+
+        if (fl <= 4) {
+          pushTier(footprintRing, 0, totalH);
+        } else if (fl <= 10) {
+          pushTier(footprintRing, 0, PODIUM_TOP);
+          pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH);
+        } else {
+          pushTier(footprintRing, 0, PODIUM_TOP);
+          pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H);
+          pushTier(scaleRing(footprintRing, 0.5), totalH - CROWN_H, totalH);
+        }
+      }
+
+      console.log("[DDA-LAND-D3]", plotFeatures.length, "plots,", buildingFeatures.length, "building tiers");
+
+      map.addSource(DDA_LAND_D3_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: plotFeatures },
+      });
+      map.addLayer({
+        id: DDA_LAND_D3_FILL,
+        type: "fill",
+        source: DDA_LAND_D3_SRC,
+        layout: { visibility: "visible" },
+        paint: {
+          "fill-color": ["get", "color"],
+          "fill-opacity": ["case", ["==", ["get", "hasLandUse"], true], 0.35, 0],
+        },
+      });
+      map.addLayer({
+        id: DDA_LAND_D3_LINE,
+        type: "line",
+        source: DDA_LAND_D3_SRC,
+        layout: { visibility: "visible" },
+        paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-opacity": 0.7 },
+      });
+
+      map.addSource(DDA_LAND_D3_BLDG_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: buildingFeatures },
+      });
+      map.addLayer({
+        id: DDA_LAND_D3_BLDG_3D,
+        type: "fill-extrusion",
+        source: DDA_LAND_D3_BLDG_SRC,
+        layout: { visibility: "visible" },
+        paint: {
+          "fill-extrusion-color": ["get", "color"],
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": ["get", "base"],
+          "fill-extrusion-opacity": 0.35,
+        },
+      });
+
+      // Hover
+      map.on("mousemove", DDA_LAND_D3_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        map.getCanvas().style.cursor = "pointer";
+        const pr = f.properties as Record<string, unknown>;
+        setDdaLandHover({
+          x: e.point.x,
+          y: e.point.y,
+          plotNumber: (pr.plotNumber as string) ?? "",
+          mainLandUse: (pr.mainLandUse as string) ?? "",
+          areaSqm: (pr.areaSqm as number) ?? 0,
+          gfaSqm: (pr.gfaSqm as number) ?? 0,
+          status: (pr.status as string) ?? "",
+        });
+      });
+      map.on("mouseleave", DDA_LAND_D3_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        setDdaLandHover(null);
+      });
+    } catch (e) {
+      console.error("[dda-land-d3] load failed", e);
+      ddaLandD3LoadedRef.current = false;
+    }
+  }
+
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
   async function attachOverlays(map: MLMap) {
@@ -2575,6 +2816,27 @@ function ParcelsMapPageInner() {
       void setLayerVisibility(map, def, !!layers[def.key], plotLabelsOn);
     }
   }, [layers]);
+
+  // DDA Land D3 toggle — separate from LAYER_REGISTRY because it has
+  // its own 3D building source/layer (not just fill+line).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const on = layers.ddaLandD3;
+    if (on) {
+      void loadDdaLandD3(map).then(() => {
+        const v = "visible";
+        if (map.getLayer(DDA_LAND_D3_FILL)) map.setLayoutProperty(DDA_LAND_D3_FILL, "visibility", v);
+        if (map.getLayer(DDA_LAND_D3_LINE)) map.setLayoutProperty(DDA_LAND_D3_LINE, "visibility", v);
+        if (map.getLayer(DDA_LAND_D3_BLDG_3D)) map.setLayoutProperty(DDA_LAND_D3_BLDG_3D, "visibility", v);
+      });
+    } else {
+      const v = "none";
+      if (map.getLayer(DDA_LAND_D3_FILL)) map.setLayoutProperty(DDA_LAND_D3_FILL, "visibility", v);
+      if (map.getLayer(DDA_LAND_D3_LINE)) map.setLayoutProperty(DDA_LAND_D3_LINE, "visibility", v);
+      if (map.getLayer(DDA_LAND_D3_BLDG_3D)) map.setLayoutProperty(DDA_LAND_D3_BLDG_3D, "visibility", v);
+    }
+  }, [layers.ddaLandD3]);
 
   useEffect(() => {
     if (!layersOpen) return;
@@ -3036,6 +3298,7 @@ function ParcelsMapPageInner() {
             { key: "adCommunities", label: "AD Communities" },
             { key: "ddaProjects", label: "DDA Project Boundaries" },
             { key: "ddaFreeZones", label: "DDA Free Zones" },
+            { key: "ddaLandD3", label: "DDA Land: Design District (d3)" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
@@ -3153,6 +3416,42 @@ function ParcelsMapPageInner() {
                 ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
                 : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
             | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
+          </div>
+        </div>
+      )}
+      {ddaLandHover && (
+        <div
+          style={{
+            position: "absolute",
+            left: ddaLandHover.x + 14,
+            top: ddaLandHover.y + 14,
+            width: 210,
+            background: "#ffffff",
+            color: "#1a1a1a",
+            borderLeft: "3px solid #4A90D9",
+            borderRadius: 4,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            padding: "8px 10px",
+            fontSize: 11,
+            fontFamily: "Georgia, serif",
+            lineHeight: 1.45,
+            pointerEvents: "none",
+            zIndex: 30,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#4A90D9", fontSize: 12 }}>
+            {ddaLandHover.plotNumber}
+            <span style={{ fontSize: 8, fontWeight: 400, color: "#999", marginLeft: 6 }}>DDA</span>
+          </div>
+          <div style={{ opacity: 0.85, marginTop: 2 }}>
+            {ddaLandHover.mainLandUse || "—"}
+          </div>
+          <div style={{ opacity: 0.7, marginTop: 1, fontSize: 10 }}>
+            {Math.round(ddaLandHover.areaSqm).toLocaleString()} sqm
+            {ddaLandHover.gfaSqm > 0 && ` · GFA ${Math.round(ddaLandHover.gfaSqm).toLocaleString()} sqm`}
+          </div>
+          <div style={{ opacity: 0.6, marginTop: 1, fontSize: 9, fontStyle: "italic" }}>
+            {ddaLandHover.status || "—"}
           </div>
         </div>
       )}
