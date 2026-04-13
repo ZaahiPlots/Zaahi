@@ -35,6 +35,9 @@ importers:
       next:
         specifier: ^15.3.1
         version: 15.5.14(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      pmtiles:
+        specifier: ^4.4.1
+        version: 4.4.1
       proj4:
         specifier: ^2.20.8
         version: 2.20.8
@@ -1419,6 +1422,9 @@ packages:
 
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
+
+  pmtiles@4.4.1:
+    resolution: {integrity: sha512-5oTeQc/yX/ft1evbpIlnoCZugQuug/iYIAj/ZTqIqzdGek4uZEho99En890EE6NOSI3JTI3IG8R7r8+SltphxA==}
 
   postcss@8.4.31:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
@@ -3006,6 +3012,10 @@ snapshots:
       confbox: 0.2.4
       exsolve: 1.0.8
       pathe: 2.0.3
+
+  pmtiles@4.4.1:
+    dependencies:
+      fflate: 0.8.2
 
   postcss@8.4.31:
     dependencies:

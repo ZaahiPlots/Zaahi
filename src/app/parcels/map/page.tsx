@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { Protocol } from "pmtiles";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
 import AddPlotModal from "./AddPlotModal";
@@ -160,25 +161,6 @@ const SAMA_AL_JADAF_LINE = "dda-sama-al-jadaf-line";
 const ARJAN_SRC = "dda-arjan";
 const ARJAN_LINE = "dda-arjan-line";
 // ── ZAAHI Plots (real listings from /api/parcels/map) ──
-// DDA Land layers — 209 DDA project plot files with 3D extrusions.
-// Each project gets its own set of source/layer IDs derived from slug.
-const ddaLandIds = (slug: string) => ({
-  src: `dda-land-${slug}`,
-  fill: `dda-land-${slug}-fill`,
-  line: `dda-land-${slug}-line`,
-  bldgSrc: `dda-land-${slug}-bldg`,
-  bldg3d: `dda-land-${slug}-bldg-3d`,
-});
-
-// AD Land layers — Abu Dhabi MyLand plot files with 3D extrusions.
-const adLandIds = (slug: string) => ({
-  src: `ad-land-${slug}`,
-  fill: `ad-land-${slug}-fill`,
-  line: `ad-land-${slug}-line`,
-  bldgSrc: `ad-land-${slug}-bldg`,
-  bldg3d: `ad-land-${slug}-bldg-3d`,
-});
-
 const ZAAHI_PLOTS_SRC = "zaahi-plots";
 const ZAAHI_PLOTS_FILL = "zaahi-plots-fill";
 const ZAAHI_PLOTS_LINE = "zaahi-plots-line";
@@ -897,6 +879,7 @@ type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
   saudiGovernorates: boolean; riyadhZones: boolean;
   adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
+  ddaLandPlots: boolean; adLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
@@ -1219,17 +1202,7 @@ function ParcelsMapPageInner() {
   // (the music toggle button lives there). The page-level state used
   // to live here for the old floating button which was removed.
 
-  // Fetch DDA Land + AD Land project lists once
-  useEffect(() => {
-    fetch("/api/layers/dda-land")
-      .then((r) => r.ok ? r.json() : [])
-      .then((list: Array<{ slug: string; name: string; count: number }>) => setDdaLandProjects(list))
-      .catch(() => {});
-    fetch("/api/layers/ad-land")
-      .then((r) => r.ok ? r.json() : [])
-      .then((list: Array<{ slug: string; name: string; count: number }>) => setAdLandProjects(list))
-      .catch(() => {});
-  }, []);
+  // PMTiles protocol is registered in the map init useEffect below.
 
   // ── Selection highlight: glow + dim others + 3D building boost ──
   useEffect(() => {
@@ -1277,14 +1250,6 @@ function ParcelsMapPageInner() {
     plotNumber: string; mainLandUse: string;
     areaSqm: number; gfaSqm: number; status: string;
   } | null>(null);
-  // DDA Land Plots — dynamic project list + enabled set
-  const [ddaLandProjects, setDdaLandProjects] = useState<Array<{ slug: string; name: string; count: number }>>([]);
-  const [ddaLandEnabled, setDdaLandEnabled] = useState<Set<string>>(new Set());
-  const ddaLandLoadedRef = useRef<Set<string>>(new Set());
-  // AD Land Plots — same pattern as DDA Land
-  const [adLandProjects, setAdLandProjects] = useState<Array<{ slug: string; name: string; count: number }>>([]);
-  const [adLandEnabled, setAdLandEnabled] = useState<Set<string>>(new Set());
-  const adLandLoadedRef = useRef<Set<string>>(new Set());
   const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -1299,7 +1264,7 @@ function ParcelsMapPageInner() {
   const [legendOpen, setLegendOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
   const legendBtnRef = useRef<HTMLButtonElement>(null);
-  const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false, ddaLand: false, adLand: false });
+  const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false });
   const [layerSearch, setLayerSearch] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
@@ -1314,6 +1279,8 @@ function ParcelsMapPageInner() {
     adCommunities: false,
     ddaProjects: false,
     ddaFreeZones: false,
+    ddaLandPlots: false,
+    adLandPlots: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -2281,248 +2248,63 @@ function ParcelsMapPageInner() {
     }
   }
 
-  // ── DDA Land: Universal loader for all 209 DDA plot projects ─────
-  // Toggleable reference layers. Same 3D style as ZAAHI plots (podium /
-  // body / crown) but NO price, NO click→SidePanel with valuation.
-  // Loaded lazily on first toggle per project.
+  // ── PMTiles: DDA + AD Land Plots ─────────────────────────────────
+  // Pre-built vector tiles served from /tiles/*.pmtiles (static files).
+  // 99K DDA + 362K AD plots with color/height/landUse pre-computed.
+  // Added to the map once in the "load" handler; toggled via layout visibility.
 
-  // Parse DDA land use string → canonical category
-  function parseDdaLandUse(raw: string | null | undefined): string | null {
-    if (!raw) return null;
-    const parts = raw.split(/\s*-\s*/);
-    const cats = new Set<string>();
-    for (const p of parts) {
-      const l = p.trim().toLowerCase();
-      if (/residential|villa|townhouse|apartment/.test(l)) cats.add("RESIDENTIAL");
-      else if (/commercial|office|retail|showroom/.test(l)) cats.add("COMMERCIAL");
-      else if (/hotel|hospitality|resort/.test(l)) cats.add("HOTEL");
-      else if (/industrial|warehouse|factory|logistics/.test(l)) cats.add("INDUSTRIAL");
-      else if (/educat|school|university/.test(l)) cats.add("EDUCATIONAL");
-      else if (/health|hospital|clinic|medical/.test(l)) cats.add("HEALTHCARE");
-      else if (/agricult|farm/.test(l)) cats.add("AGRICULTURAL");
-      else if (/future.*development/.test(l)) cats.add("FUTURE_DEVELOPMENT");
-    }
-    if (cats.size > 1) return "MIXED_USE";
-    if (cats.size === 1) return [...cats][0];
-    return null;
-  }
+  const DDA_LAND_TILES_SRC = "dda-land-tiles";
+  const DDA_LAND_TILES_FILL = "dda-land-tiles-fill";
+  const DDA_LAND_TILES_LINE = "dda-land-tiles-line";
+  const DDA_LAND_TILES_3D = "dda-land-tiles-3d";
+  const AD_LAND_TILES_SRC = "ad-land-tiles";
+  const AD_LAND_TILES_FILL = "ad-land-tiles-fill";
+  const AD_LAND_TILES_LINE = "ad-land-tiles-line";
+  const AD_LAND_TILES_3D = "ad-land-tiles-3d";
 
-  function parseDdaFloors(raw: string | null | undefined): number {
-    if (!raw) return 0;
-    const m = raw.match(/\+(\d+)\s*$/);
-    return m ? parseInt(m[1], 10) : 0;
-  }
-
-  async function loadDdaLand(map: MLMap, slug: string) {
-    const ids = ddaLandIds(slug);
-    if (ddaLandLoadedRef.current.has(slug)) return;
-    if (map.getSource(ids.src)) return;
-    ddaLandLoadedRef.current.add(slug);
-    try {
-      const res = await fetch(`/api/layers/dda-land/${slug}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const fc: GeoJSON.FeatureCollection = await res.json();
-
-      const plotFeatures: GeoJSON.Feature[] = [];
-      const buildingFeatures: GeoJSON.Feature[] = [];
-
-      for (const feat of fc.features) {
-        if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
-        const p = feat.properties as Record<string, unknown>;
-        const plotNumber = (p.PLOT_NUMBER as string) ?? "";
-        // Skip plots that already exist as ZAAHI listings to avoid double 3D
-        if (plotNumber && zaahiPlotNumbersRef.current.has(plotNumber)) continue;
-        const mainLandUse = (p.MAIN_LANDUSE as string) ?? "";
-        const subLandUse = (p.SUB_LANDUSE as string) ?? "";
-        const areaSqft = (p.AREA_SQFT as number) ?? 0;
-        const areaSqm = (p.AREA_SQM as number) ?? 0;
-        const gfaSqm = (p.GFA_SQM as number) ?? 0;
-        const status = (p.CONSTRUCTION_STATUS as string) ?? "";
-        const floorsRaw = (p.MAX_HEIGHT_FLOORS as string) ?? "";
-
-        const landUse = parseDdaLandUse(mainLandUse);
-        const hasLandUse = landUse != null;
-        const color = hasLandUse
-          ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
-          : ZAAHI_DEFAULT_COLOR;
-
-        plotFeatures.push({
-          type: "Feature",
-          geometry: feat.geometry,
-          properties: { plotNumber, mainLandUse, subLandUse, areaSqft, areaSqm, gfaSqm, status, floorsRaw, landUse: landUse ?? "", hasLandUse, color },
-        });
-
-        if (!hasLandUse) continue;
-        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
-
-        const floors = parseDdaFloors(floorsRaw);
-        let totalH = floors > 0 ? floors * 3.5 : 0;
-        if (totalH <= 0 && gfaSqm > 0 && areaSqm > 0) {
-          totalH = Math.ceil(gfaSqm / (areaSqm * 0.6)) * 3.5;
-        }
-        if (totalH <= 0) {
-          totalH = landUse === "RESIDENTIAL" ? 15 : landUse === "COMMERCIAL" ? 30 : landUse === "MIXED_USE" ? 40 : landUse === "HOTEL" || landUse === "HOSPITALITY" ? 50 : landUse === "INDUSTRIAL" || landUse === "WAREHOUSE" ? 12 : landUse === "EDUCATIONAL" || landUse === "EDUCATION" ? 12 : landUse === "HEALTHCARE" ? 18 : landUse === "AGRICULTURAL" || landUse === "AGRICULTURE" ? 6 : 20;
-        }
-
-        const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
-        const plotRing = (feat.geometry as GeoJSON.Polygon).coordinates[0];
-        const setbacks = [1, 2, 3, 4].map(i => { const v = p[`BUILDING_SETBACK_SIDE${i}`] as string; return v && v !== "N/A" ? parseFloat(v) : NaN; }).filter(n => !isNaN(n) && n > 0);
-        const avgSetback = setbacks.length > 0 ? setbacks.reduce((a, b) => a + b, 0) / setbacks.length : defaultSetbackM(landUse, subLandUse);
-        const footprintRing = areaSqft < 5000 ? plotRing : insetRingByMeters(plotRing, avgSetback);
-
-        const FLOOR_H = 3.5, PODIUM_TOP = 14, CROWN_H = 7;
-        const fl = Math.max(1, Math.round(totalH / FLOOR_H));
-        const scaleRing = (ring: number[][], scale: number): number[][] => {
-          const cx = ring.reduce((s, pt) => s + pt[0], 0) / ring.length;
-          const cy = ring.reduce((s, pt) => s + pt[1], 0) / ring.length;
-          return ring.map(([lng, lat]) => [cx + (lng - cx) * scale, cy + (lat - cy) * scale]);
-        };
-        const pushTier = (ring: number[][], baseM: number, topM: number) => {
-          buildingFeatures.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [ring] }, properties: { color: buildingHex, height: topM, base: baseM } });
-        };
-        if (fl <= 4) { pushTier(footprintRing, 0, totalH); }
-        else if (fl <= 10) { pushTier(footprintRing, 0, PODIUM_TOP); pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH); }
-        else { pushTier(footprintRing, 0, PODIUM_TOP); pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H); pushTier(scaleRing(footprintRing, 0.5), totalH - CROWN_H, totalH); }
-      }
-
-      console.log(`[DDA-LAND:${slug}]`, plotFeatures.length, "plots,", buildingFeatures.length, "building tiers");
-
-      map.addSource(ids.src, { type: "geojson", data: { type: "FeatureCollection", features: plotFeatures } });
-      map.addLayer({ id: ids.fill, type: "fill", source: ids.src, layout: { visibility: "visible" }, paint: { "fill-color": ["get", "color"], "fill-opacity": ["case", ["==", ["get", "hasLandUse"], true], 0.35, 0] } });
-      map.addLayer({ id: ids.line, type: "line", source: ids.src, layout: { visibility: "visible" }, paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-opacity": 0.7 } });
-      map.addSource(ids.bldgSrc, { type: "geojson", data: { type: "FeatureCollection", features: buildingFeatures } });
-      map.addLayer({ id: ids.bldg3d, type: "fill-extrusion", source: ids.bldgSrc, layout: { visibility: "visible" }, paint: { "fill-extrusion-color": ["get", "color"], "fill-extrusion-height": ["get", "height"], "fill-extrusion-base": ["get", "base"], "fill-extrusion-opacity": 0.35 } });
-
-      // Hover
-      map.on("mousemove", ids.fill, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const pr = f.properties as Record<string, unknown>;
-        setDdaLandHover({ x: e.point.x, y: e.point.y, plotNumber: (pr.plotNumber as string) ?? "", mainLandUse: (pr.mainLandUse as string) ?? "", areaSqm: (pr.areaSqm as number) ?? 0, gfaSqm: (pr.gfaSqm as number) ?? 0, status: (pr.status as string) ?? "" });
+  function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
+    if (map.getSource(srcId)) return;
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}` });
+    map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" }, paint: {
+      "fill-color": ["get", "color"],
+      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.1, 13, 0.35],
+    }});
+    map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" }, paint: {
+      "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
+    }});
+    map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 13, layout: { visibility: "none" },
+      filter: [">", ["get", "height"], 0],
+      paint: {
+        "fill-extrusion-color": ["get", "color"],
+        "fill-extrusion-height": ["get", "height"],
+        "fill-extrusion-base": 0,
+        "fill-extrusion-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 0.35],
+    }});
+    // Hover
+    map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      map.getCanvas().style.cursor = "pointer";
+      const pr = f.properties as Record<string, unknown>;
+      setDdaLandHover({
+        x: e.point.x, y: e.point.y,
+        plotNumber: (pr.plotNumber as string) ?? "",
+        mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
+        areaSqm: (pr.areaSqm as number) ?? 0,
+        gfaSqm: (pr.gfaSqm as number) ?? 0,
+        status: (pr.status as string) ?? "",
       });
-      map.on("mouseleave", ids.fill, () => { map.getCanvas().style.cursor = ""; setDdaLandHover(null); });
-    } catch (e) {
-      console.error(`[dda-land:${slug}] load failed`, e);
-      ddaLandLoadedRef.current.delete(slug);
-    }
+    });
+    map.on("mouseleave", fillId, () => { map.getCanvas().style.cursor = ""; setDdaLandHover(null); });
   }
 
-  // ── AD Land: Universal loader for Abu Dhabi MyLand plots ─────────
-  // Same pattern as DDA Land. Fields differ: PRIMARYUSEENGDESC instead of
-  // MAIN_LANDUSE, MAXALLOWABLEHEIGHTS (metres string), DevCode_FAR, etc.
-
-  function parseAdLandUse(raw: string | null | undefined): string | null {
-    if (!raw) return null;
-    const l = raw.toLowerCase();
-    if (/residential|villa|townhouse|apartment/.test(l)) return "RESIDENTIAL";
-    if (/commercial|office|retail|showroom/.test(l)) return "COMMERCIAL";
-    if (/mixed/.test(l)) return "MIXED_USE";
-    if (/hotel|hospitality|resort/.test(l)) return "HOTEL";
-    if (/industrial|warehouse|factory|logistics/.test(l)) return "INDUSTRIAL";
-    if (/educat|school|university/.test(l)) return "EDUCATIONAL";
-    if (/health|hospital|clinic|medical/.test(l)) return "HEALTHCARE";
-    if (/agricult|farm/.test(l)) return "AGRICULTURAL";
-    if (/future.*development/.test(l)) return "FUTURE_DEVELOPMENT";
-    if (/government|civic|public/.test(l)) return null; // skip government plots
-    return null;
+  function setLandTileVisibility(map: MLMap, fillId: string, lineId: string, extId: string, on: boolean) {
+    const v = on ? "visible" : "none";
+    if (map.getLayer(fillId)) map.setLayoutProperty(fillId, "visibility", v);
+    if (map.getLayer(lineId)) map.setLayoutProperty(lineId, "visibility", v);
+    if (map.getLayer(extId)) map.setLayoutProperty(extId, "visibility", v);
   }
 
-  async function loadAdLand(map: MLMap, slug: string) {
-    const ids = adLandIds(slug);
-    if (adLandLoadedRef.current.has(slug)) return;
-    if (map.getSource(ids.src)) return;
-    adLandLoadedRef.current.add(slug);
-    try {
-      const res = await fetch(`/api/layers/ad-land/${slug}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const fc: GeoJSON.FeatureCollection = await res.json();
-
-      const plotFeatures: GeoJSON.Feature[] = [];
-      const buildingFeatures: GeoJSON.Feature[] = [];
-
-      for (const feat of fc.features) {
-        if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
-        const p = feat.properties as Record<string, unknown>;
-        const plotNumber = (p.PLOTNUMBER as string) ?? "";
-        const district = (p.DISTRICTENG as string) ?? "";
-        const community = (p.COMMUNITYENG as string) ?? "";
-        const areaSqm = (p.CALCULATEDAREA as number) ?? 0;
-        const primaryUse = (p.PRIMARYUSEENGDESC as string) ?? "";
-        const devCategory = (p.DevCode_Category as string) ?? "";
-        const status = (p.Construction_Status as string) ?? "";
-        const maxHeight = (p.MAXALLOWABLEHEIGHTS as string) ?? "";
-        const farStr = (p.DevCode_FAR as string) ?? "";
-        const maxGfa = (p.DevCode_MaxGFA as number) ?? 0;
-
-        const landUse = parseAdLandUse(primaryUse) ?? parseAdLandUse(devCategory);
-        const hasLandUse = landUse != null;
-        const color = hasLandUse ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR) : ZAAHI_DEFAULT_COLOR;
-
-        plotFeatures.push({
-          type: "Feature",
-          geometry: feat.geometry,
-          properties: { plotNumber, district, community, areaSqm, primaryUse, devCategory, status, landUse: landUse ?? "", hasLandUse, color },
-        });
-
-        if (!hasLandUse) continue;
-        if (landUse === "FUTURE_DEVELOPMENT") continue;
-
-        // Height: from MAXALLOWABLEHEIGHTS (metres string), or FAR-derived, or fallback
-        const heightM = parseFloat(maxHeight);
-        let totalH = !isNaN(heightM) && heightM > 0 && heightM < 500 ? heightM : 0;
-        if (totalH <= 0 && maxGfa > 0 && areaSqm > 0) {
-          totalH = Math.ceil(maxGfa / (areaSqm * 0.6)) * 3.5;
-        }
-        if (totalH <= 0) {
-          totalH = landUse === "RESIDENTIAL" ? 15 : landUse === "COMMERCIAL" ? 30 : landUse === "MIXED_USE" ? 40 : landUse === "HOTEL" || landUse === "HOSPITALITY" ? 50 : landUse === "INDUSTRIAL" || landUse === "WAREHOUSE" ? 12 : landUse === "EDUCATIONAL" || landUse === "EDUCATION" ? 12 : landUse === "HEALTHCARE" ? 18 : landUse === "AGRICULTURAL" || landUse === "AGRICULTURE" ? 6 : 20;
-        }
-        // Cap at 300m
-        if (totalH > 300) totalH = 300;
-
-        const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
-        const plotRing = (feat.geometry as GeoJSON.Polygon).coordinates[0];
-        const areaSqft = areaSqm * 10.764;
-        const setbackM = defaultSetbackM(landUse, null);
-        const footprintRing = areaSqft < 5000 ? plotRing : insetRingByMeters(plotRing, setbackM);
-
-        const FLOOR_H = 3.5, PODIUM_TOP = 14, CROWN_H = 7;
-        const fl = Math.max(1, Math.round(totalH / FLOOR_H));
-        const scaleRing = (ring: number[][], scale: number): number[][] => {
-          const cx = ring.reduce((s, pt) => s + pt[0], 0) / ring.length;
-          const cy = ring.reduce((s, pt) => s + pt[1], 0) / ring.length;
-          return ring.map(([lng, lat]) => [cx + (lng - cx) * scale, cy + (lat - cy) * scale]);
-        };
-        const pushTier = (ring: number[][], baseM: number, topM: number) => {
-          buildingFeatures.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [ring] }, properties: { color: buildingHex, height: topM, base: baseM } });
-        };
-        if (fl <= 4) { pushTier(footprintRing, 0, totalH); }
-        else if (fl <= 10) { pushTier(footprintRing, 0, PODIUM_TOP); pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH); }
-        else { pushTier(footprintRing, 0, PODIUM_TOP); pushTier(scaleRing(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H); pushTier(scaleRing(footprintRing, 0.5), totalH - CROWN_H, totalH); }
-      }
-
-      console.log(`[AD-LAND:${slug}]`, plotFeatures.length, "plots,", buildingFeatures.length, "building tiers");
-
-      map.addSource(ids.src, { type: "geojson", data: { type: "FeatureCollection", features: plotFeatures } });
-      map.addLayer({ id: ids.fill, type: "fill", source: ids.src, layout: { visibility: "visible" }, paint: { "fill-color": ["get", "color"], "fill-opacity": ["case", ["==", ["get", "hasLandUse"], true], 0.35, 0] } });
-      map.addLayer({ id: ids.line, type: "line", source: ids.src, layout: { visibility: "visible" }, paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-opacity": 0.7 } });
-      map.addSource(ids.bldgSrc, { type: "geojson", data: { type: "FeatureCollection", features: buildingFeatures } });
-      map.addLayer({ id: ids.bldg3d, type: "fill-extrusion", source: ids.bldgSrc, layout: { visibility: "visible" }, paint: { "fill-extrusion-color": ["get", "color"], "fill-extrusion-height": ["get", "height"], "fill-extrusion-base": ["get", "base"], "fill-extrusion-opacity": 0.35 } });
-
-      // Hover — reuse ddaLandHover state (same tooltip format)
-      map.on("mousemove", ids.fill, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const pr = f.properties as Record<string, unknown>;
-        setDdaLandHover({ x: e.point.x, y: e.point.y, plotNumber: (pr.plotNumber as string) ?? "", mainLandUse: (pr.primaryUse as string) ?? "", areaSqm: (pr.areaSqm as number) ?? 0, gfaSqm: 0, status: (pr.status as string) ?? "" });
-      });
-      map.on("mouseleave", ids.fill, () => { map.getCanvas().style.cursor = ""; setDdaLandHover(null); });
-    } catch (e) {
-      console.error(`[ad-land:${slug}] load failed`, e);
-      adLandLoadedRef.current.delete(slug);
-    }
-  }
 
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
@@ -2554,6 +2336,9 @@ function ParcelsMapPageInner() {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    // Register PMTiles protocol for vector tile sources
+    const pmtilesProtocol = new Protocol();
+    maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: STYLES.light,
@@ -2630,6 +2415,10 @@ function ParcelsMapPageInner() {
       // both the polygon source (fill / line / glow) and the building
       // source (3D extrusions colored by land use).
       await loadZaahiPlots(map);
+
+      // ── PMTiles land layers (DDA 99K + AD 362K plots) ──
+      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+      addLandTileSource(map, AD_LAND_TILES_SRC, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, "/tiles/ad-land.pmtiles");
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
@@ -2853,11 +2642,11 @@ function ParcelsMapPageInner() {
       // (maplibre's source registry was wiped). The loader is idempotent
       // on map.getSource so it's safe to call.
       await loadZaahiPlots(map);
-      // Re-attach enabled DDA/AD Land layers (sources were wiped by setStyle)
-      ddaLandLoadedRef.current.clear();
-      for (const slug of ddaLandEnabled) void loadDdaLand(map, slug);
-      adLandLoadedRef.current.clear();
-      for (const slug of adLandEnabled) void loadAdLand(map, slug);
+      // Re-attach PMTiles land layers (sources wiped by setStyle)
+      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+      addLandTileSource(map, AD_LAND_TILES_SRC, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, "/tiles/ad-land.pmtiles");
+      setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
+      setLandTileVisibility(map, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, layers.adLandPlots);
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
@@ -2874,47 +2663,13 @@ function ParcelsMapPageInner() {
     }
   }, [layers]);
 
-  // DDA Land toggle — universal for all 209 projects
+  // PMTiles land toggles — single toggle per source (DDA / AD)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    for (const proj of ddaLandProjects) {
-      const ids = ddaLandIds(proj.slug);
-      const on = ddaLandEnabled.has(proj.slug);
-      if (on) {
-        void loadDdaLand(map, proj.slug).then(() => {
-          if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "visible");
-          if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "visible");
-          if (map.getLayer(ids.bldg3d)) map.setLayoutProperty(ids.bldg3d, "visibility", "visible");
-        });
-      } else if (ddaLandLoadedRef.current.has(proj.slug)) {
-        if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "none");
-        if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "none");
-        if (map.getLayer(ids.bldg3d)) map.setLayoutProperty(ids.bldg3d, "visibility", "none");
-      }
-    }
-  }, [ddaLandEnabled, ddaLandProjects]);
-
-  // AD Land toggle — universal for all 211 districts
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    for (const proj of adLandProjects) {
-      const ids = adLandIds(proj.slug);
-      const on = adLandEnabled.has(proj.slug);
-      if (on) {
-        void loadAdLand(map, proj.slug).then(() => {
-          if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "visible");
-          if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "visible");
-          if (map.getLayer(ids.bldg3d)) map.setLayoutProperty(ids.bldg3d, "visibility", "visible");
-        });
-      } else if (adLandLoadedRef.current.has(proj.slug)) {
-        if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "none");
-        if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "none");
-        if (map.getLayer(ids.bldg3d)) map.setLayoutProperty(ids.bldg3d, "visibility", "none");
-      }
-    }
-  }, [adLandEnabled, adLandProjects]);
+    setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
+    setLandTileVisibility(map, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, layers.adLandPlots);
+  }, [layers.ddaLandPlots, layers.adLandPlots]);
 
   useEffect(() => {
     if (!layersOpen) return;
@@ -3376,6 +3131,8 @@ function ParcelsMapPageInner() {
             { key: "adCommunities", label: "AD Communities" },
             { key: "ddaProjects", label: "DDA Project Boundaries" },
             { key: "ddaFreeZones", label: "DDA Free Zones" },
+            { key: "ddaLandPlots", label: "DDA Land Plots (99K)" },
+            { key: "adLandPlots", label: "AD Land Plots (362K)" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
@@ -3411,39 +3168,7 @@ function ParcelsMapPageInner() {
           onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
         />
 
-        {ddaLandProjects.length > 0 && (
-          <LayerGroup
-            c={c}
-            title={`DDA Land Plots (${ddaLandEnabled.size}/${ddaLandProjects.length})`}
-            open={groupOpen.ddaLand}
-            onToggle={() => setGroupOpen((g) => ({ ...g, ddaLand: !g.ddaLand }))}
-            search={layerSearch}
-            items={ddaLandProjects.map((p) => ({ key: p.slug, label: `${p.name} (${p.count})` }))}
-            isOn={(k) => ddaLandEnabled.has(k)}
-            onChange={(k, v) => setDdaLandEnabled((prev) => {
-              const next = new Set(prev);
-              if (v) next.add(k); else next.delete(k);
-              return next;
-            })}
-          />
-        )}
-
-        {adLandProjects.length > 0 && (
-          <LayerGroup
-            c={c}
-            title={`AD Land Plots (${adLandEnabled.size}/${adLandProjects.length})`}
-            open={groupOpen.adLand}
-            onToggle={() => setGroupOpen((g) => ({ ...g, adLand: !g.adLand }))}
-            search={layerSearch}
-            items={adLandProjects.map((p) => ({ key: p.slug, label: `${p.name} (${p.count})` }))}
-            isOn={(k) => adLandEnabled.has(k)}
-            onChange={(k, v) => setAdLandEnabled((prev) => {
-              const next = new Set(prev);
-              if (v) next.add(k); else next.delete(k);
-              return next;
-            })}
-          />
-        )}
+        {/* DDA + AD Land toggles are in Base Layers above */}
       </div>
       )}
 

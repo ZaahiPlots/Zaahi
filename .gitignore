@@ -5,6 +5,12 @@ tsconfig.tsbuildinfo
 # Vercel via git, otherwise every /api/layers/* route 500s with ENOENT.
 # Reference PDFs in data/meydan/ are not needed at runtime, stay ignored.
 data/meydan/
+# Raw plot-level GeoJSON is too large for git (438MB). Kept on disk for
+# PMTiles generation only. Production serves pre-built .pmtiles from public/tiles/.
+data/layers/dda-plots/
+data/layers/ad-plots/
+# Intermediate newline-delimited GeoJSON used to build PMTiles
+data/tiles/
 .env
 .env.local
 .env.*.local
