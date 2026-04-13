@@ -2727,8 +2727,8 @@ function ParcelsMapPageInner() {
           ref={legendRef}
           style={{
             position: "absolute",
-            top: 140,
-            right: 16,
+            top: 124,
+            right: 12,
             width: 280,
             maxHeight: "calc(100vh - 130px)",
             overflowY: "auto",
@@ -2886,12 +2886,12 @@ function ParcelsMapPageInner() {
       <div
         style={{
           position: "absolute",
-          right: 16,
+          right: 12,
           top: "50%",
           transform: "translateY(-50%)",
           display: "flex",
           flexDirection: "column",
-          gap: 8,
+          gap: 6,
           zIndex: 11,
         }}
       >
@@ -2902,7 +2902,7 @@ function ParcelsMapPageInner() {
           title="Reset bearing"
           onClick={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45, duration: 500 })}
         >
-          <span style={{ display: "inline-block", transform: `rotate(${-bearing}deg)`, transition: "transform 250ms ease", fontSize: 16 }}>
+          <span style={{ display: "inline-block", transform: `rotate(${-bearing}deg)`, transition: "transform 250ms ease", fontSize: 14 }}>
             ⊕
           </span>
         </ChromeBtn>
