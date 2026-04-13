@@ -2323,8 +2323,8 @@ function ParcelsMapPageInner() {
           popup
             .setLngLat(e.lngLat)
             .setHTML(
-              `<div><div style="font-family:Georgia,serif;font-weight:700;color:#C8A96E">${clean}</div>
-               <div style="font-size:10px;opacity:0.7;margin-top:2px">${planLabel}</div></div>`,
+              `<div><div style="font-family:Georgia,serif;font-weight:700;font-size:10px;color:#C8A96E">${clean}</div>
+               <div style="font-size:8px;opacity:0.7;margin-top:1px">${planLabel}</div></div>`,
             )
             .addTo(map);
         };
@@ -2394,7 +2394,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2413,7 +2413,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2431,7 +2431,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2449,7 +2449,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2467,7 +2467,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2485,7 +2485,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">Zone ${zone}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">Zone ${zone}</div>`,
           )
           .addTo(map);
       });
@@ -2503,7 +2503,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
           )
           .addTo(map);
       });
@@ -2522,7 +2522,7 @@ function ParcelsMapPageInner() {
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;letter-spacing:0.05em">${name}${fz}</div>`,
+            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}${fz}</div>`,
           )
           .addTo(map);
       });
@@ -3110,8 +3110,8 @@ function ParcelsMapPageInner() {
           color: ${c.text} !important;
           border: 1px solid ${GOLD};
           border-radius: 6px;
-          padding: 8px 12px;
-          font-size: 12px;
+          padding: 5px 8px;
+          font-size: 9px;
         }
         .zaahi-popup .maplibregl-popup-tip {
           border-top-color: ${GOLD} !important;
