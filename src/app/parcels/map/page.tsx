@@ -2680,7 +2680,10 @@ function ParcelsMapPageInner() {
           alignItems: "center",
           justifyContent: "center",
           padding: 0,
+          transition: "border-color 150ms ease, background 150ms ease",
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -2702,8 +2705,8 @@ function ParcelsMapPageInner() {
           width: 30,
           height: 30,
           borderRadius: 6,
-          border: `1px solid rgba(200, 169, 110, 0.25)`,
-          background: "rgba(10, 22, 40, 0.3)",
+          border: `1px solid rgba(200, 169, 110, 0.3)`,
+          background: "rgba(10, 22, 40, 0.4)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
@@ -2711,9 +2714,10 @@ function ParcelsMapPageInner() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          transition: "border-color 150ms ease, background 150ms ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
@@ -2852,12 +2856,13 @@ function ParcelsMapPageInner() {
               cursor: "pointer",
               fontSize: 12,
               boxShadow: "none",
+              transition: "border-color 150ms ease, background 150ms ease",
             }}
             onMouseEnter={(e) => {
-              if (baseMap !== b) e.currentTarget.style.borderColor = GOLD;
+              if (baseMap !== b) { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }
             }}
             onMouseLeave={(e) => {
-              if (baseMap !== b) e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+              if (baseMap !== b) { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }
             }}
           >
             {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
@@ -3416,9 +3421,10 @@ function ChromeBtn({
         fontWeight: 700,
         boxShadow: "none",
         padding: 0,
+        transition: "border-color 150ms ease, background 150ms ease",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)")}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
     >
       {children}
     </button>
@@ -3567,8 +3573,8 @@ function HeaderBar({
           onClick={onOpenAddModal}
           title="Add Plot"
           style={hdrBtnStyle(c)}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
         >
           <span style={{ fontSize: 15, color: GOLD, fontWeight: 700 }}>+</span>
         </button>
@@ -3599,8 +3605,8 @@ function HeaderBar({
           title={soundOn ? "Mute" : "Unmute"}
           aria-label={soundOn ? "Mute" : "Unmute"}
           style={hdrBtnStyle(c)}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
         >
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
@@ -3608,8 +3614,8 @@ function HeaderBar({
           href="/dashboard"
           title="Profile"
           style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
         >
           <span style={{ fontSize: 13 }}>👤</span>
         </a>
@@ -3668,8 +3674,8 @@ function FindLauncher({
         aria-label="Find plot"
         onClick={() => setOpen(true)}
         style={hdrBtnStyle(c)}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
       >
         <span style={{ fontSize: 12 }}>🔍</span>
       </button>
@@ -3782,8 +3788,8 @@ function HdrField({
         title={tooltip}
         onClick={() => setExpanded(true)}
         style={hdrBtnStyle(c)}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
       >
         <span style={{ fontSize: 13, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
       </button>
@@ -3799,15 +3805,15 @@ function HdrField({
         height: 28,
         padding: "0 4px 0 8px",
         borderRadius: 6,
-        border: `1px solid rgba(200, 169, 110, 0.25)`,
-        background: "rgba(10, 22, 40, 0.3)",
+        border: `1px solid rgba(200, 169, 110, 0.3)`,
+        background: "rgba(10, 22, 40, 0.4)",
         color: c.text,
         boxShadow: "none",
         gap: 4,
-        transition: "border-color 150ms ease",
+        transition: "border-color 150ms ease, background 150ms ease",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
     >
       <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
       {label && <span style={{ fontSize: 10, fontWeight: 600, color: c.text }}>{label}</span>}
