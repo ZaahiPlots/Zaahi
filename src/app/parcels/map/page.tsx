@@ -2665,24 +2665,24 @@ function ParcelsMapPageInner() {
         title="Layers"
         style={{
           position: "absolute",
-          top: 64,
-          left: 16,
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          border: `1px solid ${isDark ? GOLD : c.border}`,
-          background: c.bg,
+          top: 56,
+          left: 12,
+          width: 30,
+          height: 30,
+          borderRadius: 6,
+          border: `1px solid rgba(200, 169, 110, 0.25)`,
+          background: "rgba(10, 22, 40, 0.3)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
-          boxShadow: c.headerShadow,
+          boxShadow: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: 0,
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="12 2 2 7 12 12 22 7 12 2" />
           <polyline points="2 17 12 22 22 17" />
           <polyline points="2 12 12 17 22 12" />
@@ -2697,17 +2697,17 @@ function ParcelsMapPageInner() {
         title="Legend"
         style={{
           position: "absolute",
-          top: 96,
-          right: 16,
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          border: `1px solid ${c.border}`,
-          background: "white",
+          top: 86,
+          right: 12,
+          width: 30,
+          height: 30,
+          borderRadius: 6,
+          border: `1px solid rgba(200, 169, 110, 0.25)`,
+          background: "rgba(10, 22, 40, 0.3)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          boxShadow: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -2715,7 +2715,7 @@ function ParcelsMapPageInner() {
         onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="16" x2="12" y2="12" />
           <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -2827,12 +2827,12 @@ function ParcelsMapPageInner() {
       <div
         style={{
           position: "absolute",
-          left: 16,
+          left: 12,
           top: "50%",
           transform: "translateY(-50%)",
           display: "flex",
           flexDirection: "column",
-          gap: 8,
+          gap: 6,
           zIndex: 11,
         }}
       >
@@ -2843,21 +2843,21 @@ function ParcelsMapPageInner() {
             title={b === "light" ? "Light" : b === "dark" ? "Dark" : "Satellite"}
             aria-label={b}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              border: `1px solid ${baseMap === b ? GOLD : c.border}`,
-              background: baseMap === b ? GOLD : "white",
+              width: 30,
+              height: 30,
+              borderRadius: 6,
+              border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.25)"}`,
+              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.3)",
               color: baseMap === b ? "#0A1628" : c.text,
               cursor: "pointer",
-              fontSize: 14,
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              fontSize: 12,
+              boxShadow: "none",
             }}
             onMouseEnter={(e) => {
               if (baseMap !== b) e.currentTarget.style.borderColor = GOLD;
             }}
             onMouseLeave={(e) => {
-              if (baseMap !== b) e.currentTarget.style.borderColor = c.border;
+              if (baseMap !== b) e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)";
             }}
           >
             {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
@@ -3156,7 +3156,7 @@ function ParcelsMapPageInner() {
       {/* The music / sound toggle moved into the HeaderBar (next to
           Profile) per founder spec 2026-04-12. The old floating
           button at top:56 right:16 is gone. */}
-      <ArchibaldChat />
+      <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel
         parcelId={selectedParcelId}
         onClose={() => {
@@ -3389,7 +3389,7 @@ type ChromeTheme = {
   headerShadow: string;
 };
 
-// Square 36×36 chrome button used in the right vertical control column.
+// Square chrome button used in the right vertical control column.
 function ChromeBtn({
   c, title, onClick, children,
 }: {
@@ -3404,19 +3404,19 @@ function ChromeBtn({
       aria-label={title}
       onClick={onClick}
       style={{
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        border: `1px solid ${c.border}`,
-        background: "white",
+        width: 30,
+        height: 30,
+        borderRadius: 6,
+        border: `1px solid rgba(200, 169, 110, 0.25)`,
+        background: "rgba(10, 22, 40, 0.3)",
         color: GOLD,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: 700,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+        boxShadow: "none",
         padding: 0,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
@@ -3509,15 +3509,15 @@ function HeaderBar({
         top: 0,
         left: 0,
         right: 0,
-        height: 48,
-        background: c.bg,
-        borderBottom: `1px solid ${isDark ? GOLD : c.border}`,
+        height: 44,
+        background: "transparent",
+        borderBottom: "none",
         display: "flex",
         alignItems: "center",
-        padding: "0 16px",
+        padding: "0 12px",
         zIndex: 10,
-        boxShadow: c.headerShadow,
-        gap: 14,
+        boxShadow: "none",
+        gap: 10,
         // Mobile fallback: horizontal scroll instead of squishing the
         // search inputs together. Touch users can swipe to reach the
         // remaining controls. A proper mobile redesign (collapse into a
@@ -3526,24 +3526,26 @@ function HeaderBar({
         whiteSpace: "nowrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <div
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: 700,
             letterSpacing: "0.22em",
             color: GOLD,
+            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
           }}
         >
           ZAAHI
         </div>
         <div
           style={{
-            fontSize: 9,
-            color: c.textDim,
+            fontSize: 8,
+            color: "rgba(255,255,255,0.6)",
             letterSpacing: "0.18em",
             textTransform: "uppercase",
+            textShadow: "0 1px 3px rgba(0,0,0,0.4)",
           }}
         >
           Real Estate OS
@@ -3565,12 +3567,12 @@ function HeaderBar({
       <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
         <button
           onClick={onOpenAddModal}
-          title="Register a new plot in ZAAHI"
+          title="Add Plot"
           style={hdrBtnStyle(c)}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
         >
-          <span style={{ fontSize: 16, color: GOLD, fontWeight: 700 }}>+</span>Add Plot
+          <span style={{ fontSize: 15, color: GOLD, fontWeight: 700 }}>+</span>
         </button>
         <FindLauncher
           c={c}
@@ -3585,34 +3587,33 @@ function HeaderBar({
         <HdrField
           c={c}
           icon="✓"
-          label="Check"
+          label=""
           placeholder="Plot #"
           value={check}
           onChange={setCheck}
           onKey={doCheck}
           busy={false}
-          tooltip="Open DLD property status check"
+          tooltip="Check Plot"
         />
         <button
           type="button"
           onClick={() => sound.toggle()}
-          title={soundOn ? "Mute music & UI sounds" : "Play music & UI sounds"}
+          title={soundOn ? "Mute" : "Unmute"}
           aria-label={soundOn ? "Mute" : "Unmute"}
           style={hdrBtnStyle(c)}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
         >
-          <span style={{ fontSize: 14 }}>{soundOn ? "🎵" : "🔇"}</span>
-          {soundOn ? "Music" : "Muted"}
+          <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
         <a
           href="/dashboard"
-          title="Profile / Dashboard"
+          title="Profile"
           style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
         >
-          <span style={{ fontSize: 14 }}>👤</span>Profile
+          <span style={{ fontSize: 13 }}>👤</span>
         </a>
       </div>
     </header>
@@ -3623,18 +3624,20 @@ function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
   return {
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    height: 32,
-    padding: "0 12px",
-    borderRadius: 8,
-    border: `1px solid ${c.border}`,
-    background: "white",
+    justifyContent: "center",
+    gap: 4,
+    width: 28,
+    height: 28,
+    padding: 0,
+    borderRadius: 6,
+    border: `1px solid rgba(200, 169, 110, 0.25)`,
+    background: "rgba(10, 22, 40, 0.3)",
     color: c.text,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    boxShadow: "none",
     cursor: "pointer",
-    transition: "border-color 150ms ease",
+    transition: "border-color 150ms ease, background 150ms ease",
   };
 }
 
@@ -3663,19 +3666,14 @@ function FindLauncher({
   if (!open) {
     return (
       <button
-        title="Find plot in ZAAHI database"
+        title="Find Plot"
         aria-label="Find plot"
         onClick={() => setOpen(true)}
-        style={{
-          ...hdrBtnStyle(c),
-          width: 32,
-          padding: 0,
-          justifyContent: "center",
-        }}
+        style={hdrBtnStyle(c)}
         onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
       >
-        🔍
+        <span style={{ fontSize: 12 }}>🔍</span>
       </button>
     );
   }
@@ -3686,17 +3684,17 @@ function FindLauncher({
         style={{
           display: "flex",
           alignItems: "center",
-          height: 32,
-          padding: "0 4px 0 10px",
-          borderRadius: 8,
-          border: `2px solid ${error ? "#EF4444" : GOLD}`,
-          background: "white",
+          height: 28,
+          padding: "0 4px 0 8px",
+          borderRadius: 6,
+          border: `1px solid ${error ? "#EF4444" : GOLD}`,
+          background: "rgba(10, 22, 40, 0.4)",
           color: c.text,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-          gap: 6,
+          boxShadow: "none",
+          gap: 4,
         }}
       >
-        <span style={{ fontSize: 12 }}>🔍</span>
+        <span style={{ fontSize: 11 }}>🔍</span>
         <input
           ref={ref}
           value={value}
@@ -3713,13 +3711,13 @@ function FindLauncher({
           placeholder={busy ? "Searching…" : "Plot number..."}
           disabled={busy}
           style={{
-            width: 130,
-            height: 24,
-            padding: "0 6px",
+            width: 110,
+            height: 22,
+            padding: "0 4px",
             border: "none",
             background: "transparent",
             color: c.text,
-            fontSize: 11,
+            fontSize: 10,
             outline: "none",
           }}
         />
@@ -3730,10 +3728,10 @@ function FindLauncher({
             background: "transparent",
             border: 0,
             color: c.textDim,
-            fontSize: 16,
+            fontSize: 14,
             cursor: "pointer",
             lineHeight: 1,
-            padding: "0 4px",
+            padding: "0 2px",
           }}
         >
           ×
@@ -3748,14 +3746,14 @@ function FindLauncher({
             right: 0,
             marginTop: 4,
             padding: "4px 8px",
-            background: "white",
+            background: "rgba(10, 22, 40, 0.9)",
             border: "1px solid #EF4444",
             borderRadius: 4,
             color: "#EF4444",
             fontSize: 10,
             fontWeight: 600,
             textAlign: "center",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            boxShadow: "none",
           }}
         >
           {error}
@@ -3778,41 +3776,66 @@ function HdrField({
   busy: boolean;
   tooltip: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!expanded && !value) {
+    return (
+      <button
+        title={tooltip}
+        onClick={() => setExpanded(true)}
+        style={hdrBtnStyle(c)}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
+      >
+        <span style={{ fontSize: 13, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
+      </button>
+    );
+  }
+
   return (
     <label
       title={tooltip}
       style={{
         display: "flex",
         alignItems: "center",
-        height: 32,
-        padding: "0 4px 0 10px",
-        borderRadius: 8,
-        border: `1px solid ${c.border}`,
-        background: "white",
+        height: 28,
+        padding: "0 4px 0 8px",
+        borderRadius: 6,
+        border: `1px solid rgba(200, 169, 110, 0.25)`,
+        background: "rgba(10, 22, 40, 0.3)",
         color: c.text,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        gap: 6,
+        boxShadow: "none",
+        gap: 4,
         transition: "border-color 150ms ease",
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)")}
     >
-      <span style={{ fontSize: 14, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
-      <span style={{ fontSize: 11, fontWeight: 600, color: c.text }}>{label}</span>
+      <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
+      {label && <span style={{ fontSize: 10, fontWeight: 600, color: c.text }}>{label}</span>}
       <input
+        autoFocus
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKey}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            setExpanded(false);
+            onChange("");
+          }
+          onKey(e);
+        }}
+        onBlur={() => { if (!value) setExpanded(false); }}
         placeholder={busy ? "…" : placeholder}
         disabled={busy}
         style={{
-          width: 80,
-          height: 24,
-          padding: "0 6px",
+          width: 70,
+          height: 22,
+          padding: "0 4px",
           border: "none",
           background: "transparent",
           color: c.text,
-          fontSize: 11,
+          fontSize: 10,
           outline: "none",
         }}
       />

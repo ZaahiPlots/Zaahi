@@ -244,16 +244,6 @@ export default function AuthPage() {
               >
                 Real Estate OS
               </div>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  color: 'rgba(255,255,255,0.35)',
-                }}
-              >
-                Land Intelligence Platform for UAE &amp; Saudi Arabia
-              </div>
             </div>
 
             {/* Sign In only — no tabs needed */}

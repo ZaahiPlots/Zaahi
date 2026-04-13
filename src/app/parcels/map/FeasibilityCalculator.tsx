@@ -111,18 +111,17 @@ interface LuConfig {
   icon: string;
   rm: string;
   defaults: Record<string, number | string>;
-  ph: string[];
 }
 
 const LU: Record<LuKey, LuConfig> = {
-  residential: { label: "Residential", icon: "R", rm: "sale", defaults: { zone: "Dubai Hills Estate", landArea: 50000, eff: 0.78, hcPSF: 450, softPct: 12, contPct: 10, constMo: 28, salePSF: 1800, absUnits: 15, unitSize: 900, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 12, ltv: 60, ir: 7.5, ecr: 6.5, floors: 0, rentPSF: 0, occ: 0, opex: 0, mgmt: 0 }, ph: ["Pre-Dev", "Design", "Construction", "Sales", "Handover"] },
-  commercial: { label: "Commercial", icon: "C", rm: "noi", defaults: { zone: "Business Bay", landArea: 40000, eff: 0.82, hcPSF: 580, softPct: 14, contPct: 8, constMo: 32, rentPSF: 180, occ: 88, opex: 28, mgmt: 3, dldPct: 4, agentPct: 0, escrowPct: 20, ppSplit: 0, dr: 13, ltv: 55, ir: 7.0, ecr: 7.0, salePSF: 0, absUnits: 0, unitSize: 0, floors: 0 }, ph: ["Pre-Dev", "Design", "Construction", "Lease-Up", "Stabilization"] },
-  mixed_use: { label: "Mixed Use", icon: "M", rm: "mixed", defaults: { zone: "Business Bay", landArea: 60000, eff: 0.76, hcPSF: 520, softPct: 13, contPct: 9, constMo: 34, resPct: 55, comPct: 30, retPct: 15, salePSF: 1600, rentPSF: 160, retRent: 220, occ: 85, opex: 25, mgmt: 3, absUnits: 12, unitSize: 850, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 13, ltv: 55, ir: 7.25, ecr: 6.75, floors: 0 }, ph: ["Master Plan", "Phase 1", "Phase 2", "Lease & Sales", "Stabilized"] },
-  hotel: { label: "Hotel", icon: "H", rm: "hotel", defaults: { zone: "Palm Jumeirah", landArea: 35000, eff: 0.62, hcPSF: 1200, softPct: 16, contPct: 10, constMo: 40, adr: 750, occ: 77, rooms: 220, fbPct: 30, othPct: 15, opex: 62, mgmt: 4, ffe: 4, ramp: 2, dldPct: 4, escrowPct: 20, dr: 14, ltv: 50, ir: 8.0, ecr: 8.0, floors: 0, salePSF: 0, rentPSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0 }, ph: ["Pre-Dev", "Design", "Construction", "Pre-Open", "Ramp-Up", "Stable"] },
-  industrial: { label: "Industrial", icon: "I", rm: "noi", defaults: { zone: "DIP", landArea: 100000, eff: 0.90, hcPSF: 150, softPct: 10, contPct: 6, constMo: 14, rentPSF: 55, occ: 93, opex: 18, mgmt: 2.5, dldPct: 4, escrowPct: 0, dr: 11, ltv: 65, ir: 6.5, ecr: 7.5, salePSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 }, ph: ["Land", "Construction", "Fit-Out", "Lease-Up"] },
-  educational: { label: "Educational", icon: "E", rm: "edu", defaults: { zone: "Dubai Hills Estate", landArea: 45000, eff: 0.72, hcPSF: 380, softPct: 14, contPct: 8, constMo: 24, feePer: 55000, capacity: 1500, rampYr: 4, initPct: 35, opex: 72, dldPct: 4, escrowPct: 0, dr: 12, ltv: 45, ir: 7.0, ecr: 9.0, salePSF: 0, rentPSF: 0, occ: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 }, ph: ["Land", "Construction", "KHDA", "Staffing", "Enrollment"] },
-  healthcare: { label: "Healthcare", icon: "+", rm: "health", defaults: { zone: "Dubai Hills Estate", landArea: 30000, eff: 0.65, hcPSF: 850, softPct: 18, contPct: 12, constMo: 34, beds: 150, revBed: 900000, occ: 72, ancPct: 35, opex: 68, ramp: 3, dldPct: 4, escrowPct: 0, dr: 14, ltv: 45, ir: 7.5, ecr: 8.5, salePSF: 0, rentPSF: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 }, ph: ["Land/DHA", "Design", "Construction", "Equip", "Commission", "Ramp"] },
-  agricultural: { label: "Agricultural", icon: "A", rm: "agri", defaults: { zone: "Custom", landArea: 200000, eff: 0.85, hcPSF: 45, softPct: 8, contPct: 5, constMo: 12, yld: 12, ppu: 8, grow: 3, opex: 55, dldPct: 4, escrowPct: 0, dr: 10, ltv: 35, ir: 6.0, ecr: 10.0, salePSF: 0, rentPSF: 0, occ: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 }, ph: ["Land", "Infra", "Planting", "Yield", "Stable"] },
+  residential: { label: "Residential", icon: "R", rm: "sale", defaults: { zone: "Dubai Hills Estate", landArea: 50000, eff: 0.78, hcPSF: 450, softPct: 12, contPct: 10, constMo: 28, salePSF: 1800, absUnits: 15, unitSize: 900, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 12, ltv: 60, ir: 7.5, ecr: 6.5, floors: 0, rentPSF: 0, occ: 0, opex: 0, mgmt: 0 } },
+  commercial: { label: "Commercial", icon: "C", rm: "noi", defaults: { zone: "Business Bay", landArea: 40000, eff: 0.82, hcPSF: 580, softPct: 14, contPct: 8, constMo: 32, rentPSF: 180, occ: 88, opex: 28, mgmt: 3, dldPct: 4, agentPct: 0, escrowPct: 20, ppSplit: 0, dr: 13, ltv: 55, ir: 7.0, ecr: 7.0, salePSF: 0, absUnits: 0, unitSize: 0, floors: 0 } },
+  mixed_use: { label: "Mixed Use", icon: "M", rm: "mixed", defaults: { zone: "Business Bay", landArea: 60000, eff: 0.76, hcPSF: 520, softPct: 13, contPct: 9, constMo: 34, resPct: 55, comPct: 30, retPct: 15, salePSF: 1600, rentPSF: 160, retRent: 220, occ: 85, opex: 25, mgmt: 3, absUnits: 12, unitSize: 850, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 13, ltv: 55, ir: 7.25, ecr: 6.75, floors: 0 } },
+  hotel: { label: "Hotel", icon: "H", rm: "hotel", defaults: { zone: "Palm Jumeirah", landArea: 35000, eff: 0.62, hcPSF: 1200, softPct: 16, contPct: 10, constMo: 40, adr: 750, occ: 77, rooms: 220, fbPct: 30, othPct: 15, opex: 62, mgmt: 4, ffe: 4, ramp: 2, dldPct: 4, escrowPct: 20, dr: 14, ltv: 50, ir: 8.0, ecr: 8.0, floors: 0, salePSF: 0, rentPSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0 } },
+  industrial: { label: "Industrial", icon: "I", rm: "noi", defaults: { zone: "DIP", landArea: 100000, eff: 0.90, hcPSF: 150, softPct: 10, contPct: 6, constMo: 14, rentPSF: 55, occ: 93, opex: 18, mgmt: 2.5, dldPct: 4, escrowPct: 0, dr: 11, ltv: 65, ir: 6.5, ecr: 7.5, salePSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
+  educational: { label: "Educational", icon: "E", rm: "edu", defaults: { zone: "Dubai Hills Estate", landArea: 45000, eff: 0.72, hcPSF: 380, softPct: 14, contPct: 8, constMo: 24, feePer: 55000, capacity: 1500, rampYr: 4, initPct: 35, opex: 72, dldPct: 4, escrowPct: 0, dr: 12, ltv: 45, ir: 7.0, ecr: 9.0, salePSF: 0, rentPSF: 0, occ: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
+  healthcare: { label: "Healthcare", icon: "+", rm: "health", defaults: { zone: "Dubai Hills Estate", landArea: 30000, eff: 0.65, hcPSF: 850, softPct: 18, contPct: 12, constMo: 34, beds: 150, revBed: 900000, occ: 72, ancPct: 35, opex: 68, ramp: 3, dldPct: 4, escrowPct: 0, dr: 14, ltv: 45, ir: 7.5, ecr: 8.5, salePSF: 0, rentPSF: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
+  agricultural: { label: "Agricultural", icon: "A", rm: "agri", defaults: { zone: "Custom", landArea: 200000, eff: 0.85, hcPSF: 45, softPct: 8, contPct: 5, constMo: 12, yld: 12, ppu: 8, grow: 3, opex: 55, dldPct: 4, escrowPct: 0, dr: 10, ltv: 35, ir: 6.0, ecr: 10.0, salePSF: 0, rentPSF: 0, occ: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
 };
 
 // ── IRR / NPV ──────────────────────────────────────────────────────
@@ -149,7 +148,7 @@ function irr(cfs: number[], g = 0.1): number {
 interface RunResult {
   gba: number; nsa: number; far: number; fl: number;
   landC: number; baseHC: number; hPrem: number; hc: number;
-  sc: number; cont: number; dld: number; pm: PermitResult;
+  sc: number; cont: number; dld: number; dldAdmin: number; pm: PermitResult;
   tdc: number; eq: number; debt: number; ds: number; esc: number;
   noi: number; rev: number; tsr: number; ev: number;
   irr: number; npv: number; em: number; dscr: number; dy: number;
@@ -171,8 +170,10 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const sc = hc * ((inp.softPct as number) / 100);
   const cont = hc * ((inp.contPct as number) / 100);
   const dld = landC * ((inp.dldPct as number) / 100);
+  // DLD Admin Fee: AED 5,800 for apartments/offices, AED 4,300 for land/plots
+  const dldAdmin = (type === "residential" || type === "commercial" || type === "mixed_use" || type === "hotel") ? 5800 : 4300;
   const pm = calcPermits(type, hc, gba, fl, inp.zone as string);
-  const tdc = landC + hc + sc + cont + dld + 5000 + pm.total;
+  const tdc = landC + hc + sc + cont + dld + dldAdmin + 5000 + pm.total;
   const eq = tdc * (1 - (inp.ltv as number) / 100);
   const debt = tdc * ((inp.ltv as number) / 100);
   const ds = debt * ((inp.ir as number) / 100);
@@ -293,7 +294,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const em = cf.reduce((s, c_) => s + Math.max(0, c_), 0) / eq;
   const dscr = noi > 0 ? noi / ds : 0;
   const dy = noi > 0 ? (noi / debt) * 100 : 0;
-  return { gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, pm, tdc, eq, debt, ds, esc, noi, rev, tsr, ev, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba };
+  return { gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, dldAdmin, pm, tdc, eq, debt, ds, esc, noi, rev, tsr, ev, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba };
 }
 
 function sens(type: string, base: Record<string, number | string>, param: string) {
@@ -319,21 +320,24 @@ const F = {
 
 // ── Sub-components ─────────────────────────────────────────────────
 
-function NumInput({ l, v, onChange: o, u, s = 1 }: { l: string; v: number; onChange: (v: number) => void; u?: string; s?: number }) {
+function NumInput({ l, v, onChange: o, u, s = 1, big }: { l: string; v: number; onChange: (v: number) => void; u?: string; s?: number; big?: boolean }) {
   const [local, setLocal] = useState(String(v));
   const [focused, setFocused] = useState(false);
   useEffect(() => { if (!focused) setLocal(String(v)); }, [v, focused]);
+  const formatted = !focused && v !== 0 ? v.toLocaleString("en-US") : local;
+  const fontSize = big ? 20 : 16;
+  const pad = big ? "10px 12px" : "8px 10px";
   return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 9.5, color: SUBTLE, letterSpacing: ".04em", marginBottom: 2 }}>{l}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <input type="number" value={local}
+    <div style={{ marginBottom: 8, gridColumn: big ? "1 / -1" : undefined }}>
+      <div style={{ fontSize: big ? 12 : 11, color: big ? GOLD : SUBTLE, fontWeight: big ? 700 : 400, letterSpacing: ".04em", marginBottom: 3 }}>{l}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input type={focused ? "number" : "text"} value={focused ? local : formatted}
           onChange={(e) => { setLocal(e.target.value); const n = +e.target.value; if (!isNaN(n)) o(n); }}
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); const n = +local; setLocal(String(isNaN(n) ? 0 : n)); if (isNaN(n)) o(0); }}
           step={s}
-          style={{ flex: 1, background: BG, border: `1px solid ${LINE}`, borderRadius: 5, padding: "5px 7px", fontSize: 12, color: TXT, outline: "none", width: "100%", fontFamily: "inherit" }} />
-        {u && <span style={{ fontSize: 8, color: SUBTLE, minWidth: 20 }}>{u}</span>}
+          style={{ flex: 1, background: big ? "#fff" : BG, border: `1px solid ${big ? GOLD : LINE}`, borderRadius: 6, padding: pad, fontSize, color: TXT, outline: "none", width: "100%", fontFamily: "inherit", fontWeight: big ? 700 : 400 }} />
+        {u && <span style={{ fontSize: big ? 12 : 10, color: SUBTLE, minWidth: 24 }}>{u}</span>}
       </div>
     </div>
   );
@@ -560,7 +564,7 @@ export default function FeasibilityCalculator(props: Props) {
 
     // Cost stack
     heading("FULL COST STACK");
-    const costs: [string, number][] = [["Land", r.landC], ["Base Hard Cost", r.baseHC], [`Height Premium +${(r.pm.hPrem * 100).toFixed(0)}%`, r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["Permits & Infra", r.pm.total]];
+    const costs: [string, number][] = [["Land", r.landC], ["Base Hard Cost", r.baseHC], [`Height Premium +${(r.pm.hPrem * 100).toFixed(0)}%`, r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["DLD Admin Fee", r.dldAdmin], ["Permits & Infra", r.pm.total]];
     for (const [l, v] of costs) { if (v > 0) row(l, F.aed(v)); }
     doc.setFont("helvetica", "bold"); doc.setTextColor(...gold);
     row("TOTAL DEVELOPMENT COST", F.aed(r.tdc));
@@ -623,7 +627,7 @@ export default function FeasibilityCalculator(props: Props) {
     doc.save(`ZAAHI-Feasibility${plotLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [r, inp, lu, c, sd, it, props.plotNumber, props.district, props.plotAreaSqft, props.plotPriceAed, props.community, props.projectName, props.masterDeveloper, props.maxHeightCode]);
 
-  type FieldDef = { k: string; l: string; u?: string; s?: number; t?: string; o?: string[] };
+  type FieldDef = { k: string; l: string; u?: string; s?: number; t?: string; o?: string[]; big?: boolean };
 
   const sec = (t: string, fs: FieldDef[]) => (
     <div style={{ marginBottom: 12 }}>
@@ -631,11 +635,19 @@ export default function FeasibilityCalculator(props: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px" }}>
         {fs.map((f) => f.t === "s"
           ? <Sel key={f.k} l={f.l} v={inp[f.k] as string} onChange={(v) => u(f.k, v)} opts={f.o!} />
-          : <NumInput key={f.k} l={f.l} v={(inp[f.k] as number) ?? 0} onChange={(v) => u(f.k, v)} u={f.u} s={f.s || 1} />
+          : f.t === "text"
+          ? <div key={f.k} style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: SUBTLE, letterSpacing: ".04em", marginBottom: 3 }}>{f.l}</div>
+              <div style={{ padding: "8px 10px", background: `${GOLD}11`, border: `1px solid ${GOLD}33`, borderRadius: 6, fontSize: 16, fontWeight: 600, color: TXT }}>{inp[f.k] as string}</div>
+            </div>
+          : <NumInput key={f.k} l={f.l} v={(inp[f.k] as number) ?? 0} onChange={(v) => u(f.k, v)} u={f.u} s={f.s || 1} big={f.big} />
         )}
       </div>
     </div>
   );
+
+  const autoZone = matchZone(props.community);
+  const zoneAutoDetected = autoZone !== "Custom";
 
   const rf = (): FieldDef[] => {
     if (c.rm === "sale") return [{ k: "salePSF", l: "Sale Price/sqft", u: "AED", s: 10 }, { k: "absUnits", l: "Units/Month", u: "un" }, { k: "unitSize", l: "Avg Unit", u: "sqft", s: 50 }, { k: "ppSplit", l: "Constr Payment%", u: "%", s: 5 }, { k: "agentPct", l: "Agent Comm", u: "%", s: .5 }];
@@ -712,19 +724,6 @@ export default function FeasibilityCalculator(props: Props) {
         </div>
       )}
 
-      {/* Phase timeline */}
-      <div style={{ display: "flex", gap: 1, marginBottom: 8 }}>
-        {c.ph.map((p, i) => (
-          <div key={i} style={{
-            flex: 1, textAlign: "center", padding: "3px 1px",
-            background: i === 0 ? `${GOLD}30` : `${GOLD}10`,
-            borderRadius: i === 0 ? "4px 0 0 4px" : i === c.ph.length - 1 ? "0 4px 4px 0" : 0,
-            fontSize: 6, color: i === 0 ? GOLD : SUBTLE, fontWeight: i === 0 ? 700 : 400,
-            textTransform: "uppercase",
-          }}>{p}</div>
-        ))}
-      </div>
-
       {/* Tab nav */}
       <div style={{ display: "flex", borderBottom: `1px solid ${LINE}`, marginBottom: 10 }}>
         {([["inputs", "Assumptions"], ["results", "Analysis"], ["sensitivity", "Sensitivity"]] as const).map(([k, l]) => (
@@ -737,7 +736,15 @@ export default function FeasibilityCalculator(props: Props) {
 
       {/* ── INPUTS TAB ── */}
       {tab === "inputs" && (<>
-        {sec("SITE & ZONING", [{ k: "zone", l: "Zone", t: "s", o: Object.keys(ZONES) }, { k: "landArea", l: "Plot Area", u: "sqft" }, { k: "landCost", l: "Land Cost", u: "AED", s: 100000 }, { k: "gfa", l: "GFA (0=auto)", u: "sqft", s: 100 }, { k: "farOverride", l: "FAR (0=zone)", u: "x", s: .1 }, { k: "eff", l: "Net/Gross", u: "ratio", s: .01 }, { k: "floors", l: "Floors (0=auto)", u: "fl" }])}
+        {sec("SITE & ZONING", [
+          zoneAutoDetected ? { k: "zone", l: "Zone", t: "text" } : { k: "zone", l: "Zone", t: "s", o: Object.keys(ZONES) },
+          { k: "landArea", l: "Plot Area", u: "sqft" },
+          { k: "landCost", l: "Land Cost", u: "AED", s: 100000, big: true },
+          { k: "gfa", l: "GFA (0=auto)", u: "sqft", s: 100 },
+          { k: "farOverride", l: "FAR (0=zone)", u: "x", s: .1 },
+          { k: "eff", l: "Net/Gross", u: "ratio", s: .01 },
+          { k: "floors", l: "Floors (0=auto)", u: "fl" },
+        ])}
         {/* Contextual hints from DDA / listing */}
         <div style={{ background: `${GOLD}11`, borderRadius: 5, padding: "5px 7px", marginBottom: 8, fontSize: 8.5, color: SUBTLE, display: "flex", flexWrap: "wrap", gap: "3px 12px" }}>
           {props.plotPriceAed > 0 && <span>Listed: <b style={{ color: GOLD }}>{F.aed(props.plotPriceAed)}</b></span>}
@@ -753,13 +760,40 @@ export default function FeasibilityCalculator(props: Props) {
         {sec("FINANCING", [{ k: "ltv", l: "LTV", u: "%", s: 1 }, { k: "ir", l: "Interest", u: "%", s: .25 }, { k: "dr", l: "WACC", u: "%", s: .5 }, { k: "ecr", l: "Exit Cap", u: "%", s: .25 }])}
         {sec("REGULATORY", [{ k: "dldPct", l: "DLD Fee", u: "%", s: .5 }, { k: "escrowPct", l: "Escrow Contrib", u: "%", s: 5 }])}
 
-        {/* Live IRR banner */}
-        <div style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, borderRadius: 7, padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 7 }}>
-          <div><div style={{ fontSize: 7, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".08em" }}>Live IRR</div><div style={{ fontSize: 22, fontWeight: 800, color: ic }}>{F.pct(r.irr)}</div></div>
-          <div><div style={{ fontSize: 7, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".08em" }}>NPV</div><div style={{ fontSize: 12, fontWeight: 700 }}>{F.aed(r.npv)}</div></div>
-          <div><div style={{ fontSize: 7, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".08em" }}>Total Cost</div><div style={{ fontSize: 12, fontWeight: 700 }}>{F.aed(r.tdc)}</div></div>
-          <button onClick={() => setTab("results")} style={{ background: GOLD, color: "#fff", border: "none", borderRadius: 5, padding: "6px 14px", fontSize: 9.5, fontWeight: 600, cursor: "pointer" }}>Analysis &rarr;</button>
-        </div>
+        {/* ── SUMMARY BLOCK ── */}
+        {(() => {
+          const totalRev = r.tsr > 0 ? r.tsr : r.ev > 0 ? r.ev : r.rev > 0 ? r.rev : r.cf.reduce((s, c_) => s + Math.max(0, c_), 0);
+          const profit = totalRev - r.tdc;
+          const profitColor = profit >= 0 ? GREEN : RED;
+          return (
+            <div style={{ background: "#111827", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Total Development Cost</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: GOLD, lineHeight: 1.2 }}>AED {r.tdc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Total Revenue</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>AED {totalRev.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Profit</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: profitColor, lineHeight: 1.2 }}>AED {profit.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>IRR</div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: ic, lineHeight: 1.2 }}>{F.pct(r.irr)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        <button onClick={() => setTab("results")} style={{ width: "100%", background: GOLD, color: "#fff", border: "none", borderRadius: 6, padding: "10px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: ".05em" }}>
+          View Full Analysis &rarr;
+        </button>
       </>)}
 
       {/* ── RESULTS TAB ── */}
@@ -781,7 +815,7 @@ export default function FeasibilityCalculator(props: Props) {
         </div>
         <div style={{ background: "white", borderRadius: 6, border: `1px solid ${LINE}`, padding: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 8, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>Full Cost Stack</div>
-          {[["Land", r.landC], ["Base Hard", r.baseHC], ["Height +" + ((r.pm.hPrem * 100).toFixed(0)) + "%", r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["Permits & Infra", r.pm.total]].filter(([, v]) => (v as number) > 0).map(([l, v], i) => {
+          {[["Land", r.landC], ["Base Hard", r.baseHC], ["Height +" + ((r.pm.hPrem * 100).toFixed(0)) + "%", r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["DLD Admin Fee", r.dldAdmin], ["Permits & Infra", r.pm.total]].filter(([, v]) => (v as number) > 0).map(([l, v], i) => {
             const p = ((v as number) / r.tdc) * 100;
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>

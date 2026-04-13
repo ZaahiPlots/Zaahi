@@ -20,7 +20,7 @@ const GREETING: Msg = {
     "Hi! I'm Archibald — your Dubai real estate expert. Ask me anything about properties, fees, procedures, or let me help you navigate the platform.",
 };
 
-export default function ArchibaldChat() {
+export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
@@ -64,7 +64,14 @@ export default function ArchibaldChat() {
     }
   }
 
+  // Close chat when SidePanel opens (cat would overlap content)
+  useEffect(() => {
+    if (hidden && open) setOpen(false);
+  }, [hidden, open]);
+
   const launcherMode: AvatarMode = thinking ? "thinking" : open ? "open" : "idle";
+
+  if (hidden) return null;
 
   return (
     <>
