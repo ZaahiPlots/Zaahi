@@ -150,7 +150,7 @@ interface RunResult {
   landC: number; baseHC: number; hPrem: number; hc: number;
   sc: number; cont: number; dld: number; dldAdmin: number; pm: PermitResult;
   tdc: number; eq: number; debt: number; ds: number; esc: number;
-  noi: number; rev: number; tsr: number; ev: number;
+  noi: number; rev: number; tsr: number; ev: number; rr: number;
   irr: number; npv: number; em: number; dscr: number; dy: number;
   cf: number[]; met: Record<string, number | string>;
   hp: number; cy: number; cpsf: number;
@@ -179,7 +179,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const ds = debt * ((inp.ir as number) / 100);
   const esc = tdc * ((inp.escrowPct as number) / 100);
   const hp = 10, cy = Math.ceil((inp.constMo as number) / 12);
-  let cf: number[] = [], noi = 0, rev = 0, tsr = 0, ev = 0;
+  let cf: number[] = [], noi = 0, rev = 0, tsr = 0, ev = 0, rr = 0;
   const met: Record<string, number | string> = {};
 
   if (c.rm === "sale") {
@@ -215,7 +215,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.yieldOnCost = ((noi / tdc) * 100).toFixed(2) + "%";
     met.exitVal = ev;
   } else if (c.rm === "mixed") {
-    const rr = nsa * ((inp.resPct as number) || 55) / 100 * (inp.salePSF as number) * (1 - ((inp.agentPct as number) / 100) * 1.05);
+    rr = nsa * ((inp.resPct as number) || 55) / 100 * (inp.salePSF as number) * (1 - ((inp.agentPct as number) / 100) * 1.05);
     const cn = nsa * ((inp.comPct as number) || 30) / 100 * (inp.rentPSF as number) * ((inp.occ as number) / 100) * (1 - (inp.opex as number) / 100 - ((inp.mgmt as number) || 0) / 100);
     const rn = nsa * ((inp.retPct as number) || 15) / 100 * ((inp.retRent as number) || (inp.rentPSF as number) * 1.3) * ((inp.occ as number) / 100) * (1 - (inp.opex as number) / 100);
     noi = cn + rn;
@@ -294,7 +294,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const em = cf.reduce((s, c_) => s + Math.max(0, c_), 0) / eq;
   const dscr = noi > 0 ? noi / ds : 0;
   const dy = noi > 0 ? (noi / debt) * 100 : 0;
-  return { gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, dldAdmin, pm, tdc, eq, debt, ds, esc, noi, rev, tsr, ev, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba };
+  return { gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, dldAdmin, pm, tdc, eq, debt, ds, esc, noi, rev, tsr, ev, rr, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba };
 }
 
 function sens(type: string, base: Record<string, number | string>, param: string) {
@@ -757,7 +757,7 @@ export default function FeasibilityCalculator(props: Props) {
 
         {/* ── SUMMARY BLOCK ── */}
         {(() => {
-          const totalRev = r.tsr > 0 ? r.tsr : r.ev > 0 ? r.ev : r.rev > 0 ? r.rev : r.cf.reduce((s, c_) => s + Math.max(0, c_), 0);
+          const totalRev = r.rr > 0 ? r.rr + r.ev : r.tsr > 0 ? r.tsr : r.ev > 0 ? r.ev : r.rev > 0 ? r.rev : r.cf.reduce((s, c_) => s + Math.max(0, c_), 0);
           const profit = totalRev - r.tdc;
           const profitColor = profit >= 0 ? GREEN : RED;
           return (
