@@ -2629,7 +2629,7 @@ function ParcelsMapPageInner() {
         fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      <div ref={containerRef} style={{ position: "absolute", inset: "48px 0 0 0" }} />
+      <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
       {/* Header */}
       <HeaderBar
@@ -3122,7 +3122,7 @@ function ParcelsMapPageInner() {
           style={{
             position: "absolute",
             left: zaahiHover.x + 14,
-            top: zaahiHover.y + 14 + 48, // +48 = top toolbar offset (matches container)
+            top: zaahiHover.y + 14, // map container now starts at top:0
             width: 200,
             background: "#ffffff",
             color: "#1a1a1a",
