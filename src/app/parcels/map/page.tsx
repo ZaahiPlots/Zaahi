@@ -2670,8 +2670,8 @@ function ParcelsMapPageInner() {
           width: 30,
           height: 30,
           borderRadius: 6,
-          border: `1px solid rgba(200, 169, 110, 0.25)`,
-          background: "rgba(10, 22, 40, 0.3)",
+          border: `1px solid rgba(200, 169, 110, 0.3)`,
+          background: "rgba(10, 22, 40, 0.4)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
@@ -2846,8 +2846,8 @@ function ParcelsMapPageInner() {
               width: 30,
               height: 30,
               borderRadius: 6,
-              border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.25)"}`,
-              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.3)",
+              border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.4)",
               color: baseMap === b ? "#0A1628" : c.text,
               cursor: "pointer",
               fontSize: 12,
@@ -2857,7 +2857,7 @@ function ParcelsMapPageInner() {
               if (baseMap !== b) e.currentTarget.style.borderColor = GOLD;
             }}
             onMouseLeave={(e) => {
-              if (baseMap !== b) e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.25)";
+              if (baseMap !== b) e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
             }}
           >
             {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
@@ -3078,23 +3078,21 @@ function ParcelsMapPageInner() {
           margin-right: 16px !important;
         }
         .maplibregl-ctrl-group {
-          background: ${c.bg} !important;
-          border: 1px solid ${isDark ? GOLD : c.border} !important;
-          box-shadow: ${c.headerShadow} !important;
+          background: rgba(10, 22, 40, 0.4) !important;
+          border: 1px solid rgba(200, 169, 110, 0.3) !important;
+          box-shadow: none !important;
           border-radius: 6px !important;
           overflow: hidden;
         }
         .maplibregl-ctrl-group button {
           background: transparent !important;
-          border-bottom: 1px solid ${c.borderSubtle} !important;
+          border-bottom: 1px solid rgba(200, 169, 110, 0.15) !important;
         }
         .maplibregl-ctrl-group button:last-child {
           border-bottom: none !important;
         }
         .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-          filter: ${isDark
-            ? "invert(1) sepia(1) hue-rotate(15deg) saturate(2.5) brightness(1.05)"
-            : "none"};
+          filter: invert(1) sepia(1) hue-rotate(15deg) saturate(2.5) brightness(1.05);
         }
         .maplibregl-ctrl-group button:hover {
           background: rgba(200, 169, 110, 0.15) !important;
@@ -3407,8 +3405,8 @@ function ChromeBtn({
         width: 30,
         height: 30,
         borderRadius: 6,
-        border: `1px solid rgba(200, 169, 110, 0.25)`,
-        background: "rgba(10, 22, 40, 0.3)",
+        border: `1px solid rgba(200, 169, 110, 0.3)`,
+        background: "rgba(10, 22, 40, 0.4)",
         color: GOLD,
         cursor: "pointer",
         display: "flex",
@@ -3420,7 +3418,7 @@ function ChromeBtn({
         padding: 0,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = GOLD)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = c.border)}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)")}
     >
       {children}
     </button>
@@ -3630,8 +3628,8 @@ function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
     height: 28,
     padding: 0,
     borderRadius: 6,
-    border: `1px solid rgba(200, 169, 110, 0.25)`,
-    background: "rgba(10, 22, 40, 0.3)",
+    border: `1px solid rgba(200, 169, 110, 0.3)`,
+    background: "rgba(10, 22, 40, 0.4)",
     color: c.text,
     fontSize: 11,
     fontWeight: 600,

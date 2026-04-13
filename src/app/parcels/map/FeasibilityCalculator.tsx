@@ -524,7 +524,6 @@ export default function FeasibilityCalculator(props: Props) {
 
     // Assumptions
     heading("ASSUMPTIONS");
-    row("Zone", inp.zone as string);
     row("Land Cost", F.aed(r.landC));
     if (props.plotPriceAed > 0 && r.landC !== props.plotPriceAed) row("Listed Price", F.aed(props.plotPriceAed));
     row("GFA", `${F.n(r.gba)} sqft`);
@@ -646,9 +645,6 @@ export default function FeasibilityCalculator(props: Props) {
     </div>
   );
 
-  const autoZone = matchZone(props.community);
-  const zoneAutoDetected = autoZone !== "Custom";
-
   const rf = (): FieldDef[] => {
     if (c.rm === "sale") return [{ k: "salePSF", l: "Sale Price/sqft", u: "AED", s: 10 }, { k: "absUnits", l: "Units/Month", u: "un" }, { k: "unitSize", l: "Avg Unit", u: "sqft", s: 50 }, { k: "ppSplit", l: "Constr Payment%", u: "%", s: 5 }, { k: "agentPct", l: "Agent Comm", u: "%", s: .5 }];
     if (c.rm === "hotel") return [{ k: "adr", l: "ADR", u: "AED", s: 10 }, { k: "occ", l: "Occupancy", u: "%", s: 1 }, { k: "rooms", l: "Rooms", u: "keys" }, { k: "fbPct", l: "F&B%", u: "%", s: 1 }, { k: "othPct", l: "Other%", u: "%", s: 1 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }, { k: "mgmt", l: "Mgmt%", u: "%", s: .5 }, { k: "ffe", l: "FF&E%", u: "%", s: .5 }, { k: "ramp", l: "Ramp-Up", u: "yr" }];
@@ -737,7 +733,6 @@ export default function FeasibilityCalculator(props: Props) {
       {/* ── INPUTS TAB ── */}
       {tab === "inputs" && (<>
         {sec("SITE & ZONING", [
-          zoneAutoDetected ? { k: "zone", l: "Zone", t: "text" } : { k: "zone", l: "Zone", t: "s", o: Object.keys(ZONES) },
           { k: "landArea", l: "Plot Area", u: "sqft" },
           { k: "landCost", l: "Land Cost", u: "AED", s: 100000, big: true },
           { k: "gfa", l: "GFA (0=auto)", u: "sqft", s: 100 },
