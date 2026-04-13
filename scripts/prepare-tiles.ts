@@ -11,22 +11,22 @@ import { readdirSync, readFileSync, createWriteStream } from "node:fs";
 import { join } from "node:path";
 
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
-  RESIDENTIAL: "#FFD700",
-  COMMERCIAL: "#4A90D9",
-  MIXED_USE: "#9B59B6",
-  HOTEL: "#E67E22",
-  HOSPITALITY: "#E67E22",
-  INDUSTRIAL: "#708090",
-  WAREHOUSE: "#708090",
-  EDUCATIONAL: "#1ABC9C",
-  EDUCATION: "#1ABC9C",
-  HEALTHCARE: "#E74C3C",
-  AGRICULTURAL: "#6B8E23",
-  AGRICULTURE: "#6B8E23",
-  FUTURE_DEVELOPMENT: "#84CC16",
-  "FUTURE DEVELOPMENT": "#84CC16",
+  RESIDENTIAL: "#2D6A4F",
+  COMMERCIAL: "#1B4965",
+  MIXED_USE: "#6B4C9A",
+  HOTEL: "#9B2226",
+  HOSPITALITY: "#9B2226",
+  INDUSTRIAL: "#495057",
+  WAREHOUSE: "#495057",
+  EDUCATIONAL: "#0077B6",
+  EDUCATION: "#0077B6",
+  HEALTHCARE: "#E63946",
+  AGRICULTURAL: "#606C38",
+  AGRICULTURE: "#606C38",
+  FUTURE_DEVELOPMENT: "#C8A96E",
+  "FUTURE DEVELOPMENT": "#C8A96E",
 };
-const DEFAULT_COLOR = "#C8A96E";
+const DEFAULT_COLOR = "#888888";
 
 // ── DDA land use parser ──
 function parseDdaLandUse(raw: string | null | undefined): string | null {

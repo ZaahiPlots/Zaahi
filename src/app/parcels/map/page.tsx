@@ -178,20 +178,20 @@ const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 //   - LAND_USE_LEGEND in this file (the visible legend popup)
 // Source-of-truth in CLAUDE.md "Цвета по Land Use".
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
-  RESIDENTIAL: "#FFD700",         // yellow
-  COMMERCIAL: "#4A90D9",          // blue
-  MIXED_USE: "#9B59B6",           // purple
-  HOTEL: "#E67E22",               // orange
-  HOSPITALITY: "#E67E22",         // orange (alias)
-  INDUSTRIAL: "#708090",          // steel gray
-  WAREHOUSE: "#708090",           // steel gray (alias)
-  EDUCATIONAL: "#1ABC9C",         // teal
-  EDUCATION: "#1ABC9C",           // teal (alias)
-  HEALTHCARE: "#E74C3C",          // red
-  AGRICULTURAL: "#6B8E23",        // olive
-  AGRICULTURE: "#6B8E23",         // olive (alias)
-  FUTURE_DEVELOPMENT: "#84CC16",  // lime
-  "FUTURE DEVELOPMENT": "#84CC16",
+  RESIDENTIAL: "#2D6A4F",         // green
+  COMMERCIAL: "#1B4965",          // blue
+  MIXED_USE: "#6B4C9A",           // purple
+  HOTEL: "#9B2226",               // red
+  HOSPITALITY: "#9B2226",         // red (alias)
+  INDUSTRIAL: "#495057",          // gray
+  WAREHOUSE: "#495057",           // gray (alias)
+  EDUCATIONAL: "#0077B6",         // sky blue
+  EDUCATION: "#0077B6",           // sky blue (alias)
+  HEALTHCARE: "#E63946",          // bright red
+  AGRICULTURAL: "#606C38",        // olive
+  AGRICULTURE: "#606C38",         // olive (alias)
+  FUTURE_DEVELOPMENT: "#C8A96E",  // gold
+  "FUTURE DEVELOPMENT": "#C8A96E",
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
@@ -2272,13 +2272,13 @@ function ParcelsMapPageInner() {
     map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" }, paint: {
       "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
     }});
-    map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 13, layout: { visibility: "none" },
+    map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, layout: { visibility: "none" },
       filter: [">", ["get", "height"], 0],
       paint: {
         "fill-extrusion-color": ["get", "color"],
         "fill-extrusion-height": ["get", "height"],
         "fill-extrusion-base": 0,
-        "fill-extrusion-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 0.35],
+        "fill-extrusion-opacity": 0.35,
     }});
     // Hover
     map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -2700,15 +2700,15 @@ function ParcelsMapPageInner() {
   // is mirrored in ZAAHI_LANDUSE_COLOR, the loadZaahiPlots match
   // expression, SidePanel LANDUSE_COLORS, and CLAUDE.md.
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
-    { color: "#FFD700", name: "Residential",          desc: "Жилое" },
-    { color: "#4A90D9", name: "Commercial",           desc: "Коммерческое" },
-    { color: "#9B59B6", name: "Mixed Use",            desc: "Смешанное" },
-    { color: "#E67E22", name: "Hotel / Hospitality",  desc: "Отельное" },
-    { color: "#708090", name: "Industrial / Warehouse", desc: "Промышленное" },
-    { color: "#1ABC9C", name: "Educational",          desc: "Образовательное" },
-    { color: "#E74C3C", name: "Healthcare",           desc: "Медицина" },
-    { color: "#6B8E23", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
-    { color: "#84CC16", name: "Future Development",   desc: "Под застройку" },
+    { color: "#2D6A4F", name: "Residential",          desc: "Жилое" },
+    { color: "#1B4965", name: "Commercial",           desc: "Коммерческое" },
+    { color: "#6B4C9A", name: "Mixed Use",            desc: "Смешанное" },
+    { color: "#9B2226", name: "Hotel / Hospitality",  desc: "Отельное" },
+    { color: "#495057", name: "Industrial / Warehouse", desc: "Промышленное" },
+    { color: "#0077B6", name: "Educational",          desc: "Образовательное" },
+    { color: "#E63946", name: "Healthcare",           desc: "Медицина" },
+    { color: "#606C38", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
+    { color: "#C8A96E", name: "Future Development",   desc: "Под застройку" },
   ];
 
   const c = PALETTE[theme];
