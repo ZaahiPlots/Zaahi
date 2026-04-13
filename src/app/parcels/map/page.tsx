@@ -3495,14 +3495,19 @@ function HeaderBar({
 
   function doCheck(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
-    const plotNumber = check.trim();
-    if (!plotNumber) return;
+    const plotNumber = check.replace(/\s+/g, "").trim();
+    if (!/^\d{7}$/.test(plotNumber)) {
+      flash("Plot # must be exactly 7 digits");
+      return;
+    }
+    // Copy to clipboard so user can paste into the DLD form
+    navigator.clipboard?.writeText(plotNumber).catch(() => {});
     window.open(
       "https://dubailand.gov.ae/en/eservices/inquiry-about-a-property-status/",
       "_blank",
       "noopener",
     );
-    flash(`→ DLD check ${plotNumber}`);
+    flash(`→ DLD check ${plotNumber} (copied)`);
     setCheck("");
   }
 
