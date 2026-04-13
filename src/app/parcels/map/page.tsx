@@ -2265,19 +2265,26 @@ function ParcelsMapPageInner() {
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
     map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}` });
-    map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" }, paint: {
-      "fill-color": ["get", "color"],
-      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.1, 13, 0.35],
+    // 2D fill — only "flat" features (tier=flat, height=0)
+    map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
+      filter: ["==", ["get", "tier"], "flat"],
+      paint: {
+        "fill-color": ["get", "color"],
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.1, 13, 0.35],
     }});
-    map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" }, paint: {
-      "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
+    // 2D line — only "flat" features
+    map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" },
+      filter: ["==", ["get", "tier"], "flat"],
+      paint: {
+        "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
     }});
+    // 3D extrusion — only tier features (podium/body/crown)
     map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, layout: { visibility: "none" },
-      filter: [">", ["get", "height"], 0],
+      filter: ["!=", ["get", "tier"], "flat"],
       paint: {
         "fill-extrusion-color": ["get", "color"],
         "fill-extrusion-height": ["get", "height"],
-        "fill-extrusion-base": 0,
+        "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.35,
     }});
     // Hover

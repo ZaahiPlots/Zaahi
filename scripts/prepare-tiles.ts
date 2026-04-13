@@ -1,7 +1,11 @@
 #!/usr/bin/env npx tsx
 /**
- * Enrich DDA + AD plot GeoJSON with 3D properties (color, height, base)
- * and output newline-delimited GeoJSON for tippecanoe.
+ * Enrich DDA + AD plot GeoJSON with ZAAHI Signature 3D tiers
+ * (podium / body / crown) and output newline-delimited GeoJSON for tippecanoe.
+ *
+ * Each buildable plot produces:
+ *   - 1 "flat" feature (height=0) for 2D fill/line/hover at all zooms
+ *   - 1–3 "tier" features with height/base for fill-extrusion at zoom ≥ 14
  *
  * Usage:
  *   npx tsx scripts/prepare-tiles.ts
@@ -28,7 +32,26 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
 };
 const DEFAULT_COLOR = "#888888";
 
-// ── DDA land use parser ──
+// ── 3D tier constants (same as loadZaahiPlots in page.tsx) ──
+const FLOOR_H = 3.5;
+const PODIUM_TOP = 14;   // 4 floors
+const CROWN_H = 7;       // top 2 floors
+
+// ── Geometry helpers ──
+
+function scaleRingFromCentroid(ring: number[][], scale: number): number[][] {
+  const n = ring.length;
+  if (n === 0) return ring;
+  const cx = ring.reduce((s, p) => s + p[0], 0) / n;
+  const cy = ring.reduce((s, p) => s + p[1], 0) / n;
+  return ring.map(([lng, lat]) => [
+    cx + (lng - cx) * scale,
+    cy + (lat - cy) * scale,
+  ]);
+}
+
+// ── Land use parsers ──
+
 function parseDdaLandUse(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const parts = raw.split(/\s*-\s*/);
@@ -49,7 +72,6 @@ function parseDdaLandUse(raw: string | null | undefined): string | null {
   return null;
 }
 
-// ── AD land use parser ──
 function parseAdLandUse(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const l = raw.toLowerCase();
@@ -85,11 +107,84 @@ function defaultHeight(landUse: string): number {
   }
 }
 
-interface Feature {
+// ── Tier generation ──
+// Emits 1 flat feature (for 2D fill/hover) + 1-3 tier features (for 3D extrusion)
+
+interface TierFeature {
   type: "Feature";
   geometry: GeoJSON.Geometry;
   properties: Record<string, unknown>;
 }
+
+function emitTiers(
+  out: NodeJS.WritableStream,
+  ring: number[][],
+  totalH: number,
+  color: string,
+  baseProps: Record<string, unknown>,
+): number {
+  let count = 0;
+
+  // Always emit the flat 2D feature (height=0, base=0) for fill/line/hover
+  const flat: TierFeature = {
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [ring] },
+    properties: { ...baseProps, color, height: 0, base: 0, tier: "flat" },
+  };
+  out.write(JSON.stringify(flat) + "\n");
+  count++;
+
+  if (totalH <= 0) return count;
+
+  const floors = Math.max(1, Math.round(totalH / FLOOR_H));
+
+  if (floors <= 4) {
+    // Podium only — full footprint
+    const f: TierFeature = {
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [ring] },
+      properties: { ...baseProps, color, height: Math.round(totalH), base: 0, tier: "podium" },
+    };
+    out.write(JSON.stringify(f) + "\n");
+    count++;
+  } else if (floors <= 10) {
+    // Podium (0→14m) + Body (14→top, 70% footprint)
+    out.write(JSON.stringify({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [ring] },
+      properties: { ...baseProps, color, height: PODIUM_TOP, base: 0, tier: "podium" },
+    }) + "\n");
+    out.write(JSON.stringify({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.7)] },
+      properties: { ...baseProps, color, height: Math.round(totalH), base: PODIUM_TOP, tier: "body" },
+    }) + "\n");
+    count += 2;
+  } else {
+    // Full ZAAHI Signature: Podium + Body + Crown
+    const crownBase = Math.round(totalH - CROWN_H);
+    out.write(JSON.stringify({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [ring] },
+      properties: { ...baseProps, color, height: PODIUM_TOP, base: 0, tier: "podium" },
+    }) + "\n");
+    out.write(JSON.stringify({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.7)] },
+      properties: { ...baseProps, color, height: crownBase, base: PODIUM_TOP, tier: "body" },
+    }) + "\n");
+    out.write(JSON.stringify({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.5)] },
+      properties: { ...baseProps, color, height: Math.round(totalH), base: crownBase, tier: "crown" },
+    }) + "\n");
+    count += 3;
+  }
+
+  return count;
+}
+
+// ── Process directories ──
 
 function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
   const files = readdirSync(dir).filter(f => f.endsWith(".geojson"));
@@ -112,7 +207,6 @@ function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
       const hasLandUse = landUse != null;
       const color = hasLandUse ? (ZAAHI_LANDUSE_COLOR[landUse] ?? DEFAULT_COLOR) : DEFAULT_COLOR;
 
-      // Height
       let height = 0;
       if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT") {
         const floors = parseDdaFloors(floorsRaw);
@@ -123,26 +217,21 @@ function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
         if (height <= 0) height = defaultHeight(landUse);
       }
 
-      const enriched: Feature = {
-        type: "Feature",
-        geometry: feat.geometry,
-        properties: {
-          plotNumber,
-          mainLandUse,
-          subLandUse,
-          areaSqm: Math.round(areaSqm),
-          areaSqft: Math.round(areaSqft),
-          gfaSqm: Math.round(gfaSqm),
-          status,
-          landUse: landUse ?? "",
-          color,
-          height: Math.round(height),
-          hasLandUse,
-          source: "dda",
-        },
+      const ring = (feat.geometry as GeoJSON.Polygon).coordinates[0];
+      const baseProps = {
+        plotNumber,
+        mainLandUse,
+        subLandUse,
+        areaSqm: Math.round(areaSqm),
+        areaSqft: Math.round(areaSqft),
+        gfaSqm: Math.round(gfaSqm),
+        status,
+        landUse: landUse ?? "",
+        hasLandUse,
+        source: "dda",
       };
-      out.write(JSON.stringify(enriched) + "\n");
-      count++;
+
+      count += emitTiers(out, ring, height, color, baseProps);
     }
   }
   return count;
@@ -181,25 +270,20 @@ function processAdDir(dir: string, out: NodeJS.WritableStream): number {
         if (height > 300) height = 300;
       }
 
-      const enriched: Feature = {
-        type: "Feature",
-        geometry: feat.geometry,
-        properties: {
-          plotNumber,
-          district,
-          community,
-          areaSqm: Math.round(areaSqm),
-          primaryUse,
-          status,
-          landUse: landUse ?? "",
-          color,
-          height: Math.round(height),
-          hasLandUse,
-          source: "ad",
-        },
+      const ring = (feat.geometry as GeoJSON.Polygon).coordinates[0];
+      const baseProps = {
+        plotNumber,
+        district,
+        community,
+        areaSqm: Math.round(areaSqm),
+        primaryUse,
+        status,
+        landUse: landUse ?? "",
+        hasLandUse,
+        source: "ad",
       };
-      out.write(JSON.stringify(enriched) + "\n");
-      count++;
+
+      count += emitTiers(out, ring, height, color, baseProps);
     }
   }
   return count;
@@ -211,13 +295,13 @@ async function main() {
   const ddaOut = join(process.cwd(), "data", "tiles", "dda-plots.geojson.nl");
   const adOut = join(process.cwd(), "data", "tiles", "ad-plots.geojson.nl");
 
-  console.log("Processing DDA plots...");
+  console.log("Processing DDA plots (with podium/body/crown tiers)...");
   const ddaStream = createWriteStream(ddaOut);
   const ddaCount = processDdaDir(ddaDir, ddaStream);
   ddaStream.end();
   console.log(`  ${ddaCount.toLocaleString()} features → ${ddaOut}`);
 
-  console.log("Processing AD plots...");
+  console.log("Processing AD plots (with podium/body/crown tiers)...");
   const adStream = createWriteStream(adOut);
   const adCount = processAdDir(adDir, adStream);
   adStream.end();
