@@ -1268,6 +1268,7 @@ function ParcelsMapPageInner() {
   const [ddaLandProjects, setDdaLandProjects] = useState<Array<{ slug: string; name: string; count: number }>>([]);
   const [ddaLandEnabled, setDdaLandEnabled] = useState<Set<string>>(new Set());
   const ddaLandLoadedRef = useRef<Set<string>>(new Set());
+  const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
@@ -2033,6 +2034,11 @@ function ParcelsMapPageInner() {
         }>;
       };
 
+      // Collect all ZAAHI plot numbers so DDA Land layers can skip duplicates
+      const pnSet = new Set<string>();
+      for (const it of payload.items) pnSet.add(it.plotNumber);
+      zaahiPlotNumbersRef.current = pnSet;
+
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
       for (const it of payload.items) {
@@ -2307,6 +2313,8 @@ function ParcelsMapPageInner() {
         if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
         const p = feat.properties as Record<string, unknown>;
         const plotNumber = (p.PLOT_NUMBER as string) ?? "";
+        // Skip plots that already exist as ZAAHI listings to avoid double 3D
+        if (plotNumber && zaahiPlotNumbersRef.current.has(plotNumber)) continue;
         const mainLandUse = (p.MAIN_LANDUSE as string) ?? "";
         const subLandUse = (p.SUB_LANDUSE as string) ?? "";
         const areaSqft = (p.AREA_SQFT as number) ?? 0;
@@ -2712,6 +2720,11 @@ function ParcelsMapPageInner() {
       // (maplibre's source registry was wiped). The loader is idempotent
       // on map.getSource so it's safe to call.
       await loadZaahiPlots(map);
+      // Re-attach enabled DDA Land layers (sources were wiped by setStyle)
+      ddaLandLoadedRef.current.clear();
+      for (const slug of ddaLandEnabled) {
+        void loadDdaLand(map, slug);
+      }
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
