@@ -2257,10 +2257,15 @@ function ParcelsMapPageInner() {
   const DDA_LAND_TILES_FILL = "dda-land-tiles-fill";
   const DDA_LAND_TILES_LINE = "dda-land-tiles-line";
   const DDA_LAND_TILES_3D = "dda-land-tiles-3d";
-  const AD_LAND_TILES_SRC = "ad-land-tiles";
-  const AD_LAND_TILES_FILL = "ad-land-tiles-fill";
-  const AD_LAND_TILES_LINE = "ad-land-tiles-line";
-  const AD_LAND_TILES_3D = "ad-land-tiles-3d";
+  // AD split into two <100MB files (Vercel / GitHub 100MB limit, no LFS)
+  const AD_ADM_TILES_SRC = "ad-adm-tiles";
+  const AD_ADM_TILES_FILL = "ad-adm-tiles-fill";
+  const AD_ADM_TILES_LINE = "ad-adm-tiles-line";
+  const AD_ADM_TILES_3D = "ad-adm-tiles-3d";
+  const AD_OTHER_TILES_SRC = "ad-other-tiles";
+  const AD_OTHER_TILES_FILL = "ad-other-tiles-fill";
+  const AD_OTHER_TILES_LINE = "ad-other-tiles-line";
+  const AD_OTHER_TILES_3D = "ad-other-tiles-3d";
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
@@ -2425,7 +2430,8 @@ function ParcelsMapPageInner() {
 
       // ── PMTiles land layers (DDA 99K + AD 362K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
-      addLandTileSource(map, AD_LAND_TILES_SRC, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, "/tiles/ad-land.pmtiles");
+      addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
+      addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
@@ -2651,9 +2657,11 @@ function ParcelsMapPageInner() {
       await loadZaahiPlots(map);
       // Re-attach PMTiles land layers (sources wiped by setStyle)
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
-      addLandTileSource(map, AD_LAND_TILES_SRC, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, "/tiles/ad-land.pmtiles");
+      addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
+      addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
       setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
-      setLandTileVisibility(map, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, layers.adLandPlots);
+      setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
+      setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
@@ -2675,7 +2683,8 @@ function ParcelsMapPageInner() {
     const map = mapRef.current;
     if (!map) return;
     setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
-    setLandTileVisibility(map, AD_LAND_TILES_FILL, AD_LAND_TILES_LINE, AD_LAND_TILES_3D, layers.adLandPlots);
+    setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
+    setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
   }, [layers.ddaLandPlots, layers.adLandPlots]);
 
   useEffect(() => {

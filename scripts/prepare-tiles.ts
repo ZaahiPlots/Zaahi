@@ -237,9 +237,14 @@ function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
   return count;
 }
 
-function processAdDir(dir: string, out: NodeJS.WritableStream): number {
+function processAdDir(
+  dir: string,
+  admOut: NodeJS.WritableStream,
+  otherOut: NodeJS.WritableStream,
+): { admCount: number; otherCount: number } {
   const files = readdirSync(dir).filter(f => f.endsWith(".geojson"));
-  let count = 0;
+  let admCount = 0;
+  let otherCount = 0;
   for (const file of files) {
     const fc = JSON.parse(readFileSync(join(dir, file), "utf8")) as GeoJSON.FeatureCollection;
     for (const feat of fc.features) {
@@ -248,6 +253,7 @@ function processAdDir(dir: string, out: NodeJS.WritableStream): number {
       const plotNumber = (p.PLOTNUMBER as string) ?? "";
       const district = (p.DISTRICTENG as string) ?? "";
       const community = (p.COMMUNITYENG as string) ?? "";
+      const municipality = (p.MUNICIPALITYENG as string) ?? "";
       const areaSqm = (p.CALCULATEDAREA as number) ?? 0;
       const primaryUse = (p.PRIMARYUSEENGDESC as string) ?? "";
       const devCategory = (p.DevCode_Category as string) ?? "";
@@ -275,6 +281,7 @@ function processAdDir(dir: string, out: NodeJS.WritableStream): number {
         plotNumber,
         district,
         community,
+        municipality,
         areaSqm: Math.round(areaSqm),
         primaryUse,
         status,
@@ -283,17 +290,27 @@ function processAdDir(dir: string, out: NodeJS.WritableStream): number {
         source: "ad",
       };
 
-      count += emitTiers(out, ring, height, color, baseProps);
+      // Split by municipality to keep each PMTiles < 100MB:
+      //   ADM (Abu Dhabi Municipality) → ad-plots-adm.geojson.nl
+      //   AAM (Al Ain) + WRM (Western Region) + other → ad-plots-other.geojson.nl
+      if (municipality === "ADM") {
+        emitTiers(admOut, ring, height, color, baseProps);
+        admCount++;
+      } else {
+        emitTiers(otherOut, ring, height, color, baseProps);
+        otherCount++;
+      }
     }
   }
-  return count;
+  return { admCount, otherCount };
 }
 
 async function main() {
   const ddaDir = join(process.cwd(), "data", "layers", "dda-plots");
   const adDir = join(process.cwd(), "data", "layers", "ad-plots");
   const ddaOut = join(process.cwd(), "data", "tiles", "dda-plots.geojson.nl");
-  const adOut = join(process.cwd(), "data", "tiles", "ad-plots.geojson.nl");
+  const adAdmOut = join(process.cwd(), "data", "tiles", "ad-plots-adm.geojson.nl");
+  const adOtherOut = join(process.cwd(), "data", "tiles", "ad-plots-other.geojson.nl");
 
   console.log("Processing DDA plots (with podium/body/crown tiers)...");
   const ddaStream = createWriteStream(ddaOut);
@@ -301,11 +318,14 @@ async function main() {
   ddaStream.end();
   console.log(`  ${ddaCount.toLocaleString()} features → ${ddaOut}`);
 
-  console.log("Processing AD plots (with podium/body/crown tiers)...");
-  const adStream = createWriteStream(adOut);
-  const adCount = processAdDir(adDir, adStream);
-  adStream.end();
-  console.log(`  ${adCount.toLocaleString()} features → ${adOut}`);
+  console.log("Processing AD plots (split by municipality for <100MB PMTiles)...");
+  const adAdmStream = createWriteStream(adAdmOut);
+  const adOtherStream = createWriteStream(adOtherOut);
+  const { admCount, otherCount } = processAdDir(adDir, adAdmStream, adOtherStream);
+  adAdmStream.end();
+  adOtherStream.end();
+  console.log(`  ADM (Abu Dhabi Municipality): ${admCount.toLocaleString()} plots → ${adAdmOut}`);
+  console.log(`  AAM+WRM (Al Ain + Western):   ${otherCount.toLocaleString()} plots → ${adOtherOut}`);
 
   console.log(`\nDone! Run tippecanoe next.`);
 }
