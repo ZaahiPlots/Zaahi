@@ -1,12 +1,12 @@
 "use client";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { jsPDF } from "jspdf";
 
 /* ═══════════════════════════════════════════════════════════════════
-   ZAAHI FEASIBILITY CALCULATOR v3.1 — INSTITUTIONAL GRADE
+   ZAAHI FEASIBILITY CALCULATOR v4.0 — TWO-TIER INSTITUTIONAL GRADE
    Dubai Land Development · 8 Segments · IRR-Centric
-   Height Premium, Permits/Licenses, DEWA, Master Dev Fees
-   Calibrated: Knight Frank, CBRE, DLD, RERA, Cavendish Maxwell, DBC 2021
+   Simple (owner/developer) + Advanced (expert) views
+   Land-price slider drives real-time recomputation
    ═══════════════════════════════════════════════════════════════════ */
 
 interface Props {
@@ -25,15 +25,20 @@ interface Props {
   maxHeightCode?: string | null;
 }
 
-// ── Constants ──────────────────────────────────────────────────────
+// ── Palette (ZAAHI navy / teal / gold) ──────────────────────────────
 
 const GOLD = "#C8A96E";
+const NAVY = "#1A1A2E";
+const TEAL = "#1B4965";
 const TXT = "#1A1A2E";
 const SUBTLE = "#6B7280";
 const LINE = "#E5E7EB";
 const BG = "#FAFAF9";
 const RED = "#E63946";
 const GREEN = "#2D6A4F";
+const AMBER = "#E67E22";
+
+// ── Height brackets and permits (unchanged from v3.1) ──────────────
 
 interface HeightBracket {
   maxFloors: number;
@@ -105,6 +110,7 @@ const ZONES: Record<string, ZoneInfo> = {
 };
 
 type LuKey = "residential" | "commercial" | "mixed_use" | "hotel" | "industrial" | "educational" | "healthcare" | "agricultural";
+type Mode = "sell" | "rent" | "jv";
 
 interface LuConfig {
   label: string;
@@ -114,8 +120,8 @@ interface LuConfig {
 }
 
 const LU: Record<LuKey, LuConfig> = {
-  residential: { label: "Residential", icon: "R", rm: "sale", defaults: { zone: "Dubai Hills Estate", landArea: 50000, eff: 0.78, hcPSF: 450, softPct: 12, contPct: 10, constMo: 28, salePSF: 1800, absUnits: 15, unitSize: 900, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 12, ltv: 60, ir: 7.5, ecr: 6.5, floors: 0, rentPSF: 0, occ: 0, opex: 0, mgmt: 0 } },
-  commercial: { label: "Commercial", icon: "C", rm: "noi", defaults: { zone: "Business Bay", landArea: 40000, eff: 0.82, hcPSF: 580, softPct: 14, contPct: 8, constMo: 32, rentPSF: 180, occ: 88, opex: 28, mgmt: 3, dldPct: 4, agentPct: 0, escrowPct: 20, ppSplit: 0, dr: 13, ltv: 55, ir: 7.0, ecr: 7.0, salePSF: 0, absUnits: 0, unitSize: 0, floors: 0 } },
+  residential: { label: "Residential", icon: "R", rm: "sale", defaults: { zone: "Dubai Hills Estate", landArea: 50000, eff: 0.78, hcPSF: 450, softPct: 12, contPct: 10, constMo: 28, salePSF: 1800, absUnits: 15, unitSize: 900, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 12, ltv: 60, ir: 7.5, ecr: 6.5, floors: 0, rentPSF: 120, occ: 85, opex: 25, mgmt: 3 } },
+  commercial: { label: "Commercial", icon: "C", rm: "noi", defaults: { zone: "Business Bay", landArea: 40000, eff: 0.82, hcPSF: 580, softPct: 14, contPct: 8, constMo: 32, rentPSF: 180, occ: 88, opex: 28, mgmt: 3, dldPct: 4, agentPct: 0, escrowPct: 20, ppSplit: 0, dr: 13, ltv: 55, ir: 7.0, ecr: 7.0, salePSF: 2200, absUnits: 8, unitSize: 1200, floors: 0 } },
   mixed_use: { label: "Mixed Use", icon: "M", rm: "mixed", defaults: { zone: "Business Bay", landArea: 60000, eff: 0.76, hcPSF: 520, softPct: 13, contPct: 9, constMo: 34, resPct: 55, comPct: 30, retPct: 15, salePSF: 1600, rentPSF: 160, retRent: 220, occ: 85, opex: 25, mgmt: 3, absUnits: 12, unitSize: 850, dldPct: 4, agentPct: 2, escrowPct: 20, ppSplit: 60, dr: 13, ltv: 55, ir: 7.25, ecr: 6.75, floors: 0 } },
   hotel: { label: "Hotel", icon: "H", rm: "hotel", defaults: { zone: "Palm Jumeirah", landArea: 35000, eff: 0.62, hcPSF: 1200, softPct: 16, contPct: 10, constMo: 40, adr: 750, occ: 77, rooms: 220, fbPct: 30, othPct: 15, opex: 62, mgmt: 4, ffe: 4, ramp: 2, dldPct: 4, escrowPct: 20, dr: 14, ltv: 50, ir: 8.0, ecr: 8.0, floors: 0, salePSF: 0, rentPSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0 } },
   industrial: { label: "Industrial", icon: "I", rm: "noi", defaults: { zone: "DIP", landArea: 100000, eff: 0.90, hcPSF: 150, softPct: 10, contPct: 6, constMo: 14, rentPSF: 55, occ: 93, opex: 18, mgmt: 2.5, dldPct: 4, escrowPct: 0, dr: 11, ltv: 65, ir: 6.5, ecr: 7.5, salePSF: 0, agentPct: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
@@ -123,6 +129,31 @@ const LU: Record<LuKey, LuConfig> = {
   healthcare: { label: "Healthcare", icon: "+", rm: "health", defaults: { zone: "Dubai Hills Estate", landArea: 30000, eff: 0.65, hcPSF: 850, softPct: 18, contPct: 12, constMo: 34, beds: 150, revBed: 900000, occ: 72, ancPct: 35, opex: 68, ramp: 3, dldPct: 4, escrowPct: 0, dr: 14, ltv: 45, ir: 7.5, ecr: 8.5, salePSF: 0, rentPSF: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
   agricultural: { label: "Agricultural", icon: "A", rm: "agri", defaults: { zone: "Custom", landArea: 200000, eff: 0.85, hcPSF: 45, softPct: 8, contPct: 5, constMo: 12, yld: 12, ppu: 8, grow: 3, opex: 55, dldPct: 4, escrowPct: 0, dr: 10, ltv: 35, ir: 6.0, ecr: 10.0, salePSF: 0, rentPSF: 0, occ: 0, agentPct: 0, mgmt: 0, ppSplit: 0, absUnits: 0, unitSize: 0, floors: 0 } },
 };
+
+// Which modes make sense for which land use
+function allowedModes(lu: LuKey): Mode[] {
+  if (lu === "residential" || lu === "commercial" || lu === "mixed_use") return ["sell", "rent", "jv"];
+  return [];
+}
+function defaultMode(lu: LuKey): Mode {
+  const rm = LU[lu].rm;
+  if (rm === "sale") return "sell";
+  if (rm === "noi") return "rent";
+  return "sell";
+}
+
+// Runtime-model derivation from mode + lu
+function effectiveRm(lu: LuKey, mode: Mode): string {
+  const base = LU[lu].rm;
+  // Mode toggle only applies to residential / commercial (pure-sale or pure-rent flip).
+  // Mixed / Hotel / Edu / Health / Agri keep their native revenue model.
+  if (lu === "residential" || lu === "commercial") {
+    if (mode === "sell") return "sale";
+    if (mode === "rent") return "noi";
+    if (mode === "jv") return "sale"; // JV uses sale proceeds as base, split by share
+  }
+  return base;
+}
 
 // ── IRR / NPV ──────────────────────────────────────────────────────
 
@@ -154,10 +185,16 @@ interface RunResult {
   irr: number; npv: number; em: number; dscr: number; dy: number;
   cf: number[]; met: Record<string, number | string>;
   hp: number; cy: number; cpsf: number;
+  paybackMonths: number;    // time to positive cumulative cash flow
+  totalRevenue: number;     // for summary (mode-aware)
+  netProfit: number;        // totalRevenue - tdc
 }
 
-function run(type: string, inp: Record<string, number | string>): RunResult {
+// Optional rmOverride lets the caller force a specific revenue model
+// (used for SELL/RENT toggle on residential/commercial).
+function run(type: string, inp: Record<string, number | string>, rmOverride?: string): RunResult {
   const c = LU[type as LuKey] || LU.residential;
+  const rm = rmOverride ?? c.rm;
   const z = ZONES[inp.zone as string] || ZONES.Custom;
   const far = (inp.farOverride as number) > 0 ? (inp.farOverride as number) : z.far;
   const la = inp.landArea as number;
@@ -170,7 +207,6 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const sc = hc * ((inp.softPct as number) / 100);
   const cont = hc * ((inp.contPct as number) / 100);
   const dld = landC * ((inp.dldPct as number) / 100);
-  // DLD Admin Fee: AED 5,800 for apartments/offices, AED 4,300 for land/plots
   const dldAdmin = (type === "residential" || type === "commercial" || type === "mixed_use" || type === "hotel") ? 5800 : 4300;
   const pm = calcPermits(type, hc, gba, fl, inp.zone as string);
   const tdc = landC + hc + sc + cont + dld + dldAdmin + 5000 + pm.total;
@@ -182,7 +218,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   let cf: number[] = [], noi = 0, rev = 0, tsr = 0, ev = 0, rr = 0;
   const met: Record<string, number | string> = {};
 
-  if (c.rm === "sale") {
+  if (rm === "sale") {
     tsr = nsa * (inp.salePSF as number);
     const tu = Math.floor(nsa / ((inp.unitSize as number) || 900));
     const ac = tsr * ((inp.agentPct as number) / 100) * 1.05;
@@ -202,7 +238,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.devMargin = dm.toFixed(1) + "%";
     met.monthsToSell = Math.round(ms);
     met.costPerUnit = Math.round(tdc / tu);
-  } else if (c.rm === "noi") {
+  } else if (rm === "noi") {
     rev = nsa * (inp.rentPSF as number) * ((inp.occ as number) / 100);
     noi = rev * (1 - (inp.opex as number) / 100 - ((inp.mgmt as number) || 0) / 100);
     ev = (noi * Math.pow(1.03, hp - cy)) / ((inp.ecr as number) / 100);
@@ -214,7 +250,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.annualNOI = noi;
     met.yieldOnCost = ((noi / tdc) * 100).toFixed(2) + "%";
     met.exitVal = ev;
-  } else if (c.rm === "mixed") {
+  } else if (rm === "mixed") {
     rr = nsa * ((inp.resPct as number) || 55) / 100 * (inp.salePSF as number) * (1 - ((inp.agentPct as number) / 100) * 1.05);
     const cn = nsa * ((inp.comPct as number) || 30) / 100 * (inp.rentPSF as number) * ((inp.occ as number) / 100) * (1 - (inp.opex as number) / 100 - ((inp.mgmt as number) || 0) / 100);
     const rn = nsa * ((inp.retPct as number) || 15) / 100 * ((inp.retRent as number) || (inp.rentPSF as number) * 1.3) * ((inp.occ as number) / 100) * (1 - (inp.opex as number) / 100);
@@ -228,10 +264,10 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.resRev = rr;
     met.annualNOI = noi;
     met.exitVal = ev;
-  } else if (c.rm === "hotel") {
+  } else if (rm === "hotel") {
     const rp = (inp.adr as number) * ((inp.occ as number) / 100);
-    const rr = rp * (inp.rooms as number) * 365;
-    rev = rr * (1 + (inp.fbPct as number) / 100 + (inp.othPct as number) / 100);
+    const rrev = rp * (inp.rooms as number) * 365;
+    rev = rrev * (1 + (inp.fbPct as number) / 100 + (inp.othPct as number) / 100);
     const gop = rev * (1 - (inp.opex as number) / 100);
     noi = gop - rev * ((inp.mgmt as number) / 100) - rev * (((inp.ffe as number) || 4) / 100);
     ev = (noi * Math.pow(1.03, hp - cy - ((inp.ramp as number) || 2))) / ((inp.ecr as number) / 100);
@@ -245,14 +281,14 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.costPerKey = Math.round(tdc / (inp.rooms as number));
     met.gopMargin = ((gop / rev) * 100).toFixed(1) + "%";
     met.annualNOI = noi;
-  } else if (c.rm === "edu") {
+  } else if (rm === "edu") {
     const mx = (inp.capacity as number) * (inp.feePer as number);
-    const rm = (inp.rampYr as number) || 4;
+    const rmp = (inp.rampYr as number) || 4;
     const ip = ((inp.initPct as number) || 35) / 100;
     cf = [-eq];
     for (let y = 1; y <= cy; y++) cf.push(-ds);
     for (let y = 1; y <= hp - cy; y++) {
-      const ep = Math.min(0.95, ip + (0.95 - ip) * Math.min(1, y / rm));
+      const ep = Math.min(0.95, ip + (0.95 - ip) * Math.min(1, y / rmp));
       noi = mx * ep * (1 - (inp.opex as number) / 100);
       if (y === hp - cy) { ev = noi / ((inp.ecr as number) / 100); cf.push(noi - ds + ev - debt); }
       else cf.push(noi - ds);
@@ -260,7 +296,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.maxRev = mx;
     met.costPerStudent = Math.round(tdc / (inp.capacity as number));
     met.stabilizedNOI = noi;
-  } else if (c.rm === "health") {
+  } else if (rm === "health") {
     rev = (inp.beds as number) * (inp.revBed as number) * ((inp.occ as number) / 100) * (1 + (inp.ancPct as number) / 100);
     noi = rev * (1 - (inp.opex as number) / 100);
     ev = (noi * Math.pow(1.03, hp - cy - ((inp.ramp as number) || 3))) / ((inp.ecr as number) / 100);
@@ -274,7 +310,7 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
     met.annualNOI = noi;
     met.costPerBed = Math.round(tdc / (inp.beds as number));
     met.ebitda = ((noi / rev) * 100).toFixed(1) + "%";
-  } else if (c.rm === "agri") {
+  } else if (rm === "agri") {
     rev = la * (inp.eff as number) * ((inp.yld as number) || 12) * ((inp.ppu as number) || 8);
     noi = rev * (1 - (inp.opex as number) / 100);
     ev = (noi * Math.pow(1.03, hp - cy)) / ((inp.ecr as number) / 100);
@@ -294,13 +330,39 @@ function run(type: string, inp: Record<string, number | string>): RunResult {
   const em = cf.reduce((s, c_) => s + Math.max(0, c_), 0) / eq;
   const dscr = noi > 0 ? noi / ds : 0;
   const dy = noi > 0 ? (noi / debt) * 100 : 0;
-  return { gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, dldAdmin, pm, tdc, eq, debt, ds, esc, noi, rev, tsr, ev, rr, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba };
+
+  // Payback: months until cumulative CF turns positive
+  let cum = 0;
+  let paybackMonths = 0;
+  for (let t = 0; t < cf.length; t++) {
+    cum += cf[t];
+    if (cum > 0) { paybackMonths = t * 12; break; }
+  }
+  if (paybackMonths === 0 && cum <= 0) paybackMonths = cf.length * 12;
+
+  // Total revenue for summary (mode-aware)
+  let totalRevenue = 0;
+  if (rm === "sale") totalRevenue = tsr;
+  else if (rm === "noi") totalRevenue = ev;
+  else if (rm === "mixed") totalRevenue = rr + ev;
+  else if (rm === "hotel") totalRevenue = rev * Math.max(1, hp - cy) + ev;
+  else if (rm === "edu") totalRevenue = (met.maxRev as number || 0) * Math.max(1, hp - cy) * 0.7 + ev;
+  else if (rm === "health") totalRevenue = rev * Math.max(1, hp - cy) + ev;
+  else if (rm === "agri") totalRevenue = rev * Math.max(1, hp - cy) + ev;
+
+  const netProfit = totalRevenue - tdc;
+
+  return {
+    gba, nsa, far, fl, landC, baseHC, hPrem: hPrem_, hc, sc, cont, dld, dldAdmin, pm, tdc, eq, debt, ds, esc,
+    noi, rev, tsr, ev, rr, irr: ip, npv: n, em, dscr, dy, cf, met, hp, cy, cpsf: tdc / gba,
+    paybackMonths, totalRevenue, netProfit,
+  };
 }
 
-function sens(type: string, base: Record<string, number | string>, param: string) {
+function sens(type: string, base: Record<string, number | string>, param: string, rmOverride?: string) {
   return [-20, -10, 0, 10, 20].map((d) => {
     const m = { ...base, [param]: (base[param] as number) * (1 + d / 100) };
-    return { d, irr: run(type, m).irr };
+    return { d, irr: run(type, m, rmOverride).irr, profit: run(type, m, rmOverride).netProfit };
   });
 }
 
@@ -308,7 +370,7 @@ function sens(type: string, base: Record<string, number | string>, param: string
 
 const F = {
   n: (v: number): string => {
-    if (!v && v !== 0 || isNaN(v)) return "\u2014";
+    if ((!v && v !== 0) || isNaN(v)) return "\u2014";
     if (Math.abs(v) >= 1e9) return (v / 1e9).toFixed(2) + "B";
     if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1) + "M";
     if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(0) + "K";
@@ -316,67 +378,14 @@ const F = {
   },
   aed: (v: number): string => "AED " + F.n(v),
   pct: (v: number, d = 1): string => (isNaN(v) ? "\u2014" : v.toFixed(d) + "%"),
+  months: (m: number): string => {
+    if (!isFinite(m) || isNaN(m)) return "\u2014";
+    if (m >= 120) return `${(m / 12).toFixed(1)} yrs`;
+    return `${Math.round(m)} mo`;
+  },
 };
 
-// ── Sub-components ─────────────────────────────────────────────────
-
-function NumInput({ l, v, onChange: o, u, s = 1, big }: { l: string; v: number; onChange: (v: number) => void; u?: string; s?: number; big?: boolean }) {
-  const [local, setLocal] = useState(String(v));
-  const [focused, setFocused] = useState(false);
-  useEffect(() => { if (!focused) setLocal(String(v)); }, [v, focused]);
-  const formatted = !focused && v !== 0 ? v.toLocaleString("en-US") : local;
-  const fontSize = big ? 20 : 16;
-  const pad = big ? "10px 12px" : "8px 10px";
-  return (
-    <div style={{ marginBottom: 8, gridColumn: big ? "1 / -1" : undefined }}>
-      <div style={{ fontSize: big ? 12 : 11, color: big ? GOLD : SUBTLE, fontWeight: big ? 700 : 400, letterSpacing: ".04em", marginBottom: 3 }}>{l}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <input type={focused ? "number" : "text"} value={focused ? local : formatted}
-          onChange={(e) => { setLocal(e.target.value); const n = +e.target.value; if (!isNaN(n)) o(n); }}
-          onFocus={() => setFocused(true)}
-          onBlur={() => { setFocused(false); const n = +local; setLocal(String(isNaN(n) ? 0 : n)); if (isNaN(n)) o(0); }}
-          step={s}
-          style={{ flex: 1, background: big ? "#fff" : BG, border: `1px solid ${big ? GOLD : LINE}`, borderRadius: 6, padding: pad, fontSize, color: TXT, outline: "none", width: "100%", fontFamily: "inherit", fontWeight: big ? 700 : 400 }} />
-        {u && <span style={{ fontSize: big ? 12 : 10, color: SUBTLE, minWidth: 24 }}>{u}</span>}
-      </div>
-    </div>
-  );
-}
-
-function Sel({ l, v, onChange: o, opts }: { l: string; v: string; onChange: (v: string) => void; opts: string[] }) {
-  return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 9.5, color: SUBTLE, letterSpacing: ".04em", marginBottom: 2 }}>{l}</div>
-      <select value={v} onChange={(e) => o(e.target.value)}
-        style={{ width: "100%", background: BG, border: `1px solid ${LINE}`, borderRadius: 5, padding: "5px 7px", fontSize: 12, color: TXT, outline: "none", fontFamily: "inherit" }}>
-        {opts.map((o_) => <option key={o_}>{o_}</option>)}
-      </select>
-    </div>
-  );
-}
-
-function Metric({ l, v, sub, big: b }: { l: string; v: string; sub?: string; big?: boolean }) {
-  return (
-    <div style={{ background: b ? GOLD : "white", borderRadius: 6, padding: b ? "11px 13px" : "7px 9px", border: b ? "none" : `1px solid ${LINE}`, flex: "1 1 100px", minWidth: 90 }}>
-      <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: ".06em", color: b ? "rgba(255,255,255,.55)" : SUBTLE, marginBottom: 1 }}>{l}</div>
-      <div style={{ fontSize: b ? 20 : 14, fontWeight: 700, color: b ? "#fff" : TXT, lineHeight: 1.1 }}>{v}</div>
-      {sub && <div style={{ fontSize: 7.5, color: b ? "rgba(255,255,255,.4)" : SUBTLE, marginTop: 1 }}>{sub}</div>}
-    </div>
-  );
-}
-
-function CfBar({ cfs }: { cfs: number[] }) {
-  const mx = Math.max(...cfs.map(Math.abs), 1);
-  return (
-    <svg viewBox="0 0 100 50" style={{ width: "100%", height: 65 }}>
-      <line x1="0" y1="25" x2="100" y2="25" stroke={LINE} strokeWidth=".3" />
-      {cfs.map((c_, i) => { const w = 100 / cfs.length, h = (Math.abs(c_) / mx) * 22; return <rect key={i} x={i * w + w * .15} y={c_ >= 0 ? 25 - h : 25} width={w * .7} height={h} fill={c_ >= 0 ? GOLD : RED} rx=".6" opacity=".8" />; })}
-      {cfs.map((_, i) => { const w = 100 / cfs.length; return <text key={"t" + i} x={i * w + w / 2} y="48" textAnchor="middle" fontSize="2.3" fill={SUBTLE}>Y{i}</text>; })}
-    </svg>
-  );
-}
-
-// ── Map land use string → LuKey ────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────
 
 function mapLandUse(lu: string): LuKey {
   const s = lu.toUpperCase().replace(/[\s_-]+/g, "_");
@@ -390,8 +399,6 @@ function mapLandUse(lu: string): LuKey {
   if (s.includes("COMMERCIAL") || s.includes("OFFICE") || s.includes("RETAIL")) return "commercial";
   return "residential";
 }
-
-// ── Match community name → zone key ────────────────────────────────
 
 function matchZone(community: string | null | undefined): string {
   if (!community) return "Custom";
@@ -411,8 +418,6 @@ function matchZone(community: string | null | undefined): string {
   return "Custom";
 }
 
-// ── Auto-split mixed use from DDA landUseMix ──────────────────────
-
 function computeMixedSplit(mix: Props["landUseMix"]): { resPct: number; comPct: number; retPct: number } | null {
   if (!mix || mix.length < 2) return null;
   const areas = mix.map((m) => m.areaSqm ?? 0);
@@ -429,17 +434,244 @@ function computeMixedSplit(mix: Props["landUseMix"]): { resPct: number; comPct: 
   return { resPct: Math.round((res / total) * 100), comPct: Math.round((com / total) * 100), retPct: Math.round((ret / total) * 100) };
 }
 
+// ── Reactive sub-components ────────────────────────────────────────
+
+function NumInput({ l, v, onChange: o, u, s = 1 }: { l: string; v: number; onChange: (v: number) => void; u?: string; s?: number }) {
+  const [local, setLocal] = useState(String(v));
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setLocal(String(v)); }, [v, focused]);
+  const formatted = !focused && v !== 0 ? v.toLocaleString("en-US") : local;
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: SUBTLE, letterSpacing: ".04em", marginBottom: 3 }}>{l}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input
+          type={focused ? "number" : "text"}
+          value={focused ? local : formatted}
+          onChange={(e) => { setLocal(e.target.value); const n = +e.target.value; if (!isNaN(n)) o(n); }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setFocused(false); const n = +local; setLocal(String(isNaN(n) ? 0 : n)); if (isNaN(n)) o(0); }}
+          step={s}
+          style={{ flex: 1, background: BG, border: `1px solid ${LINE}`, borderRadius: 6, padding: "7px 9px", fontSize: 13, color: TXT, outline: "none", width: "100%", fontFamily: "inherit" }}
+        />
+        {u && <span style={{ fontSize: 10, color: SUBTLE, minWidth: 28 }}>{u}</span>}
+      </div>
+    </div>
+  );
+}
+
+function LandPriceSlider({
+  value, onChange, plotAreaSqft,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  plotAreaSqft: number;
+}) {
+  // Slider range: 10% → 500% of current value (or if 0, use zone default times area)
+  const min = Math.max(100_000, Math.round(value * 0.1 / 100_000) * 100_000);
+  const max = Math.max(min * 10, Math.round(value * 5 / 1_000_000) * 1_000_000);
+  const step = Math.max(10_000, Math.round((max - min) / 1000 / 10_000) * 10_000);
+  const pricePerSqft = plotAreaSqft > 0 ? value / plotAreaSqft : 0;
+
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`,
+      borderRadius: 12, padding: "18px 20px 16px", color: "#fff",
+      boxShadow: "0 6px 20px rgba(27,73,101,0.25)",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+        <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.65)" }}>
+          Land Cost
+        </div>
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,.5)" }}>
+          {pricePerSqft > 0 ? `AED ${pricePerSqft.toFixed(0)}/sqft` : "—"}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,.55)" }}>AED</span>
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => {
+            const n = +e.target.value;
+            if (!isNaN(n) && n >= 0) onChange(n);
+          }}
+          step={step}
+          style={{
+            background: "transparent", border: 0, borderBottom: "1px solid rgba(255,255,255,.2)",
+            color: "#fff", fontSize: 28, fontWeight: 800, width: "100%", outline: "none",
+            fontFamily: "inherit", padding: "2px 0",
+          }}
+        />
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={Math.min(Math.max(value, min), max)}
+        onChange={(e) => onChange(+e.target.value)}
+        style={{
+          width: "100%", accentColor: GOLD, height: 4, cursor: "pointer",
+        }}
+      />
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,.45)", marginTop: 4 }}>
+        <span>{F.aed(min)}</span>
+        <span>{F.aed(max)}</span>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  label, value, sub, accent, big,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: string;
+  big?: boolean;
+}) {
+  return (
+    <div style={{
+      background: "white", borderRadius: 10, padding: big ? "14px 16px" : "12px 14px",
+      border: `1px solid ${LINE}`,
+      borderLeft: accent ? `4px solid ${accent}` : `1px solid ${LINE}`,
+      minWidth: 0, // allow ellipsize within grid
+    }}>
+      <div style={{ fontSize: 9, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: big ? 22 : 18, fontWeight: 800, color: accent ?? TXT, lineHeight: 1.1,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 10, color: SUBTLE, marginTop: 3 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Verdict({ irr, netProfit }: { irr: number; netProfit: number }) {
+  let status: "STRONG" | "MARGINAL" | "WEAK";
+  let color: string;
+  let bg: string;
+  let msg: string;
+  if (irr >= 18 && netProfit > 0) {
+    status = "STRONG";
+    color = "#fff";
+    bg = GREEN;
+    msg = "Attractive returns";
+  } else if (irr >= 10 && netProfit > 0) {
+    status = "MARGINAL";
+    color = "#fff";
+    bg = AMBER;
+    msg = "Acceptable — negotiate harder";
+  } else {
+    status = "WEAK";
+    color = "#fff";
+    bg = RED;
+    msg = netProfit <= 0 ? "Loss-making at this land price" : "Below target — reconsider";
+  }
+  return (
+    <div style={{
+      background: bg, color, borderRadius: 10, padding: "12px 16px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      <div>
+        <div style={{ fontSize: 10, letterSpacing: ".1em", opacity: 0.75 }}>VERDICT</div>
+        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: ".04em" }}>{status}</div>
+      </div>
+      <div style={{ fontSize: 12, textAlign: "right", opacity: 0.92 }}>{msg}</div>
+    </div>
+  );
+}
+
+function ModeToggle({ mode, onChange, modes }: { mode: Mode; onChange: (m: Mode) => void; modes: Mode[] }) {
+  if (modes.length === 0) return null;
+  const labels: Record<Mode, string> = { sell: "BUILD-TO-SELL", rent: "BUILD-TO-RENT", jv: "JOINT VENTURE" };
+  return (
+    <div style={{ display: "flex", gap: 4, background: BG, padding: 3, borderRadius: 8, border: `1px solid ${LINE}` }}>
+      {modes.map((m) => {
+        const active = m === mode;
+        return (
+          <button
+            key={m}
+            onClick={() => onChange(m)}
+            style={{
+              flex: 1, border: 0, cursor: "pointer",
+              background: active ? TEAL : "transparent",
+              color: active ? "#fff" : SUBTLE,
+              padding: "7px 10px", borderRadius: 6,
+              fontSize: 10, fontWeight: 700, letterSpacing: ".05em",
+            }}
+          >
+            {labels[m]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({
+  title, open, onToggle, children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ background: "white", borderRadius: 8, border: `1px solid ${LINE}`, marginBottom: 8, overflow: "hidden" }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width: "100%", background: "transparent", border: 0, cursor: "pointer",
+          padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: ".07em",
+          fontFamily: "Georgia, serif",
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ color: SUBTLE, fontSize: 14, transition: "transform .15s", transform: open ? "rotate(180deg)" : "none" }}>
+          ⌄
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: "4px 14px 12px", borderTop: `1px solid ${LINE}` }}>{children}</div>
+      )}
+    </div>
+  );
+}
+
+function ToggleRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${LINE}22` }}>
+      <span style={{ fontSize: 11, color: SUBTLE }}>{label}</span>
+      <span style={{ fontSize: 12, color: TXT, fontWeight: 600 }}>{children}</span>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────
 
 export default function FeasibilityCalculator(props: Props) {
   const initialLu = mapLandUse(props.landUse);
   const [lu, setLU] = useState<LuKey>(initialLu);
+  const [mode, setMode] = useState<Mode>(defaultMode(initialLu));
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    costs: true, revenue: false, timeline: false, metrics: false, hotel: false,
+  });
+  const [disclaimerVisible, setDisclaimerVisible] = useState(true);
+
   const [inp, setInp] = useState<Record<string, number | string>>(() => {
     const d = { ...LU[initialLu].defaults };
     if (props.plotAreaSqft > 0) d.landArea = props.plotAreaSqft;
     if (props.maxFloors && props.maxFloors > 0) d.floors = props.maxFloors;
-    const zone = matchZone(props.community);
-    d.zone = zone;
+    d.zone = matchZone(props.community);
     d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
     d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
     d.farOverride = props.far && props.far > 0 ? props.far : 0;
@@ -447,69 +679,65 @@ export default function FeasibilityCalculator(props: Props) {
     if (ms && initialLu === "mixed_use") { d.resPct = ms.resPct; d.comPct = ms.comPct; d.retPct = ms.retPct; }
     return d;
   });
-  const [tab, setTab] = useState<"inputs" | "results" | "sensitivity">("inputs");
-  const [sd, setSD] = useState<Array<{ l: string; d: Array<{ d: number; irr: number }> }> | null>(null);
-  const [disclaimerVisible, setDisclaimerVisible] = useState(true);
 
-  const c = LU[lu];
-
-  // When land use type changes, reset defaults but keep plot-specific overrides
+  // Reset inputs + mode when land use changes (keep plot-derived overrides).
   useEffect(() => {
     const d = { ...LU[lu].defaults };
     if (props.plotAreaSqft > 0) d.landArea = props.plotAreaSqft;
     if (props.maxFloors && props.maxFloors > 0) d.floors = props.maxFloors;
-    const zone = matchZone(props.community);
-    d.zone = zone;
+    d.zone = matchZone(props.community);
     d.landCost = props.plotPriceAed > 0 ? props.plotPriceAed : 0;
     d.gfa = props.gfaSqft > 0 ? props.gfaSqft : 0;
     d.farOverride = props.far && props.far > 0 ? props.far : 0;
     const ms = computeMixedSplit(props.landUseMix);
     if (ms && lu === "mixed_use") { d.resPct = ms.resPct; d.comPct = ms.comPct; d.retPct = ms.retPct; }
     setInp(d);
-    setTab("inputs");
-    setSD(null);
+    setMode(defaultMode(lu));
+    // intentionally not including props in deps for the initial mount reset
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lu, props.plotAreaSqft, props.maxFloors, props.community, props.plotPriceAed, props.gfaSqft, props.far, props.landUseMix]);
 
   const u = useCallback((k: string, v: number | string) => setInp((p) => ({ ...p, [k]: v })), []);
-  const r = useMemo(() => run(lu, inp), [lu, inp]);
+  const updateLandCost = useCallback((n: number) => setInp((p) => ({ ...p, landCost: n })), []);
 
-  const doS = () => {
-    const ps: [string, string][] =
-      lu === "hotel" ? [["adr", "ADR"], ["occ", "Occ"], ["hcPSF", "Hard"], ["ecr", "Cap"]] :
-      c.rm === "sale" ? [["salePSF", "Price"], ["hcPSF", "Hard"], ["absUnits", "Absorb"], ["ir", "Rate"]] :
-      c.rm === "edu" ? [["feePer", "Fee"], ["capacity", "Cap"], ["hcPSF", "Hard"], ["opex", "OpEx"]] :
-      c.rm === "health" ? [["revBed", "Rev/Bed"], ["occ", "Occ"], ["hcPSF", "Hard"], ["opex", "OpEx"]] :
-      [["rentPSF", "Rent"], ["occ", "Occ"], ["hcPSF", "Hard"], ["ecr", "Cap"]];
-    setSD(ps.map(([k, l]) => ({ l, d: sens(lu, inp, k) })));
-  };
+  const rm = effectiveRm(lu, mode);
+  const r = useMemo(() => run(lu, inp, rm), [lu, inp, rm]);
+  const c = LU[lu];
 
-  const ic = r.irr > 18 ? GREEN : r.irr > 12 ? GOLD : RED;
-  const it = r.irr > 18 ? "STRONG" : r.irr > 12 ? "MODERATE" : "BELOW TARGET";
+  // Sensitivity table: land price ±20% → profit / IRR
+  const landSens = useMemo(
+    () => sens(lu, inp, "landCost", rm),
+    [lu, inp, rm],
+  );
 
+  const irrColor = r.irr > 18 ? GREEN : r.irr > 12 ? GOLD : r.irr >= 8 ? AMBER : RED;
+  const profitColor = r.netProfit > 0 ? GREEN : RED;
+
+  // PDF export
   const downloadPDF = useCallback(() => {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = 210, M = 15;
-    const cw = W - 2 * M;
     let y = 15;
     const gold: [number, number, number] = [200, 169, 110];
     const dark: [number, number, number] = [26, 26, 46];
     const gray: [number, number, number] = [107, 114, 128];
 
-    const addLine = () => { doc.setDrawColor(...gold); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 4; };
-    const addFooter = () => { doc.setFontSize(6.5); doc.setTextColor(...gray); doc.setFont("helvetica", "normal"); doc.text("ZAAHI Real Estate OS \u2014 zaahi.io \u2014 Confidential", W / 2, 290, { align: "center" }); };
+    const addFooter = () => {
+      doc.setFontSize(6.5); doc.setTextColor(...gray); doc.setFont("helvetica", "normal");
+      doc.text("ZAAHI Real Estate OS — zaahi.io — Confidential", W / 2, 290, { align: "center" });
+    };
     addFooter();
     const checkPage = (need: number) => { if (y + need > 275) { doc.addPage(); y = 15; addFooter(); } };
     const heading = (t: string) => { checkPage(12); doc.setFontSize(11); doc.setTextColor(...gold); doc.setFont("helvetica", "bold"); doc.text(t, M, y); y += 6; };
     const row = (l: string, v: string) => { checkPage(6); doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray); doc.text(l, M, y); doc.setTextColor(...dark); doc.text(v, W - M, y, { align: "right" }); y += 5; };
+    const rule = () => { doc.setDrawColor(...gold); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 4; };
 
-    // Header
     doc.setFontSize(18); doc.setTextColor(...gold); doc.setFont("helvetica", "bold");
     doc.text("ZAAHI Feasibility Report", M, y); y += 8;
     doc.setFontSize(9); doc.setTextColor(...gray); doc.setFont("helvetica", "normal");
     doc.text(`Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, M, y); y += 4;
-    addLine();
+    rule();
 
-    // Plot info
     heading("PLOT INFORMATION");
     if (props.projectName) row("Project", props.projectName);
     if (props.masterDeveloper) row("Master Developer", props.masterDeveloper);
@@ -519,192 +747,95 @@ export default function FeasibilityCalculator(props: Props) {
     if (props.community) row("Community", props.community);
     if (props.maxHeightCode) row("Height Code", props.maxHeightCode);
     row("Plot Area", `${Math.round(props.plotAreaSqft).toLocaleString()} sqft`);
-    if (props.plotPriceAed > 0) row("Plot Price", F.aed(props.plotPriceAed));
+    if (props.plotPriceAed > 0) row("Listed Price", F.aed(props.plotPriceAed));
+    row("Strategy", mode === "sell" ? "Build-to-Sell" : mode === "rent" ? "Build-to-Rent" : "Joint Venture");
     y += 2;
 
-    // Assumptions
-    heading("ASSUMPTIONS");
+    heading("SUMMARY");
+    row("Total Investment", F.aed(r.tdc));
+    row("Total Revenue", F.aed(r.totalRevenue));
+    row("Net Profit", F.aed(r.netProfit));
+    row("IRR", F.pct(r.irr));
+    row("Payback", F.months(r.paybackMonths));
+    y += 2;
+
+    heading("COSTS");
     row("Land Cost", F.aed(r.landC));
-    if (props.plotPriceAed > 0 && r.landC !== props.plotPriceAed) row("Listed Price", F.aed(props.plotPriceAed));
-    row("GFA", `${F.n(r.gba)} sqft`);
-    row("FAR", `${r.far}x`);
-    row("Efficiency", `${((inp.eff as number) * 100).toFixed(0)}%`);
-    row("Hard Cost / sqft", `AED ${inp.hcPSF}`);
-    row("Soft Costs", `${inp.softPct}%`);
-    row("Contingency", `${inp.contPct}%`);
-    row("Construction", `${inp.constMo} months`);
-    row("LTV", `${inp.ltv}%`);
-    row("Interest Rate", `${inp.ir}%`);
-    row("WACC", `${inp.dr}%`);
-    row("Exit Cap Rate", `${inp.ecr}%`);
-    const revFields = rf();
-    for (const f of revFields) {
-      const v = inp[f.k];
-      row(f.l, `${v}${f.u ? " " + f.u : ""}`);
-    }
+    row("Base Hard Cost", F.aed(r.baseHC));
+    row("Height Premium (+" + (r.pm.hPrem * 100).toFixed(0) + "%)", F.aed(r.hPrem));
+    row("Soft Costs", F.aed(r.sc));
+    row("Contingency", F.aed(r.cont));
+    row("DLD Registration (4%)", F.aed(r.dld));
+    row("DLD Admin Fee", F.aed(r.dldAdmin));
+    row("Permits & Infrastructure", F.aed(r.pm.total));
     y += 2;
 
-    // Key metrics
-    heading("KEY METRICS");
-    row("Levered IRR", `${F.pct(r.irr)} (${it})`);
+    heading("METRICS");
+    row("GBA", `${F.n(r.gba)} sqft`);
+    row("NSA", `${F.n(r.nsa)} sqft`);
+    row("Cost / sqft", `AED ${r.cpsf.toFixed(0)}`);
+    row("Floors", String(r.fl));
     row("NPV", F.aed(r.npv));
     row("Equity Multiple", `${r.em.toFixed(2)}x`);
     if (r.dscr > 0) row("DSCR", r.dscr.toFixed(2));
-    if (r.dy > 0) row("Debt Yield", F.pct(r.dy));
-    row("GBA", `${F.n(r.gba)} sqft`);
-    row("NSA", `${F.n(r.nsa)} sqft`);
-    row("Floors", `${r.fl} (${r.pm.hLabel})`);
-    row("Cost / sqft (GBA)", `AED ${r.cpsf.toFixed(0)}`);
-    for (const [k, v] of Object.entries(r.met)) {
-      const label = k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
-      row(label, typeof v === "number" ? (Math.abs(v) > 1000 ? F.aed(v) : F.n(v)) : String(v));
-    }
+    row("Yield on Debt", F.pct(r.dy));
     y += 2;
 
-    // Cost stack
-    heading("FULL COST STACK");
-    const costs: [string, number][] = [["Land", r.landC], ["Base Hard Cost", r.baseHC], [`Height Premium +${(r.pm.hPrem * 100).toFixed(0)}%`, r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["DLD Admin Fee", r.dldAdmin], ["Permits & Infra", r.pm.total]];
-    for (const [l, v] of costs) { if (v > 0) row(l, F.aed(v)); }
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...gold);
-    row("TOTAL DEVELOPMENT COST", F.aed(r.tdc));
-    doc.setFont("helvetica", "normal");
-    row("Equity Required", F.aed(r.eq));
-    row("Debt", F.aed(r.debt));
-    row("Annual Debt Service", F.aed(r.ds));
-    y += 2;
-
-    // Cash flow table
-    heading("CASH FLOW PROJECTION");
-    checkPage(10 + r.cf.length * 5);
-    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
-    doc.text("Year", M, y); doc.text("Cash Flow (AED)", W - M, y, { align: "right" }); y += 4;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
-    r.cf.forEach((v, i) => {
-      checkPage(5);
-      doc.setTextColor(...gray); doc.text(`Year ${i}`, M, y);
-      doc.setTextColor(v >= 0 ? 45 : 230, v >= 0 ? 106 : 57, v >= 0 ? 79 : 70);
-      doc.text(F.aed(v), W - M, y, { align: "right" }); y += 4.5;
+    heading("LAND PRICE SENSITIVITY");
+    [-20, -10, 0, 10, 20].forEach((d, i) => {
+      const item = landSens[i];
+      row(`${d > 0 ? "+" : ""}${d}% land cost`, `IRR ${F.pct(item.irr)} · Profit ${F.aed(item.profit)}`);
     });
-    y += 2;
-
-    // Sensitivity
-    if (sd && sd.length > 0) {
-      heading("SENSITIVITY ANALYSIS (IRR +/-20%)");
-      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
-      doc.text("Parameter", M, y);
-      [-20, -10, 0, 10, 20].forEach((d, i) => {
-        doc.text(`${d > 0 ? "+" : ""}${d}%`, M + 35 + i * 22, y, { align: "center" });
-      }); y += 4;
-      doc.setFont("helvetica", "normal");
-      for (const s of sd) {
-        checkPage(5);
-        doc.setTextColor(...gray); doc.text(s.l, M, y);
-        s.d.forEach((d, i) => {
-          doc.setTextColor(...dark); doc.text(F.pct(d.irr, 1), M + 35 + i * 22, y, { align: "center" });
-        }); y += 4.5;
-      }
-      y += 2;
-    }
-
-    // Disclaimer
-    checkPage(15);
-    addLine();
-    doc.setFontSize(7); doc.setTextColor(...gray); doc.setFont("helvetica", "italic");
-    doc.text("DISCLAIMER: This report is generated by ZAAHI Feasibility Calculator v3.1 for informational purposes only.", M, y); y += 3.5;
-    doc.text("It does not constitute investment advice. All assumptions are user-defined and should be independently verified.", M, y); y += 3.5;
-    doc.text("ZAAHI assumes no liability for investment decisions made based on this report.", M, y);
-
-    // Page numbers
-    const totalPages = doc.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-      doc.setPage(p);
-      doc.setFontSize(7); doc.setTextColor(...gray); doc.setFont("helvetica", "normal");
-      doc.text(`Page ${p} of ${totalPages}`, W - M, 290, { align: "right" });
-    }
 
     const plotLabel = props.plotNumber ? `-Plot-${props.plotNumber}` : "";
     doc.save(`ZAAHI-Feasibility${plotLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
-  }, [r, inp, lu, c, sd, it, props.plotNumber, props.district, props.plotAreaSqft, props.plotPriceAed, props.community, props.projectName, props.masterDeveloper, props.maxHeightCode]);
+  }, [r, landSens, lu, mode, props, c]);
 
-  type FieldDef = { k: string; l: string; u?: string; s?: number; t?: string; o?: string[]; big?: boolean };
+  const toggleSection = (k: string) => setExpandedSections((s) => ({ ...s, [k]: !s[k] }));
+  const allowed = allowedModes(lu);
 
-  const sec = (t: string, fs: FieldDef[]) => (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 8, fontWeight: 700, color: GOLD, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 5, borderBottom: `1px solid ${GOLD}22`, paddingBottom: 2 }}>{t}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px" }}>
-        {fs.map((f) => f.t === "s"
-          ? <Sel key={f.k} l={f.l} v={inp[f.k] as string} onChange={(v) => u(f.k, v)} opts={f.o!} />
-          : f.t === "text"
-          ? <div key={f.k} style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 11, color: SUBTLE, letterSpacing: ".04em", marginBottom: 3 }}>{f.l}</div>
-              <div style={{ padding: "8px 10px", background: `${GOLD}11`, border: `1px solid ${GOLD}33`, borderRadius: 6, fontSize: 16, fontWeight: 600, color: TXT }}>{inp[f.k] as string}</div>
-            </div>
-          : <NumInput key={f.k} l={f.l} v={(inp[f.k] as number) ?? 0} onChange={(v) => u(f.k, v)} u={f.u} s={f.s || 1} big={f.big} />
-        )}
-      </div>
-    </div>
-  );
-
-  const rf = (): FieldDef[] => {
-    if (c.rm === "sale") return [{ k: "salePSF", l: "Sale Price/sqft", u: "AED", s: 10 }, { k: "absUnits", l: "Units/Month", u: "un" }, { k: "unitSize", l: "Avg Unit", u: "sqft", s: 50 }, { k: "ppSplit", l: "Constr Payment%", u: "%", s: 5 }, { k: "agentPct", l: "Agent Comm", u: "%", s: .5 }];
-    if (c.rm === "hotel") return [{ k: "adr", l: "ADR", u: "AED", s: 10 }, { k: "occ", l: "Occupancy", u: "%", s: 1 }, { k: "rooms", l: "Rooms", u: "keys" }, { k: "fbPct", l: "F&B%", u: "%", s: 1 }, { k: "othPct", l: "Other%", u: "%", s: 1 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }, { k: "mgmt", l: "Mgmt%", u: "%", s: .5 }, { k: "ffe", l: "FF&E%", u: "%", s: .5 }, { k: "ramp", l: "Ramp-Up", u: "yr" }];
-    if (c.rm === "edu") return [{ k: "feePer", l: "Fee/Student", u: "AED", s: 1000 }, { k: "capacity", l: "Capacity", u: "stud" }, { k: "rampYr", l: "Ramp Years", u: "yr" }, { k: "initPct", l: "Yr1 Enroll", u: "%", s: 5 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }];
-    if (c.rm === "health") return [{ k: "beds", l: "Beds", u: "beds" }, { k: "revBed", l: "Rev/Bed/Yr", u: "AED", s: 10000 }, { k: "occ", l: "Occupancy", u: "%", s: 1 }, { k: "ancPct", l: "Ancillary%", u: "%", s: 1 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }, { k: "ramp", l: "Ramp-Up", u: "yr" }];
-    if (c.rm === "agri") return [{ k: "yld", l: "Yield/sqft", u: "un", s: .5 }, { k: "ppu", l: "Price/Unit", u: "AED", s: .5 }, { k: "grow", l: "Growth%", u: "%", s: .5 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }];
-    if (c.rm === "mixed") return [{ k: "resPct", l: "Residential%", u: "%", s: 5 }, { k: "comPct", l: "Commercial%", u: "%", s: 5 }, { k: "retPct", l: "Retail%", u: "%", s: 5 }, { k: "salePSF", l: "Res Sale/sqft", u: "AED", s: 10 }, { k: "rentPSF", l: "Office Rent", u: "AED", s: 5 }, { k: "retRent", l: "Retail Rent", u: "AED", s: 5 }, { k: "occ", l: "Occupancy", u: "%", s: 1 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }];
-    return [{ k: "rentPSF", l: "Rent/sqft/yr", u: "AED", s: 5 }, { k: "occ", l: "Occupancy", u: "%", s: 1 }, { k: "opex", l: "OpEx%", u: "%", s: 1 }, { k: "mgmt", l: "Mgmt%", u: "%", s: .5 }];
-  };
+  // ── RENDER ──
 
   return (
-    <div style={{ color: TXT, fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif', fontSize: 11 }}>
-      {/* Disclaimer banner */}
+    <div style={{ color: TXT, fontFamily: "-apple-system, Segoe UI, Roboto, sans-serif", fontSize: 12 }}>
+
+      {/* Disclaimer */}
       {disclaimerVisible && (
-        <div
-          style={{
-            marginBottom: 8,
-            padding: "6px 10px",
-            background: `${GOLD}0D`,
-            border: `1px solid ${GOLD}33`,
-            borderRadius: 6,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
+        <div style={{
+          marginBottom: 10, padding: "7px 11px", background: `${GOLD}0D`,
+          border: `1px solid ${GOLD}33`, borderRadius: 6,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+        }}>
           <span style={{ fontSize: 9, color: SUBTLE, lineHeight: 1.4 }}>
-            This analysis is for informational purposes only and does not constitute investment advice.
+            For informational purposes only — not investment advice.
           </span>
           <button
             onClick={() => setDisclaimerVisible(false)}
-            style={{
-              background: "none",
-              border: "none",
-              color: SUBTLE,
-              fontSize: 13,
-              cursor: "pointer",
-              padding: "0 2px",
-              lineHeight: 1,
-              flexShrink: 0,
-            }}
-            aria-label="Dismiss disclaimer"
-          >
-            &times;
-          </button>
+            style={{ background: "none", border: "none", color: SUBTLE, fontSize: 14, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
+            aria-label="Dismiss"
+          >&times;</button>
         </div>
       )}
 
-      {/* Land Use type selector */}
-      <div style={{ marginBottom: 8, display: "flex", gap: 2, flexWrap: "wrap" }}>
+      {/* Project heading */}
+      {(props.projectName || props.masterDeveloper) && (
+        <div style={{ marginBottom: 10, padding: "6px 10px", background: `${GOLD}0A`, borderRadius: 5, borderLeft: `2px solid ${GOLD}` }}>
+          {props.projectName && <div style={{ fontSize: 11, fontWeight: 700, color: TXT }}>{props.projectName}</div>}
+          {props.masterDeveloper && <div style={{ fontSize: 9, color: SUBTLE }}>by {props.masterDeveloper}</div>}
+        </div>
+      )}
+
+      {/* Land use selector */}
+      <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 10 }}>
         {(Object.entries(LU) as [LuKey, LuConfig][]).map(([k, v]) => (
           <button key={k} onClick={() => setLU(k)}
             style={{
               background: lu === k ? GOLD : "transparent",
               color: lu === k ? "#fff" : SUBTLE,
               border: lu === k ? "none" : `1px solid ${LINE}`,
-              borderRadius: 5, padding: "3px 7px", cursor: "pointer",
-              fontSize: 9, fontWeight: 600, whiteSpace: "nowrap",
-              display: "flex", alignItems: "center", gap: 3,
+              borderRadius: 5, padding: "4px 8px", cursor: "pointer",
+              fontSize: 9.5, fontWeight: 600, whiteSpace: "nowrap",
+              display: "flex", alignItems: "center", gap: 4,
             }}>
             <span style={{ fontSize: 8, fontWeight: 700, opacity: .7 }}>{v.icon}</span>
             {v.label}
@@ -712,189 +843,268 @@ export default function FeasibilityCalculator(props: Props) {
         ))}
       </div>
 
-      {/* Project info from DDA */}
-      {(props.projectName || props.masterDeveloper) && (
-        <div style={{ marginBottom: 6, padding: "4px 8px", background: `${GOLD}0A`, borderRadius: 5, borderLeft: `2px solid ${GOLD}` }}>
-          {props.projectName && <div style={{ fontSize: 10, fontWeight: 700, color: TXT }}>{props.projectName}</div>}
-          {props.masterDeveloper && <div style={{ fontSize: 8.5, color: SUBTLE }}>by {props.masterDeveloper}</div>}
+      {/* Mode toggle (residential / commercial / mixed only) */}
+      {allowed.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <ModeToggle mode={mode} onChange={setMode} modes={allowed} />
         </div>
       )}
 
-      {/* Tab nav */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${LINE}`, marginBottom: 10 }}>
-        {([["inputs", "Assumptions"], ["results", "Analysis"], ["sensitivity", "Sensitivity"]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => { setTab(k as typeof tab); if (k === "sensitivity") doS(); }}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 10px", fontSize: 10, fontWeight: 600, color: tab === k ? GOLD : SUBTLE, borderBottom: tab === k ? `2px solid ${GOLD}` : "2px solid transparent" }}>
-            {l}
-          </button>
-        ))}
+      {/* ══════════ SIMPLE VIEW (always visible) ══════════ */}
+
+      <div style={{ marginBottom: 12 }}>
+        <LandPriceSlider
+          value={(inp.landCost as number) || 0}
+          onChange={updateLandCost}
+          plotAreaSqft={props.plotAreaSqft}
+        />
       </div>
 
-      {/* ── INPUTS TAB ── */}
-      {tab === "inputs" && (<>
-        {sec("SITE & ZONING", [
-          { k: "landArea", l: "Plot Area", u: "sqft" },
-          { k: "landCost", l: "Land Cost", u: "AED", s: 100000, big: true },
-          { k: "gfa", l: "GFA (0=auto)", u: "sqft", s: 100 },
-          { k: "farOverride", l: "FAR (0=zone)", u: "x", s: .1 },
-          { k: "eff", l: "Net/Gross", u: "ratio", s: .01 },
-          { k: "floors", l: "Floors (0=auto)", u: "fl" },
-        ])}
-        {/* Contextual hints from DDA / listing */}
-        <div style={{ background: `${GOLD}11`, borderRadius: 5, padding: "5px 7px", marginBottom: 8, fontSize: 8.5, color: SUBTLE, display: "flex", flexWrap: "wrap", gap: "3px 12px" }}>
-          {props.plotPriceAed > 0 && <span>Listed: <b style={{ color: GOLD }}>{F.aed(props.plotPriceAed)}</b></span>}
-          {props.gfaSqft > 0 && <span>DDA GFA: <b>{F.n(props.gfaSqft)} sqft</b></span>}
-          {props.far && props.far > 0 && <span>DDA FAR: <b style={{ color: GOLD }}>{props.far}x</b></span>}
-          <span>Calc FAR: <b style={{ color: GOLD }}>{r.far}x</b></span>
-          <span>GBA: <b>{F.n(r.gba)}</b></span>
-          <span>Floors: <b style={{ color: GOLD }}>{r.fl}</b></span>
-          <span>Class: <b style={{ color: r.pm.hPrem > .3 ? RED : GOLD }}>{r.pm.hLabel}</b></span>
-        </div>
-        {sec("CONSTRUCTION", [{ k: "hcPSF", l: "Base Hard Cost/sqft", u: "AED", s: 5 }, { k: "softPct", l: "Soft Costs", u: "%", s: .5 }, { k: "contPct", l: "Contingency", u: "%", s: .5 }, { k: "constMo", l: "Duration", u: "mo" }])}
-        {sec("REVENUE & OPS", rf())}
-        {sec("FINANCING", [{ k: "ltv", l: "LTV", u: "%", s: 1 }, { k: "ir", l: "Interest", u: "%", s: .25 }, { k: "dr", l: "WACC", u: "%", s: .5 }, { k: "ecr", l: "Exit Cap", u: "%", s: .25 }])}
-        {sec("REGULATORY", [{ k: "dldPct", l: "DLD Fee", u: "%", s: .5 }, { k: "escrowPct", l: "Escrow Contrib", u: "%", s: 5 }])}
+      {/* 5 big summary cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+        <SummaryCard label="Total Investment" value={F.aed(r.tdc)} sub={`${F.n(r.gba)} sqft GBA`} accent={TEAL} big />
+        <SummaryCard label="Total Revenue" value={F.aed(r.totalRevenue)} sub={mode === "sell" ? "Sale proceeds" : mode === "rent" ? "Rent + exit" : "Split basis"} accent={GOLD} big />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }}>
+        <SummaryCard label="Net Profit" value={F.aed(r.netProfit)} accent={profitColor} />
+        <SummaryCard label="IRR" value={F.pct(r.irr)} accent={irrColor} />
+        <SummaryCard label="Payback" value={F.months(r.paybackMonths)} sub="break-even" />
+      </div>
 
-        {/* ── SUMMARY BLOCK ── */}
-        {(() => {
-          const totalRev = r.rr > 0 ? r.rr + r.ev : r.tsr > 0 ? r.tsr : r.ev > 0 ? r.ev : r.rev > 0 ? r.rev : r.cf.reduce((s, c_) => s + Math.max(0, c_), 0);
-          const profit = totalRev - r.tdc;
-          const profitColor = profit >= 0 ? GREEN : RED;
-          return (
-            <div style={{ background: "#111827", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Total Development Cost</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: GOLD, lineHeight: 1.2 }}>AED {r.tdc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Total Revenue</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>AED {totalRev.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>Profit</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: profitColor, lineHeight: 1.2 }}>AED {profit.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: ".08em" }}>IRR</div>
-                    <div style={{ fontSize: 26, fontWeight: 800, color: ic, lineHeight: 1.2 }}>{F.pct(r.irr)}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+      {/* Verdict banner */}
+      <div style={{ marginBottom: 10 }}>
+        <Verdict irr={r.irr} netProfit={r.netProfit} />
+      </div>
 
-        <button onClick={() => setTab("results")} style={{ width: "100%", background: GOLD, color: "#fff", border: "none", borderRadius: 6, padding: "10px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: ".05em" }}>
-          View Full Analysis &rarr;
+      {/* Action row */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+        <button
+          onClick={() => setAdvancedOpen((o) => !o)}
+          style={{
+            flex: 1, background: advancedOpen ? TEAL : "white",
+            color: advancedOpen ? "#fff" : TEAL,
+            border: `1px solid ${TEAL}`, borderRadius: 6, padding: "9px 12px",
+            fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: ".06em", textTransform: "uppercase",
+          }}
+        >
+          {advancedOpen ? "Hide Details ▴" : "Advanced Details ▾"}
         </button>
-      </>)}
+        <button
+          onClick={downloadPDF}
+          style={{
+            flex: 1, background: GOLD, color: "#fff", border: 0, borderRadius: 6,
+            padding: "9px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer",
+            letterSpacing: ".06em", textTransform: "uppercase",
+          }}
+        >
+          Download Report ↓
+        </button>
+      </div>
 
-      {/* ── RESULTS TAB ── */}
-      {tab === "results" && (<>
-        <div style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD}bb)`, borderRadius: 9, padding: "16px 18px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -6, right: -6, fontSize: 45, opacity: .06, fontWeight: 700 }}>{c.icon}</div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 7.5, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: ".1em" }}>Levered IRR</div>
-              <div style={{ fontSize: 34, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{F.pct(r.irr)}</div>
-            </div>
-            <div style={{ background: ic, borderRadius: 12, padding: "2px 9px", fontSize: 8.5, color: "#fff", fontWeight: 700, marginBottom: 4 }}>{it}</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-          <Metric l="NPV" v={F.aed(r.npv)} sub={`@${inp.dr}%`} />
-          <Metric l="Eq Mult" v={`${r.em.toFixed(2)}x`} sub={`${r.hp}yr`} />
-          {r.dscr > 0 && <Metric l="DSCR" v={r.dscr.toFixed(2)} sub={r.dscr >= 1.25 ? "Bankable" : "<1.25x"} />}
-        </div>
-        <div style={{ background: "white", borderRadius: 6, border: `1px solid ${LINE}`, padding: 10, marginBottom: 10 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>Full Cost Stack</div>
-          {[["Land", r.landC], ["Base Hard", r.baseHC], ["Height +" + ((r.pm.hPrem * 100).toFixed(0)) + "%", r.hPrem], ["Soft Cost", r.sc], ["Contingency", r.cont], ["DLD 4%", r.dld], ["DLD Admin Fee", r.dldAdmin], ["Permits & Infra", r.pm.total]].filter(([, v]) => (v as number) > 0).map(([l, v], i) => {
-            const p = ((v as number) / r.tdc) * 100;
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-                <div style={{ width: 80, fontSize: 8, color: (l as string).includes("Height") ? RED : SUBTLE }}>{l as string}</div>
-                <div style={{ flex: 1, height: 7, background: BG, borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ width: `${p}%`, height: "100%", background: (l as string).includes("Height") ? RED : GOLD, opacity: .3 + i * .1, borderRadius: 2 }} />
-                </div>
-                <div style={{ width: 60, textAlign: "right", fontSize: 8.5 }}>{F.aed(v as number)}</div>
-                <div style={{ width: 25, textAlign: "right", fontSize: 7, color: SUBTLE }}>{F.pct(p, 0)}</div>
-              </div>
-            );
-          })}
-          <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 3, marginTop: 2, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 9, fontWeight: 700 }}>Total</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: GOLD }}>{F.aed(r.tdc)}</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-          <Metric l="GBA" v={F.n(r.gba)} sub="sqft" />
-          <Metric l="NSA" v={F.n(r.nsa)} sub="sqft" />
-          <Metric l="Cost/sqft" v={`AED ${r.cpsf.toFixed(0)}`} sub="GBA" />
-          <Metric l="Floors" v={String(r.fl)} sub={r.pm.hLabel} />
-        </div>
-        <div style={{ background: "white", borderRadius: 6, border: `1px solid ${LINE}`, padding: 10, marginBottom: 10 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 3 }}>Cash Flow</div>
-          <CfBar cfs={r.cf} />
-        </div>
-        {Object.keys(r.met).length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {Object.entries(r.met).map(([k, v]) => (
-              <Metric key={k} l={k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())} v={typeof v === "number" ? (Math.abs(v) > 1000 ? F.aed(v) : F.n(v)) : String(v)} />
-            ))}
-          </div>
-        )}
-        <button onClick={downloadPDF} style={{
-          width: "100%", marginTop: 10, padding: "8px 12px", borderRadius: 6,
-          border: `1px solid ${GOLD}`, background: "rgba(200,169,110,0.08)",
-          color: GOLD, fontWeight: 700, fontSize: 10, cursor: "pointer",
-          textTransform: "uppercase", letterSpacing: 1,
+      {/* ══════════ ADVANCED VIEW (collapsible) ══════════ */}
+
+      {advancedOpen && (
+        <div style={{
+          borderTop: `2px solid ${GOLD}33`, paddingTop: 10,
+          animation: "zaahiFadeIn 200ms ease",
         }}>
-          Download Report (PDF)
-        </button>
-      </>)}
 
-      {/* ── SENSITIVITY TAB ── */}
-      {tab === "sensitivity" && (<>
-        {!sd ? (
-          <div style={{ textAlign: "center", padding: 20, fontSize: 10, color: SUBTLE }}>Computing…</div>
-        ) : (<>
-          <div style={{ fontSize: 8, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 3 }}>IRR Sensitivity &plusmn;20%</div>
-          <div style={{ display: "flex", gap: 1.5, marginBottom: 3, paddingLeft: 55 }}>
-            {[-20, -10, 0, 10, 20].map((d) => (
-              <div key={d} style={{ flex: 1, textAlign: "center", fontSize: 7, color: SUBTLE }}>{d > 0 ? `+${d}%` : `${d}%`}</div>
-            ))}
-          </div>
-          {sd.map((s, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 2 }}>
-              <div style={{ width: 50, fontSize: 8, color: SUBTLE, textAlign: "right" }}>{s.l}</div>
-              <div style={{ display: "flex", gap: 1.5, flex: 1 }}>
-                {s.d.map((d, j) => {
-                  const df = d.irr - r.irr;
-                  const bg = df > 0 ? `rgba(45,106,79,${Math.min(.5, Math.abs(df) / 10)})` : `rgba(230,57,70,${Math.min(.5, Math.abs(df) / 10)})`;
-                  return <div key={j} style={{ flex: 1, textAlign: "center", padding: "2px 0", borderRadius: 2, background: bg, fontSize: 7, color: TXT }}>{F.pct(d.irr, 1)}</div>;
+          <Section title="Costs" open={expandedSections.costs} onToggle={() => toggleSection("costs")}>
+            <ToggleRow label="Land Cost">{F.aed(r.landC)}</ToggleRow>
+            <NumInput l="Base Hard Cost / sqft (AED)" v={inp.hcPSF as number} onChange={(v) => u("hcPSF", v)} s={5} />
+            <ToggleRow label="Base Hard Cost (total)">{F.aed(r.baseHC)}</ToggleRow>
+            <ToggleRow label={`Height Premium +${(r.pm.hPrem * 100).toFixed(0)}% (${r.pm.hLabel})`}>{F.aed(r.hPrem)}</ToggleRow>
+            <NumInput l="Soft Costs (%)" v={inp.softPct as number} onChange={(v) => u("softPct", v)} s={0.5} />
+            <NumInput l="Contingency (%)" v={inp.contPct as number} onChange={(v) => u("contPct", v)} s={0.5} />
+            <ToggleRow label="Building Permit (BP)">{F.aed(r.pm.bp)}</ToggleRow>
+            <ToggleRow label="Civil Defence">{F.aed(r.pm.cd)}</ToggleRow>
+            <ToggleRow label="DEWA (+ substation if req'd)">{F.aed(r.pm.dewa)}</ToggleRow>
+            <ToggleRow label="Piling">{F.aed(r.pm.piling)}</ToggleRow>
+            <ToggleRow label="Master Developer Fee (AED 8/sqft GBA)">{F.aed(r.pm.mdFee)}</ToggleRow>
+            {r.pm.sector > 0 && <ToggleRow label="Sector Licence">{F.aed(r.pm.sector)}</ToggleRow>}
+            <ToggleRow label="RERA Fee">{F.aed(r.pm.rera)}</ToggleRow>
+            <NumInput l="DLD Registration (%)" v={inp.dldPct as number} onChange={(v) => u("dldPct", v)} s={0.5} />
+            <ToggleRow label="DLD Admin Fee">{F.aed(r.dldAdmin)}</ToggleRow>
+            <ToggleRow label="─── Total Investment ───"><b style={{ color: GOLD }}>{F.aed(r.tdc)}</b></ToggleRow>
+          </Section>
+
+          <Section title="Revenue" open={expandedSections.revenue} onToggle={() => toggleSection("revenue")}>
+            {rm === "sale" && (
+              <>
+                <NumInput l="Sale Price / sqft (AED)" v={inp.salePSF as number} onChange={(v) => u("salePSF", v)} s={10} />
+                <NumInput l="Absorption (units / month)" v={inp.absUnits as number} onChange={(v) => u("absUnits", v)} />
+                <NumInput l="Avg Unit Size (sqft)" v={inp.unitSize as number} onChange={(v) => u("unitSize", v)} s={50} />
+                <NumInput l="Construction Payment %" v={inp.ppSplit as number} onChange={(v) => u("ppSplit", v)} s={5} />
+                <NumInput l="Agent Commission (%)" v={inp.agentPct as number} onChange={(v) => u("agentPct", v)} s={0.5} />
+                <ToggleRow label="Total Sale Revenue">{F.aed(r.tsr)}</ToggleRow>
+                {typeof r.met.totalUnits === "number" && <ToggleRow label="Units">{String(r.met.totalUnits)}</ToggleRow>}
+                {r.met.monthsToSell !== undefined && <ToggleRow label="Months to Sell">{String(r.met.monthsToSell)}</ToggleRow>}
+              </>
+            )}
+            {rm === "noi" && (
+              <>
+                <NumInput l="Rent / sqft / year (AED)" v={inp.rentPSF as number} onChange={(v) => u("rentPSF", v)} s={5} />
+                <NumInput l="Occupancy (%)" v={inp.occ as number} onChange={(v) => u("occ", v)} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <NumInput l="Management Fee (%)" v={inp.mgmt as number} onChange={(v) => u("mgmt", v)} s={0.5} />
+                <NumInput l="Exit Cap Rate (%)" v={inp.ecr as number} onChange={(v) => u("ecr", v)} s={0.25} />
+                <ToggleRow label="Gross Annual Revenue">{F.aed(r.rev)}</ToggleRow>
+                <ToggleRow label="Annual NOI">{F.aed(r.noi)}</ToggleRow>
+                <ToggleRow label="Exit Value">{F.aed(r.ev)}</ToggleRow>
+                {r.met.yieldOnCost && <ToggleRow label="Yield on Cost">{String(r.met.yieldOnCost)}</ToggleRow>}
+              </>
+            )}
+            {rm === "mixed" && (
+              <>
+                <NumInput l="Residential %" v={inp.resPct as number} onChange={(v) => u("resPct", v)} s={5} />
+                <NumInput l="Commercial %" v={inp.comPct as number} onChange={(v) => u("comPct", v)} s={5} />
+                <NumInput l="Retail %" v={inp.retPct as number} onChange={(v) => u("retPct", v)} s={5} />
+                <NumInput l="Res Sale / sqft (AED)" v={inp.salePSF as number} onChange={(v) => u("salePSF", v)} s={10} />
+                <NumInput l="Office Rent / sqft / yr" v={inp.rentPSF as number} onChange={(v) => u("rentPSF", v)} s={5} />
+                <NumInput l="Retail Rent / sqft / yr" v={inp.retRent as number} onChange={(v) => u("retRent", v)} s={5} />
+                <NumInput l="Occupancy (%)" v={inp.occ as number} onChange={(v) => u("occ", v)} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <ToggleRow label="Res Sale Revenue">{F.aed(r.rr)}</ToggleRow>
+                <ToggleRow label="Annual Com+Ret NOI">{F.aed(r.noi)}</ToggleRow>
+                <ToggleRow label="Exit Value (NOI basis)">{F.aed(r.ev)}</ToggleRow>
+              </>
+            )}
+            {rm === "hotel" && (
+              <>
+                <NumInput l="ADR (AED)" v={inp.adr as number} onChange={(v) => u("adr", v)} s={10} />
+                <NumInput l="Occupancy (%)" v={inp.occ as number} onChange={(v) => u("occ", v)} />
+                <NumInput l="Rooms (keys)" v={inp.rooms as number} onChange={(v) => u("rooms", v)} s={5} />
+                <NumInput l="F&B Revenue (%)" v={inp.fbPct as number} onChange={(v) => u("fbPct", v)} />
+                <NumInput l="Other Revenue (%)" v={inp.othPct as number} onChange={(v) => u("othPct", v)} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <NumInput l="Management Fee (%)" v={inp.mgmt as number} onChange={(v) => u("mgmt", v)} s={0.5} />
+                <NumInput l="FF&E Reserve (%)" v={inp.ffe as number} onChange={(v) => u("ffe", v)} s={0.5} />
+                <NumInput l="Ramp-up (years)" v={inp.ramp as number} onChange={(v) => u("ramp", v)} />
+                <ToggleRow label="RevPAR">{String(r.met.revpar ?? "—")} AED</ToggleRow>
+                <ToggleRow label="Cost / Key">{F.aed(r.met.costPerKey as number)}</ToggleRow>
+                <ToggleRow label="GOP Margin">{String(r.met.gopMargin ?? "—")}</ToggleRow>
+                <ToggleRow label="Stabilized NOI">{F.aed(r.noi)}</ToggleRow>
+              </>
+            )}
+            {rm === "edu" && (
+              <>
+                <NumInput l="Fee / Student / year" v={inp.feePer as number} onChange={(v) => u("feePer", v)} s={1000} />
+                <NumInput l="Capacity (students)" v={inp.capacity as number} onChange={(v) => u("capacity", v)} s={50} />
+                <NumInput l="Ramp Years" v={inp.rampYr as number} onChange={(v) => u("rampYr", v)} />
+                <NumInput l="Year-1 Enrollment (%)" v={inp.initPct as number} onChange={(v) => u("initPct", v)} s={5} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <ToggleRow label="Max Revenue">{F.aed(r.met.maxRev as number)}</ToggleRow>
+                <ToggleRow label="Cost / Student">{F.aed(r.met.costPerStudent as number)}</ToggleRow>
+              </>
+            )}
+            {rm === "health" && (
+              <>
+                <NumInput l="Beds" v={inp.beds as number} onChange={(v) => u("beds", v)} />
+                <NumInput l="Revenue / Bed / year" v={inp.revBed as number} onChange={(v) => u("revBed", v)} s={10000} />
+                <NumInput l="Occupancy (%)" v={inp.occ as number} onChange={(v) => u("occ", v)} />
+                <NumInput l="Ancillary Revenue (%)" v={inp.ancPct as number} onChange={(v) => u("ancPct", v)} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <NumInput l="Ramp-up (years)" v={inp.ramp as number} onChange={(v) => u("ramp", v)} />
+                <ToggleRow label="Annual Revenue">{F.aed(r.rev)}</ToggleRow>
+                <ToggleRow label="Annual NOI">{F.aed(r.noi)}</ToggleRow>
+                <ToggleRow label="EBITDA Margin">{String(r.met.ebitda ?? "—")}</ToggleRow>
+                <ToggleRow label="Cost / Bed">{F.aed(r.met.costPerBed as number)}</ToggleRow>
+              </>
+            )}
+            {rm === "agri" && (
+              <>
+                <NumInput l="Yield / sqft" v={inp.yld as number} onChange={(v) => u("yld", v)} s={0.5} />
+                <NumInput l="Price / Unit (AED)" v={inp.ppu as number} onChange={(v) => u("ppu", v)} s={0.5} />
+                <NumInput l="Annual Growth (%)" v={inp.grow as number} onChange={(v) => u("grow", v)} s={0.5} />
+                <NumInput l="OpEx (%)" v={inp.opex as number} onChange={(v) => u("opex", v)} />
+                <ToggleRow label="Annual Revenue">{F.aed(r.rev)}</ToggleRow>
+                <ToggleRow label="Revenue / Acre">{F.aed(r.met.revPerAcre as number)}</ToggleRow>
+              </>
+            )}
+            {mode === "jv" && rm === "sale" && (
+              <div style={{ marginTop: 8, padding: 10, background: `${GOLD}11`, borderRadius: 6, borderLeft: `3px solid ${GOLD}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, marginBottom: 6, letterSpacing: ".06em", textTransform: "uppercase" }}>Joint Venture Split</div>
+                <ToggleRow label="Land Contribution">{F.aed(r.landC)}</ToggleRow>
+                <ToggleRow label="Developer Contribution (Construction+Fees)">{F.aed(r.tdc - r.landC)}</ToggleRow>
+                <ToggleRow label="Total Investment">{F.aed(r.tdc)}</ToggleRow>
+                <ToggleRow label="Land Owner Share (at 60/40 split)">{F.aed(r.netProfit * 0.4)}</ToggleRow>
+                <ToggleRow label="Developer Share (at 60/40 split)">{F.aed(r.netProfit * 0.6)}</ToggleRow>
+                <div style={{ fontSize: 9, color: SUBTLE, marginTop: 6 }}>
+                  Typical splits: 50/50 (equal), 60/40 (dev-led), 70/30 (large dev).
+                </div>
+              </div>
+            )}
+          </Section>
+
+          <Section title="Timeline" open={expandedSections.timeline} onToggle={() => toggleSection("timeline")}>
+            <ToggleRow label="Design & Permits">6–12 months</ToggleRow>
+            <NumInput l="Construction (months)" v={inp.constMo as number} onChange={(v) => u("constMo", v)} />
+            {rm === "sale" && r.met.monthsToSell !== undefined && (
+              <ToggleRow label="Sales Period (est.)">{String(r.met.monthsToSell)} months</ToggleRow>
+            )}
+            <ToggleRow label="Total Construction Years">{r.cy}</ToggleRow>
+            <ToggleRow label="Hold Period (cash flow model)">{r.hp} years</ToggleRow>
+          </Section>
+
+          <Section title="Metrics & Financing" open={expandedSections.metrics} onToggle={() => toggleSection("metrics")}>
+            <NumInput l="LTV (%)" v={inp.ltv as number} onChange={(v) => u("ltv", v)} />
+            <NumInput l="Interest (%)" v={inp.ir as number} onChange={(v) => u("ir", v)} s={0.25} />
+            <NumInput l="WACC (%)" v={inp.dr as number} onChange={(v) => u("dr", v)} s={0.5} />
+            <NumInput l="Escrow (%)" v={inp.escrowPct as number} onChange={(v) => u("escrowPct", v)} s={5} />
+            <div style={{ height: 6 }} />
+            <ToggleRow label="Equity">{F.aed(r.eq)}</ToggleRow>
+            <ToggleRow label="Debt">{F.aed(r.debt)}</ToggleRow>
+            <ToggleRow label="Annual Debt Service">{F.aed(r.ds)}</ToggleRow>
+            <ToggleRow label="NPV @ WACC">{F.aed(r.npv)}</ToggleRow>
+            <ToggleRow label="Equity Multiple">{`${r.em.toFixed(2)}x`}</ToggleRow>
+            {r.dscr > 0 && <ToggleRow label="DSCR">{r.dscr.toFixed(2)}</ToggleRow>}
+            {r.dy > 0 && <ToggleRow label="Yield on Debt">{F.pct(r.dy)}</ToggleRow>}
+
+            {/* Sensitivity table — land price */}
+            <div style={{ marginTop: 10, padding: 8, background: `${GOLD}08`, borderRadius: 6 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, marginBottom: 6, letterSpacing: ".06em", textTransform: "uppercase" }}>
+                Land Price Sensitivity
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 3, fontSize: 9 }}>
+                {[-20, -10, 0, 10, 20].map((d, i) => {
+                  const item = landSens[i];
+                  const up = d > 0;
+                  const bg = d === 0 ? `${GOLD}22` : up ? `${RED}11` : `${GREEN}11`;
+                  return (
+                    <div key={d} style={{ background: bg, padding: "6px 4px", borderRadius: 4, textAlign: "center" }}>
+                      <div style={{ fontSize: 8, color: SUBTLE }}>{up ? "+" : ""}{d}%</div>
+                      <div style={{ fontWeight: 700, color: item.irr >= 12 ? GREEN : RED }}>{F.pct(item.irr, 0)}</div>
+                      <div style={{ fontSize: 8, color: SUBTLE }}>{F.aed(item.profit)}</div>
+                    </div>
+                  );
                 })}
               </div>
             </div>
-          ))}
-          <div style={{ marginTop: 10, padding: 7, background: "white", borderRadius: 5, border: `1px solid ${LINE}` }}>
-            <div style={{ fontSize: 7.5, fontWeight: 700, color: SUBTLE, textTransform: "uppercase", marginBottom: 3 }}>Scenarios</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {([["Worst", RED, Math.min(...sd.flatMap((s) => s.d.map((d) => d.irr)))], ["Base", GOLD, r.irr], ["Best", GREEN, Math.max(...sd.flatMap((s) => s.d.map((d) => d.irr)))]] as [string, string, number][]).map(([l, cl, v]) => (
-                <div key={l} style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 7, color: cl }}>{l}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: cl }}>{F.pct(v)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>)}
-      </>)}
+          </Section>
 
-      <div style={{ marginTop: 10, fontSize: 7, color: SUBTLE, textAlign: "center" }}>
-        ZAAHI Feasibility v3.1 &middot; Not investment advice
+          {lu === "hotel" && (
+            <Section title="Hotel Specifics" open={expandedSections.hotel} onToggle={() => toggleSection("hotel")}>
+              <ToggleRow label="ADR × Occupancy = RevPAR">{String(r.met.revpar ?? "—")} AED</ToggleRow>
+              <ToggleRow label="Cost per Key">{F.aed(r.met.costPerKey as number)}</ToggleRow>
+              <ToggleRow label="GOP Margin">{String(r.met.gopMargin ?? "—")}</ToggleRow>
+              <ToggleRow label="GOPPAR (approx)">{F.aed(((r.rev * 0.38) / ((inp.rooms as number) || 1)) / 365)} /key/night</ToggleRow>
+              <ToggleRow label="Pre-opening Expenses">~2–3% of construction</ToggleRow>
+            </Section>
+          )}
+
+        </div>
+      )}
+
+      <div style={{ marginTop: 10, fontSize: 8, color: SUBTLE, textAlign: "center" }}>
+        ZAAHI Feasibility v4.0 · Two-tier · Not investment advice
       </div>
+
+      <style jsx global>{`
+        @keyframes zaahiFadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
