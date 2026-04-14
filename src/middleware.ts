@@ -40,6 +40,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Ambassador QR code images are public — anyone with a referral code URL
+  // can generate a QR for sharing. The code itself is the share token, no
+  // PII is exposed by the QR endpoint. All other /api/ambassador/* routes
+  // (activate, stats, tree, commissions) still require auth.
+  if (PUBLIC_READS.has(req.method) && pathname.startsWith('/api/ambassador/qr/')) {
+    return NextResponse.next();
+  }
+
   const auth = req.headers.get('authorization');
   if (!auth || !auth.toLowerCase().startsWith('bearer ')) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });

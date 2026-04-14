@@ -101,6 +101,25 @@ function DashboardInner() {
               </button>
             );
           })}
+          {/* External link to the Ambassador Program dashboard */}
+          <Link
+            href="/ambassador"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "9px 12px",
+              borderLeft: `3px solid transparent`,
+              color: TXT,
+              fontSize: 12,
+              fontWeight: 500,
+              textDecoration: "none",
+              marginTop: 8,
+            }}
+          >
+            <span style={{ fontSize: 14 }}>🌟</span>
+            Ambassador
+          </Link>
         </nav>
 
         <Link

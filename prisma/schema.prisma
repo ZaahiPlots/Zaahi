@@ -57,12 +57,22 @@ enum DocumentType {
   PASSPORT
   EMIRATES_ID
   NOC
-  SPA               // Sale & Purchase Agreement
+  SPA // Sale & Purchase Agreement
   OQOOD
   EJARI
   POWER_OF_ATTORNEY
   VALUATION_REPORT
   OTHER
+}
+
+// Ambassador program commission statuses.
+// PENDING  — commission accrued on deal COMPLETE, awaiting payout.
+// PAID     — admin marked as paid out (bank/ZAH token/etc).
+// REVERSED — deal later cancelled/disputed, commission clawed back.
+enum CommissionStatus {
+  PENDING
+  PAID
+  REVERSED
 }
 
 // ── MODELS ────────────────────────────────────────────
@@ -75,13 +85,28 @@ model User {
   phone     String?
   createdAt DateTime @default(now())
 
-  parcels    Parcel[] @relation("ParcelOwner")
-  dealsAsSeller Deal[] @relation("DealSeller")
-  dealsAsBuyer  Deal[] @relation("DealBuyer")
-  dealsAsBroker Deal[] @relation("DealBroker")
+  // ── Ambassador program ──
+  // referralCode: unique 8-char code (generated on ambassador activation)
+  // referredById: L1 upline (the user who invited this one). Immutable after set.
+  // referredAt:   when the referral cookie was consumed at signup.
+  // ambassadorActive: has this user activated ambassador mode (gets commissions)?
+  referralCode     String?   @unique
+  referredById     String?
+  referredAt       DateTime?
+  ambassadorActive Boolean   @default(false)
+
+  parcels       Parcel[]      @relation("ParcelOwner")
+  dealsAsSeller Deal[]        @relation("DealSeller")
+  dealsAsBuyer  Deal[]        @relation("DealBuyer")
+  dealsAsBroker Deal[]        @relation("DealBroker")
   dealMessages  DealMessage[]
 
+  referredBy  User?        @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals   User[]       @relation("UserReferrals")
+  commissions Commission[]
+
   @@index([role])
+  @@index([referredById])
 }
 
 model Parcel {
@@ -89,14 +114,14 @@ model Parcel {
   plotNumber       String
   ownerId          String
   owner            User         @relation("ParcelOwner", fields: [ownerId], references: [id])
-  area             Float        // sqft (Dubai market standard)
+  area             Float // sqft (Dubai market standard)
   emirate          String
   district         String
   latitude         Float?
   longitude        Float?
-  geometry         Json?        // GeoJSON polygon
+  geometry         Json? // GeoJSON polygon
   status           ParcelStatus @default(VACANT)
-  currentValuation BigInt?      // fils
+  currentValuation BigInt? // fils
   isTokenized      Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -113,28 +138,28 @@ model Parcel {
 }
 
 model Deal {
-  id           String     @id @default(cuid())
-  parcelId     String
-  parcel       Parcel     @relation(fields: [parcelId], references: [id])
-  sellerId     String
-  seller       User       @relation("DealSeller", fields: [sellerId], references: [id])
-  buyerId      String
-  buyer        User       @relation("DealBuyer", fields: [buyerId], references: [id])
-  brokerId     String?
-  broker       User?      @relation("DealBroker", fields: [brokerId], references: [id])
-  status       DealStatus @default(INITIAL)
+  id       String     @id @default(cuid())
+  parcelId String
+  parcel   Parcel     @relation(fields: [parcelId], references: [id])
+  sellerId String
+  seller   User       @relation("DealSeller", fields: [sellerId], references: [id])
+  buyerId  String
+  buyer    User       @relation("DealBuyer", fields: [buyerId], references: [id])
+  brokerId String?
+  broker   User?      @relation("DealBroker", fields: [brokerId], references: [id])
+  status   DealStatus @default(INITIAL)
 
   // priceInFils kept for backward compatibility — mirrors offerPriceInFils on create.
   priceInFils       BigInt
   offerPriceInFils  BigInt?
   agreedPriceInFils BigInt?
 
-  paymentType     String?  // CASH | MORTGAGE | INSTALLMENT
-  mortgageBank    String?
-  mortgageAmount  BigInt?
-  closingDays     Int      @default(90)
-  conditions      String?
-  initialMessage  String?
+  paymentType    String? // CASH | MORTGAGE | INSTALLMENT
+  mortgageBank   String?
+  mortgageAmount BigInt?
+  closingDays    Int     @default(90)
+  conditions     String?
+  initialMessage String?
 
   depositPaid  Boolean @default(false)
   mouSigned    Boolean @default(false)
@@ -142,14 +167,19 @@ model Deal {
   dldApproved  Boolean @default(false)
   dldReference String?
 
-  rating       Int?    // 1..5, set on completion
+  rating Int? // 1..5, set on completion
 
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  // Platform fee (0.25% of agreedPriceInFils) — computed and frozen at DEAL_COMPLETED.
+  // Basis for ambassador commission distribution. Null until deal completes.
+  platformFeeFils BigInt?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   documents   Document[]
   messages    DealMessage[]
   auditEvents DealAuditEvent[]
+  commissions Commission[]
 
   @@index([parcelId])
   @@index([sellerId])
@@ -176,9 +206,9 @@ model DealAuditEvent {
   id           String   @id @default(cuid())
   dealId       String
   deal         Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  eventType    String   // OFFER_SUBMITTED | OFFER_ACCEPTED | COUNTER_OFFER | DEPOSIT_PAID | MOU_SIGNED | NOC_REQUESTED | NOC_RECEIVED | DLD_SUBMITTED | DLD_APPROVED | COMPLETED | CANCELLED | DISPUTED
-  txHash       String?  // polygon tx hash, or "pending"
-  documentHash String?  // SHA-256 of related document, if any
+  eventType    String // OFFER_SUBMITTED | OFFER_ACCEPTED | COUNTER_OFFER | DEPOSIT_PAID | MOU_SIGNED | NOC_REQUESTED | NOC_RECEIVED | DLD_SUBMITTED | DLD_APPROVED | COMPLETED | CANCELLED | DISPUTED
+  txHash       String? // polygon tx hash, or "pending"
+  documentHash String? // SHA-256 of related document, if any
   metadata     Json?
   createdAt    DateTime @default(now())
 
@@ -188,11 +218,11 @@ model DealAuditEvent {
 }
 
 model AffectionPlan {
-  id              String   @id @default(cuid())
-  parcelId        String
-  parcel          Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
-  fetchedAt       DateTime @default(now())
-  source          String   // e.g. "gis.dda.gov.ae/DIS"
+  id        String   @id @default(cuid())
+  parcelId  String
+  parcel    Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  fetchedAt DateTime @default(now())
+  source    String // e.g. "gis.dda.gov.ae/DIS"
 
   plotNumber      String
   oldNumber       String?
@@ -200,24 +230,24 @@ model AffectionPlan {
   community       String?
   masterDeveloper String?
 
-  plotAreaSqm     Float?
-  plotAreaSqft    Float?
-  maxGfaSqm       Float?
-  maxGfaSqft      Float?
+  plotAreaSqm  Float?
+  plotAreaSqft Float?
+  maxGfaSqm    Float?
+  maxGfaSqft   Float?
 
-  maxHeightCode   String?  // raw, e.g. "G+15"
+  maxHeightCode   String? // raw, e.g. "G+15"
   maxFloors       Int?
   maxHeightMeters Float?
   far             Float?
 
-  setbacks        Json?    // [{side, building, podium}, ...]
-  landUseMix      Json?    // [{category, sub, areaSqm}, ...]
-  sitePlanIssue   DateTime?
-  sitePlanExpiry  DateTime?
-  notes           String?
+  setbacks       Json? // [{side, building, podium}, ...]
+  landUseMix     Json? // [{category, sub, areaSqm}, ...]
+  sitePlanIssue  DateTime?
+  sitePlanExpiry DateTime?
+  notes          String?
 
   buildingLimitGeometry Json? // GeoJSON Polygon from MAIN_MAP layer 8
-  raw             Json?       // full parsed bundle for debugging
+  raw                   Json? // full parsed bundle for debugging
 
   // Optional Salesforce URL for the "Plot Guidelines" PDF that DDA's
   // plot info page surfaces alongside the existing "Plot Details PDF".
@@ -243,4 +273,44 @@ model Document {
   @@index([dealId])
   @@index([parcelId])
   @@index([type])
+}
+
+// Immutable, append-only ledger of ambassador commission accruals.
+// Never update or delete rows — use status=REVERSED to claw back.
+// Computed in awardCommissions() on deal COMPLETE.
+model Commission {
+  id           String           @id @default(cuid())
+  dealId       String
+  deal         Deal             @relation(fields: [dealId], references: [id])
+  ambassadorId String
+  ambassador   User             @relation(fields: [ambassadorId], references: [id])
+  level        Int // 1, 2, or 3
+  sourceUserId String // the direct referral whose deal triggered this commission
+  amountFils   BigInt // commission amount in fils
+  basisFils    BigInt // platform fee amount this commission was calculated from
+  rate         Decimal          @db.Decimal(5, 4) // 0.3000 / 0.1500 / 0.0500
+  status       CommissionStatus @default(PENDING)
+  payoutMethod String? // "bank" | "zah_token" | null
+  payoutRef    String? // bank transfer ref, tx hash, etc.
+  createdAt    DateTime         @default(now())
+  paidAt       DateTime?
+
+  @@index([ambassadorId, status])
+  @@index([dealId])
+  @@index([level])
+  @@index([status])
+}
+
+// Analytics-only: records landing page hits on /r/[code].
+// Lightweight — no PII, ip is hashed. Safe to prune after 90 days.
+model ReferralClick {
+  id                String   @id @default(cuid())
+  referralCode      String
+  ipHash            String? // SHA256(ip+salt) — for dedup, not re-identification
+  userAgent         String?
+  convertedToUserId String? // filled when a signup is attributed to this click
+  createdAt         DateTime @default(now())
+
+  @@index([referralCode])
+  @@index([createdAt])
 }

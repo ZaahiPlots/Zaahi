@@ -371,6 +371,50 @@ Footprint каждого верхнего яруса получается чер
 - **ПРАВИЛО:** НИКОГДА не удалять функционал при рефакторинге. Оптимизировать — да. Удалять рабочий код — нет.
 - **ПРАВИЛО:** При рефакторинге крупных файлов (>500 строк) — сначала составь список ВСЕХ функций в файле, после рефакторинга проверь что ВСЕ функции сохранены. Это правило существует потому, что на одном из коммитов агент случайно удалил `loadZaahiPlots` (~270 строк) внутри bulk-replace `attachOverlays`, и на проде пропали все участки на карте. Список функций ДО рефакторинга — единственная защита от такой регрессии.
 
+## AMBASSADOR PROGRAM RULES — APPROVED 2026-04-14
+
+3-level referral/ambassador system for ZAAHI. Every approved user can activate
+ambassador mode and earn commissions from their 3-level downline when deals close.
+
+### Commission rates (do NOT change without founder approval)
+- **Level 1** (direct referral):      **30%** of platform fee share
+- **Level 2** (referral of referral): **15%**
+- **Level 3**:                         **5%**
+
+Платформенный сбор = **0.25%** от `agreedPriceInFils` (замораживается на Deal.platformFeeFils при DEAL_COMPLETED). Сумма делится пополам seller/buyer, каждая половина независимо проходит 3-уровневую цепочку referral.
+
+### Attribution rules — IMMUTABLE after signup
+- Пользователь может иметь только ОДНОГО прямого referrer (`referredById`).
+- Referral code — 8-символьный уникальный код из `A-Z2-9` без похожих символов (0/O/1/I/L).
+- Код **нельзя менять** после активации (anti-fraud).
+- Referrer **нельзя менять** после signup (immutable relation).
+- Cycle detection: `wouldCreateCycle()` в `src/lib/ambassador.ts` — защита от A→B→A.
+- Cookie `zaahi_ref` (30 дней) ставится на `/r/[code]`, читается на `/api/users/sync` при первой синхронизации.
+- После первого signup cookie удаляется — повторное использование невозможно.
+
+### Commission lifecycle
+- **PENDING** — начислена на `DEAL_COMPLETED`, ждёт выплаты.
+- **PAID** — админ отметил как выплаченную (bank/ZAH token).
+- **REVERSED** — сделка позже отменена (`DEAL_CANCELLED`/`DISPUTE_INITIATED`) → clawback.
+
+Commission rows **immutable** — никогда не обновлять `amountFils` / `dealId` / `level` / `ambassadorId` / `basisFils` / `rate` после создания. Только `status`, `payoutMethod`, `payoutRef`, `paidAt`.
+
+### Skip-inactive policy
+Если L1 ambassador **не активен** (`ambassadorActive=false`), его слот **НЕ занимается** — L2 "поднимается" на L1 позицию. Это поощряет активное участие: неактивные не блокируют downline.
+
+### Source of truth
+- **Константы:** `src/lib/ambassador.ts` (COMMISSION_RATES, PLATFORM_FEE_RATE, MAX_LEVEL).
+- **Схема:** Prisma `Commission`, `ReferralClick` модели + `User.referralCode/referredById`.
+- **Расчёт:** `awardCommissions()` вызывается в `PATCH /api/deals/[id]` на action=COMPLETE **внутри того же `$transaction`**, что и обновление Deal.status.
+- **Reversal:** `reverseCommissions()` на action=CANCEL/DISPUTE.
+
+### Не трогать без founder approval
+- Ставки 30/15/5.
+- Platform fee 0.25%.
+- Глубина 3 уровня (`MAX_LEVEL`).
+- Immutability правила.
+- Skip-inactive policy.
+
 ## FOUNDER CONTACTS
 - **Founder & CEO/CTO:** Zharkyn (Zhan) Ryspayev — `zhanrysbayev@gmail.com` — 17 лет в недвижимости, Full-stack инженер, построил всю платформу ZAAHI
 - **Co-founder, Ambassador, Guardian Partner:** Dmytro (Dymo) Tsvyk — `d.tsvyk@gmail.com` — 18+ лет глобального управления операциями (Stolt-Nielsen, Bahri), рынок недвижимости Дубая с 2018, партнёр Equilibrium Advisory Group, право вето на стратегические решения

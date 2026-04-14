@@ -4,6 +4,7 @@ import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { recordDealEvent } from "@/lib/blockchain";
 import { validateAction, DealAction, getRole } from "@/lib/deal-flow";
+import { awardCommissions, computePlatformFee, reverseCommissions } from "@/lib/ambassador";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -111,9 +112,48 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
   const documentHash = typeof body.documentHash === "string" ? body.documentHash : null;
 
-  const updated = await prisma.deal.update({ where: { id }, data });
+  // On COMPLETE: compute platform fee (0.25% of agreedPrice) and award
+  // ambassador commissions atomically in the same transaction as the
+  // deal status update. On CANCEL/DISPUTE: claw back pending commissions.
+  const { updated, commissionsCreated, commissionsReversed } = await prisma.$transaction(async (tx) => {
+    // Freeze platform fee on the Deal row itself for audit
+    if (action === "COMPLETE") {
+      const agreed = data.agreedPriceInFils ?? deal.offerPriceInFils ?? deal.priceInFils;
+      if (agreed && agreed > BigInt(0)) {
+        data.platformFeeFils = computePlatformFee(agreed);
+      }
+    }
 
+    const updatedRow = await tx.deal.update({ where: { id }, data });
+
+    let created = 0;
+    let reversed = 0;
+
+    if (action === "COMPLETE" && updatedRow.platformFeeFils && updatedRow.platformFeeFils > BigInt(0)) {
+      created = await awardCommissions(
+        tx,
+        updatedRow.id,
+        deal.sellerId,
+        deal.buyerId,
+        updatedRow.platformFeeFils,
+      );
+    }
+
+    if (action === "CANCEL" || action === "DISPUTE") {
+      reversed = await reverseCommissions(tx, id);
+    }
+
+    return { updated: updatedRow, commissionsCreated: created, commissionsReversed: reversed };
+  });
+
+  // Blockchain event + audit log (outside transaction — best-effort).
+  // These are append-only and don't need to be atomic with the deal update.
   const { txHash } = await recordDealEvent(id, v.def.eventType, documentHash);
+  if (commissionsCreated > 0) eventMeta.commissionsCreated = commissionsCreated;
+  if (commissionsReversed > 0) eventMeta.commissionsReversed = commissionsReversed;
+  if (action === "COMPLETE" && updated.platformFeeFils) {
+    eventMeta.platformFeeFils = updated.platformFeeFils.toString();
+  }
   await prisma.dealAuditEvent.create({
     data: {
       dealId: id,
