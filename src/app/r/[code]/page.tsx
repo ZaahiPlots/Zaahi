@@ -31,13 +31,17 @@ export default async function ReferralLanding({
     redirect('/');
   }
 
-  // Set cookie (30 days)
+  // Set cookie (30 days). httpOnly — only the server (/api/users/sync)
+  // needs to read this. Preventing JS access limits XSS blast radius
+  // (referral attribution cannot be stolen or manipulated by injected
+  // scripts). Client UI that wants to show "Invited by X" should fetch
+  // a server endpoint, not read the cookie directly.
   const cookieStore = await cookies();
   cookieStore.set('zaahi_ref', normalized, {
     maxAge: 30 * 24 * 3600,
     path: '/',
     sameSite: 'lax',
-    httpOnly: false, // client may want to read it for signup UI
+    httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
   });
 

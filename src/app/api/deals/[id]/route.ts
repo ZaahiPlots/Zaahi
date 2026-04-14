@@ -115,6 +115,13 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // On COMPLETE: compute platform fee (0.25% of agreedPrice) and award
   // ambassador commissions atomically in the same transaction as the
   // deal status update. On CANCEL/DISPUTE: claw back pending commissions.
+  //
+  // Concurrency: use updateMany with a status-match predicate (optimistic
+  // concurrency control). If two COMPLETE requests race, only the one that
+  // transitions `deal.status` from its pre-transaction value wins — the
+  // other sees updated.count === 0 and aborts without double-awarding
+  // commissions.
+  let raceAborted = false;
   const { updated, commissionsCreated, commissionsReversed } = await prisma.$transaction(async (tx) => {
     // Freeze platform fee on the Deal row itself for audit
     if (action === "COMPLETE") {
@@ -124,7 +131,20 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       }
     }
 
-    const updatedRow = await tx.deal.update({ where: { id }, data });
+    // Conditional update: only succeeds if the row is still in the
+    // pre-transaction status. Prevents the second of two concurrent
+    // COMPLETE/CANCEL/DISPUTE requests from re-running commission logic.
+    const updateRes = await tx.deal.updateMany({
+      where: { id, status: deal.status },
+      data,
+    });
+    if (updateRes.count === 0) {
+      raceAborted = true;
+      // Read the current deal (already updated by the winning request)
+      const current = await tx.deal.findUnique({ where: { id } });
+      return { updated: current!, commissionsCreated: 0, commissionsReversed: 0 };
+    }
+    const updatedRow = (await tx.deal.findUnique({ where: { id } }))!;
 
     let created = 0;
     let reversed = 0;
@@ -145,6 +165,15 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
     return { updated: updatedRow, commissionsCreated: created, commissionsReversed: reversed };
   });
+
+  if (raceAborted) {
+    // The concurrent request already performed the state transition.
+    // Return 409 Conflict so the client can resync rather than assume success.
+    return NextResponse.json(
+      { error: "concurrent_update", currentStatus: updated.status },
+      { status: 409 },
+    );
+  }
 
   // Blockchain event + audit log (outside transaction — best-effort).
   // These are append-only and don't need to be atomic with the deal update.

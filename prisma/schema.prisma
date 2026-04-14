@@ -295,6 +295,11 @@ model Commission {
   createdAt    DateTime         @default(now())
   paidAt       DateTime?
 
+  // Defense-in-depth against race conditions: a given
+  // (deal, ambassador, level, sourceUser) tuple can only exist once.
+  // Prevents duplicate commission accrual even if optimistic concurrency
+  // control in the caller fails.
+  @@unique([dealId, ambassadorId, level, sourceUserId])
   @@index([ambassadorId, status])
   @@index([dealId])
   @@index([level])

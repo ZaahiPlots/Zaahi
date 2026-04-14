@@ -249,20 +249,31 @@ export async function awardCommissions(
       const amountFils = (halfFee * rateInt) / BigInt(10000);
       if (amountFils <= ZERO) continue;
 
-      await tx.commission.create({
-        data: {
-          dealId,
-          ambassadorId: u.ambassadorId,
-          level: u.level,
-          sourceUserId,
-          amountFils,
-          basisFils: halfFee,
-          // Prisma Decimal accepts string for precision.
-          rate: u.rate.toFixed(4),
-          status: "PENDING",
-        },
-      });
-      created++;
+      // Defense-in-depth: unique constraint on (dealId, ambassadorId, level,
+      // sourceUserId) prevents duplicates. A P2002 error here means a race
+      // slipped past the caller's optimistic concurrency check — we silently
+      // skip because the winning request already created this commission.
+      try {
+        await tx.commission.create({
+          data: {
+            dealId,
+            ambassadorId: u.ambassadorId,
+            level: u.level,
+            sourceUserId,
+            amountFils,
+            basisFils: halfFee,
+            // Prisma Decimal accepts string for precision.
+            rate: u.rate.toFixed(4),
+            status: "PENDING",
+          },
+        });
+        created++;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err?.code !== "P2002") throw e;
+        // Duplicate — ignore. The winning concurrent request already
+        // recorded this commission.
+      }
     }
   }
 
