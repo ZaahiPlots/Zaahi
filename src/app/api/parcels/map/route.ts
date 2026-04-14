@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
           far: true,
           landUseMix: true,
           setbacks: true,
+          buildingStyle: true,
         },
       },
     },
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
             landUseMix: plan.landUseMix,
             buildingLimitGeometry: plan.buildingLimitGeometry,
             setbacks: plan.setbacks,
+            buildingStyle: plan.buildingStyle,
           }
         : null,
     };

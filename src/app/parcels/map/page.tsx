@@ -2014,6 +2014,7 @@ function ParcelsMapPageInner() {
             buildingLimitGeometry?: GeoJSON.Polygon | null;
             setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
             landUseMix?: Array<{ category: string; sub?: string | null }> | null;
+            buildingStyle?: string | null;
           } | null;
         }>;
       };
@@ -2149,7 +2150,16 @@ function ParcelsMapPageInner() {
           });
         };
 
-        if (floors <= 4) {
+        // ── Data-driven style selection ──
+        // AffectionPlan.buildingStyle === "FLAT" → single block of full
+        // footprint at full height (correct for most commercial office
+        // buildings where there is no visual podium/tower distinction).
+        // Default/null/"SIGNATURE" → ZAAHI tiered model below.
+        // Per-plot opt-in keeps the renderer free of hardcoded plot-number
+        // overrides (per CLAUDE.md rule).
+        if (it.plan?.buildingStyle === "FLAT") {
+          pushTier(footprintRing, 0, totalH);
+        } else if (floors <= 4) {
           // Podium only — short building, no taper.
           pushTier(footprintRing, 0, totalH);
         } else if (floors <= 10) {

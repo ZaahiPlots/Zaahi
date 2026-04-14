@@ -256,6 +256,14 @@ model AffectionPlan {
   // scripts/seed-dda + the backfill script. Public URL — no DDA auth.
   plotGuidelinesUrl String?
 
+  // 3D rendering style for this plot. Null or "SIGNATURE" = default ZAAHI
+  // tiering (podium/body/crown based on floors). "FLAT" = single block
+  // of full footprint at full height — correct for most commercial office
+  // buildings that have no visual podium/tower distinction. Data-driven:
+  // any parcel can opt in/out per AffectionPlan row; no hardcoded per-plot
+  // logic in the renderer.
+  buildingStyle String?
+
   @@index([parcelId])
   @@index([fetchedAt])
 }
