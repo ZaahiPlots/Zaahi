@@ -12,7 +12,9 @@
  *   - 3-level downline tree (names + join dates only)
  *   - Full commission history
  *
- * Style: matches /dashboard — white cards on #FAFAFA, gold accent, Georgia headings.
+ * Style: ZAAHI UI Style Guide — Apple-like glassmorphism over navy gradient,
+ * white text on dark translucent cards, gold accent, Georgia headings.
+ * Matches landing page (src/app/page.tsx).
  */
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -20,11 +22,33 @@ import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
-const BG = "#FAFAFA";
+const NAVY = "#1A1A2E";
+const TEAL = "#1B4965";
+const TXT = "#FFFFFF";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const DIM = "rgba(255,255,255,0.7)";
+const LINE = "rgba(255,255,255,0.12)";
 const GREEN = "#2D6A4F";
+const RED = "#E63946";
+const AMBER = "#E67E22";
+
+// Shared glass card style — matches landing page auth card.
+const GLASS_CARD: React.CSSProperties = {
+  background: "rgba(0, 0, 0, 0.3)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  borderRadius: 14,
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+  color: TXT,
+};
+
+const GLASS_SUBCARD: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.04)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  borderRadius: 10,
+  color: TXT,
+};
 
 // ── Types ──
 
@@ -130,8 +154,14 @@ function AmbassadorInner() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: SUBTLE, fontFamily: "-apple-system, Segoe UI, sans-serif" }}>
-        Loading...
+      <div style={{
+        minHeight: "100vh",
+        background: `radial-gradient(ellipse at top, ${TEAL} 0%, ${NAVY} 55%, #0B0D1C 100%)`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: DIM, fontFamily: "-apple-system, Segoe UI, sans-serif", fontSize: 13,
+        letterSpacing: "0.1em", textTransform: "uppercase",
+      }}>
+        Loading…
       </div>
     );
   }
@@ -141,7 +171,13 @@ function AmbassadorInner() {
     : "";
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, padding: "24px 20px", fontFamily: "-apple-system, Segoe UI, Roboto, sans-serif", color: TXT }}>
+    <div style={{
+      minHeight: "100vh",
+      background: `radial-gradient(ellipse at top, ${TEAL} 0%, ${NAVY} 55%, #0B0D1C 100%)`,
+      padding: "28px 20px 40px",
+      fontFamily: "-apple-system, Segoe UI, Roboto, sans-serif",
+      color: TXT,
+    }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
         {/* Header */}
@@ -159,10 +195,15 @@ function AmbassadorInner() {
 
         {/* Not activated — show CTA */}
         {!stats?.ambassadorActive && (
-          <div style={{ background: "white", borderRadius: 12, padding: 32, border: `1px solid ${LINE}`, marginBottom: 24, textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌟</div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: 22, margin: "0 0 8px", color: TXT }}>Become a ZAAHI Ambassador</h2>
-            <p style={{ color: SUBTLE, maxWidth: 560, margin: "0 auto 20px", fontSize: 14, lineHeight: 1.6 }}>
+          <div style={{ ...GLASS_CARD, padding: 36, marginBottom: 24, textAlign: "center" }}>
+            <div style={{
+              width: 56, height: 56, margin: "0 auto 16px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${GOLD}33 0%, transparent 70%)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, color: GOLD,
+            }}>◆</div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: 24, margin: "0 0 8px", color: TXT, letterSpacing: "0.04em" }}>Become a ZAAHI Ambassador</h2>
+            <p style={{ color: DIM, maxWidth: 560, margin: "0 auto 24px", fontSize: 14, lineHeight: 1.6 }}>
               Activate ambassador mode to get your personal referral link. Share it, and earn commissions on every deal closed by people you bring to ZAAHI — across 3 levels.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
@@ -174,18 +215,19 @@ function AmbassadorInner() {
               onClick={activate}
               disabled={activating}
               style={{
-                background: `linear-gradient(135deg, ${GOLD} 0%, #B8975E 100%)`,
-                color: "white",
-                border: 0,
-                borderRadius: 8,
-                padding: "12px 28px",
-                fontSize: 14,
+                background: GOLD,
+                color: NAVY,
+                border: "none",
+                borderRadius: 10,
+                padding: "14px 32px",
+                fontSize: 13,
                 fontWeight: 700,
-                letterSpacing: "0.05em",
+                letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 cursor: activating ? "wait" : "pointer",
-                boxShadow: `0 4px 14px rgba(200, 169, 110, 0.35)`,
-                opacity: activating ? 0.7 : 1,
+                boxShadow: "0 8px 24px rgba(200, 169, 110, 0.28)",
+                opacity: activating ? 0.6 : 1,
+                transition: "transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
               }}
             >
               {activating ? "Activating..." : "Activate Ambassador Mode"}
@@ -197,44 +239,45 @@ function AmbassadorInner() {
         {stats?.ambassadorActive && stats.referralCode && (
           <>
             {/* Referral link card */}
-            <div style={{ background: "white", borderRadius: 12, padding: 20, border: `1px solid ${LINE}`, marginBottom: 16 }}>
+            <div style={{ ...GLASS_CARD, padding: 22, marginBottom: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
                     Your Referral Link
                   </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
                     <code style={{
-                      background: `${GOLD}11`,
-                      border: `1px solid ${GOLD}33`,
-                      padding: "10px 14px",
-                      borderRadius: 6,
+                      background: "rgba(200, 169, 110, 0.1)",
+                      border: "1px solid rgba(200, 169, 110, 0.3)",
+                      padding: "11px 14px",
+                      borderRadius: 8,
                       fontFamily: "'SF Mono', Menlo, monospace",
                       fontSize: 14,
                       fontWeight: 600,
-                      color: TXT,
+                      color: GOLD,
                       flex: 1,
                       minWidth: 260,
                     }}>{referralUrl}</code>
                     <button
                       onClick={copyLink}
                       style={{
-                        background: copied ? GREEN : GOLD,
-                        color: "white",
-                        border: 0,
-                        borderRadius: 6,
-                        padding: "10px 18px",
+                        background: copied ? "rgba(45, 106, 79, 0.85)" : GOLD,
+                        color: copied ? "#fff" : NAVY,
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "11px 20px",
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: "pointer",
-                        letterSpacing: "0.05em",
+                        letterSpacing: "0.08em",
                         textTransform: "uppercase",
+                        transition: "background 150ms ease, transform 150ms ease",
                       }}
                     >{copied ? "✓ Copied" : "Copy"}</button>
                   </div>
-                  <div style={{ fontSize: 11, color: SUBTLE }}>
+                  <div style={{ fontSize: 11, color: DIM }}>
                     Code: <b style={{ color: GOLD, fontFamily: "'SF Mono', Menlo, monospace" }}>{stats.referralCode}</b>
-                    {" · "}Share anywhere — WhatsApp, Instagram, email
+                    <span style={{ color: SUBTLE }}> · Share anywhere — WhatsApp, Instagram, email</span>
                   </div>
                 </div>
                 {/* QR */}
@@ -322,19 +365,19 @@ function AmbassadorInner() {
 
 function RateCard({ level, rate, desc }: { level: number; rate: string; desc: string }) {
   return (
-    <div style={{ border: `1px solid ${LINE}`, borderRadius: 8, padding: "12px 20px", minWidth: 140 }}>
-      <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.08em" }}>Level {level}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, color: GOLD, margin: "4px 0" }}>{rate}</div>
-      <div style={{ fontSize: 11, color: SUBTLE }}>{desc}</div>
+    <div style={{ ...GLASS_SUBCARD, padding: "14px 22px", minWidth: 140 }}>
+      <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.1em" }}>Level {level}</div>
+      <div style={{ fontSize: 26, fontWeight: 800, color: GOLD, margin: "6px 0 2px", letterSpacing: "-0.01em" }}>{rate}</div>
+      <div style={{ fontSize: 11, color: DIM }}>{desc}</div>
     </div>
   );
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div style={{ background: "white", borderRadius: 10, padding: "14px 16px", border: `1px solid ${LINE}` }}>
-      <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: color ?? TXT, margin: "4px 0", lineHeight: 1.1 }}>{value}</div>
+    <div style={{ ...GLASS_CARD, padding: "16px 18px" }}>
+      <div style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: color ?? TXT, margin: "6px 0 2px", lineHeight: 1.1, letterSpacing: "-0.01em" }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: SUBTLE }}>{sub}</div>}
     </div>
   );
@@ -342,8 +385,14 @@ function StatCard({ label, value, sub, color }: { label: string; value: string; 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: "white", borderRadius: 10, border: `1px solid ${LINE}`, marginBottom: 16, overflow: "hidden" }}>
-      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}`, fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "Georgia, serif" }}>
+    <div style={{ ...GLASS_CARD, marginBottom: 16, overflow: "hidden" }}>
+      <div style={{
+        padding: "13px 18px",
+        borderBottom: `1px solid ${LINE}`,
+        fontSize: 11, fontWeight: 700, color: GOLD,
+        textTransform: "uppercase", letterSpacing: "0.1em",
+        fontFamily: "Georgia, serif",
+      }}>
         {title}
       </div>
       {children}
@@ -353,9 +402,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function TreeNodeRow({ node }: { node: TreeNode }) {
   return (
-    <div style={{ marginLeft: (node.level - 1) * 20, padding: "6px 8px", borderLeft: node.level > 1 ? `2px solid ${GOLD}33` : "none" }}>
+    <div style={{ marginLeft: (node.level - 1) * 20, padding: "7px 10px", borderLeft: node.level > 1 ? "2px solid rgba(200, 169, 110, 0.25)" : "none" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ background: `${GOLD}22`, color: GOLD, padding: "1px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700 }}>L{node.level}</span>
+        <span style={{ background: "rgba(200, 169, 110, 0.15)", color: GOLD, padding: "2px 7px", borderRadius: 4, fontSize: 9, fontWeight: 700 }}>L{node.level}</span>
         <span style={{ fontSize: 13, fontWeight: 600, color: TXT }}>{node.name}</span>
         <span style={{ fontSize: 11, color: SUBTLE, marginLeft: "auto" }}>{formatDate(node.joinedAt)}</span>
       </div>
@@ -366,12 +415,12 @@ function TreeNodeRow({ node }: { node: TreeNode }) {
 
 function StatusPill({ status }: { status: "PENDING" | "PAID" | "REVERSED" }) {
   const palette = {
-    PENDING: { bg: "#F9F5EC", color: GOLD, label: "Pending" },
-    PAID: { bg: "#E7F5EE", color: GREEN, label: "Paid" },
-    REVERSED: { bg: "#FBEAEA", color: "#C74B4B", label: "Reversed" },
+    PENDING: { bg: "rgba(200, 169, 110, 0.18)", color: GOLD, label: "Pending" },
+    PAID: { bg: "rgba(45, 106, 79, 0.22)", color: "#4ade80", label: "Paid" },
+    REVERSED: { bg: "rgba(230, 57, 70, 0.18)", color: "#fca5a5", label: "Reversed" },
   }[status];
   return (
-    <span style={{ background: palette.bg, color: palette.color, padding: "3px 10px", borderRadius: 12, fontSize: 10, fontWeight: 700 }}>
+    <span style={{ background: palette.bg, color: palette.color, padding: "3px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700, border: `1px solid ${palette.color}33` }}>
       {palette.label}
     </span>
   );

@@ -6,10 +6,14 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 
+// ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
+// White text on dark translucent panel (matches landing page auth card).
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
+const NAVY = "#1A1A2E";
+const TXT = "#FFFFFF";
+const DIM = "rgba(255,255,255,0.75)";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.1)";
 
 // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
 // remove, or recolor without explicit founder approval. Mirrors
@@ -136,8 +140,11 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
   return (
     <aside
       style={{
-        background: "rgba(255,255,255,0.95)",
-        backdropFilter: "blur(8px)",
+        background: "rgba(10, 22, 40, 0.75)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+        boxShadow: "-8px 0 40px rgba(0, 0, 0, 0.3)",
         color: TXT,
       }}
       // Mobile (< sm): bottom sheet — slides up from the bottom, takes
@@ -158,10 +165,13 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
         <div style={{ width: 36, height: 4, borderRadius: 2, background: LINE }} />
       </div>
       <div
-        className="sticky top-0 px-4 py-2 flex items-center gap-2"
+        className="sticky top-0 px-4 py-3 flex items-center gap-2"
         style={{
-          background: "rgba(255,255,255,0.95)",
+          background: "rgba(10, 22, 40, 0.85)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           borderBottom: `1px solid ${LINE}`,
+          zIndex: 5,
         }}
       >
         <button
@@ -359,15 +369,16 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                     width: "100%",
                     textAlign: "left",
                     fontSize: 11,
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    background: "white",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: "rgba(255, 255, 255, 0.04)",
                     border: `1px solid ${LINE}`,
                     color: TXT,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     cursor: "pointer",
+                    transition: "background 150ms ease, border-color 150ms ease",
                   }}
                 >
                   <span>Documents</span>
@@ -468,11 +479,12 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
             bottom: 0,
             left: 0,
             right: 0,
-            padding: 12,
-            background: "rgba(255,255,255,0.97)",
-            backdropFilter: "blur(8px)",
+            padding: 14,
+            background: "rgba(10, 22, 40, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             borderTop: `1px solid ${LINE}`,
-            boxShadow: "0 -4px 14px rgba(0,0,0,0.06)",
+            boxShadow: "0 -8px 24px rgba(0,0,0,0.25)",
           }}
         >
           <button
@@ -480,16 +492,17 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
             style={{
               width: "100%",
               padding: "14px 16px",
-              borderRadius: 8,
-              border: 0,
-              background: `linear-gradient(135deg, ${GOLD} 0%, #B8975E 100%)`,
-              color: "white",
+              borderRadius: 10,
+              border: "none",
+              background: GOLD,
+              color: NAVY,
               fontWeight: 800,
               fontSize: 13,
-              letterSpacing: 1.2,
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
               cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(200,169,110,0.35)",
+              boxShadow: "0 8px 28px rgba(200, 169, 110, 0.3)",
+              transition: "transform 150ms ease, box-shadow 150ms ease",
             }}
           >
             Start Negotiation

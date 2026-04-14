@@ -25,18 +25,45 @@ interface Props {
   maxHeightCode?: string | null;
 }
 
-// ── Palette (ZAAHI navy / teal / gold) ──────────────────────────────
+// ── Palette — ZAAHI UI Style Guide (Apple-like glassmorphism) ──────
+// White text on dark translucent background. Calculator renders inside
+// SidePanel which uses dark glass over the satellite map.
 
 const GOLD = "#C8A96E";
 const NAVY = "#1A1A2E";
 const TEAL = "#1B4965";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
-const BG = "#FAFAF9";
+const TXT = "#FFFFFF";
+const DIM = "rgba(255,255,255,0.7)";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.1)";
+const BG = "transparent";
 const RED = "#E63946";
 const GREEN = "#2D6A4F";
 const AMBER = "#E67E22";
+
+// Shared glass surface styles — match landing page auth card.
+const GLASS_CARD: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.05)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
+  borderRadius: 12,
+  color: TXT,
+};
+const GLASS_SUBCARD: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.03)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  borderRadius: 10,
+};
+const GLASS_INPUT: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.06)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  borderRadius: 8,
+  color: TXT,
+  outline: "none",
+  fontFamily: "inherit",
+  transition: "border-color 150ms ease, background 150ms ease",
+};
 
 // ── Height brackets and permits (unchanged from v3.1) ──────────────
 
@@ -442,17 +469,22 @@ function NumInput({ l, v, onChange: o, u, s = 1 }: { l: string; v: number; onCha
   useEffect(() => { if (!focused) setLocal(String(v)); }, [v, focused]);
   const formatted = !focused && v !== 0 ? v.toLocaleString("en-US") : local;
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 10, color: SUBTLE, letterSpacing: ".04em", marginBottom: 3 }}>{l}</div>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10, color: SUBTLE, letterSpacing: ".06em", marginBottom: 4, textTransform: "uppercase" }}>{l}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <input
           type={focused ? "number" : "text"}
           value={focused ? local : formatted}
           onChange={(e) => { setLocal(e.target.value); const n = +e.target.value; if (!isNaN(n)) o(n); }}
-          onFocus={() => setFocused(true)}
-          onBlur={() => { setFocused(false); const n = +local; setLocal(String(isNaN(n) ? 0 : n)); if (isNaN(n)) o(0); }}
+          onFocus={(e) => { setFocused(true); e.currentTarget.style.borderColor = GOLD; }}
+          onBlur={(e) => {
+            setFocused(false);
+            const n = +local; setLocal(String(isNaN(n) ? 0 : n));
+            if (isNaN(n)) o(0);
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+          }}
           step={s}
-          style={{ flex: 1, background: BG, border: `1px solid ${LINE}`, borderRadius: 6, padding: "7px 9px", fontSize: 13, color: TXT, outline: "none", width: "100%", fontFamily: "inherit" }}
+          style={{ ...GLASS_INPUT, flex: 1, padding: "8px 10px", fontSize: 13, width: "100%" }}
         />
         {u && <span style={{ fontSize: 10, color: SUBTLE, minWidth: 28 }}>{u}</span>}
       </div>
@@ -534,56 +566,59 @@ function SummaryCard({
 }) {
   return (
     <div style={{
-      background: "white", borderRadius: 10, padding: big ? "14px 16px" : "12px 14px",
-      border: `1px solid ${LINE}`,
-      borderLeft: accent ? `4px solid ${accent}` : `1px solid ${LINE}`,
+      ...GLASS_CARD,
+      padding: big ? "14px 16px" : "12px 14px",
+      borderLeft: accent ? `3px solid ${accent}` : (GLASS_CARD.border as string),
       minWidth: 0, // allow ellipsize within grid
     }}>
-      <div style={{ fontSize: 9, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>
+      <div style={{ fontSize: 9, color: SUBTLE, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
         {label}
       </div>
       <div style={{
-        fontSize: big ? 22 : 18, fontWeight: 800, color: accent ?? TXT, lineHeight: 1.1,
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        fontSize: big ? 24 : 19, fontWeight: 800, color: accent ?? TXT, lineHeight: 1.1,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em",
       }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 10, color: SUBTLE, marginTop: 3 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 10, color: SUBTLE, marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }
 
 function Verdict({ irr, netProfit }: { irr: number; netProfit: number }) {
   let status: "STRONG" | "MARGINAL" | "WEAK";
-  let color: string;
-  let bg: string;
+  let tint: string;
   let msg: string;
   if (irr >= 18 && netProfit > 0) {
     status = "STRONG";
-    color = "#fff";
-    bg = GREEN;
+    tint = GREEN;
     msg = "Attractive returns";
   } else if (irr >= 10 && netProfit > 0) {
     status = "MARGINAL";
-    color = "#fff";
-    bg = AMBER;
+    tint = AMBER;
     msg = "Acceptable — negotiate harder";
   } else {
     status = "WEAK";
-    color = "#fff";
-    bg = RED;
+    tint = RED;
     msg = netProfit <= 0 ? "Loss-making at this land price" : "Below target — reconsider";
   }
   return (
     <div style={{
-      background: bg, color, borderRadius: 10, padding: "12px 16px",
+      background: `linear-gradient(135deg, ${tint}cc 0%, ${tint}88 100%)`,
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: `1px solid ${tint}aa`,
+      borderRadius: 12,
+      padding: "14px 18px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
+      boxShadow: `0 4px 20px ${tint}40`,
+      color: "#fff",
     }}>
       <div>
-        <div style={{ fontSize: 10, letterSpacing: ".1em", opacity: 0.75 }}>VERDICT</div>
-        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: ".04em" }}>{status}</div>
+        <div style={{ fontSize: 10, letterSpacing: ".15em", opacity: 0.8, textTransform: "uppercase" }}>Verdict</div>
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: ".05em" }}>{status}</div>
       </div>
-      <div style={{ fontSize: 12, textAlign: "right", opacity: 0.92 }}>{msg}</div>
+      <div style={{ fontSize: 12, textAlign: "right", opacity: 0.95 }}>{msg}</div>
     </div>
   );
 }
@@ -592,7 +627,12 @@ function ModeToggle({ mode, onChange, modes }: { mode: Mode; onChange: (m: Mode)
   if (modes.length === 0) return null;
   const labels: Record<Mode, string> = { sell: "BUILD-TO-SELL", rent: "BUILD-TO-RENT", jv: "JOINT VENTURE" };
   return (
-    <div style={{ display: "flex", gap: 4, background: BG, padding: 3, borderRadius: 8, border: `1px solid ${LINE}` }}>
+    <div style={{
+      display: "flex", gap: 3, padding: 3,
+      background: "rgba(255, 255, 255, 0.04)",
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      borderRadius: 10,
+    }}>
       {modes.map((m) => {
         const active = m === mode;
         return (
@@ -600,11 +640,12 @@ function ModeToggle({ mode, onChange, modes }: { mode: Mode; onChange: (m: Mode)
             key={m}
             onClick={() => onChange(m)}
             style={{
-              flex: 1, border: 0, cursor: "pointer",
-              background: active ? TEAL : "transparent",
-              color: active ? "#fff" : SUBTLE,
-              padding: "7px 10px", borderRadius: 6,
-              fontSize: 10, fontWeight: 700, letterSpacing: ".05em",
+              flex: 1, border: "none", cursor: "pointer",
+              background: active ? GOLD : "transparent",
+              color: active ? NAVY : SUBTLE,
+              padding: "8px 10px", borderRadius: 7,
+              fontSize: 10, fontWeight: 700, letterSpacing: ".08em",
+              transition: "background 150ms ease, color 150ms ease",
             }}
           >
             {labels[m]}
@@ -624,23 +665,26 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ background: "white", borderRadius: 8, border: `1px solid ${LINE}`, marginBottom: 8, overflow: "hidden" }}>
+    <div style={{ ...GLASS_CARD, marginBottom: 8, overflow: "hidden" }}>
       <button
         onClick={onToggle}
         style={{
           width: "100%", background: "transparent", border: 0, cursor: "pointer",
-          padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between",
-          fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: ".07em",
+          padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: ".1em",
           fontFamily: "Georgia, serif",
+          transition: "background 150ms ease",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200, 169, 110, 0.06)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
         <span>{title}</span>
-        <span style={{ color: SUBTLE, fontSize: 14, transition: "transform .15s", transform: open ? "rotate(180deg)" : "none" }}>
+        <span style={{ color: SUBTLE, fontSize: 14, transition: "transform 200ms ease", transform: open ? "rotate(180deg)" : "none" }}>
           ⌄
         </span>
       </button>
       {open && (
-        <div style={{ padding: "4px 14px 12px", borderTop: `1px solid ${LINE}` }}>{children}</div>
+        <div style={{ padding: "6px 16px 14px", borderTop: `1px solid ${LINE}` }}>{children}</div>
       )}
     </div>
   );
@@ -648,8 +692,8 @@ function Section({
 
 function ToggleRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${LINE}22` }}>
-      <span style={{ fontSize: 11, color: SUBTLE }}>{label}</span>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
+      <span style={{ fontSize: 11, color: DIM }}>{label}</span>
       <span style={{ fontSize: 12, color: TXT, fontWeight: 600 }}>{children}</span>
     </div>
   );
@@ -826,16 +870,17 @@ export default function FeasibilityCalculator(props: Props) {
       )}
 
       {/* Land use selector */}
-      <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
         {(Object.entries(LU) as [LuKey, LuConfig][]).map(([k, v]) => (
           <button key={k} onClick={() => setLU(k)}
             style={{
-              background: lu === k ? GOLD : "transparent",
-              color: lu === k ? "#fff" : SUBTLE,
-              border: lu === k ? "none" : `1px solid ${LINE}`,
-              borderRadius: 5, padding: "4px 8px", cursor: "pointer",
-              fontSize: 9.5, fontWeight: 600, whiteSpace: "nowrap",
+              background: lu === k ? GOLD : "rgba(255, 255, 255, 0.04)",
+              color: lu === k ? NAVY : DIM,
+              border: `1px solid ${lu === k ? GOLD : "rgba(255, 255, 255, 0.1)"}`,
+              borderRadius: 6, padding: "5px 9px", cursor: "pointer",
+              fontSize: 10, fontWeight: 600, whiteSpace: "nowrap",
               display: "flex", alignItems: "center", gap: 4,
+              transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
             }}>
             <span style={{ fontSize: 8, fontWeight: 700, opacity: .7 }}>{v.icon}</span>
             {v.label}
@@ -877,14 +922,17 @@ export default function FeasibilityCalculator(props: Props) {
       </div>
 
       {/* Action row */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <button
           onClick={() => setAdvancedOpen((o) => !o)}
           style={{
-            flex: 1, background: advancedOpen ? TEAL : "white",
-            color: advancedOpen ? "#fff" : TEAL,
-            border: `1px solid ${TEAL}`, borderRadius: 6, padding: "9px 12px",
-            fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: ".06em", textTransform: "uppercase",
+            flex: 1,
+            background: advancedOpen ? "rgba(200, 169, 110, 0.15)" : "rgba(255, 255, 255, 0.04)",
+            color: advancedOpen ? GOLD : DIM,
+            border: `1px solid ${advancedOpen ? GOLD : "rgba(255, 255, 255, 0.12)"}`,
+            borderRadius: 10, padding: "11px 12px",
+            fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: ".12em", textTransform: "uppercase",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
           }}
         >
           {advancedOpen ? "Hide Details ▴" : "Advanced Details ▾"}
@@ -892,9 +940,11 @@ export default function FeasibilityCalculator(props: Props) {
         <button
           onClick={downloadPDF}
           style={{
-            flex: 1, background: GOLD, color: "#fff", border: 0, borderRadius: 6,
-            padding: "9px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer",
-            letterSpacing: ".06em", textTransform: "uppercase",
+            flex: 1, background: GOLD, color: NAVY, border: "none", borderRadius: 10,
+            padding: "11px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer",
+            letterSpacing: ".12em", textTransform: "uppercase",
+            boxShadow: "0 4px 16px rgba(200, 169, 110, 0.28)",
+            transition: "transform 150ms ease, box-shadow 150ms ease",
           }}
         >
           Download Report ↓
