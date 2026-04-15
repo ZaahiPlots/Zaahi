@@ -2417,6 +2417,11 @@ function ParcelsMapPageInner() {
       dragRotate: true,
       pitchWithRotate: true,
       touchPitch: true,
+      // Required so `map.getCanvas().toDataURL()` returns a non-blank image
+      // — used by the Site Plan PDF generator. WebGL otherwise clears the
+      // drawing buffer after each frame. MapLibre v5 moved this flag into
+      // `canvasContextAttributes`. Negligible perf impact.
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
     map.dragRotate.enable();
     map.touchZoomRotate.enableRotation();

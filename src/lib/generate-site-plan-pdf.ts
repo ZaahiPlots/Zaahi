@@ -71,22 +71,6 @@ export interface SitePlanArgs {
 
 // ── Map snapshot helpers ────────────────────────────────────────────
 
-function waitForRender(map: MLMap): Promise<void> {
-  return new Promise((resolve) => {
-    if (map.loaded() && !map.isMoving() && !map.isZooming()) {
-      // Give tiles a moment even when "idle" — guards against blank
-      // frames immediately after a flyTo without animation.
-      setTimeout(resolve, 400);
-      return;
-    }
-    const done = () => {
-      map.off('idle', done);
-      setTimeout(resolve, 200);
-    };
-    map.on('idle', done);
-  });
-}
-
 function polygonBBox(ring: GeoJSON.Position[]) {
   let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
   for (const [lng, lat] of ring) {
@@ -103,20 +87,37 @@ async function captureMap(
   geom: GeoJSON.Polygon | null | undefined,
 ): Promise<string | null> {
   try {
+    // Re-centre on the plot bbox with comfortable padding so the polygon
+    // AND surrounding context (neighbouring parcels, 3D buildings) are
+    // in-frame. animate:false so we don't have to wait on easing.
     if (geom?.coordinates?.[0]?.length) {
       const bb = polygonBBox(geom.coordinates[0]);
-      // 20% padding around the plot for context.
       map.fitBounds(
         [[bb.minLng, bb.minLat], [bb.maxLng, bb.maxLat]],
-        { padding: 60, duration: 0, maxZoom: 19 },
+        { padding: 80, duration: 0, maxZoom: 19, animate: false },
       );
     }
-    await waitForRender(map);
-    // Force a redraw so the buffer has the latest frame.
+    // Wait for all tiles/sources to settle. `idle` fires once when the
+    // map is fully rendered after the last source update.
+    await new Promise<void>((resolve) => {
+      const onIdle = () => {
+        map.off('idle', onIdle);
+        resolve();
+      };
+      map.on('idle', onIdle);
+      // Safety timeout: if `idle` never fires (unusual), fall through
+      // after 3s — preserveDrawingBuffer still guarantees the buffer
+      // holds the last rendered frame.
+      setTimeout(() => {
+        map.off('idle', onIdle);
+        resolve();
+      }, 3000);
+    });
+    // Extra repaint so the buffer definitely has the latest frame.
     map.triggerRepaint();
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
     const canvas = map.getCanvas();
-    return canvas.toDataURL('image/jpeg', 0.9);
+    return canvas.toDataURL('image/jpeg', 0.92);
   } catch (e) {
     console.warn('[site-plan-pdf] map capture failed:', e);
     return null;
@@ -367,23 +368,10 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
     rgap();
   }
 
-  // SETBACKS
-  if (plan?.setbacks && plan.setbacks.length > 0) {
-    rh('Setbacks (m)');
-    for (const s of plan.setbacks) {
-      const label = s.label ?? `Side ${s.side}`;
-      const parts: string[] = [];
-      if (s.podium != null) parts.push(`podium ${s.podium}`);
-      if (s.building != null) parts.push(`tower ${s.building}`);
-      rrow(label, parts.join(', ') || null);
-    }
-    rgap();
-  }
-
   // NOTES (truncated if long)
   if (plan?.notes && plan.notes.trim().length > 0) {
     rh('General Notes');
-    rwrap(plan.notes.trim(), 8);
+    rwrap(plan.notes.trim(), 10);
   }
 
   // ── Footer ─────────────────────────────────────────────────
