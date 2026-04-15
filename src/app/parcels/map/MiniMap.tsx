@@ -322,14 +322,14 @@ export default function MiniMap({
       style={{
         position: "relative",
         width: 280,
-        height: 160,
-        background: "rgba(10, 22, 40, 0.85)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 12,
-        boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+        height: 162,
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: 8,
         overflow: "hidden",
+        // Intentionally no backdrop-filter here — this canvas sits
+        // inside the dock's own glass panel so a second glass layer
+        // would muddy the basemap contours. The thin border is all
+        // we need for visual separation.
       }}
     >
       <div

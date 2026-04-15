@@ -3377,38 +3377,94 @@ function ParcelsMapPageInner() {
           pointerEvents: "none",
         }}
       >
-        {/* Dock row — faded out + translated down when collapsed. */}
+        {/* Dock — unified glass panel around the minimap. Buttons split
+            across three rails (top / left / right) so the layer pile
+            isn't all on one side. Grid areas keep everything snapped
+            flush against the minimap edges. */}
         <div
           aria-hidden={!miniOpen}
           style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "flex-end",
-            gap: 8,
+            display: "grid",
+            gridTemplateColumns: "auto auto auto",
+            gridTemplateRows: "auto auto",
+            gridTemplateAreas: `
+              ".    top   ."
+              "left mid   right"
+            `,
+            columnGap: 6,
+            rowGap: 6,
+            padding: 8,
+            background: "rgba(10, 22, 40, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
             opacity: miniOpen ? 1 : 0,
             transform: miniOpen ? "translateY(0)" : "translateY(12px)",
             pointerEvents: miniOpen ? "auto" : "none",
             transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
           }}
         >
-          <MiniRail>
-            {MINI_LEFT_LAYERS.map((l) => (
+          <div
+            style={{
+              gridArea: "top",
+              display: "flex",
+              flexDirection: "row",
+              gap: 6,
+              justifyContent: "space-between",
+            }}
+          >
+            {MINI_TOP_LAYERS.map((l) => (
               <MiniRailBtn
                 key={l.key}
                 title={l.label}
-                active={!!layers[l.key as keyof LayersState]}
+                active={!!layers[l.key]}
                 onClick={() =>
-                  setLayers((s) => ({ ...s, [l.key]: !s[l.key as keyof LayersState] }))
+                  setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))
                 }
               >
                 {l.icon}
               </MiniRailBtn>
             ))}
-          </MiniRail>
+          </div>
 
-          <MiniMap mainMapRef={mapRef} />
+          <div
+            style={{
+              gridArea: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              alignSelf: "start",
+            }}
+          >
+            {MINI_LEFT_LAYERS.map((l) => (
+              <MiniRailBtn
+                key={l.key}
+                title={l.label}
+                active={!!layers[l.key]}
+                onClick={() =>
+                  setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))
+                }
+              >
+                {l.icon}
+              </MiniRailBtn>
+            ))}
+          </div>
 
-          <MiniRail>
+          <div style={{ gridArea: "mid" }}>
+            <MiniMap mainMapRef={mapRef} />
+          </div>
+
+          <div
+            style={{
+              gridArea: "right",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              alignSelf: "start",
+            }}
+          >
             <MiniRailBtn
               title="Legend"
               active={legendOpen}
@@ -3450,7 +3506,7 @@ function ParcelsMapPageInner() {
                 </svg>
               </MiniRailBtn>
             </Link>
-          </MiniRail>
+          </div>
         </div>
 
         {/* Toggle — always visible, bottom-center. Flips the dock open. */}
@@ -4196,15 +4252,16 @@ function HdrField({
   );
 }
 
-// ─── MiniMap left-rail configuration ─────────────────────────────
-// Left rail next to the MiniMap: top-level region toggles. Each key
-// must exist on LayersState or setLayers will no-op silently. Icons
-// are minimal inline SVG — no emoji per CLAUDE.md UI STYLE GUIDE.
-const MINI_LEFT_LAYERS: Array<{
-  key: keyof LayersState;
-  label: string;
-  icon: React.ReactNode;
-}> = [
+// ─── MiniMap dock layer configuration ─────────────────────────────
+// Buttons wrap the minimap on three sides. Top rail = region toggles
+// (the four biggest land datasets). Left rail = contextual toggles
+// (communities, governorates, zones, projects). Right rail lives in
+// page.tsx as Link-wrapped actions (Legend / Ambassador / Profile).
+// Every key must exist on LayersState or setLayers will no-op.
+// Icons are minimal inline SVG — no emoji per CLAUDE.md UI STYLE GUIDE.
+type MiniLayer = { key: keyof LayersState; label: string; icon: React.ReactNode };
+
+const MINI_TOP_LAYERS: MiniLayer[] = [
   {
     key: "ddaLandPlots",
     label: "DDA Land Plots",
@@ -4248,6 +4305,9 @@ const MINI_LEFT_LAYERS: Array<{
       </svg>
     ),
   },
+];
+
+const MINI_LEFT_LAYERS: MiniLayer[] = [
   {
     key: "communities",
     label: "Communities",
@@ -4288,35 +4348,6 @@ const MINI_LEFT_LAYERS: Array<{
     ),
   },
 ];
-
-/**
- * Glass rail that sits next to the MiniMap. Vertical stack of
- * 30×30 icon buttons (same size as ChromeBtn on the map chrome) so the
- * whole bottom-center widget feels part of one control surface.
- */
-function MiniRail({ children }: { children: React.ReactNode }) {
-  // Intentionally no `pointer-events: auto` here. The parent dock row
-  // controls interactivity based on miniOpen so children inherit and
-  // stay inert while the dock is faded out.
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        padding: 6,
-        background: "rgba(10, 22, 40, 0.85)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 12,
-        boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 /**
  * Icon button for the MiniMap rails. Renders as a `<button>` by default;
