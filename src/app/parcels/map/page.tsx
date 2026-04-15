@@ -1248,6 +1248,7 @@ function ParcelsMapPageInner() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
+  const [miniOpen, setMiniOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
   const legendBtnRef = useRef<HTMLButtonElement>(null);
   const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false });
@@ -3356,11 +3357,12 @@ function ParcelsMapPageInner() {
           button at top:56 right:16 is gone. */}
 
       {/* ── MiniMap dock — bottom center ──
-          Civ6-style regional overview with left rail (layer toggles)
-          and right rail (Legend / Ambassador / Profile). Anchored to
-          the bottom, horizontally centered, layered above the map
-          canvas but below the SidePanel (which takes over when a
-          parcel is selected). */}
+          Civ6-style regional overview. Collapsed by default: only the
+          tiny map-icon toggle is visible at the bottom-center. When
+          the user opens it, the full dock (layer rail · minimap ·
+          action rail) slides up with a 300 ms ease-in-out fade. The
+          MiniMap instance stays mounted while hidden so it keeps
+          syncing with the main map — re-opening is instant. */}
       <div
         style={{
           position: "absolute",
@@ -3368,72 +3370,137 @@ function ParcelsMapPageInner() {
           bottom: 12,
           transform: "translateX(-50%)",
           display: "flex",
-          alignItems: "flex-end",
-          gap: 10,
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 8,
           zIndex: 14,
           pointerEvents: "none",
         }}
       >
-        <MiniRail>
-          {MINI_LEFT_LAYERS.map((l) => (
-            <MiniRailBtn
-              key={l.key}
-              title={l.label}
-              active={!!layers[l.key as keyof LayersState]}
-              onClick={() =>
-                setLayers((s) => ({ ...s, [l.key]: !s[l.key as keyof LayersState] }))
-              }
-            >
-              {l.icon}
-            </MiniRailBtn>
-          ))}
-        </MiniRail>
+        {/* Dock row — faded out + translated down when collapsed. */}
+        <div
+          aria-hidden={!miniOpen}
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 8,
+            opacity: miniOpen ? 1 : 0,
+            transform: miniOpen ? "translateY(0)" : "translateY(12px)",
+            pointerEvents: miniOpen ? "auto" : "none",
+            transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
+          }}
+        >
+          <MiniRail>
+            {MINI_LEFT_LAYERS.map((l) => (
+              <MiniRailBtn
+                key={l.key}
+                title={l.label}
+                active={!!layers[l.key as keyof LayersState]}
+                onClick={() =>
+                  setLayers((s) => ({ ...s, [l.key]: !s[l.key as keyof LayersState] }))
+                }
+              >
+                {l.icon}
+              </MiniRailBtn>
+            ))}
+          </MiniRail>
 
-        <div style={{ pointerEvents: "auto" }}>
           <MiniMap mainMapRef={mapRef} />
+
+          <MiniRail>
+            <MiniRailBtn
+              title="Legend"
+              active={legendOpen}
+              onClick={() => setLegendOpen((o) => !o)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <circle cx="4" cy="6" r="1.2" fill="currentColor" />
+                <circle cx="4" cy="12" r="1.2" fill="currentColor" />
+                <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+              </svg>
+            </MiniRailBtn>
+            <Link
+              href="/ambassador"
+              title="Ambassador Program"
+              aria-label="Ambassador Program"
+              style={{ display: "block", textDecoration: "none" }}
+              tabIndex={miniOpen ? 0 : -1}
+            >
+              <MiniRailBtn title="Ambassador" active={false} onClick={() => {}} asSpan>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2" />
+                </svg>
+              </MiniRailBtn>
+            </Link>
+            <Link
+              href="/dashboard"
+              title="Profile / Dashboard"
+              aria-label="Profile"
+              style={{ display: "block", textDecoration: "none" }}
+              tabIndex={miniOpen ? 0 : -1}
+            >
+              <MiniRailBtn title="Profile" active={false} onClick={() => {}} asSpan>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+                </svg>
+              </MiniRailBtn>
+            </Link>
+          </MiniRail>
         </div>
 
-        <MiniRail>
-          <MiniRailBtn
-            title="Legend"
-            active={legendOpen}
-            onClick={() => setLegendOpen((o) => !o)}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <circle cx="4" cy="6" r="1.2" fill="currentColor" />
-              <circle cx="4" cy="12" r="1.2" fill="currentColor" />
-              <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+        {/* Toggle — always visible, bottom-center. Flips the dock open. */}
+        <button
+          onClick={() => setMiniOpen((o) => !o)}
+          title={miniOpen ? "Hide mini map" : "Show mini map"}
+          aria-label={miniOpen ? "Hide mini map" : "Show mini map"}
+          aria-expanded={miniOpen}
+          style={{
+            pointerEvents: "auto",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: `1px solid ${miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: miniOpen ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            color: GOLD,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+            transition: "border-color 150ms ease, background 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = miniOpen
+              ? "rgba(200,169,110,0.25)"
+              : "rgba(10, 22, 40, 0.85)";
+          }}
+        >
+          {miniOpen ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
-          </MiniRailBtn>
-          <Link
-            href="/ambassador"
-            title="Ambassador Program"
-            aria-label="Ambassador Program"
-            style={{ display: "block", pointerEvents: "auto", textDecoration: "none" }}
-          >
-            <MiniRailBtn title="Ambassador" active={false} onClick={() => {}} asSpan>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2" />
-              </svg>
-            </MiniRailBtn>
-          </Link>
-          <Link
-            href="/dashboard"
-            title="Profile / Dashboard"
-            aria-label="Profile"
-            style={{ display: "block", pointerEvents: "auto", textDecoration: "none" }}
-          >
-            <MiniRailBtn title="Profile" active={false} onClick={() => {}} asSpan>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-              </svg>
-            </MiniRailBtn>
-          </Link>
-        </MiniRail>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="1 6 7 3 15 6 23 3 23 18 15 21 7 18 1 21 1 6" />
+              <line x1="7" y1="3" x2="7" y2="18" />
+              <line x1="15" y1="6" x2="15" y2="21" />
+            </svg>
+          )}
+        </button>
       </div>
 
       <ArchibaldChat hidden={!!selectedParcelId} />
@@ -4228,10 +4295,12 @@ const MINI_LEFT_LAYERS: Array<{
  * whole bottom-center widget feels part of one control surface.
  */
 function MiniRail({ children }: { children: React.ReactNode }) {
+  // Intentionally no `pointer-events: auto` here. The parent dock row
+  // controls interactivity based on miniOpen so children inherit and
+  // stay inert while the dock is faded out.
   return (
     <div
       style={{
-        pointerEvents: "auto",
         display: "flex",
         flexDirection: "column",
         gap: 6,

@@ -8,7 +8,7 @@
  * Also dots each ZAAHI plot so the founder can see listing coverage
  * across Dubai at a glance.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
@@ -42,17 +42,17 @@ const LANDUSE_COLOR: Record<string, string> = {
 const INITIAL_CENTER: [number, number] = [55.6, 24.3];
 const INITIAL_ZOOM = 5.9;
 
-// Raster-only style with no labels — keeps the mini uncluttered so the
-// viewport rectangle and plot dots stay readable at this size.
+// Raster-only light basemap with no labels — contours visible, nothing
+// competes with the viewport rectangle and plot dots.
 const MINI_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     base: {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
+        "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
       ],
       tileSize: 256,
       attribution: "",
@@ -108,7 +108,6 @@ export default function MiniMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const miniRef = useRef<MLMap | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
   const pendingSync = useRef<number | null>(null);
 
   // Init the mini MapLibre instance once. It's a separate Map with its
@@ -159,13 +158,13 @@ export default function MiniMap({
         id: VIEWPORT_FILL,
         type: "fill",
         source: VIEWPORT_SRC,
-        paint: { "fill-color": "#EF4444", "fill-opacity": 0.12 },
+        paint: { "fill-color": "#FF0000", "fill-opacity": 0.15 },
       });
       mini.addLayer({
         id: VIEWPORT_LINE,
         type: "line",
         source: VIEWPORT_SRC,
-        paint: { "line-color": "#EF4444", "line-width": 1.6, "line-opacity": 0.95 },
+        paint: { "line-color": "#FF0000", "line-width": 2, "line-opacity": 1 },
       });
     });
 
@@ -318,21 +317,12 @@ export default function MiniMap({
     };
   }, [mainMapRef]);
 
-  // Resize the mini's canvas when the collapsed state flips so MapLibre
-  // picks up the new container dimensions and doesn't render into a
-  // stale-sized viewport.
-  useEffect(() => {
-    if (collapsed) return;
-    const id = window.setTimeout(() => miniRef.current?.resize(), 220);
-    return () => window.clearTimeout(id);
-  }, [collapsed]);
-
   return (
     <div
       style={{
         position: "relative",
-        width: collapsed ? 120 : 250,
-        height: collapsed ? 32 : 150,
+        width: 280,
+        height: 160,
         background: "rgba(10, 22, 40, 0.85)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
@@ -340,74 +330,12 @@ export default function MiniMap({
         borderRadius: 12,
         boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
         overflow: "hidden",
-        transition: "width 200ms ease, height 200ms ease",
       }}
     >
       <div
         ref={containerRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          cursor: "crosshair",
-          opacity: collapsed ? 0 : 1,
-          pointerEvents: collapsed ? "none" : "auto",
-          transition: "opacity 150ms ease",
-        }}
+        style={{ position: "absolute", inset: 0, cursor: "crosshair" }}
       />
-      {collapsed && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "Georgia, serif",
-            fontSize: 11,
-            color: GOLD,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            pointerEvents: "none",
-          }}
-        >
-          MiniMap
-        </div>
-      )}
-      <button
-        onClick={() => setCollapsed((c) => !c)}
-        title={collapsed ? "Expand mini map" : "Collapse mini map"}
-        aria-label={collapsed ? "Expand mini map" : "Collapse mini map"}
-        style={{
-          position: "absolute",
-          top: 4,
-          right: 4,
-          width: 22,
-          height: 22,
-          borderRadius: 4,
-          border: "1px solid rgba(200, 169, 110, 0.3)",
-          background: "rgba(10, 22, 40, 0.7)",
-          color: GOLD,
-          cursor: "pointer",
-          fontSize: 12,
-          lineHeight: 1,
-          padding: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2,
-          transition: "border-color 150ms ease, background 150ms ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = GOLD;
-          e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
-          e.currentTarget.style.background = "rgba(10, 22, 40, 0.7)";
-        }}
-      >
-        {collapsed ? "▢" : "—"}
-      </button>
     </div>
   );
 }
