@@ -1,0 +1,1315 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="nad_al_hammer__master_plan_modified" id="nad_al_hammer__master_plan_modified">
+	<SimpleField name="fid" type="float"></SimpleField>
+	<SimpleField name="Layer" type="string"></SimpleField>
+	<SimpleField name="PaperSpace" type="int"></SimpleField>
+	<SimpleField name="SubClasses" type="string"></SimpleField>
+	<SimpleField name="Linetype" type="string"></SimpleField>
+	<SimpleField name="EntityHandle" type="string"></SimpleField>
+	<SimpleField name="Text" type="string"></SimpleField>
+</Schema>
+<Folder><name>nad_al_hammer__master_plan_modified</name>
+  <Placemark id="nad_al_hammer__master_plan_modified.1">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">1</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">60</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3901894774799,25.1844043180331 55.3898039516168,25.184537444141 55.3897581047793,25.1846344905743 55.3899958223619,25.1851659082325 55.3904603771481,25.1849987483907 55.3901894774799,25.1844043180331</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.2">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">2</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">61</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3901894774799,25.1844043180331 55.3904603771481,25.1849987483907 55.3907281760083,25.1849041848083 55.3904611732507,25.184313423662 55.3901894774799,25.1844043180331</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.3">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">3</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">62</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3907281760083,25.1849041848083 55.3912729291904,25.1847094725293 55.3911407749639,25.1844162497687 55.3910426672696,25.1843467575863 55.3906226988555,25.1842882245923 55.3904611732507,25.184313423662 55.3907281760083,25.1849041848083</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.4">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">4</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">63</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3907281760083,25.1849041848083 55.3909120839462,25.1853286874545 55.3914566342785,25.1851242860444 55.3912729291904,25.1847094725293 55.3907281760083,25.1849041848083</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.5">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">5</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">64</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3909120839462,25.1853286874545 55.3910945811281,25.185749928991 55.3916504180769,25.1855466635905 55.3914566342785,25.1851242860444 55.3909120839462,25.1853286874545</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.6">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">6</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">65</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3904153837169,25.1850149388902 55.3899958223619,25.1851659082325 55.3904513271182,25.1861941901567 55.3908592095986,25.1860372531331 55.3904153837169,25.1850149388902</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.7">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">7</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">66</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3904513271182,25.1861941901567 55.3907347841136,25.186868634571 55.3908678818833,25.1869200873334 55.3911932777143,25.1868009468718 55.3908592095986,25.1860372531331 55.3904513271182,25.1861941901567</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.8">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">8</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">67</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3904153837169,25.1850149388902 55.3899958223619,25.1851659082325 55.3904513271182,25.1861941901567 55.3908592095986,25.1860372531331 55.3904153837169,25.1850149388902</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.9">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">9</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">68</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3904153837169,25.1850149388902 55.3907281760083,25.1849041848083 55.3915020087671,25.1866903729494 55.3911932777143,25.1868009468718 55.3904153837169,25.1850149388902</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.10">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">10</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">69</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3910945811281,25.185749928991 55.3911155381817,25.1857982997799 55.3916734608084,25.1855972788374 55.3916504180769,25.1855466635905 55.3910945811281,25.185749928991</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.11">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">11</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3911155381817,25.1857982997799 55.3912991136289,25.1862220503324 55.3918563136333,25.1860220558765 55.3916734608084,25.1855972788374 55.3911155381817,25.1857982997799</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.12">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">12</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3912991136289,25.1862220503324 55.3915020087671,25.1866903729494 55.3919695118092,25.1865180253018 55.3920225931928,25.186400165363 55.3918563136333,25.1860220558765 55.3912991136289,25.1862220503324</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.13">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">13</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3916549044989,25.1870032257386 55.391345567037,25.1871190246878 55.3932387450062,25.1911869672035 55.393536681014,25.1910601705121 55.3919747786604,25.1876869931522 55.3925374816535,25.1874759369197 55.3924313004931,25.1872485252855 55.3918681275014,25.1874644890677 55.3916549044989,25.1870032257386</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.14">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">14</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3924751274134,25.190599271056 55.3927874812224,25.1912717490333 55.3929201450417,25.1913225351767 55.3932387450062,25.1911869672035 55.3928866360469,25.1904303760366 55.3924751274134,25.190599271056</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.15">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">15</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3918765742319,25.1893261688455 55.3924751274134,25.190599271056 55.3928866360469,25.1904303760366 55.3922948280178,25.1891587481828 55.3918765742319,25.1893261688455</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.16">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">16</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">6F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3917884003194,25.1891445570321 55.3918765742319,25.1893261688455 55.3922948280178,25.1891587481828 55.3922109135274,25.1889784292132 55.3917884003194,25.1891445570321</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.17">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">17</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">70</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3912711194785,25.188037265268 55.3917884003194,25.1891445570321 55.3922109135274,25.1889784292132 55.3917011715433,25.1878831270714 55.3912711194785,25.188037265268</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.18">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">18</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">71</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.391345567037,25.1871190246878 55.3910026303881,25.1872478219824 55.3909504014589,25.1873774355562 55.3912711194785,25.188037265268 55.3917011715433,25.1878831270714 55.391345567037,25.1871190246878</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.19">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">19</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">72</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3921206470037,25.1868288440342 55.3916549044989,25.1870032257386 55.3918681275014,25.1874644890677 55.3924313004931,25.1872485252855 55.3922539974284,25.1868763087499 55.3921206470037,25.1868288440342</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.20">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">20</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">73</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3919747786604,25.1876869931522 55.3925374816535,25.1874759369197 55.3927346341038,25.1878978467734 55.3921677680374,25.1881037755352 55.3919747786604,25.1876869931522</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.21">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">21</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">74</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3927346341038,25.1878978467734 55.3921677680374,25.1881037755352 55.3923633501408,25.1885261743163 55.392931664436,25.1883133189902 55.3927346341038,25.1878978467734</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.22">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">22</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">75</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.392931664436,25.1883133189902 55.3923633501408,25.1885261743163 55.3925552736481,25.1889406632753 55.3931188966442,25.1887249789497 55.392931664436,25.1883133189902</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.23">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">23</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">76</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3931188966442,25.1887249789497 55.3925552736481,25.1889406632753 55.3927512573276,25.189363920835 55.3933130047915,25.1891427482106 55.3931188966442,25.1887249789497</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.24">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">24</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">77</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3933130047915,25.1891427482106 55.3927512573276,25.189363920835 55.3929481057458,25.1897890355839 55.3934981322461,25.1895796417137 55.3933130047915,25.1891427482106</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.25">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">25</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">78</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3934981322461,25.1895796417137 55.3929481057458,25.1897890355839 55.3931409484435,25.1902055181604 55.3936870284456,25.1899953512225 55.3934981322461,25.1895796417137</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.26">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">26</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">79</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3936870284456,25.1899953512225 55.3931409484435,25.1902055181604 55.3933343657133,25.1906232350275 55.393871051173,25.1904040604685 55.3936870284456,25.1899953512225</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.27">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">27</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.393871051173,25.1904040604685 55.3933343657133,25.1906232350275 55.393536681014,25.1910601705121 55.3939843455014,25.1908777848022 55.3940308673719,25.1907524616219 55.393871051173,25.1904040604685</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.28">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">28</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3940860677163,25.1910913816544 55.3931741917608,25.1914502098593 55.3936124612541,25.1924140200939 55.3946769897927,25.1920080927538 55.3951123444456,25.1920226012646 55.3951517204962,25.1911661619235 55.3950814273495,25.191093595272 55.3942680790666,25.191061711521 55.3940860677163,25.1910913816544</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.29">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">29</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946769897927,25.1920080927538 55.3936124612541,25.1924140200939 55.3941470303348,25.1935958922234 55.3948470352554,25.1933307554258 55.3949356440221,25.1932926514793 55.3949744229154,25.1932742608887 55.395003659667,25.1932562458634 55.3950247634166,25.1932375389835 55.3950391477915,25.1932170796785 55.3950482109443,25.1931938142258 55.3950533777821,25.193166676355 55.3950560450723,25.1931346003827 55.3950576160577,25.1930965272827 55.3950629124805,25.1929497114396 55.395088665002,25.192437796348 55.3950925406442,25.1923195755786 55.3950363827872,25.1922596600535 55.3950460702078,25.1921080705064 55.3951102792234,25.1920587398996 55.3951123444456,25.1920226012646 55.3946769897927,25.1920080927538</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.30">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">30</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3939740366937,25.193671208944 55.3941470303348,25.1935958922234 55.3938200541321,25.1928729973148 55.3935685503651,25.1929803652077 55.3938446048797,25.1936247286668 55.3939740366937,25.193671208944</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.31">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">31</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3935685503651,25.1929803652077 55.3938200541321,25.1928729973148 55.3934961160865,25.19215816259 55.3932399988709,25.1922555630112 55.3935685503651,25.1929803652077</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.32">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">32</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">7F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3934961160865,25.19215816259 55.3932399988709,25.1922555630112 55.3929475982949,25.1916307837703 55.3930024819223,25.191512286628 55.3931741917608,25.1914502098593 55.3934961160865,25.19215816259</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.33">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">33</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">80</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3944173659128,25.1937820821047 55.394090283156,25.1939058844897 55.3940388591335,25.1940359629966 55.3943217390615,25.1946463380069 55.3947312364037,25.1944877687927 55.3944173659128,25.1937820821047</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.34">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">34</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">81</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947312364037,25.1944877687927 55.3943217390615,25.1946463380069 55.3946536287473,25.195362970732 55.3950674802575,25.1951987912733 55.3947312364037,25.1944877687927</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.35">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">35</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">82</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3950674802575,25.1951987912733 55.3946536287473,25.195362970732 55.3949453985759,25.1959896935069 55.3950447367221,25.1960300769187 55.395377657199,25.195897130334 55.3950674802575,25.1951987912733</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.36">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">36</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">83</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3945683892522,25.194121623141 55.3944173659128,25.1937820821047 55.394786534054,25.1936429114326 55.394871659264,25.1936700585944 55.3950003661273,25.1939514085786 55.3945683892522,25.194121623141</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.37">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">37</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">84</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3949978337917,25.1939524095601 55.3945683892522,25.194121623141 55.3947312364037,25.1944877687927 55.395107259383,25.1943431184137 55.3951160851701,25.1942186822697 55.3949978337917,25.1939524095601</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.38">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">38</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">85</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.395107259383,25.1943431184137 55.3947312364037,25.1944877687927 55.394977906278,25.195009372422 55.395078390661,25.1949692490947 55.395107259383,25.1943431184137</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.39">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">39</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">86</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3951819611769,25.1951512076019 55.3950674802575,25.1951987912733 55.395377657199,25.195897130334 55.395757056464,25.1957450111593 55.3957853415683,25.1951483977137 55.3951974080816,25.1951325106275 55.3951819611769,25.1951512076019</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.40">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">40</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">87</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3952078185689,25.1951327971683 55.3957853415683,25.1951483977137 55.3958109008992,25.1946848937773 55.3952247622328,25.1946776232856 55.3952078185689,25.1951327971683</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.41">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">41</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">88</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3958109008992,25.1946848937773 55.3952247622328,25.1946776232856 55.3952469287328,25.194247660279 55.3958314204471,25.1942610425228 55.3958109008992,25.1946848937773</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.42">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">42</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">89</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3958314204471,25.1942610425228 55.3952469287328,25.194247660279 55.395249628888,25.1941777853974 55.3950819546065,25.193813409782 55.3958506141586,25.1938307422467 55.3958314204471,25.1942610425228</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.43">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">43</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3958506141586,25.1938307422467 55.3950819546065,25.193813409782 55.3949977165216,25.1936099889348 55.3950321211807,25.1935410499121 55.3951249111356,25.1935097364389 55.3951829177438,25.1934880327643 55.3952324223075,25.193457204778 55.3952648572234,25.193414699925 55.3952785273835,25.1933750396374 55.3958756373995,25.19339522992 55.3958506141586,25.1938307422467</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.44">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">44</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3958756373995,25.19339522992 55.3952785273835,25.1933750396374 55.3953049249166,25.1929493166806 55.3958919343963,25.1929664948013 55.3958756373995,25.19339522992</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.45">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">45</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3958919343963,25.1929664948013 55.3953049249166,25.1929493166806 55.3953245295837,25.192501383621 55.3954648149949,25.1923766335783 55.3959166244445,25.1923892789702 55.3958919343963,25.1929664948013</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.46">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">46</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3953493011391,25.1918950477193 55.3954795124178,25.1920280630749 55.3959280956685,25.1920430419935 55.3959598494502,25.1914474495171 55.3953691973776,25.1914321277262 55.3953493011391,25.1918950477193</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.47">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">47</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3959598494502,25.1914474495171 55.3953691973776,25.1914321277262 55.3953919884822,25.1909844670622 55.3959822005859,25.190999896328 55.3959598494502,25.1914474495171</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.48">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">48</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">8F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3959822005859,25.190999896328 55.3953919884822,25.1909844670622 55.3954167980096,25.1905362359093 55.3960017667609,25.1905586531181 55.3959822005859,25.190999896328</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.49">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">49</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">90</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960017667609,25.1905586531181 55.3954167980096,25.1905362359093 55.3954382497963,25.1900881314216 55.3960247684401,25.1901114132588 55.3960017667609,25.1905586531181</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.50">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">50</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">91</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960247684401,25.1901114132588 55.3954382497963,25.1900881314216 55.3954564148504,25.1896370786651 55.3960362551189,25.1896566404751 55.3960247684401,25.1901114132588</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.51">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">51</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">92</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960362551189,25.1896566404751 55.3954564148504,25.1896370786651 55.3954795305829,25.1891892137085 55.3960641759173,25.1892127029885 55.3960362551189,25.1896566404751</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.52">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">52</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">93</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960641759173,25.1892127029885 55.3954795305829,25.1891892137085 55.395502832905,25.1887307768204 55.3960844122026,25.1887337758266 55.3960641759173,25.1892127029885</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.53">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">53</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">94</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960844122026,25.1887337758266 55.395502832905,25.1887307768204 55.3954857003609,25.1882920643328 55.3960778100681,25.1882669995462 55.3960844122026,25.1887337758266</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.54">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">54</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">95</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960738693997,25.1882671674403 55.3954857003609,25.1882920643328 55.3954620835612,25.1878426072121 55.396055855884,25.1878214848232 55.3960738693997,25.1882671674403</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.55">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">55</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">96</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.396055855884,25.1878214848232 55.3954620835612,25.1878426072121 55.3954485968277,25.1873871158461 55.3960324039796,25.1873668008468 55.396055855884,25.1878214848232</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.56">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">56</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">97</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960324039796,25.1873668008468 55.3954485968277,25.1873871158461 55.3954316576916,25.1869377186599 55.3960154122413,25.1869228485769 55.3960324039796,25.1873668008468</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.57">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">57</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">98</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960154122413,25.1869228485769 55.3954316576916,25.1869377186599 55.3954131060875,25.1864852484069 55.3960036034065,25.1864682875278 55.3960154122413,25.1869228485769</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.58">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">58</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">99</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3960036034065,25.1864682875278 55.3954131060875,25.1864852484069 55.3954060655076,25.1863201586723 55.3953967338775,25.1862818404475 55.3952171869178,25.1860425115446 55.395701919178,25.1857395214835 55.395994651253,25.1861327214613 55.3960036034065,25.1864682875278</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.59">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">59</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9A</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.395701919178,25.1857395214835 55.3952171869178,25.1860425115446 55.394936017039,25.1856683049669 55.3954216177942,25.1853671906056 55.395701919178,25.1857395214835</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.60">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">60</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9B</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3954216177942,25.1853671906056 55.394936017039,25.1856683049669 55.3949015614084,25.1856279991979 55.3953839771753,25.1853238073295 55.3954216177942,25.1853671906056</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.61">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">61</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9C</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3953839771753,25.1853238073295 55.3949015614084,25.1856279991979 55.3946232788756,25.1852485205871 55.3951064650662,25.1849508045924 55.3953839771753,25.1853238073295</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.62">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">62</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9D</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946232788756,25.1852485205871 55.3951064650662,25.1849508045924 55.3947654068895,25.1845005434368 55.394307720444,25.1844451495614 55.3942394952525,25.1849743924086 55.3943088769449,25.1849878735299 55.3943687271852,25.1850083123876 55.3944207596219,25.185035194848 55.3944666840021,25.1850680139416 55.3945081932855,25.1851062628545 55.3945469987822,25.1851494351085 55.3945847960389,25.1851970236092 55.3946232788756,25.1852485205871</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.63">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">63</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9E</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.394307720444,25.1844451495614 55.3942394952525,25.1849743924086 55.3938064048456,25.1849307531543 55.3937315789325,25.184847979094 55.3937826460526,25.1843869620223 55.394307720444,25.1844451495614</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.64">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">64</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">9F</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3920222442384,25.1841872091499 55.3912536751228,25.1840913612055 55.3914845914824,25.1845961387549 55.3915993837313,25.1846716968297 55.3919525467152,25.1847113578096 55.3920222442384,25.1841872091499</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.65">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">65</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3920222442384,25.1841872091499 55.3919525467152,25.1847113578096 55.392445315606,25.1847621969737 55.3925147536547,25.1842388755829 55.3920222442384,25.1841872091499</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.66">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">66</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3925147536547,25.1842388755829 55.392445315606,25.1847621969737 55.392938291632,25.1848198592264 55.3930074382614,25.184299108146 55.3925147536547,25.1842388755829</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.67">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">67</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3930074382614,25.184299108146 55.392938291632,25.1848198592264 55.3933953516891,25.1848715187241 55.3934843773557,25.1848157712491 55.3935463534836,25.1843583372606 55.3930074382614,25.184299108146</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.68">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">68</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946876114871,25.1904677895847 55.394670693977,25.1908452788965 55.3950831958987,25.1908641541466 55.3951646198479,25.1907933300125 55.3951773873323,25.1904831995373 55.3946876114871,25.1904677895847</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.69">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">69</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946876114871,25.1904677895847 55.394670693977,25.1908452788965 55.3944122122186,25.1908391956515 55.39427432266,25.1907488890555 55.3941502158204,25.1904497288442 55.3946876114871,25.1904677895847</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.70">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">70</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946876114871,25.1904677895847 55.3941502158204,25.1904497288442 55.393975365311,25.1900820320002 55.3947070377717,25.1901100454847 55.3946876114871,25.1904677895847</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.71">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">71</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947070377717,25.1901100454847 55.3946876114871,25.1904677895847 55.3951773873323,25.1904831995373 55.3951967032821,25.1901273337465 55.3947070377717,25.1901100454847</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.72">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">72</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3943416425341,25.1900960556267 55.393975365311,25.1900820320002 55.393841031211,25.1897770915377 55.3938911543377,25.1897193683255 55.3943575935191,25.1897346708739 55.3943416425341,25.1900960556267</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.73">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">73</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3943575935191,25.1897346708739 55.3943416425341,25.1900960556267 55.3947070377717,25.1901100454847 55.3947279422513,25.1897497583642 55.3943575935191,25.1897346708739</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.74">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">74</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">A9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947277416108,25.1897532035422 55.3947070377717,25.1901100454847 55.3951967032821,25.1901273337465 55.3952090630985,25.1898395586292 55.3951359811521,25.1897674926377 55.3947277416108,25.1897532035422</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.75">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">75</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3938910402407,25.1888165478716 55.3934800618803,25.1888008786958 55.3934355772018,25.1888673506216 55.393569097393,25.1891722374157 55.3938763569901,25.189184815619 55.3938910402407,25.1888165478716</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.76">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">76</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3938910402407,25.1888165478716 55.3938763569901,25.189184815619 55.394210028771,25.1891984687258 55.3942317062937,25.1888318424893 55.3938910402407,25.1888165478716</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.77">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">77</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.394210028771,25.1891984687258 55.393569097393,25.1891722374157 55.3937025359694,25.1894751691591 55.3938174995221,25.1895523480351 55.3941939600507,25.1895651976253 55.394210028771,25.1891984687258</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.78">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">78</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.394210028771,25.1891984687258 55.3941939600507,25.1895651976253 55.3945259130407,25.1895781969705 55.3945483467024,25.1892114492995 55.394210028771,25.1891984687258</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.79">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">79</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3945483467024,25.1892114492995 55.3945259130407,25.1895781969705 55.3948664474033,25.1895914348762 55.3948835874761,25.1892241158355 55.3945483467024,25.1892114492995</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.80">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">80</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">AF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948835874761,25.1892241158355 55.3948664474033,25.1895914348762 55.395141479186,25.1896006661474 55.3952232539718,25.1895291838677 55.39523581783,25.1892387337334 55.3948835874761,25.1892241158355</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.81">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">81</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3945483467024,25.1892114492995 55.394210028771,25.1891984687258 55.3942317062937,25.1888318424893 55.3945665491844,25.1888466692435 55.3945483467024,25.1892114492995</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.82">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">82</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948835874761,25.1892241158355 55.3945483467024,25.1892114492995 55.3945665491844,25.1888466692435 55.394902653034,25.1888599118947 55.3948835874761,25.1892241158355</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.83">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">83</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.394902653034,25.1888599118947 55.3948835874761,25.1892241158355 55.39523581783,25.1892387337334 55.3952538597087,25.1889512910876 55.3951753371593,25.1888720018063 55.394902653034,25.1888599118947</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.84">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">84</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3920628233477,25.1849400923442 55.391701080652,25.1848956029153 55.3916497822374,25.1849555125002 55.3917929223945,25.1852750780254 55.3920139113534,25.1853013327211 55.3920628233477,25.1849400923442</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.85">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">85</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3923080631275,25.1853374512286 55.3920139113534,25.1853013327211 55.3920628233477,25.1849400923442 55.3922804444827,25.184964533305 55.3923481053798,25.1850447266628 55.3923080631275,25.1853374512286</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.86">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">86</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3923080631275,25.1853374512286 55.3917929223945,25.1852750780254 55.3919310635132,25.1855930143063 55.3920423088643,25.1856667774206 55.3921778923166,25.1856844887896 55.3922663787716,25.1856247771391 55.3923080631275,25.1853374512286</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.87">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">87</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3924919621404,25.185345061944 55.3924590371193,25.1856351825509 55.392532681753,25.1857176812731 55.392821463614,25.185750211891 55.3928629287561,25.1853892217171 55.3924919621404,25.185345061944</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.88">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">88</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3928629287561,25.1853892217171 55.3924919621404,25.185345061944 55.3925303062077,25.1850584341862 55.392611971707,25.1850033978373 55.392913371198,25.1850368112194 55.3928629287561,25.1853892217171</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.89">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">89</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3928629287561,25.1853892217171 55.392821463614,25.185750211891 55.3931916511318,25.1857938360073 55.3932403006883,25.1854333974965 55.3928629287561,25.1853892217171</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.90">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">90</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">B9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3932403006883,25.1854333974965 55.3928629287561,25.1853892217171 55.392913371198,25.1850368112194 55.3932869772017,25.1850796942937 55.3932403006883,25.1854333974965</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.91">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">91</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3932403006883,25.1854333974965 55.3931916511318,25.1857938360073 55.3935500213149,25.1858372009743 55.3936007544833,25.1854790993931 55.3932403006883,25.1854333974965</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.92">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">92</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3936007544833,25.1854790993931 55.3932403006883,25.1854333974965 55.3932869772017,25.1850796942937 55.3934374331171,25.1850967893192 55.3934612271546,25.1851256109667 55.3936437268756,25.1851476451391 55.3936007544833,25.1854790993931</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.93">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">93</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3936007544833,25.1854790993931 55.3936437268756,25.1851476451391 55.3936633008738,25.1851501165534 55.393695550474,25.1851333784909 55.3939663421174,25.185158005171 55.3939179006804,25.1855219957372 55.3936007544833,25.1854790993931</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.94">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">94</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3936007544833,25.1854790993931 55.3935500213149,25.1858372009743 55.393732162557,25.1858613961327 55.3937963708906,25.1858687321039 55.3938272793826,25.185881980742 55.3938481407068,25.1858950814193 55.3941185741984,25.1856003588119 55.3939179006804,25.1855219957372 55.3936007544833,25.1854790993931</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.95">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">95</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.394152114984,25.1851795634501 55.3939663421174,25.185158005171 55.3939179006804,25.1855219957372 55.3941185741984,25.1856003588119 55.3943754151192,25.1853144036629 55.3943539493818,25.1852797404144 55.3943327961468,25.1852520260726 55.3943108867565,25.1852303370154 55.3942871384662,25.185213730021 55.3942604673583,25.1852012867247 55.3942297960064,25.1851920634296 55.3941940385907,25.18518513498 55.394152114984,25.1851795634501</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.96">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">96</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">BF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3941185741984,25.1856003588119 55.3938481407068,25.1858950814193 55.3938558746513,25.1858996106611 55.3938617722645,25.1859032738862 55.3938663187522,25.1859064757564 55.3938700200193,25.185909621172 55.3938767925517,25.1859173477124 55.3938859973226,25.1859296898635 55.3940145839582,25.1861021944796 55.3943420004336,25.1858996830445 55.3941185741984,25.1856003588119</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.97">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">97</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3943420004336,25.1858996830445 55.3940145839582,25.1861021944796 55.3942280764455,25.1863836957342 55.3945575472329,25.186183163217 55.3943420004336,25.1858996830445</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.98">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">98</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3945575472329,25.186183163217 55.3942280764455,25.1863836957342 55.3943615777926,25.1865530004145 55.3943811148838,25.18657979226 55.3943889252375,25.1866006292668 55.3947892171286,25.1864803936447 55.3945575472329,25.186183163217</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.99">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">99</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947892171286,25.1864803936447 55.3943889252375,25.1866006292668 55.3943964951796,25.1867840555113 55.394481626443,25.1868555386024 55.3948025390609,25.1868459229956 55.3947892171286,25.1864803936447</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.100">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">100</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947892171286,25.1864803936447 55.3948025390609,25.1868459229956 55.3951191687979,25.1868354506368 55.3951893399535,25.1867609541451 55.3951724697977,25.1863925458924 55.3951629944981,25.1863659489493 55.3947892171286,25.1864803936447</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.101">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">101</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3946279364784,25.1862734741824 55.3947892171286,25.1864803936447 55.3951629944981,25.1863659489493 55.395141019644,25.1863292578019 55.3949499465844,25.1860725673399 55.3946279364784,25.1862734741824</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.102">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">102</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3944460621229,25.186036540178 55.3946279364784,25.1862734741824 55.3949499465844,25.1860725673399 55.394768685764,25.1858325036908 55.3944460621229,25.186036540178</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.103">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">103</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3944460621229,25.186036540178 55.394768685764,25.1858325036908 55.394596786932,25.1856000646809 55.3942723668028,25.1858063925369 55.3944460621229,25.186036540178</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.104">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">104</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3943754151192,25.1853144036629 55.3941185741984,25.1856003588119 55.3942723668028,25.1858063925369 55.394596786932,25.1856000646809 55.3943754151192,25.1853144036629</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.105">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">105</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3927750636345,25.1859201591631 55.3921155883773,25.1858371267584 55.3920670364473,25.1859076331937 55.3924777337329,25.1867919035818 55.3929476365189,25.1866090840104 55.3927750636345,25.1859201591631</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.106">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">106</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">C9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3929476365189,25.1866090840104 55.3924777337329,25.1867919035818 55.392660268759,25.1871743437779 55.3931283477658,25.1869898343066 55.3929476365189,25.1866090840104</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.107">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">107</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3932296074386,25.1872203733079 55.3927698200157,25.1873969761973 55.3929280334926,25.1877359321316 55.3933900353939,25.1875553697209 55.3932296074386,25.1872203733079</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.108">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">108</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3933900353939,25.1875553697209 55.3929280334926,25.1877359321316 55.3930785451323,25.1880603006405 55.3935347120137,25.1878899139795 55.3933900353939,25.1875553697209</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.109">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">109</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3935347120137,25.1878899139795 55.3930785451323,25.1880603006405 55.3932273998372,25.1883962070193 55.3936857283505,25.1882254020734 55.3935347120137,25.1878899139795</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.110">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">110</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3936857283505,25.1882254020734 55.3932273998372,25.1883962070193 55.393302501726,25.188559908695 55.3934131018918,25.1886314897767 55.3938077265157,25.1886501691367 55.3937896951543,25.1882190216262 55.3936857283505,25.1882254020734</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.111">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">111</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937951808283,25.1883502580339 55.3938077265157,25.1886501691367 55.3942168310679,25.1886700687545 55.394294472475,25.1885985561124 55.3942837143294,25.1883379262901 55.3937951808283,25.1883502580339</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.112">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">112</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">CF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937828586108,25.1880264877735 55.3937951808283,25.1883502580339 55.3942837143294,25.1883379262901 55.3942715978636,25.1880100888523 55.3937828586108,25.1880264877735</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.113">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">113</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937650729802,25.1877057869168 55.3937828586108,25.1880264877735 55.3942715978636,25.1880100888523 55.3942635735009,25.1876881346099 55.3937650729802,25.1877057869168</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.114">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">114</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937454113089,25.1873870290671 55.3937650729802,25.1877057869168 55.3942635735009,25.1876881346099 55.3942468145632,25.1873686420936 55.3937454113089,25.1873870290671</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.115">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">115</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D2</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937315453002,25.1870618714939 55.3937454113089,25.1873870290671 55.3942468145632,25.1873686420936 55.3942300954994,25.1870465640373 55.3937315453002,25.1870618714939</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.116">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">116</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D3</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937165641477,25.1867973101078 55.3937315453002,25.1870618714939 55.3942300954994,25.1870465640373 55.3942153058359,25.1866961759787 55.3942143266308,25.1866831332614 55.3942125610977,25.186671840042 55.3942095525851,25.1866607777273 55.394204879327,25.1866484091353 55.3937165641477,25.1867973101078</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.117">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">117</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D4</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3932134910413,25.1859668995521 55.3927750636345,25.1859201591631 55.3928976559151,25.1864095582738 55.3931526327612,25.1864227755922 55.3932134910413,25.1859668995521</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.118">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">118</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D5</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.393384991164,25.1864332370038 55.3931526327612,25.1864227755922 55.3932138230153,25.1859666513103 55.3936045088688,25.1860078923102 55.3936307427309,25.1860108133055 55.3936545747897,25.1860141736776 55.3936662524568,25.18601627657 55.3936781227772,25.186018805085 55.3936904616423,25.1860218577566 55.3937035309695,25.1860255328932 55.393384991164,25.1864332370038</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.119">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">119</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D6</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3937035309695,25.1860255328932 55.393384991164,25.1864332370038 55.3935592480393,25.1865905647825 55.3939724825669,25.1863390877213 55.3937650644374,25.1860680597166 55.3937563395223,25.1860597949269 55.3937489203207,25.1860533470947 55.3937422953724,25.18604822949 55.3937359669924,25.1860439554747 55.3937221741865,25.1860359844933 55.3937035309695,25.1860255328932</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.120">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">120</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D7</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3939724825669,25.1863390877213 55.3935592480393,25.1865905647825 55.3937165641477,25.1867973101078 55.394204879327,25.1866484091353 55.394200312285,25.1866343896898 55.3941965076978,25.1866252147413 55.394191472253,25.1866167308087 55.3941831913798,25.186604796298 55.3939724825669,25.1863390877213</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.121">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">121</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D8</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948509776938,25.1882943705899 55.3944633911887,25.1883131744535 55.394473519683,25.1886134881715 55.3945566951653,25.1886886984482 55.3948683118449,25.1886974560913 55.3948509776938,25.1882943705899</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.122">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">122</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">D9</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948509776938,25.1882943705899 55.3948683118449,25.1886974560913 55.3951857230676,25.1887085998495 55.3952634479976,25.18863442945 55.395246494243,25.1882839524796 55.3948509776938,25.1882943705899</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.123">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">123</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DA</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948346476315,25.1879789927824 55.3948509776938,25.1882943705899 55.3944633911887,25.1883131744535 55.3944470940773,25.1879938317741 55.3948346476315,25.1879789927824</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.124">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">124</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DB</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948346476315,25.1879789927824 55.3948509776938,25.1882943705899 55.395246494243,25.1882839524796 55.3952289549489,25.1879654267241 55.3948346476315,25.1879789927824</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.125">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">125</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DC</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948225128254,25.1876470489958 55.3948346476315,25.1879789927824 55.3952289549489,25.1879654267241 55.3952180189549,25.1876398473992 55.3948225128254,25.1876470489958</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.126">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">126</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DD</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948225128254,25.1876470489958 55.3948346476315,25.1879789927824 55.3944470940773,25.1879938317741 55.3944349890612,25.1876590928816 55.3948225128254,25.1876470489958</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.127">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">127</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DE</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3948225128254,25.1876470489958 55.3944349890612,25.1876590928816 55.3944201550059,25.1873402165561 55.3948124021724,25.1873304144228 55.3948225128254,25.1876470489958</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.128">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">128</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">DF</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3952180189549,25.1876398473992 55.3948225128254,25.1876470489958 55.3948124021724,25.1873304144228 55.3952046845202,25.1873138478113 55.3952180189549,25.1876398473992</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.129">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">129</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E0</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947967638394,25.1870110897166 55.3948124021724,25.1873304144228 55.3952046845202,25.1873138478113 55.3951961121949,25.1870681098457 55.3951163636823,25.1870034994589 55.3947967638394,25.1870110897166</coordinates></LineString>
+  </Placemark>
+  <Placemark id="nad_al_hammer__master_plan_modified.130">
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#nad_al_hammer__master_plan_modified">
+		<SimpleData name="fid">130</SimpleData>
+		<SimpleData name="Layer">layer 1</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbPolyline</SimpleData>
+		<SimpleData name="EntityHandle">E1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>55.3947967638394,25.1870110897166 55.3948124021724,25.1873304144228 55.3944201550059,25.1873402165561 55.394412481947,25.1870946995403 55.3944857466455,25.187023054319 55.3947967638394,25.1870110897166</coordinates></LineString>
+  </Placemark>
+</Folder>
+</Document></kml>

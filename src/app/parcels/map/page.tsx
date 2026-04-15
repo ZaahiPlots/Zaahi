@@ -137,6 +137,8 @@ const RES12_SRC = "residential-12";
 const RES12_LINE = "residential-12-line";
 const D11_SRC = "d11-parcel-ld";
 const D11_LINE = "d11-parcel-ld-line";
+const NAD_AL_HAMMER_SRC = "nad-al-hammer";
+const NAD_AL_HAMMER_LINE = "nad-al-hammer-line";
 const DUBAI_HILLS_SRC = "dda-dubai-hills";
 const DUBAI_HILLS_LINE = "dda-dubai-hills-line";
 const DAMAC_HILLS_2_SRC = "dda-damac-hills-2";
@@ -898,6 +900,7 @@ type LayersState = {
   plotLabels: boolean;
   islands: boolean; meydan: boolean; d11: boolean;
   alFurjan: boolean; intlCity23: boolean; residential12: boolean;
+  nadAlHammer: boolean;
   dubaiHills: boolean; damacHills2: boolean; damacLagoons: boolean; damacIslands: boolean;
   theValley: boolean; damacHills: boolean; mudon: boolean; jabelAliHills: boolean;
   arabianRanches1: boolean; nasGardens: boolean; dsp: boolean; businessBay: boolean;
@@ -1306,6 +1309,7 @@ function ParcelsMapPageInner() {
     intlCity23: false,
     residential12: false,
     d11: false,
+    nadAlHammer: false,
     dubaiHills: false,
     damacHills2: false,
     damacLagoons: false,
@@ -1777,6 +1781,7 @@ function ParcelsMapPageInner() {
       { key: "intlCity23",   kind: "masterplan", label: "Intl City 2 & 3",          url: "/api/layers/masterplans/intl-city-23",   srcId: IC23_SRC,    lineId: IC23_LINE,    linePaint: masterPlanPaint, hoverLabel: "International City Phase 2 & 3" },
       { key: "residential12", kind: "masterplan", label: "Residential District",    url: "/api/layers/masterplans/residential-12", srcId: RES12_SRC,   lineId: RES12_LINE,   linePaint: masterPlanPaint, hoverLabel: "Residential District Phase I & II" },
       { key: "d11",          kind: "masterplan", label: "D11 — Parcel L/D",         url: "/api/layers/masterplans/d11-parcel-ld",  srcId: D11_SRC,     lineId: D11_LINE,     linePaint: masterPlanPaint, hoverLabel: "D11 — Parcel L/D master plan" },
+      { key: "nadAlHammer",  kind: "masterplan", label: "Nad Al Hammer",            url: "/api/layers/masterplans/nad-al-hammer",  srcId: NAD_AL_HAMMER_SRC, lineId: NAD_AL_HAMMER_LINE, linePaint: masterPlanPaint, hoverLabel: "Nad Al Hammer master plan" },
     ];
     // ── DDA districts (lazy) ──
     for (const d of DDA_LAYERS) {
@@ -3259,6 +3264,7 @@ function ParcelsMapPageInner() {
             { key: "intlCity23", label: "International City 2 & 3" },
             { key: "residential12", label: "Residential District I & II" },
             { key: "d11", label: "D11 — Parcel L/D" },
+            { key: "nadAlHammer", label: "Nad Al Hammer" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}
           onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
