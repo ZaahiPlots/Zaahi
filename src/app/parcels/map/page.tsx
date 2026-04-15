@@ -211,8 +211,8 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
       ["!=", ["get", "hasLandUse"], true], 0,
-      ["==", ["get", "id"], sel], 0.7,
-      0.2,
+      ["==", ["get", "id"], sel], 0.85,
+      0.08,
     ]);
   } else {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
@@ -221,6 +221,21 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
       0,
     ]);
   }
+  // Outline: thick + fully opaque on selected, thin + dim elsewhere so
+  // neighbours recede visually.
+  if (map.getLayer(ZAAHI_PLOTS_LINE)) {
+    if (selectedId) {
+      map.setPaintProperty(ZAAHI_PLOTS_LINE, "line-width", [
+        "case", ["==", ["get", "id"], sel], 4, 1,
+      ]);
+      map.setPaintProperty(ZAAHI_PLOTS_LINE, "line-opacity", [
+        "case", ["==", ["get", "id"], sel], 1, 0.35,
+      ]);
+    } else {
+      map.setPaintProperty(ZAAHI_PLOTS_LINE, "line-width", 2);
+      map.setPaintProperty(ZAAHI_PLOTS_LINE, "line-opacity", 1);
+    }
+  }
   // Glow filters
   if (map.getLayer(ZAAHI_PLOTS_GLOW)) {
     map.setFilter(ZAAHI_PLOTS_GLOW, ["==", ["id"], sel]);
@@ -228,14 +243,21 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (map.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) {
     map.setFilter(ZAAHI_PLOTS_GLOW_CRISP, ["==", ["id"], sel]);
   }
-  // 3D buildings — selection is signalled via the gold glow outline
-  // (ZAAHI_PLOTS_GLOW / GLOW_CRISP filters set above) and the plot-fill
-  // opacity boost. `fill-extrusion-opacity` MUST stay a literal number
-  // (MapLibre rejects data expressions on that property), so we do NOT
-  // touch building opacity on selection — it stays at the founder-spec
-  // 0.4 set when the layer was first added. If we ever want a per-parcel
-  // building highlight, use `fill-extrusion-color` (supports expressions)
-  // to brighten the selected feature, not opacity.
+  // 3D buildings: selected stays in its canonical land-use color, the
+  // rest shift to grey so the Signature model is clearly the brightest
+  // thing on screen. The 3D features carry `parcelId` (not `id`).
+  // `fill-extrusion-color` accepts data expressions (unlike -opacity).
+  if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+    if (selectedId) {
+      map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-color", [
+        "case",
+        ["==", ["get", "parcelId"], sel], ["get", "color"],
+        "#7a7a7a",
+      ]);
+    } else {
+      map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-color", ["get", "color"]);
+    }
+  }
 }
 
 /**
