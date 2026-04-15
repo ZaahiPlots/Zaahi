@@ -356,6 +356,7 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                       projectName={plan.projectName}
                       masterDeveloper={plan.masterDeveloper}
                       maxHeightCode={plan.maxHeightCode}
+                      onStartNegotiation={() => setOfferOpen(true)}
                     />
                   </div>
                 )}
