@@ -9,6 +9,7 @@ data/meydan/
 # PMTiles generation only. Production serves pre-built .pmtiles from public/tiles/.
 data/layers/dda-plots/
 data/layers/ad-plots/
+data/layers/oman-plots/
 # Intermediate newline-delimited GeoJSON used to build PMTiles
 data/tiles/
 .env

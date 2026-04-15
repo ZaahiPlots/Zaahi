@@ -879,7 +879,7 @@ type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
   saudiGovernorates: boolean; riyadhZones: boolean;
   adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
-  ddaLandPlots: boolean; adLandPlots: boolean;
+  ddaLandPlots: boolean; adLandPlots: boolean; omanLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
@@ -1281,6 +1281,7 @@ function ParcelsMapPageInner() {
     ddaFreeZones: false,
     ddaLandPlots: false,
     adLandPlots: false,
+    omanLandPlots: false,
     plotLabels: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -2276,6 +2277,11 @@ function ParcelsMapPageInner() {
   const AD_OTHER_TILES_FILL = "ad-other-tiles-fill";
   const AD_OTHER_TILES_LINE = "ad-other-tiles-line";
   const AD_OTHER_TILES_3D = "ad-other-tiles-3d";
+  // Oman — Muscat Municipality (Seeb contract): 94,640 plots, single PMTiles
+  const OMAN_LAND_TILES_SRC = "oman-land-tiles";
+  const OMAN_LAND_TILES_FILL = "oman-land-tiles-fill";
+  const OMAN_LAND_TILES_LINE = "oman-land-tiles-line";
+  const OMAN_LAND_TILES_3D = "oman-land-tiles-3d";
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
@@ -2438,10 +2444,11 @@ function ParcelsMapPageInner() {
       // source (3D extrusions colored by land use).
       await loadZaahiPlots(map);
 
-      // ── PMTiles land layers (DDA 99K + AD 362K plots) ──
+      // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
@@ -2669,9 +2676,11 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
       setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
       setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
       setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
+      setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
@@ -2695,7 +2704,8 @@ function ParcelsMapPageInner() {
     setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
     setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-  }, [layers.ddaLandPlots, layers.adLandPlots]);
+    setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
+  }, [layers.ddaLandPlots, layers.adLandPlots, layers.omanLandPlots]);
 
   useEffect(() => {
     if (!layersOpen) return;
@@ -3159,6 +3169,7 @@ function ParcelsMapPageInner() {
             { key: "ddaFreeZones", label: "DDA Free Zones" },
             { key: "ddaLandPlots", label: "DDA Land Plots (99K)" },
             { key: "adLandPlots", label: "AD Land Plots (362K)" },
+            { key: "omanLandPlots", label: "Oman Land Plots (95K)" },
             { key: "plotLabels", label: "Plot Numbers (zoom in)" },
           ]}
           isOn={(k) => layers[k as keyof LayersState] as boolean}

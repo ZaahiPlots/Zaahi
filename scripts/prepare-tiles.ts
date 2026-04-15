@@ -72,6 +72,38 @@ function parseDdaLandUse(raw: string | null | undefined): string | null {
   return null;
 }
 
+// Map Oman Muscat Municipality PLOTUSAGECD (integer 0-11) to ZAAHI
+// canonical land use categories. Codes verified from the Muscat
+// geoportal; mapping to the 9 canonical categories follows the same
+// scheme as DDA and AD (GIS.OM → RESIDENTIAL/COMMERCIAL/etc.).
+//
+//   0  = Undefined
+//   1  = Commercial
+//   2  = Residential
+//   3  = Industrial
+//   4  = Mixed Use (Commercial-Residential)
+//   5  = Agricultural
+//   6  = Government / Public / Utilities
+//   7  = Educational
+//   8  = Healthcare
+//   9  = Tourism / Hotel / Recreational
+//   10 = Infrastructure / Open space
+//   11 = Religious / Mosque
+function parseOmanLandUse(code: number | null | undefined): string | null {
+  if (code == null) return null;
+  switch (code) {
+    case 1: return "COMMERCIAL";
+    case 2: return "RESIDENTIAL";
+    case 3: return "INDUSTRIAL";
+    case 4: return "MIXED_USE";
+    case 5: return "AGRICULTURAL";
+    case 7: return "EDUCATIONAL";
+    case 8: return "HEALTHCARE";
+    case 9: return "HOTEL";
+    default: return null; // 0/6/10/11 = utilities/government/open/religious → no 3D
+  }
+}
+
 function parseAdLandUse(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const l = raw.toLowerCase();
@@ -305,12 +337,94 @@ function processAdDir(
   return { admCount, otherCount };
 }
 
+// ── Oman (Muscat Municipality — Seeb contract) ─────────────────────
+// Source: https://geoportal.mm.gov.om/.../MUSCAT.Plots (MapServer/11).
+// 94,640 plots, already returned as WGS84 GeoJSON by the server.
+function processOmanDir(dir: string, out: NodeJS.WritableStream): number {
+  const files = readdirSync(dir).filter(f => f.endsWith(".geojson"));
+  let count = 0;
+  for (const file of files) {
+    const fc = JSON.parse(readFileSync(join(dir, file), "utf8")) as GeoJSON.FeatureCollection;
+    for (const feat of fc.features) {
+      if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
+      const p = feat.properties as Record<string, unknown>;
+      const plotNumber = String((p.NEWPLOTNO as string | number | null) ?? (p.PLOTNO as string | number | null) ?? "");
+      const plotUid = String((p.PLOTUID as string | number | null) ?? "");
+      const wilayat = (p.WILAYATNAME_E as string) ?? "";
+      const community = (p.NEWHOUSINGAREANAME_E as string) ?? "";
+      const phase = (p.NEWPHASESNAME_E as string) ?? "";
+      const areaSqm = Number((p.PLOTAREA as number) ?? 0);
+      const usageCode = (p.PLOTUSAGECD as number) ?? null;
+      const flag = (p.FLAG as string) ?? "";
+      const permitType = (p.PERMITTYPE as string) ?? "";
+      const permitYear = (p.PERMITYEAR as number) ?? null;
+
+      const landUse = parseOmanLandUse(usageCode);
+      const hasLandUse = landUse != null;
+      const color = hasLandUse ? (ZAAHI_LANDUSE_COLOR[landUse] ?? DEFAULT_COLOR) : DEFAULT_COLOR;
+
+      // Height — Oman's dataset has no maxHeight/floors. Use land-use
+      // defaults. Residential in Muscat is mostly villas (G+1 ~ 8m).
+      let height = 0;
+      if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT") {
+        switch (landUse) {
+          case "RESIDENTIAL": height = 8; break;  // typical Muscat villa G+1
+          case "COMMERCIAL": height = 20; break;
+          case "MIXED_USE": height = 28; break;
+          case "HOTEL": height = 30; break;
+          case "INDUSTRIAL": height = 12; break;
+          case "EDUCATIONAL": height = 12; break;
+          case "HEALTHCARE": height = 18; break;
+          case "AGRICULTURAL": height = 6; break;
+          default: height = 10;
+        }
+      }
+
+      // Human-readable label for the hover popup. Falls back to
+      // "Plot use {code}" when the canonical map didn't recognise the code.
+      const mainLandUse = landUse
+        ? landUse.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+        : usageCode != null ? `Use code ${usageCode}` : "";
+      const status = permitType
+        ? `${permitType}${permitYear ? ` permit ${permitYear}` : ""}`
+        : "";
+
+      const ring = (feat.geometry as GeoJSON.Polygon).coordinates[0];
+      const baseProps = {
+        plotNumber,
+        plotUid,
+        wilayat,
+        community,
+        phase,
+        areaSqm: Math.round(areaSqm),
+        usageCode: usageCode ?? -1,
+        flag,
+        permitType,
+        permitYear: permitYear ?? 0,
+        landUse: landUse ?? "",
+        hasLandUse,
+        source: "oman",
+        // Compatibility fields for the shared hover popup
+        // (mainLandUse, gfaSqm, status — same shape as DDA/AD).
+        mainLandUse,
+        gfaSqm: 0,
+        status,
+      };
+
+      count += emitTiers(out, ring, height, color, baseProps);
+    }
+  }
+  return count;
+}
+
 async function main() {
   const ddaDir = join(process.cwd(), "data", "layers", "dda-plots");
   const adDir = join(process.cwd(), "data", "layers", "ad-plots");
+  const omanDir = join(process.cwd(), "data", "layers", "oman-plots");
   const ddaOut = join(process.cwd(), "data", "tiles", "dda-plots.geojson.nl");
   const adAdmOut = join(process.cwd(), "data", "tiles", "ad-plots-adm.geojson.nl");
   const adOtherOut = join(process.cwd(), "data", "tiles", "ad-plots-other.geojson.nl");
+  const omanOut = join(process.cwd(), "data", "tiles", "oman-plots.geojson.nl");
 
   console.log("Processing DDA plots (with podium/body/crown tiers)...");
   const ddaStream = createWriteStream(ddaOut);
@@ -326,6 +440,12 @@ async function main() {
   adOtherStream.end();
   console.log(`  ADM (Abu Dhabi Municipality): ${admCount.toLocaleString()} plots → ${adAdmOut}`);
   console.log(`  AAM+WRM (Al Ain + Western):   ${otherCount.toLocaleString()} plots → ${adOtherOut}`);
+
+  console.log("Processing Oman plots (Muscat — Seeb contract, all wilayats)...");
+  const omanStream = createWriteStream(omanOut);
+  const omanCount = processOmanDir(omanDir, omanStream);
+  omanStream.end();
+  console.log(`  ${omanCount.toLocaleString()} features → ${omanOut}`);
 
   console.log(`\nDone! Run tippecanoe next.`);
 }
