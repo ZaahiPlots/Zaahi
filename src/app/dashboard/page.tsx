@@ -9,13 +9,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
-const BG = "#FAFAFA";
+const TXT = "#FFFFFF";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.1)";
+const BG = "linear-gradient(180deg, #0A1628 0%, #050B18 100%)";
 
 type Role = "OWNER" | "BROKER" | "BUYER" | "DEVELOPER";
 
@@ -30,7 +31,8 @@ const USER = {
 
 type SectionKey =
   | "overview" | "profile" | "properties" | "favorites"
-  | "deals" | "documents" | "financials" | "notifications" | "settings";
+  | "deals" | "documents" | "financials" | "notifications"
+  | "pending" | "settings";
 
 const NAV: Array<{ key: SectionKey; icon: string; label: string; rolesOnly?: Role[] }> = [
   { key: "overview", icon: "📊", label: "Overview" },
@@ -41,15 +43,36 @@ const NAV: Array<{ key: SectionKey; icon: string; label: string; rolesOnly?: Rol
   { key: "documents", icon: "📄", label: "Documents" },
   { key: "financials", icon: "💰", label: "Financials", rolesOnly: ["BROKER"] },
   { key: "notifications", icon: "🔔", label: "Notifications" },
+  { key: "pending", icon: "🧾", label: "Pending Reviews", rolesOnly: ["OWNER"] },
   { key: "settings", icon: "⚙️", label: "Settings" },
 ];
 
 function DashboardInner() {
   const [section, setSection] = useState<SectionKey>("overview");
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const visibleNav = useMemo(
     () => NAV.filter((n) => !n.rolesOnly || n.rolesOnly.includes(USER.role)),
     [],
   );
+
+  // Pre-fetch the PENDING_REVIEW queue size so the sidebar can show a
+  // badge without waiting for the user to click into the section. API
+  // returns 401 for non-admin callers — swallow silently so non-admin
+  // sessions don't spam the console.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/parcels/pending");
+        if (!r.ok) return;
+        const data = (await r.json()) as { count?: number };
+        if (alive && typeof data.count === "number") setPendingCount(data.count);
+      } catch {
+        /* non-admin or offline — silently ignore */
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TXT, display: "flex", fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif' }}>
@@ -57,7 +80,9 @@ function DashboardInner() {
       <aside
         style={{
           width: 220,
-          background: "white",
+          background: "rgba(10, 22, 40, 0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           borderRight: `1px solid ${LINE}`,
           display: "flex",
           flexDirection: "column",
@@ -97,7 +122,26 @@ function DashboardInner() {
                 }}
               >
                 <span style={{ fontSize: 14 }}>{n.icon}</span>
-                {n.label}
+                <span style={{ flex: 1 }}>{n.label}</span>
+                {n.key === "pending" && pendingCount != null && pendingCount > 0 && (
+                  <span
+                    style={{
+                      minWidth: 20,
+                      height: 18,
+                      padding: "0 6px",
+                      borderRadius: 10,
+                      background: GOLD,
+                      color: "#0A1628",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {pendingCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -152,6 +196,7 @@ function DashboardInner() {
           {section === "documents" && <Documents />}
           {section === "financials" && <Financials />}
           {section === "notifications" && <Notifications />}
+          {section === "pending" && <PendingReviews onCount={setPendingCount} />}
           {section === "settings" && <Settings />}
         </div>
       </main>
@@ -165,7 +210,9 @@ function Header() {
     <div
       style={{
         height: 56,
-        background: "white",
+        background: "rgba(10, 22, 40, 0.4)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderBottom: `1px solid ${LINE}`,
         display: "flex",
         alignItems: "center",
@@ -203,11 +250,13 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   return (
     <div
       style={{
-        background: "white",
+        background: "rgba(10, 22, 40, 0.4)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         border: `1px solid ${LINE}`,
-        borderRadius: 10,
+        borderRadius: 12,
         padding: 16,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
         ...style,
       }}
     >
@@ -256,9 +305,10 @@ function input(): React.CSSProperties {
     padding: "8px 10px",
     border: `1px solid ${LINE}`,
     borderRadius: 6,
-    background: "white",
+    background: "rgba(255,255,255,0.04)",
     color: TXT,
     outline: "none",
+    fontFamily: "inherit",
   };
 }
 function GoldBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
@@ -417,10 +467,10 @@ function Profile() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Field label="Full Name"><input defaultValue={USER.name} style={input()} /></Field>
-          <Field label="Email (verified)"><input defaultValue={USER.email} disabled style={{ ...input(), background: "#F9FAFB", color: SUBTLE }} /></Field>
+          <Field label="Email (verified)"><input defaultValue={USER.email} disabled style={{ ...input(), background: "rgba(255,255,255,0.05)", color: SUBTLE }} /></Field>
           <Field label="Phone"><input defaultValue={USER.phone} style={input()} /></Field>
           <Field label="Role">
-            <input defaultValue={USER.role} disabled style={{ ...input(), background: "#F9FAFB", color: SUBTLE }} />
+            <input defaultValue={USER.role} disabled style={{ ...input(), background: "rgba(255,255,255,0.05)", color: SUBTLE }} />
           </Field>
           <Field label="Emirates ID / Passport"><input placeholder="784-XXXX-…" style={input()} /></Field>
           <Field label="Company Name"><input placeholder="(optional)" style={input()} /></Field>
@@ -484,7 +534,7 @@ function Properties() {
               fontSize: 11,
               borderRadius: 999,
               border: `1px solid ${filter === f ? GOLD : LINE}`,
-              background: filter === f ? "rgba(200,169,110,0.12)" : "white",
+              background: filter === f ? "rgba(200,169,110,0.25)" : "rgba(255,255,255,0.06)",
               color: filter === f ? GOLD : TXT,
               cursor: "pointer",
               fontWeight: filter === f ? 700 : 500,
@@ -498,7 +548,7 @@ function Properties() {
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
-            <tr style={{ background: "#F9FAFB", color: SUBTLE, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+            <tr style={{ background: "rgba(255,255,255,0.05)", color: SUBTLE, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>
               <Th>Plot</Th><Th>District</Th><Th>Area</Th><Th>Price</Th><Th>Status</Th><Th>Views</Th><Th>Actions</Th>
             </tr>
           </thead>
@@ -555,11 +605,12 @@ function actionBtnStyle(): React.CSSProperties {
   return {
     fontSize: 10,
     padding: "3px 8px",
-    border: `1px solid ${LINE}`,
+    border: `1px solid rgba(200, 169, 110, 0.3)`,
     borderRadius: 4,
-    background: "white",
-    color: TXT,
+    background: "rgba(255,255,255,0.06)",
+    color: GOLD,
     cursor: "pointer",
+    fontFamily: "inherit",
   };
 }
 function ActionBtn({ children, danger = false }: { children: React.ReactNode; danger?: boolean }) {
@@ -782,7 +833,7 @@ function Financials() {
       <Card style={{ padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
-            <tr style={{ background: "#F9FAFB", color: SUBTLE, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+            <tr style={{ background: "rgba(255,255,255,0.05)", color: SUBTLE, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>
               <Th>Date</Th><Th>Deal</Th><Th>Amount</Th><Th>Status</Th>
             </tr>
           </thead>
@@ -832,7 +883,7 @@ function Notifications() {
               gap: 12,
               padding: "12px 14px",
               borderTop: i > 0 ? `1px solid ${LINE}` : "none",
-              background: n.read ? "white" : "rgba(200,169,110,0.05)",
+              background: n.read ? "transparent" : "rgba(200,169,110,0.08)",
               fontSize: 12,
             }}
           >
@@ -892,8 +943,8 @@ function Settings() {
           <Field label="Currency"><select style={input()}><option>AED</option><option>USD</option><option>EUR</option></select></Field>
         </div>
         <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
-          <button style={{ padding: "8px 14px", border: `1px solid ${LINE}`, borderRadius: 6, background: "white", fontSize: 12, cursor: "pointer" }}>Change Password</button>
-          <button style={{ padding: "8px 14px", border: `1px solid ${LINE}`, borderRadius: 6, background: "white", fontSize: 12, cursor: "pointer" }}>Export My Data (PDPL)</button>
+          <button style={{ padding: "8px 14px", border: `1px solid rgba(200, 169, 110, 0.3)`, borderRadius: 6, background: "rgba(255,255,255,0.06)", color: GOLD, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Change Password</button>
+          <button style={{ padding: "8px 14px", border: `1px solid rgba(200, 169, 110, 0.3)`, borderRadius: 6, background: "rgba(255,255,255,0.06)", color: GOLD, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Export My Data (PDPL)</button>
         </div>
       </Card>
 
@@ -909,6 +960,236 @@ function Settings() {
           Delete Account
         </button>
       </Card>
+    </div>
+  );
+}
+
+// ─── Section: Pending Reviews (admin / owner only) ─────────────────
+interface PendingDoc {
+  kind: "title_deed" | "id_doc" | "rera_contract";
+  url: string;
+  name: string;
+  size?: number;
+  contentType?: string;
+}
+interface PendingRaw {
+  flow?: "broker" | "owner";
+  broker?: { reraPermit?: string; contractRef?: string | null } | null;
+  owner?: { fullName?: string; phone?: string; email?: string } | null;
+  description?: string | null;
+  askingPriceAed?: number;
+  documents?: PendingDoc[];
+  submittedAt?: string;
+  submittedBy?: string;
+}
+interface PendingItem {
+  id: string;
+  plotNumber: string;
+  district: string;
+  emirate: string;
+  area: number;
+  currentValuation: string | null;
+  status: string;
+  createdAt: string;
+  owner: { id: string; email: string; name: string; role: string } | null;
+  affectionPlans: Array<{
+    source: string;
+    fetchedAt: string;
+    landUseMix: unknown;
+    notes: string | null;
+    raw: PendingRaw | null;
+  }>;
+}
+
+function PendingReviews({ onCount }: { onCount: (n: number) => void }) {
+  const [items, setItems] = useState<PendingItem[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useMemo(() => async () => {
+    setErr(null);
+    try {
+      const r = await apiFetch("/api/parcels/pending");
+      if (r.status === 401) { setErr("Admin access required."); setItems([]); return; }
+      if (!r.ok) { setErr("Failed to load pending reviews"); return; }
+      const data = (await r.json()) as { items: PendingItem[]; count: number };
+      setItems(data.items);
+      onCount(data.count);
+    } catch {
+      setErr("Network error");
+    }
+  }, [onCount]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function act(id: string, action: "APPROVE" | "REJECT") {
+    if (!confirm(`${action === "APPROVE" ? "Approve" : "Reject"} this listing?`)) return;
+    setBusy(id);
+    try {
+      const r = await apiFetch(`/api/parcels/${id}/review`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        alert(j.error ?? "Action failed");
+      } else {
+        await load();
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <H1>Pending Reviews</H1>
+        <Sub>
+          Listings submitted through the map wizard. Approve publishes them
+          to the public map; Reject keeps the row but marks it as rejected.
+        </Sub>
+      </div>
+      {err && <Card style={{ color: "#FCA5A5" }}>{err}</Card>}
+      {!err && items === null && <Card style={{ color: SUBTLE, padding: 20 }}>Loading…</Card>}
+      {!err && items && items.length === 0 && (
+        <Card style={{ textAlign: "center", padding: 40, color: SUBTLE }}>
+          No listings waiting for review.
+        </Card>
+      )}
+      {!err && items && items.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {items.map((it) => {
+            const plan = it.affectionPlans[0];
+            const sub = plan?.raw;
+            const priceAed = it.currentValuation ? Number(BigInt(it.currentValuation)) / 100 : 0;
+            const priceStr = priceAed >= 1_000_000
+              ? `${(priceAed / 1_000_000).toFixed(1)}M AED`
+              : priceAed >= 1_000
+                ? `${(priceAed / 1_000).toFixed(0)}K AED`
+                : `${priceAed.toFixed(0)} AED`;
+            const flow = sub?.flow ?? "—";
+            const submitter = sub?.flow === "broker"
+              ? sub?.broker?.reraPermit ?? it.owner?.email ?? it.owner?.id
+              : sub?.owner?.fullName ?? it.owner?.name ?? it.owner?.email;
+            const docs = sub?.documents ?? [];
+            return (
+              <Card key={it.id}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 10 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: GOLD }}>
+                      Plot {it.plotNumber}
+                    </div>
+                    <div style={{ fontSize: 11, color: SUBTLE, marginTop: 2 }}>
+                      {it.district} · {it.emirate} · {Math.round(it.area).toLocaleString()} ft²
+                    </div>
+                    <div style={{ fontSize: 11, color: SUBTLE, marginTop: 2 }}>
+                      Submitted {new Date(it.createdAt).toLocaleString()} by{" "}
+                      <span style={{ color: TXT }}>{submitter || "unknown"}</span>{" "}
+                      <span style={{ textTransform: "uppercase", letterSpacing: 0.8, color: GOLD }}>
+                        [{flow}]
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: GOLD }}>{priceStr}</div>
+                    <div style={{ fontSize: 9, color: SUBTLE, textTransform: "uppercase", letterSpacing: 1 }}>
+                      Asking
+                    </div>
+                  </div>
+                </div>
+
+                {sub?.description && (
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 10, padding: 10, background: "rgba(255,255,255,0.05)", borderRadius: 6 }}>
+                    {sub.description}
+                  </div>
+                )}
+
+                {docs.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    {docs.map((d, i) => (
+                      <a
+                        key={i}
+                        href={d.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontSize: 11,
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: `1px solid rgba(200, 169, 110, 0.3)`,
+                          background: "rgba(255,255,255,0.06)",
+                          color: GOLD,
+                          textDecoration: "none",
+                        }}
+                      >
+                        📎 {d.kind.replace("_", " ")} — {d.name}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => act(it.id, "APPROVE")}
+                    disabled={busy === it.id}
+                    style={{
+                      padding: "9px 18px",
+                      background: busy === it.id ? "rgba(255,255,255,0.1)" : GOLD,
+                      color: "white",
+                      border: 0,
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      cursor: busy === it.id ? "wait" : "pointer",
+                    }}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => act(it.id, "REJECT")}
+                    disabled={busy === it.id}
+                    style={{
+                      padding: "9px 18px",
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#F87171",
+                      border: "1px solid rgba(248,113,113,0.35)",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      cursor: busy === it.id ? "wait" : "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    Reject
+                  </button>
+                  <Link
+                    href="/parcels/map"
+                    style={{
+                      padding: "9px 18px",
+                      background: "rgba(255,255,255,0.06)",
+                      color: GOLD,
+                      border: "1px solid rgba(200, 169, 110, 0.3)",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    View on Map
+                  </Link>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

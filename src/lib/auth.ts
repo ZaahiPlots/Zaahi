@@ -1,6 +1,10 @@
 import { headers } from 'next/headers';
 import { NextRequest } from 'next/server';
+import { UserRole } from '@prisma/client';
+import { prisma } from './prisma';
 import { supabase } from './supabase';
+
+const FOUNDER_EMAILS = new Set(['zhanrysbayev@gmail.com', 'd.tsvyk@gmail.com']);
 
 async function readBearer(req?: NextRequest): Promise<string | null> {
   const authHeader = req
@@ -48,4 +52,33 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
   if (error || !data.user) return null;
   if (data.user.user_metadata?.approved !== true) return null;
   return data.user.id;
+}
+
+/**
+ * Same as {@link getApprovedUserId} but additionally requires ADMIN role
+ * or a founder email (Zhan / Dymo). Returns the user id on success, null
+ * otherwise — suitable for admin endpoints (pending-review queue,
+ * approve / reject actions) where the caller's session alone is not
+ * enough authority.
+ *
+ * Looks up the User row in Prisma rather than trusting user_metadata —
+ * role lives in the database, not in the JWT.
+ */
+export async function getAdminUserId(req?: NextRequest): Promise<string | null> {
+  const token = await readBearer(req);
+  if (!token) return null;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return null;
+  if (data.user.user_metadata?.approved !== true) return null;
+
+  const email = data.user.email?.toLowerCase() ?? '';
+  if (FOUNDER_EMAILS.has(email)) return data.user.id;
+
+  const prismaUser = await prisma.user.findUnique({
+    where: { id: data.user.id },
+    select: { role: true },
+  });
+  if (prismaUser?.role === UserRole.ADMIN) return data.user.id;
+  return null;
 }

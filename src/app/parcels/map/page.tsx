@@ -223,30 +223,14 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (map.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) {
     map.setFilter(ZAAHI_PLOTS_GLOW_CRISP, ["==", ["id"], sel]);
   }
-  // 3D buildings — boost selected parcel's segments
-  const podiumId = `${ZAAHI_BUILDINGS_3D}-podium`;
-  const crownId = `${ZAAHI_BUILDINGS_3D}-crown`;
-  if (map.getLayer(podiumId)) {
-    map.setPaintProperty(
-      podiumId,
-      "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.6, 0.45] : 0.45,
-    );
-  }
-  if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
-    map.setPaintProperty(
-      ZAAHI_BUILDINGS_3D,
-      "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.5, 0.35] : 0.35,
-    );
-  }
-  if (map.getLayer(crownId)) {
-    map.setPaintProperty(
-      crownId,
-      "fill-extrusion-opacity",
-      selectedId ? ["case", ["==", ["get", "parcelId"], sel], 0.45, 0.3] : 0.3,
-    );
-  }
+  // 3D buildings — selection is signalled via the gold glow outline
+  // (ZAAHI_PLOTS_GLOW / GLOW_CRISP filters set above) and the plot-fill
+  // opacity boost. `fill-extrusion-opacity` MUST stay a literal number
+  // (MapLibre rejects data expressions on that property), so we do NOT
+  // touch building opacity on selection — it stays at the founder-spec
+  // 0.4 set when the layer was first added. If we ever want a per-parcel
+  // building highlight, use `fill-extrusion-color` (supports expressions)
+  // to brighten the selected feature, not opacity.
 }
 
 /**
@@ -1787,6 +1771,9 @@ function ParcelsMapPageInner() {
       const r = await fetch(def.url);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data: GeoJSON.FeatureCollection = await r.json();
+      // Style can be torn down during the await (basemap swap, unmount,
+      // React strict-mode remount). Bail before touching the style.
+      if (!map.getStyle()) return false;
       if (!map.getSource(def.srcId)) {
         map.addSource(def.srcId, {
           type: "geojson",
@@ -1988,6 +1975,7 @@ function ParcelsMapPageInner() {
   }
 
   async function loadZaahiPlots(map: MLMap) {
+    if (!map.getStyle()) return;
     if (map.getSource(ZAAHI_PLOTS_SRC)) return;
     try {
       const r = await apiFetch("/api/parcels/map");
@@ -2019,6 +2007,10 @@ function ParcelsMapPageInner() {
           } | null;
         }>;
       };
+
+      // Style may have been torn down during the fetch (basemap swap,
+      // unmount). Bail before touching map.addSource / map.addLayer.
+      if (!map.getStyle()) return;
 
       // Collect all ZAAHI plot numbers so DDA Land layers can skip duplicates
       const pnSet = new Set<string>();
@@ -2181,51 +2173,67 @@ function ParcelsMapPageInner() {
         "buildingFeatures:", buildingFeatures.length,
         "(of", payload.items.length, "parcels)",
       );
-      map.addSource(ZAAHI_PLOTS_SRC, {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: plotFeatures },
-      });
-      map.addLayer({
-        id: ZAAHI_PLOTS_FILL,
-        type: "fill",
-        source: ZAAHI_PLOTS_SRC,
-        paint: {
-          "fill-color": ["get", "color"],
-          // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
-          "fill-opacity": [
-            "case",
-            ["==", ["get", "hasLandUse"], true],
-            0.4,
-            0,
-          ],
-          "fill-opacity-transition": { duration: 300 },
-          "fill-color-transition": { duration: 300 },
-        },
-      });
-      map.addLayer({
-        id: ZAAHI_PLOTS_LINE,
-        type: "line",
-        source: ZAAHI_PLOTS_SRC,
-        paint: {
-          "line-color": ["get", "color"],
-          "line-width": 2,
-          "line-opacity-transition": { duration: 300 },
-        },
-      });
-      map.addLayer({
-        id: ZAAHI_PLOTS_GLOW,
-        type: "line",
-        source: ZAAHI_PLOTS_SRC,
-        filter: ["==", ["id"], "__none__"],
-        paint: { "line-color": "#FFD700", "line-width": 6, "line-blur": 8, "line-opacity": 0.9 },
-      });
-      map.addLayer({
-        id: ZAAHI_PLOTS_GLOW_CRISP,
-        type: "line",
-        source: ZAAHI_PLOTS_SRC,
-        filter: ["==", ["id"], "__none__"],
-        paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
-      });
+      // Guard against races: the early-return at the top of
+      // loadZaahiPlots can be bypassed by a concurrent call during the
+      // `await apiFetch` gap (React strict-mode double effect, or a
+      // basemap swap mid-fetch). Re-check right before mutating the
+      // style, and skip the whole block if another caller already
+      // wired the plot source + layers.
+      if (!map.getSource(ZAAHI_PLOTS_SRC)) {
+        map.addSource(ZAAHI_PLOTS_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: plotFeatures },
+        });
+        if (!map.getLayer(ZAAHI_PLOTS_FILL)) {
+          map.addLayer({
+            id: ZAAHI_PLOTS_FILL,
+            type: "fill",
+            source: ZAAHI_PLOTS_SRC,
+            paint: {
+              "fill-color": ["get", "color"],
+              // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
+              "fill-opacity": [
+                "case",
+                ["==", ["get", "hasLandUse"], true],
+                0.4,
+                0,
+              ],
+              "fill-opacity-transition": { duration: 300 },
+              "fill-color-transition": { duration: 300 },
+            },
+          });
+        }
+        if (!map.getLayer(ZAAHI_PLOTS_LINE)) {
+          map.addLayer({
+            id: ZAAHI_PLOTS_LINE,
+            type: "line",
+            source: ZAAHI_PLOTS_SRC,
+            paint: {
+              "line-color": ["get", "color"],
+              "line-width": 2,
+              "line-opacity-transition": { duration: 300 },
+            },
+          });
+        }
+        if (!map.getLayer(ZAAHI_PLOTS_GLOW)) {
+          map.addLayer({
+            id: ZAAHI_PLOTS_GLOW,
+            type: "line",
+            source: ZAAHI_PLOTS_SRC,
+            filter: ["==", ["id"], "__none__"],
+            paint: { "line-color": "#FFD700", "line-width": 6, "line-blur": 8, "line-opacity": 0.9 },
+          });
+        }
+        if (!map.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) {
+          map.addLayer({
+            id: ZAAHI_PLOTS_GLOW_CRISP,
+            type: "line",
+            source: ZAAHI_PLOTS_SRC,
+            filter: ["==", ["id"], "__none__"],
+            paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
+          });
+        }
+      }
 
       // ── 3D BUILDING EXTRUSION — single layer, single source ──
       // Founder spec (4th attempt fix): one fill-extrusion layer, no
@@ -2234,26 +2242,30 @@ function ParcelsMapPageInner() {
       // ZAAHI_LANDUSE_COLOR) and `height` (metres) so the paint can
       // use plain `["get", "color"]` and `["get", "height"]`.
       console.log("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
-      console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
-      map.addSource(ZAAHI_BUILDINGS_SRC, {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: buildingFeatures },
-      });
-      console.log("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
-      map.addLayer({
-        id: ZAAHI_BUILDINGS_3D,
-        type: "fill-extrusion",
-        source: ZAAHI_BUILDINGS_SRC,
-        paint: {
-          "fill-extrusion-color": ["get", "color"],
-          "fill-extrusion-height": ["get", "height"],
-          "fill-extrusion-base": ["get", "base"],
-          // Founder-spec ZAAHI Signature opacity. Single value across
-          // the layer so podium / body / crown blend visually rather
-          // than each tier having a different transparency.
-          "fill-extrusion-opacity": 0.4,
-        },
-      });
+      if (!map.getSource(ZAAHI_BUILDINGS_SRC)) {
+        console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
+        map.addSource(ZAAHI_BUILDINGS_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: buildingFeatures },
+        });
+        if (!map.getLayer(ZAAHI_BUILDINGS_3D)) {
+          console.log("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
+          map.addLayer({
+            id: ZAAHI_BUILDINGS_3D,
+            type: "fill-extrusion",
+            source: ZAAHI_BUILDINGS_SRC,
+            paint: {
+              "fill-extrusion-color": ["get", "color"],
+              "fill-extrusion-height": ["get", "height"],
+              "fill-extrusion-base": ["get", "base"],
+              // Founder-spec ZAAHI Signature opacity. Single value across
+              // the layer so podium / body / crown blend visually rather
+              // than each tier having a different transparency.
+              "fill-extrusion-opacity": 0.4,
+            },
+          });
+        }
+      }
     } catch (e) {
       console.error("[zaahi-plots] load failed", e);
     }
@@ -2867,12 +2879,14 @@ function ParcelsMapPageInner() {
             width: 280,
             maxHeight: "calc(100vh - 130px)",
             overflowY: "auto",
-            background: c.bg,
-            border: `1px solid ${isDark ? GOLD : c.border}`,
-            borderRadius: 10,
-            boxShadow: c.headerShadow,
+            background: "rgba(10, 22, 40, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: 12,
+            boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
             zIndex: 12,
-            color: c.text,
+            color: "#FFFFFF",
             fontFamily: "system-ui, sans-serif",
           }}
         >
@@ -2882,7 +2896,7 @@ function ParcelsMapPageInner() {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "10px 14px",
-              borderBottom: `1px solid ${c.borderSubtle}`,
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
             }}
           >
             <div
@@ -2891,6 +2905,7 @@ function ParcelsMapPageInner() {
                 fontSize: 13,
                 letterSpacing: "0.1em",
                 color: GOLD,
+                fontWeight: 700,
               }}
             >
               LAND USE LEGEND
@@ -2901,7 +2916,7 @@ function ParcelsMapPageInner() {
               style={{
                 background: "transparent",
                 border: "none",
-                color: c.textDim,
+                color: "rgba(255, 255, 255, 0.55)",
                 cursor: "pointer",
                 fontSize: 18,
                 lineHeight: 1,
@@ -2928,14 +2943,14 @@ function ParcelsMapPageInner() {
                     width: 16,
                     height: 16,
                     background: item.color,
-                    border: `1px solid ${c.borderSubtle}`,
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
                     borderRadius: 3,
                     flexShrink: 0,
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: c.text, fontWeight: 600 }}>{item.name}</div>
-                  <div style={{ fontSize: 10, color: c.textDim, marginTop: 1 }}>{item.desc}</div>
+                  <div style={{ fontSize: 12, color: "#FFFFFF", fontWeight: 600 }}>{item.name}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255, 255, 255, 0.55)", marginTop: 1 }}>{item.desc}</div>
                 </div>
               </div>
             ))}
@@ -2943,10 +2958,10 @@ function ParcelsMapPageInner() {
 
           <div
             style={{
-              borderTop: `1px solid ${c.borderSubtle}`,
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
               padding: "10px 14px",
               fontSize: 10,
-              color: c.textDim,
+              color: "rgba(255, 255, 255, 0.55)",
               fontStyle: "italic",
               lineHeight: 1.5,
             }}
@@ -3265,11 +3280,14 @@ function ParcelsMapPageInner() {
             left: zaahiHover.x + 14,
             top: zaahiHover.y + 14, // map container now starts at top:0
             width: 200,
-            background: "#ffffff",
-            color: "#1a1a1a",
+            background: "rgba(10, 22, 40, 0.75)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            color: "#FFFFFF",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderLeft: `3px solid ${GOLD}`,
-            borderRadius: 4,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            borderRadius: 6,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
             padding: "8px 10px",
             fontSize: 11,
             fontFamily: "Georgia, serif",
@@ -3278,7 +3296,7 @@ function ParcelsMapPageInner() {
             zIndex: 30,
           }}
         >
-          <div style={{ fontWeight: 700, color: "#B8860B", fontSize: 12 }}>
+          <div style={{ fontWeight: 700, color: GOLD, fontSize: 12 }}>
             {zaahiHover.plotNumber}
           </div>
           <div style={{ opacity: 0.85, marginTop: 2 }}>
@@ -3299,11 +3317,14 @@ function ParcelsMapPageInner() {
             left: ddaLandHover.x + 14,
             top: ddaLandHover.y + 14,
             width: 210,
-            background: "#ffffff",
-            color: "#1a1a1a",
+            background: "rgba(10, 22, 40, 0.75)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            color: "#FFFFFF",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderLeft: "3px solid #4A90D9",
-            borderRadius: 4,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            borderRadius: 6,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
             padding: "8px 10px",
             fontSize: 11,
             fontFamily: "Georgia, serif",
@@ -3314,7 +3335,7 @@ function ParcelsMapPageInner() {
         >
           <div style={{ fontWeight: 700, color: "#4A90D9", fontSize: 12 }}>
             {ddaLandHover.plotNumber}
-            <span style={{ fontSize: 8, fontWeight: 400, color: "#999", marginLeft: 6 }}>DDA</span>
+            <span style={{ fontSize: 8, fontWeight: 400, color: "rgba(255,255,255,0.5)", marginLeft: 6 }}>DDA</span>
           </div>
           <div style={{ opacity: 0.85, marginTop: 2 }}>
             {ddaLandHover.mainLandUse || "—"}

@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
+const TXT = "#FFFFFF";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.1)";
 
 interface Props {
   parcelId: string;
@@ -106,13 +106,16 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "white",
+          background: "rgba(10, 22, 40, 0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: `1px solid ${LINE}`,
           borderRadius: 12,
           width: "100%",
           maxWidth: 480,
           maxHeight: "90vh",
           overflowY: "auto",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
           color: TXT,
         }}
       >
@@ -157,12 +160,13 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
                     flex: 1,
                     padding: "8px 12px",
                     borderRadius: 6,
-                    border: `1px solid ${paymentType === t ? GOLD : LINE}`,
-                    background: paymentType === t ? "rgba(200,169,110,0.1)" : "white",
+                    border: `1px solid ${paymentType === t ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+                    background: paymentType === t ? "rgba(200,169,110,0.25)" : "rgba(255,255,255,0.06)",
                     color: paymentType === t ? GOLD : TXT,
                     fontWeight: 600,
                     fontSize: 11,
                     cursor: "pointer",
+                    transition: "border-color 150ms ease, background 150ms ease",
                   }}
                 >
                   {t}
@@ -204,7 +208,7 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
           </Field>
 
           {error && (
-            <div style={{ color: "#dc2626", fontSize: 12, padding: 8, background: "#fef2f2", borderRadius: 6 }}>
+            <div style={{ color: "#FCA5A5", fontSize: 12, padding: 8, background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.35)", borderRadius: 6 }}>
               {error}
             </div>
           )}
@@ -241,8 +245,9 @@ const inputStyle: React.CSSProperties = {
   border: `1px solid ${LINE}`,
   fontSize: 13,
   color: TXT,
-  background: "white",
+  background: "rgba(255,255,255,0.04)",
   fontFamily: "inherit",
+  outline: "none",
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

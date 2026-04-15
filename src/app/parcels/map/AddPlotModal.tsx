@@ -12,11 +12,67 @@
  */
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+
+const DOCUMENTS_BUCKET = "documents";
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB hard cap — keeps S3 bill + modal UX sane
+const ALLOWED_CT = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+
+interface UploadedDoc {
+  kind: "title_deed" | "id_doc" | "rera_contract";
+  url: string;
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+/**
+ * Upload a document to Supabase Storage (`documents` bucket). Path:
+ * `<userId>/<plotNumber>/<kind>-<timestamp>.<ext>`. Returns the public
+ * URL + metadata. Best-effort — surfaces a user-readable error message
+ * on failure (bucket missing, network, size limit) so the caller can
+ * decide whether to proceed without the document or block submission.
+ */
+async function uploadDoc(
+  file: File,
+  kind: UploadedDoc["kind"],
+  userId: string,
+  plotNumber: string,
+): Promise<UploadedDoc> {
+  if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} exceeds 10 MB`);
+  if (file.type && !ALLOWED_CT.has(file.type)) {
+    throw new Error(`${file.name}: only PDF, JPG, PNG allowed`);
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
+  const path = `${userId}/${plotNumber}/${kind}-${Date.now()}.${ext}`;
+  const { error } = await supabaseBrowser.storage
+    .from(DOCUMENTS_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+  if (error) throw new Error(`upload failed: ${error.message}`);
+  const { data } = supabaseBrowser.storage.from(DOCUMENTS_BUCKET).getPublicUrl(path);
+  return {
+    kind,
+    url: data.publicUrl,
+    name: file.name,
+    size: file.size,
+    contentType: file.type || "application/octet-stream",
+  };
+}
 
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
-const SUBTLE = "#6B7280";
-const LINE = "#E5E7EB";
+const TXT = "#FFFFFF";
+const SUBTLE = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.1)";
 
 type Role = "broker" | "owner" | null;
 
@@ -73,10 +129,12 @@ export default function AddPlotModal({
         style={{
           width: 480,
           maxHeight: "80vh",
-          background: "white",
-          borderRadius: 14,
-          border: `1px solid ${GOLD}`,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+          background: "rgba(10, 22, 40, 0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderRadius: 12,
+          border: `1px solid ${LINE}`,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
           color: TXT,
           display: "flex",
           flexDirection: "column",
@@ -155,22 +213,24 @@ function RoleCard({
       style={{
         padding: "20px 14px",
         borderRadius: 10,
-        border: `1px solid ${LINE}`,
-        background: "white",
+        border: `1px solid rgba(200, 169, 110, 0.3)`,
+        background: "rgba(255, 255, 255, 0.06)",
         color: TXT,
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 8,
-        transition: "border-color 200ms ease, transform 150ms ease",
+        transition: "border-color 150ms ease, background 150ms ease, transform 150ms ease",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = GOLD;
+        e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
         e.currentTarget.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = LINE;
+        e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+        e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
         e.currentTarget.style.transform = "none";
       }}
     >
@@ -189,7 +249,7 @@ function BrokerFlow({
   const [plotNumber, setPlotNumber] = useState("");
   const [askingPrice, setAskingPrice] = useState("");
   const [landUse, setLandUse] = useState("Residential");
-  const [contractName, setContractName] = useState<string | null>(null);
+  const [contractFile, setContractFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -199,21 +259,44 @@ function BrokerFlow({
 
   async function submit() {
     setErr(null);
+    const trimmedPlot = plotNumber.trim();
     if (!reraPermit.trim()) return setErr("RERA permit / Form A required");
-    if (!plotNumber.trim()) return setErr("Plot number required");
+    if (!trimmedPlot) return setErr("Plot number required");
+    if (!/^\d{5,10}$/.test(trimmedPlot)) return setErr("Plot number must be 5-10 digits");
     if (price <= 0) return setErr("Asking price required");
     setBusy(true);
     try {
+      const { data: sess } = await supabaseBrowser.auth.getSession();
+      const userId = sess.session?.user.id;
+      if (!userId) {
+        setErr("Please sign in");
+        setBusy(false);
+        return;
+      }
+
+      const documents: UploadedDoc[] = [];
+      if (contractFile) {
+        try {
+          documents.push(await uploadDoc(contractFile, "rera_contract", userId, trimmedPlot));
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : "upload failed";
+          setErr(`Contract upload: ${msg}`);
+          setBusy(false);
+          return;
+        }
+      }
+
       const r = await apiFetch("/api/parcels/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           flow: "broker",
-          plotNumber: plotNumber.trim(),
+          plotNumber: trimmedPlot,
           askingPriceAed: price,
           landUse,
           description,
-          broker: { reraPermit: reraPermit.trim(), contractRef: contractName },
+          broker: { reraPermit: reraPermit.trim(), contractRef: contractFile?.name ?? null },
+          documents,
         }),
       });
       const data = await r.json();
@@ -259,8 +342,8 @@ function BrokerFlow({
       <Field label="Upload Contract (PDF)">
         <DropZone
           accept=".pdf"
-          onFile={(f) => setContractName(f.name)}
-          label={contractName ?? "Drop PDF here or click to browse"}
+          onFile={(f) => setContractFile(f)}
+          label={contractFile?.name ?? "Drop PDF here or click to browse"}
         />
       </Field>
       <Field label="Description">
@@ -284,7 +367,8 @@ function OwnerFlow({
     areaSqm: null, areaSqft: null, emirate: null, district: null, issueDate: null,
   });
 
-  const [idDocName, setIdDocName] = useState<string | null>(null);
+  const [idDocFile, setIdDocFile] = useState<File | null>(null);
+  const [titleDeedFile, setTitleDeedFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -303,6 +387,7 @@ function OwnerFlow({
       setParseErr("Please upload a JPG/PNG photo of the title deed");
       return;
     }
+    setTitleDeedFile(file);
     setParsing(true);
     try {
       const base64 = await fileToBase64(file);
@@ -329,17 +414,42 @@ function OwnerFlow({
   async function submit() {
     setErr(null);
     const price = Number(askingPrice) || 0;
-    if (!deed.plotNumber) return setErr("Plot number missing — re-upload deed");
+    const plot = deed.plotNumber ?? "";
+    if (!plot) return setErr("Plot number missing — re-upload deed");
+    if (!/^\d{5,10}$/.test(plot)) return setErr("Plot number must be 5-10 digits");
     if (!fullName.trim() || !phone.trim()) return setErr("Identity required");
     if (price <= 0) return setErr("Asking price required");
     setBusy(true);
     try {
+      const { data: sess } = await supabaseBrowser.auth.getSession();
+      const userId = sess.session?.user.id;
+      if (!userId) {
+        setErr("Please sign in");
+        setBusy(false);
+        return;
+      }
+
+      const documents: UploadedDoc[] = [];
+      try {
+        if (titleDeedFile) {
+          documents.push(await uploadDoc(titleDeedFile, "title_deed", userId, plot));
+        }
+        if (idDocFile) {
+          documents.push(await uploadDoc(idDocFile, "id_doc", userId, plot));
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "upload failed";
+        setErr(`Document upload: ${msg}`);
+        setBusy(false);
+        return;
+      }
+
       const r = await apiFetch("/api/parcels/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           flow: "owner",
-          plotNumber: deed.plotNumber,
+          plotNumber: plot,
           askingPriceAed: price,
           landUse,
           description,
@@ -349,6 +459,7 @@ function OwnerFlow({
             email: email.trim(),
             titleDeedNumber: deed.titleDeedNumber,
           },
+          documents,
         }),
       });
       const data = await r.json();
@@ -390,7 +501,7 @@ function OwnerFlow({
           </Field>
           {parseErr && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {parseErr}</div>}
           {deed.plotNumber && (
-            <div style={{ background: "#F9FAFB", border: `1px solid ${LINE}`, borderRadius: 8, padding: 10 }}>
+            <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${LINE}`, borderRadius: 8, padding: 10 }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
                 We found
               </div>
@@ -409,7 +520,7 @@ function OwnerFlow({
       {step === 2 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <Field label="Emirates ID or Passport (PDF / image)">
-            <DropZone accept="image/*,.pdf" onFile={(f) => setIdDocName(f.name)} label={idDocName ?? "Drop ID document"} />
+            <DropZone accept="image/*,.pdf" onFile={(f) => setIdDocFile(f)} label={idDocFile?.name ?? "Drop ID document"} />
           </Field>
           <Field label="Full Name*">
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={input()} />
@@ -449,7 +560,7 @@ function OwnerFlow({
 
       {step === 4 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ background: "#F9FAFB", border: `1px solid ${LINE}`, borderRadius: 8, padding: 12 }}>
+          <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${LINE}`, borderRadius: 8, padding: 12 }}>
             <KV2 k="Plot" v={deed.plotNumber} onChange={() => {}} readOnly />
             <KV2 k="Owner" v={fullName} onChange={() => {}} readOnly />
             <KV2 k="Phone" v={phone} onChange={() => {}} readOnly />
@@ -485,7 +596,7 @@ function PriceFields({
         />
       </Field>
       <Field label="Per sqft">
-        <div style={{ ...input(), background: "#F9FAFB", color: SUBTLE, display: "flex", alignItems: "center" }}>
+        <div style={{ ...input(), background: "rgba(255,255,255,0.05)", color: SUBTLE, display: "flex", alignItems: "center" }}>
           {perSqft != null ? perSqft.toLocaleString("en-US") : "—"}
         </div>
       </Field>
@@ -508,7 +619,7 @@ function StepIndicator({ step, total }: { step: number; total: number }) {
                 width: 22,
                 height: 22,
                 borderRadius: "50%",
-                background: active || done ? GOLD : "white",
+                background: active || done ? GOLD : "rgba(255,255,255,0.08)",
                 color: active || done ? "white" : SUBTLE,
                 border: `1px solid ${active || done ? GOLD : LINE}`,
                 display: "flex",
@@ -547,9 +658,9 @@ function DropZone({
         alignItems: "center",
         justifyContent: "center",
         padding: "16px 12px",
-        border: `2px dashed ${hover ? GOLD : "#D1D5DB"}`,
+        border: `2px dashed ${hover ? GOLD : "rgba(255,255,255,0.2)"}`,
         borderRadius: 8,
-        background: hover ? "rgba(200,169,110,0.08)" : "#F9FAFB",
+        background: hover ? "rgba(200,169,110,0.15)" : "rgba(255,255,255,0.04)",
         color: SUBTLE,
         fontSize: 11,
         cursor: "pointer",
@@ -606,9 +717,10 @@ function input(): React.CSSProperties {
     padding: "8px 10px",
     border: `1px solid ${LINE}`,
     borderRadius: 6,
-    background: "white",
+    background: "rgba(255,255,255,0.04)",
     color: TXT,
     outline: "none",
+    fontFamily: "inherit",
   };
 }
 
@@ -644,10 +756,19 @@ function SecondaryBtn({ onClick, children }: { onClick: () => void; children: Re
         padding: "10px 16px",
         fontSize: 12,
         borderRadius: 6,
-        border: `1px solid ${LINE}`,
-        background: "white",
-        color: TXT,
+        border: `1px solid rgba(200, 169, 110, 0.3)`,
+        background: "rgba(255,255,255,0.06)",
+        color: GOLD,
         cursor: "pointer",
+        transition: "border-color 150ms ease, background 150ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = GOLD;
+        e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
       }}
     >
       {children}

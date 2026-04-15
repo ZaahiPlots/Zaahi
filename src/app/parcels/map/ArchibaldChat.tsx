@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
-const TXT = "#1A1A2E";
+const TXT = "#FFFFFF";
 
 interface Msg {
   role: "user" | "assistant";
@@ -261,11 +261,12 @@ export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) 
           bottom: 72px;
           width: 350px;
           height: 500px;
-          background: rgba(255, 255, 255, 0.97);
-          backdrop-filter: blur(8px);
-          border: 1px solid ${GOLD};
+          background: rgba(10, 22, 40, 0.75);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
-          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -292,12 +293,12 @@ export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) 
           display: flex;
           flex-direction: column;
           gap: 8px;
-          background: rgba(249, 250, 251, 0.7);
+          background: rgba(255, 255, 255, 0.04);
         }
         .archibald-input-row {
           padding: 10px;
-          border-top: 1px solid #e5e7eb;
-          background: white;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(10, 22, 40, 0.4);
           display: flex;
           gap: 6px;
         }
@@ -305,12 +306,13 @@ export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) 
           flex: 1;
           font-size: 12px;
           padding: 8px 10px;
-          border: 1px solid #d1d5db;
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 6px;
           color: ${TXT};
-          background: white;
+          background: rgba(255, 255, 255, 0.04);
           outline: none;
           transition: border-color 150ms ease;
+          font-family: inherit;
         }
         .archibald-input:focus {
           border-color: ${GOLD};
@@ -436,13 +438,14 @@ function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
         style={{
           padding: "8px 12px",
           borderRadius: 12,
-          background: "#F3F4F6",
+          background: "rgba(255, 255, 255, 0.08)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
           color: TXT,
           fontSize: 12,
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
         }}
       >
         {text}
