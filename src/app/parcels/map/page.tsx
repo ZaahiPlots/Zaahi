@@ -116,6 +116,9 @@ const AD_DIST_FILL = "ad-districts-fill";
 const AD_COMM_SRC = "ad-communities";
 const AD_COMM_LINE = "ad-communities-line";
 const AD_COMM_FILL = "ad-communities-fill";
+const UAE_DIST_SRC = "uae-districts";
+const UAE_DIST_LINE = "uae-districts-line";
+const UAE_DIST_FILL = "uae-districts-fill";
 const DDA_PROJ_SRC = "dda-projects";
 const DDA_PROJ_LINE = "dda-projects-line";
 const DDA_PROJ_FILL = "dda-projects-fill";
@@ -865,6 +868,7 @@ type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
   saudiGovernorates: boolean; riyadhZones: boolean;
   adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
+  uaeDistricts: boolean;
   ddaLandPlots: boolean; adLandPlots: boolean; omanLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
@@ -1264,6 +1268,7 @@ function ParcelsMapPageInner() {
     adMunicipalities: false,
     adDistricts: false,
     adCommunities: false,
+    uaeDistricts: false,
     ddaProjects: false,
     ddaFreeZones: false,
     ddaLandPlots: false,
@@ -1686,6 +1691,24 @@ function ParcelsMapPageInner() {
           "line-color": "#C8A96E",
           "line-width": 1,
           "line-opacity": 0.6,
+        },
+      },
+      {
+        key: "uaeDistricts",
+        kind: "base",
+        label: "UAE Districts",
+        url: "/api/layers/uae-districts",
+        srcId: UAE_DIST_SRC,
+        fillId: UAE_DIST_FILL,
+        lineId: UAE_DIST_LINE,
+        fillPaint: {
+          "fill-color": "#E63946",
+          "fill-opacity": 0.05,
+        },
+        linePaint: {
+          "line-color": "#E63946",
+          "line-width": 1.5,
+          "line-opacity": 0.8,
         },
       },
       // ── DDA Project Boundaries & Free Zones ──
@@ -3184,6 +3207,7 @@ function ParcelsMapPageInner() {
             { key: "adMunicipalities", label: "AD Municipalities" },
             { key: "adDistricts", label: "AD Districts" },
             { key: "adCommunities", label: "AD Communities" },
+            { key: "uaeDistricts", label: "UAE Districts" },
             { key: "ddaProjects", label: "DDA Project Boundaries" },
             { key: "ddaFreeZones", label: "DDA Free Zones" },
             { key: "ddaLandPlots", label: "DDA Land Plots (99K)" },
