@@ -365,8 +365,16 @@ Footprint каждого верхнего яруса получается чер
 **Все будущие участки (новые seed-ы, ручные добавления, импорт из Excel) автоматически получают этот стиль через тот же loadZaahiPlots — отдельные hardcoded override-ы для конкретных участков ЗАПРЕЩЕНЫ.**
 
 ### Слои по умолчанию
-- ВСЕГДА включены: Communities, Major Roads, ZAAHI Plots
-- ВЫКЛЮЧЕНЫ: все DDA районы, мастер-планы
+- ВСЕГДА включены: ZAAHI Plots (полигоны участков + 3D Signature здания)
+- ВЫКЛЮЧЕНЫ по умолчанию: все DDA районы, мастер-планы, Communities, Major Roads, Metro и прочие overlays. Пользователь сам включает через Layers panel.
+
+### Навигация по карте
+- WASD drone navigation — always-on на desktop (не активируется на touch/mobile).
+  - W/A/S/D — полёт в направлении камеры, Space — выше, Shift — ниже, Shift+WASD — ×3 скорость.
+  - Правая кнопка мыши (drag) — вращение камеры (bearing + pitch 0–85°).
+  - Левая кнопка — клик по участку (не трогать), стандартная MapLibre навигация работает параллельно.
+  - Ignore keys когда фокус в input/textarea/contenteditable.
+  - Реализация: `src/lib/drone-controls.ts`, install в map-init useEffect, cleanup на unmount.
 
 ### UI
 - Hover на участок: мини-карточка (plotNumber | район | sqft | цена | landUse)
@@ -468,8 +476,9 @@ Footprint каждого верхнего яруса получается чер
 - [ ] Цвета 3D зданий соответствуют land use
 - [ ] Клик на участок открывает side panel с данными
 - [ ] Слои (Layers) панель открывается
-- [ ] Communities и Roads видны по умолчанию
-- [ ] DDA Districts НЕ загружаются автоматически
+- [ ] По умолчанию видны ТОЛЬКО ZAAHI Plots (остальные слои off)
+- [ ] DDA Districts, мастер-планы, Communities, Roads НЕ загружаются автоматически
+- [ ] WASD drone navigation работает (desktop), правая кнопка мыши вращает камеру
 - [ ] Toggle отдельного слоя работает (вкл/выкл)
 - [ ] Чекбокс секции (ALL) работает
 - [ ] Archibald (кот) иконка видна
