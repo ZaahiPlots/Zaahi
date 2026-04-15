@@ -3,9 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Protocol } from "pmtiles";
+import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
 import AddPlotModal from "./AddPlotModal";
+import MiniMap from "./MiniMap";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
@@ -3352,6 +3354,88 @@ function ParcelsMapPageInner() {
       {/* The music / sound toggle moved into the HeaderBar (next to
           Profile) per founder spec 2026-04-12. The old floating
           button at top:56 right:16 is gone. */}
+
+      {/* ── MiniMap dock — bottom center ──
+          Civ6-style regional overview with left rail (layer toggles)
+          and right rail (Legend / Ambassador / Profile). Anchored to
+          the bottom, horizontally centered, layered above the map
+          canvas but below the SidePanel (which takes over when a
+          parcel is selected). */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: 12,
+          transform: "translateX(-50%)",
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 10,
+          zIndex: 14,
+          pointerEvents: "none",
+        }}
+      >
+        <MiniRail>
+          {MINI_LEFT_LAYERS.map((l) => (
+            <MiniRailBtn
+              key={l.key}
+              title={l.label}
+              active={!!layers[l.key as keyof LayersState]}
+              onClick={() =>
+                setLayers((s) => ({ ...s, [l.key]: !s[l.key as keyof LayersState] }))
+              }
+            >
+              {l.icon}
+            </MiniRailBtn>
+          ))}
+        </MiniRail>
+
+        <div style={{ pointerEvents: "auto" }}>
+          <MiniMap mainMapRef={mapRef} />
+        </div>
+
+        <MiniRail>
+          <MiniRailBtn
+            title="Legend"
+            active={legendOpen}
+            onClick={() => setLegendOpen((o) => !o)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <circle cx="4" cy="6" r="1.2" fill="currentColor" />
+              <circle cx="4" cy="12" r="1.2" fill="currentColor" />
+              <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+            </svg>
+          </MiniRailBtn>
+          <Link
+            href="/ambassador"
+            title="Ambassador Program"
+            aria-label="Ambassador Program"
+            style={{ display: "block", pointerEvents: "auto", textDecoration: "none" }}
+          >
+            <MiniRailBtn title="Ambassador" active={false} onClick={() => {}} asSpan>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2" />
+              </svg>
+            </MiniRailBtn>
+          </Link>
+          <Link
+            href="/dashboard"
+            title="Profile / Dashboard"
+            aria-label="Profile"
+            style={{ display: "block", pointerEvents: "auto", textDecoration: "none" }}
+          >
+            <MiniRailBtn title="Profile" active={false} onClick={() => {}} asSpan>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+              </svg>
+            </MiniRailBtn>
+          </Link>
+        </MiniRail>
+      </div>
+
       <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel
         parcelId={selectedParcelId}
@@ -4042,6 +4126,196 @@ function HdrField({
         }}
       />
     </label>
+  );
+}
+
+// ─── MiniMap left-rail configuration ─────────────────────────────
+// Left rail next to the MiniMap: top-level region toggles. Each key
+// must exist on LayersState or setLayers will no-op silently. Icons
+// are minimal inline SVG — no emoji per CLAUDE.md UI STYLE GUIDE.
+const MINI_LEFT_LAYERS: Array<{
+  key: keyof LayersState;
+  label: string;
+  icon: React.ReactNode;
+}> = [
+  {
+    key: "ddaLandPlots",
+    label: "DDA Land Plots",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+      </svg>
+    ),
+  },
+  {
+    key: "adLandPlots",
+    label: "Abu Dhabi Land Plots",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M7 12h10M12 7v10" />
+      </svg>
+    ),
+  },
+  {
+    key: "omanLandPlots",
+    label: "Oman Land Plots (Muscat)",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3v18" />
+      </svg>
+    ),
+  },
+  {
+    key: "metro",
+    label: "Metro",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="3" width="14" height="16" rx="3" />
+        <path d="M5 13h14" />
+        <circle cx="9" cy="17" r="1.2" fill="currentColor" />
+        <circle cx="15" cy="17" r="1.2" fill="currentColor" />
+        <path d="M7 21l-2 2M17 21l2 2" />
+      </svg>
+    ),
+  },
+  {
+    key: "communities",
+    label: "Communities",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21V9l9-6 9 6v12" />
+        <path d="M9 21v-7h6v7" />
+      </svg>
+    ),
+  },
+  {
+    key: "saudiGovernorates",
+    label: "Saudi Governorates",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0z" />
+        <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
+      </svg>
+    ),
+  },
+  {
+    key: "ddaFreeZones",
+    label: "Free Zones",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3l8 4v5c0 4-4 7-8 9-4-2-8-5-8-9V7l8-4z" />
+      </svg>
+    ),
+  },
+  {
+    key: "ddaProjects",
+    label: "DDA Projects",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 21h16M6 21V10l6-5 6 5v11" />
+        <rect x="10" y="13" width="4" height="4" />
+      </svg>
+    ),
+  },
+];
+
+/**
+ * Glass rail that sits next to the MiniMap. Vertical stack of
+ * 30×30 icon buttons (same size as ChromeBtn on the map chrome) so the
+ * whole bottom-center widget feels part of one control surface.
+ */
+function MiniRail({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        pointerEvents: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        padding: 6,
+        background: "rgba(10, 22, 40, 0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 12,
+        boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Icon button for the MiniMap rails. Renders as a `<button>` by default;
+ * pass `asSpan` when wrapping in a Link so we don't nest interactive
+ * elements. Active = gold fill + gold text. Inactive = dim gold border,
+ * hover lifts into the gold tint — same language as ChromeBtn.
+ */
+function MiniRailBtn({
+  title,
+  active,
+  onClick,
+  children,
+  asSpan,
+}: {
+  title: string;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  asSpan?: boolean;
+}) {
+  const base: React.CSSProperties = {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    border: `1px solid ${active ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+    background: active ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.4)",
+    color: GOLD,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    transition: "border-color 150ms ease, background 150ms ease",
+  };
+  const onEnter = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.borderColor = GOLD;
+    e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+  };
+  const onLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.borderColor = active ? GOLD : "rgba(200, 169, 110, 0.3)";
+    e.currentTarget.style.background = active
+      ? "rgba(200,169,110,0.25)"
+      : "rgba(10, 22, 40, 0.4)";
+  };
+  if (asSpan) {
+    return (
+      <span
+        title={title}
+        aria-label={title}
+        style={base}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+      >
+        {children}
+      </span>
+    );
+  }
+  return (
+    <button
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      style={base}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
+      {children}
+    </button>
   );
 }
 
