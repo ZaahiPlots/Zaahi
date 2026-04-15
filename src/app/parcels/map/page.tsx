@@ -3586,6 +3586,7 @@ function ParcelsMapPageInner() {
       <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel
         parcelId={selectedParcelId}
+        mapRef={mapRef}
         onClose={() => {
           sound.swooshClose();
           setSelectedParcelId(null);

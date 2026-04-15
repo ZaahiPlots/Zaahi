@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { Map as MLMap } from "maplibre-gl";
 import FeasibilityCalculator from "./FeasibilityCalculator";
 import OfferModal from "./OfferModal";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
+import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
 // White text on dark translucent panel (matches landing page auth card).
@@ -70,6 +72,9 @@ interface Plan {
   plotGuidelinesUrl: string | null;
   source: string;
   fetchedAt: string;
+  // Optional bag of extra fields from the seed/DDA import — we look for
+  // `authority` here when rendering the Site Plan PDF header.
+  raw: { authority?: string | null } | null;
 }
 
 interface ParcelDetail {
@@ -80,6 +85,9 @@ interface ParcelDetail {
   status: string;
   area: number;
   currentValuation: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geometry: GeoJSON.Polygon | null;
   affectionPlans: Plan[];
 }
 
@@ -94,13 +102,22 @@ function fmtBigAed(aed: number | null): string {
   return `${aed} AED`;
 }
 
-export default function SidePanel({ parcelId, onClose }: { parcelId: string | null; onClose: () => void }) {
+export default function SidePanel({
+  parcelId,
+  onClose,
+  mapRef,
+}: {
+  parcelId: string | null;
+  onClose: () => void;
+  mapRef?: { current: MLMap | null };
+}) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [feasOpen, setFeasOpen] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     supabaseBrowser.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -222,6 +239,97 @@ export default function SidePanel({ parcelId, onClose }: { parcelId: string | nu
                 </div>
               )}
             </div>
+
+            {/* Download Site Plan — glassmorphism, gold border. Renders a
+                one-page branded PDF from the current parcel data + a
+                snapshot of the current map canvas (polygon preview as
+                a fallback when the map is unavailable). */}
+            <button
+              type="button"
+              disabled={pdfBusy || !data}
+              onClick={async () => {
+                if (!data) return;
+                setPdfBusy(true);
+                try {
+                  await generateSitePlanPdf({
+                    parcel: {
+                      id: data.id,
+                      plotNumber: data.plotNumber,
+                      district: data.district,
+                      emirate: data.emirate,
+                      area: data.area,
+                      currentValuation: data.currentValuation,
+                      geometry: data.geometry,
+                      latitude: data.latitude,
+                      longitude: data.longitude,
+                    },
+                    plan: plan
+                      ? {
+                          projectName: plan.projectName,
+                          community: plan.community,
+                          masterDeveloper: plan.masterDeveloper,
+                          plotAreaSqm: plan.plotAreaSqm,
+                          plotAreaSqft: plan.plotAreaSqft,
+                          maxGfaSqm: plan.maxGfaSqm,
+                          maxGfaSqft: plan.maxGfaSqft,
+                          maxHeightCode: plan.maxHeightCode,
+                          maxFloors: plan.maxFloors,
+                          maxHeightMeters: plan.maxHeightMeters,
+                          far: plan.far,
+                          setbacks: plan.setbacks,
+                          landUseMix: plan.landUseMix,
+                          notes: plan.notes,
+                        }
+                      : null,
+                    authority: plan?.raw?.authority ?? null,
+                    map: mapRef?.current ?? null,
+                  });
+                } catch (e) {
+                  console.error("[site-plan-pdf]", e);
+                  alert("Could not generate the Site Plan PDF. Please try again.");
+                } finally {
+                  setPdfBusy(false);
+                }
+              }}
+              style={{
+                marginTop: 12,
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                border: `1px solid rgba(200,169,110,0.3)`,
+                color: GOLD,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1.1,
+                textTransform: "uppercase",
+                cursor: pdfBusy ? "wait" : "pointer",
+                opacity: pdfBusy ? 0.7 : 1,
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                transition: "background 150ms ease, border-color 150ms ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+              onMouseEnter={(e) => {
+                if (pdfBusy) return;
+                e.currentTarget.style.background = "rgba(200,169,110,0.2)";
+                e.currentTarget.style.borderColor = GOLD;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>{pdfBusy ? "Generating…" : "Download Site Plan"}</span>
+            </button>
           </div>
 
           {plan ? (
