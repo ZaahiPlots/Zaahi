@@ -11,6 +11,7 @@ import MiniMap from "./MiniMap";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
+import { installDroneControls } from "@/lib/drone-controls";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1275,6 +1276,7 @@ function ParcelsMapPageInner() {
   const [zoom, setZoom] = useState(12);
   const [bearing, setBearing] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDroneHint, setShowDroneHint] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
@@ -1285,8 +1287,12 @@ function ParcelsMapPageInner() {
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
   const [layers, setLayers] = useState<LayersState>({
-    communities: true,
-    roads: true,
+    // Founder spec 2026-04-15: all user-toggleable layers default OFF.
+    // Only ZAAHI parcel polygons + ZAAHI Signature 3D buildings stay on
+    // by default — those are the core listings (loaded unconditionally
+    // via loadZaahiPlots, not gated by LayersState).
+    communities: false,
+    roads: false,
     metro: false,
     saudiGovernorates: false,
     riyadhZones: false,
@@ -2414,9 +2420,11 @@ function ParcelsMapPageInner() {
     for (const def of LAYER_REGISTRY) {
       const wantOn = !!layers[def.key];
       const wasLoaded = loadedLayersRef.current.has(def.key);
-      // Re-load any layer that was previously loaded (so the basemap
-      // swap restores them) plus the always-on base layers.
-      if (def.kind === 'base' || wasLoaded) {
+      // Only re-load layers the user has enabled (or that were already
+      // loaded in this session). Base layers used to be eagerly loaded
+      // but the founder spec (2026-04-15) moved defaults to OFF so every
+      // layer except ZAAHI listings is lazy now.
+      if (wantOn || wasLoaded) {
         // The basemap swap blew away the source registry, so we have to
         // pretend nothing is loaded. The loader is idempotent on
         // map.getSource so this is safe even if the source somehow
@@ -2721,7 +2729,26 @@ function ParcelsMapPageInner() {
     });
 
     mapRef.current = map;
+
+    // Always-on WASD drone navigation (desktop only). Cleanup on unmount.
+    const uninstallDrone = installDroneControls(map);
+
+    // First-visit hint — shown once, auto-dismissed after 5s.
+    try {
+      if (typeof window !== "undefined" &&
+          !window.matchMedia?.("(pointer: coarse)").matches &&
+          !("ontouchstart" in window) &&
+          !localStorage.getItem("zaahi-drone-hint-shown")) {
+        setShowDroneHint(true);
+        localStorage.setItem("zaahi-drone-hint-shown", "1");
+        window.setTimeout(() => setShowDroneHint(false), 5000);
+      }
+    } catch {
+      /* localStorage might be blocked; hint is optional */
+    }
+
     return () => {
+      uninstallDrone();
       popup.remove();
       map.remove();
       mapRef.current = null;
@@ -2832,6 +2859,32 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* First-visit drone-controls hint — glassmorphism toast, auto-dismissed after 5s */}
+      {showDroneHint && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(10,22,40,0.7)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.9)",
+            borderRadius: 12,
+            padding: "8px 16px",
+            fontSize: 13,
+            letterSpacing: "0.02em",
+            zIndex: 40,
+            pointerEvents: "none",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          Use WASD to fly, Right-click to rotate
+        </div>
+      )}
 
       {/* Header */}
       <HeaderBar
