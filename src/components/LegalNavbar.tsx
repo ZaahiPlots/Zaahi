@@ -57,7 +57,7 @@ export default function LegalNavbar() {
           textDecoration: 'none',
           border: `1px solid rgba(200, 169, 110, 0.3)`,
           borderRadius: 6,
-          transition: 'all 0.2s ease',
+          transition: 'background-color 150ms ease, border-color 150ms ease, color 150ms ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(200, 169, 110, 0.1)';

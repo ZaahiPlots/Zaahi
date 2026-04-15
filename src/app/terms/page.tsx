@@ -139,7 +139,7 @@ export default function TermsPage() {
                 textDecoration: 'none',
                 borderLeft: `2px solid ${activeSection === s.id ? GOLD : 'transparent'}`,
                 paddingLeft: 12,
-                transition: 'all 0.2s ease',
+                transition: 'color 150ms ease, border-color 150ms ease',
               }}
             >
               {s.num}. {s.title}
