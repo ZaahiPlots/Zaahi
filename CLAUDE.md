@@ -305,6 +305,11 @@ DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
 Для каждого land use свой 3D стиль (цвета — секция выше "Цвета по Land Use").
 
+**3D buildings opacity — два разных значения по типу слоя (founder spec 2026-04-15):**
+- **ZAAHI listings 3D buildings (`ZAAHI_BUILDINGS_3D`, source `zaahi-plots-buildings`, наши 101 участок): `fill-extrusion-opacity: 1` — SOLID.** Это наши участки, должны выделяться на карте как сплошные объекты.
+- **PMTiles 3D buildings (DDA / AD / Oman через `addLandTileSource`): `fill-extrusion-opacity: 0.35` — TRANSPARENT.** Это фоновые данные, не должны доминировать над листингами.
+- `fill-extrusion-opacity` ДОЛЖЕН быть литеральное число, MapLibre не принимает data expressions. Любое выделение выбранного здания делается через `fill-extrusion-color` (brightness) или glow outline на plot layer, НЕ через opacity.
+
 FUTURE DEVELOPMENT (земля без зданий) — только fill polygon, без 3D extrusion.
 
 ### Правила 3D моделей (ZAAHI Signature) — НАВСЕГДА

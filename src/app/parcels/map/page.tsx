@@ -2261,10 +2261,11 @@ function ParcelsMapPageInner() {
               "fill-extrusion-color": ["get", "color"],
               "fill-extrusion-height": ["get", "height"],
               "fill-extrusion-base": ["get", "base"],
-              // Founder-spec ZAAHI Signature opacity. Single value across
-              // the layer so podium / body / crown blend visually rather
-              // than each tier having a different transparency.
-              "fill-extrusion-opacity": 0.4,
+              // ZAAHI listings (our 101 parcels) render SOLID so they
+              // stand out against the PMTiles background layers which
+              // stay at 0.35. Single literal — data expressions are
+              // not supported on fill-extrusion-opacity.
+              "fill-extrusion-opacity": 1,
             },
           });
         }
