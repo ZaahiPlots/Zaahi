@@ -87,15 +87,22 @@ async function captureMap(
   geom: GeoJSON.Polygon | null | undefined,
 ): Promise<string | null> {
   try {
-    // Re-centre on the plot bbox with comfortable padding so the polygon
-    // AND surrounding context (neighbouring parcels, 3D buildings) are
-    // in-frame. animate:false so we don't have to wait on easing.
+    // Re-centre on the plot bbox with generous padding so tall 3D
+    // extrusions stay fully in-frame. With pitch 45° a 100 m-tall
+    // building projects ~70 m northward on-screen; 180 px padding on
+    // all sides + maxZoom 17.5 + a final zoom-out step keeps the full
+    // Signature model visible even at high zoom. animate:false so we
+    // don't have to wait on easing.
     if (geom?.coordinates?.[0]?.length) {
       const bb = polygonBBox(geom.coordinates[0]);
       map.fitBounds(
         [[bb.minLng, bb.minLat], [bb.maxLng, bb.maxLat]],
-        { padding: 80, duration: 0, maxZoom: 19, animate: false },
+        { padding: 180, duration: 0, maxZoom: 17.5, animate: false },
       );
+      // Back off another half zoom step so the pitch doesn't push the
+      // top of the 3D building out of the viewport.
+      const z = map.getZoom();
+      map.setZoom(Math.max(z - 0.5, 13));
     }
     // Wait for all tiles/sources to settle. `idle` fires once when the
     // map is fully rendered after the last source update.
