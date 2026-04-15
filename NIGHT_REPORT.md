@@ -984,3 +984,34 @@ Both pushed to `origin/main`. No reverts, no force-push, no amends.
 *Built by the overnight shift. HEAD builds clean; two WIPs restored;
 numbers in the prior report corrected where wrong. Report line count
 expanded from 410 → ~720. Sleep well.*
+
+---
+
+## Follow-up actions applied — 2026-04-15
+
+Founder reviewed the eight open questions above and authorised four
+fixes. Items 3, 4 and 7 are explicitly **deferred**.
+
+| # | Decision | Commit | Outcome |
+|---|----------|--------|---------|
+| 1 | CLAUDE.md SESSION STATUS `101 → 114` parcels (also the 3D-buildings opacity note; session date bumped to 2026-04-15) | `af53fc0` | Applied. DB actually reports 114 total / 111 LISTED / 3 VACANT — breakdown corrected alongside the total. |
+| 5 | Delete `src/hooks/useAuth.ts` (0 consumers; referenced four non-existent endpoints) | `a9ab56e` | File removed. `pnpm build` clean. |
+| 6 | Normalise `MIXED USE` → `MIXED_USE` in `AffectionPlan.landUseMix[].category` | `e39531b` | 2 rows fixed (both on parcel `cmo028bhk000095ewdn6waedq`, plot 5912323): `cmo028bmo000195ew9zfu4j8y` and `cmo028myi0001coewjyvb9lcj`. Script `scripts/fix-mixed-use-typo.ts` is idempotent — post-fix run updates 0 rows. |
+| 2 | Kadastr drop: ingest ONLY `04_Nad Al Hammer` as new layer; archive the 7 duplicates | `e8e3f16` | All 7 candidates confirmed byte-identical (SHA-256) to existing `data/layers/*.kml`; moved to `data/master-plans/archive/`. Nad Al Hammer (130 placemarks) tracked as `data/layers/04_Nad_Al_Hammer_master_plan.kml`, served by `/api/layers/masterplans/nad-al-hammer`, wired into the Master Plans toggle group in `parcels/map`. |
+
+### Deferred (per founder)
+
+- **Item 3** — `/api/modules` and `/api/cat/chat` stay; Archibald AI backlog.
+- **Item 4** — RLS untouched.
+- **Item 7** — no backfill of `plotGuidelinesUrl` / `buildingStyle`.
+
+### Incidental notes
+
+- The kadastr drop actually contained 10 geo files, not 8: 8 KMLs
+  plus 2 KMZ files (`09_Metro Dubai.kmz`, `010 Red Line
+  Districts_gadm41_ARE_3.kmz`) and two PNG ingest-instruction
+  screenshots. Only the 7 duplicate KMLs were archived and the 1
+  new KML ingested; the KMZ files and PNG helpers remain untouched
+  under `data/master-plans/kadastr/` pending founder guidance.
+- `pnpm build` passed on every commit gate.
+
