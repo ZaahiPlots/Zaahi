@@ -3366,9 +3366,8 @@ function ParcelsMapPageInner() {
       <div
         style={{
           position: "absolute",
-          left: "50%",
+          left: 12,
           bottom: 12,
-          transform: "translateX(-50%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
