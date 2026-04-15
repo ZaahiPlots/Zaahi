@@ -306,7 +306,7 @@ Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять
 Для каждого land use свой 3D стиль (цвета — секция выше "Цвета по Land Use").
 
 **3D buildings opacity — два разных значения по типу слоя (founder spec 2026-04-15):**
-- **ZAAHI listings 3D buildings (`ZAAHI_BUILDINGS_3D`, source `zaahi-plots-buildings`, наши 101 участок): `fill-extrusion-opacity: 1` — SOLID.** Это наши участки, должны выделяться на карте как сплошные объекты.
+- **ZAAHI listings 3D buildings (`ZAAHI_BUILDINGS_3D`, source `zaahi-plots-buildings`, наши 114 участков): `fill-extrusion-opacity: 1` — SOLID.** Это наши участки, должны выделяться на карте как сплошные объекты.
 - **PMTiles 3D buildings (DDA / AD / Oman через `addLandTileSource`): `fill-extrusion-opacity: 0.35` — TRANSPARENT.** Это фоновые данные, не должны доминировать над листингами.
 - `fill-extrusion-opacity` ДОЛЖЕН быть литеральное число, MapLibre не принимает data expressions. Любое выделение выбранного здания делается через `fill-extrusion-color` (brightness) или glow outline на plot layer, НЕ через opacity.
 
@@ -539,10 +539,10 @@ Commission rows **immutable** — никогда не обновлять `amount
 - All architectural decisions require founder approval
 - Agent communicates via CLAUDE.md and git commits only
 
-## SESSION STATUS — 2026-04-12
+## SESSION STATUS — 2026-04-15
 
 ### База данных
-- **Parcels:** 101 total (98 LISTED, 3 VACANT) — все в эмирате Dubai
+- **Parcels:** 114 total (111 LISTED, 3 VACANT) — все в эмирате Dubai
 - Все участки рендерятся как ZAAHI Signature 3D buildings (podium / body / crown по числу этажей)
 
 ### Сделано сегодня
