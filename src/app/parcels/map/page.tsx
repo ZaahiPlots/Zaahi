@@ -12,7 +12,7 @@ import TermsAcceptModal from "./TermsAcceptModal";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
-import { installDroneControls } from "@/lib/drone-controls";
+import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1212,6 +1212,106 @@ const DDA_LAYERS: { key: keyof LayersState; srcId: string; lineId: string; label
 
 const ddaLabelId = (srcId: string) => `${srcId}-label`;
 
+// ── Phase 1 RBAC scaffold — country + category + lock metadata ──────
+// Every toggleable layer key maps to a country (for the hierarchy) and
+// a category (for the sub-section inside that country). Optional
+// `tier` marks visually-locked layers. Phase 1 is UX only: the toggle
+// still works — Phase 3 will actually disable the checkbox once
+// `useAccess()` + tier enforcement land.
+
+type LayerCountry = "dubai" | "abudhabi" | "otheruae" | "saudi" | "oman";
+type LayerCategory =
+  | "base"            // roads / metro / admin boundaries
+  | "dda-admin"       // DDA projects, free zones, 99K plots layer
+  | "dda-districts"   // individual DDA community layers (206 items)
+  | "masterplans"     // 8 master plan KMLs
+  | "landplots";      // country-scale PMTiles parcel grids (AD, Oman)
+type LayerLockTier = "GOLD" | "PLATINUM";
+
+type LayerMeta = {
+  country: LayerCountry;
+  category: LayerCategory;
+  tier?: LayerLockTier;
+};
+
+const LAYER_COUNTRY_ORDER: LayerCountry[] = [
+  "dubai", "abudhabi", "otheruae", "saudi", "oman",
+];
+
+const LAYER_CATEGORY_ORDER: LayerCategory[] = [
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots",
+];
+
+const COUNTRY_LABELS: Record<LayerCountry, string> = {
+  dubai: "UAE — Dubai",
+  abudhabi: "UAE — Abu Dhabi",
+  otheruae: "UAE — Other Emirates",
+  saudi: "Saudi Arabia",
+  oman: "Oman",
+};
+
+const CATEGORY_LABELS: Record<LayerCategory, string> = {
+  "base": "Base",
+  "dda-admin": "DDA Layers",
+  "masterplans": "Master Plans",
+  "dda-districts": "DDA Districts",
+  "landplots": "Land Plots",
+};
+
+// Build-once map: layer-key → metadata. Keys not in this map are treated
+// as "unclassified" and land in Dubai/base as a safe default (prevents
+// a missing key from silently disappearing from the panel).
+const LAYER_META: Record<string, LayerMeta> = (() => {
+  const m: Record<string, LayerMeta> = {
+    // ── Dubai — base ──
+    communities: { country: "dubai", category: "base" },
+    roads: { country: "dubai", category: "base" },
+    metro: { country: "dubai", category: "base" },
+    plotLabels: { country: "dubai", category: "base" },
+    // ── Dubai — DDA ──
+    ddaProjects: { country: "dubai", category: "dda-admin" },
+    ddaFreeZones: { country: "dubai", category: "dda-admin" },
+    ddaLandPlots: { country: "dubai", category: "dda-admin", tier: "GOLD" },
+    // ── Dubai — master plans (all locked GOLD per mockup) ──
+    islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    alFurjan: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    intlCity23: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    residential12: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    d11: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    nadAlHammer: { country: "dubai", category: "masterplans", tier: "GOLD" },
+    // ── Abu Dhabi — base ──
+    adMunicipalities: { country: "abudhabi", category: "base" },
+    adDistricts: { country: "abudhabi", category: "base" },
+    adCommunities: { country: "abudhabi", category: "base" },
+    // ── Abu Dhabi — land plots (PMTiles 362K) ──
+    adLandPlots: { country: "abudhabi", category: "landplots", tier: "GOLD" },
+    // ── Other UAE ──
+    uaeDistricts: { country: "otheruae", category: "base" },
+    // ── Saudi ──
+    saudiGovernorates: { country: "saudi", category: "base" },
+    riyadhZones: { country: "saudi", category: "base", tier: "PLATINUM" },
+    // ── Oman ──
+    omanLandPlots: { country: "oman", category: "landplots", tier: "GOLD" },
+  };
+  // DDA districts (206 community polygons) — all Dubai, not tier-locked.
+  for (const d of DDA_LAYERS) {
+    m[d.key] = { country: "dubai", category: "dda-districts" };
+  }
+  return m;
+})();
+
+// Best-effort country detection from a map center. Used once on first
+// panel open so the user's current country is auto-expanded.
+function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
+  if (lng < 50) return "saudi";          // Riyadh ~46.7
+  if (lng > 56.5) return "oman";         // Muscat ~58.5
+  // Inside UAE rectangle — distinguish Dubai / AD / other emirates.
+  if (lat < 24.85) return "abudhabi";    // AD metro ~24.45, Al Ain ~24.2
+  if (lat > 25.35) return "otheruae";    // Sharjah+, RAK, Fujairah
+  return "dubai";
+}
+
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
@@ -1277,13 +1377,24 @@ function ParcelsMapPageInner() {
   const [zoom, setZoom] = useState(12);
   const [bearing, setBearing] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  // Drone mode — toggleable via on-map button. Persists across reloads
+  // via localStorage "zaahi-drone-mode". Default OFF on first visit.
+  const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
+  const droneCtrlRef = useRef<DroneController | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
   const legendBtnRef = useRef<HTMLButtonElement>(null);
-  const [groupOpen, setGroupOpen] = useState({ base: true, master: true, dda: false });
+  // Country-first hierarchy — one section per country, collapsible.
+  // Phase 1: default Dubai expanded (where 114 ZAAHI listings live); on
+  // first open of the layers panel we re-initialise from map center so
+  // a user already panned to AD/Oman sees the right country expanded.
+  const [countryOpen, setCountryOpen] = useState<Record<LayerCountry, boolean>>({
+    dubai: true, abudhabi: false, otheruae: false, saudi: false, oman: false,
+  });
+  const countryInitialisedRef = useRef(false);
   const [layerSearch, setLayerSearch] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
@@ -2731,30 +2842,48 @@ function ParcelsMapPageInner() {
 
     mapRef.current = map;
 
-    // Always-on WASD drone navigation (desktop only). Cleanup on unmount.
-    const uninstallDrone = installDroneControls(map);
+    // Toggleable WASD drone navigation (desktop only). Controller stays
+    // installed for the map's lifetime; a separate effect drives
+    // enable/disable based on `droneEnabled` state. Default is OFF so
+    // WASD / right-click do NOT hijack the page until the user opts in.
+    const droneCtrl = installDroneControls(map);
+    droneCtrlRef.current = droneCtrl;
 
-    // First-visit hint — shown once, auto-dismissed after 5s.
+    // Restore saved preference (default OFF on first visit).
     try {
       if (typeof window !== "undefined" &&
-          !window.matchMedia?.("(pointer: coarse)").matches &&
-          !("ontouchstart" in window) &&
-          !localStorage.getItem("zaahi-drone-hint-shown")) {
-        setShowDroneHint(true);
-        localStorage.setItem("zaahi-drone-hint-shown", "1");
-        window.setTimeout(() => setShowDroneHint(false), 5000);
+          localStorage.getItem("zaahi-drone-mode") === "1") {
+        setDroneEnabled(true);
       }
     } catch {
-      /* localStorage might be blocked; hint is optional */
+      /* localStorage may be blocked — stay OFF */
     }
 
     return () => {
-      uninstallDrone();
+      droneCtrl.destroy();
+      droneCtrlRef.current = null;
       popup.remove();
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Drive the drone controller from React state. Persists choice and
+  // flashes the on-enable toast. Keeps WASD behaviour strictly opt-in.
+  useEffect(() => {
+    const ctrl = droneCtrlRef.current;
+    if (!ctrl) return;
+    if (droneEnabled) {
+      ctrl.enable();
+      setShowDroneHint(true);
+      const t = window.setTimeout(() => setShowDroneHint(false), 3500);
+      try { localStorage.setItem("zaahi-drone-mode", "1"); } catch { /* ignore */ }
+      return () => window.clearTimeout(t);
+    }
+    ctrl.disable();
+    setShowDroneHint(false);
+    try { localStorage.setItem("zaahi-drone-mode", "0"); } catch { /* ignore */ }
+  }, [droneEnabled]);
 
   // Theme swap → reload basemap, reattach overlays after styledata fires,
   // and re-tint the road colour to match.
@@ -2818,6 +2947,22 @@ function ParcelsMapPageInner() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [layersOpen]);
 
+  // First time the user opens the layers panel, pick the country that
+  // matches the current map center and expand only that one. After the
+  // first open, user toggles stick — we never re-auto-expand.
+  useEffect(() => {
+    if (!layersOpen || countryInitialisedRef.current) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const ctr = map.getCenter();
+    const detected = detectCountryFromLngLat(ctr.lng, ctr.lat);
+    setCountryOpen({
+      dubai: false, abudhabi: false, otheruae: false, saudi: false, oman: false,
+      [detected]: true,
+    });
+    countryInitialisedRef.current = true;
+  }, [layersOpen]);
+
   useEffect(() => {
     if (!legendOpen) return;
     const onDown = (e: MouseEvent) => {
@@ -2861,7 +3006,7 @@ function ParcelsMapPageInner() {
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* First-visit drone-controls hint — glassmorphism toast, auto-dismissed after 5s */}
+      {/* Drone-mode on-enable toast — shown each time the user turns drone mode ON */}
       {showDroneHint && (
         <div
           style={{
@@ -2883,7 +3028,7 @@ function ParcelsMapPageInner() {
             boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
           }}
         >
-          Use WASD to fly, Right-click to rotate
+          Drone mode activated — WASD to fly, right-click to rotate
         </div>
       )}
 
@@ -3186,6 +3331,53 @@ function ParcelsMapPageInner() {
             {is3D ? "3D" : "2D"}
           </span>
         </ChromeBtn>
+        <button
+          title={droneEnabled ? "Disable drone mode" : "Enable drone mode (WASD + right-click rotate)"}
+          aria-label={droneEnabled ? "Disable drone mode" : "Enable drone mode"}
+          aria-pressed={droneEnabled}
+          onClick={() => {
+            sound.whoosh();
+            setDroneEnabled((v) => !v);
+          }}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            border: `1px solid ${droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.4)",
+            color: droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "none",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+            if (!droneEnabled) e.currentTarget.style.color = GOLD;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.4)";
+            e.currentTarget.style.color = droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)";
+          }}
+        >
+          {/* Minimal quadcopter silhouette — four arms, center body, props. */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="2" />
+            <line x1="12" y1="10" x2="12" y2="5" />
+            <line x1="12" y1="14" x2="12" y2="19" />
+            <line x1="10" y1="12" x2="5" y2="12" />
+            <line x1="14" y1="12" x2="19" y2="12" />
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="19" cy="12" r="2" />
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="12" cy="19" r="2" />
+          </svg>
+        </button>
       </div>
 
       {layersOpen && (
@@ -3278,62 +3470,128 @@ function ParcelsMapPageInner() {
           </div>
         </div>
 
-        <LayerGroup
-          c={c}
-          title="Base Layers"
-          open={groupOpen.base}
-          onToggle={() => setGroupOpen((g) => ({ ...g, base: !g.base }))}
-          search={layerSearch}
-          items={[
-            { key: "communities", label: "Communities" },
-            { key: "roads", label: "Major Roads" },
-            { key: "metro", label: "Metro Lines" },
-            { key: "saudiGovernorates", label: "Saudi Arabia Governorates" },
-            { key: "riyadhZones", label: "Riyadh Zones" },
-            { key: "adMunicipalities", label: "AD Municipalities" },
-            { key: "adDistricts", label: "AD Districts" },
-            { key: "adCommunities", label: "AD Communities" },
-            { key: "uaeDistricts", label: "UAE Districts" },
-            { key: "ddaProjects", label: "DDA Project Boundaries" },
-            { key: "ddaFreeZones", label: "DDA Free Zones" },
-            { key: "ddaLandPlots", label: "DDA Land Plots (99K)" },
-            { key: "adLandPlots", label: "AD Land Plots (362K)" },
-            { key: "omanLandPlots", label: "Oman Land Plots (95K)" },
-            { key: "plotLabels", label: "Plot Numbers (zoom in)" },
-          ]}
-          isOn={(k) => layers[k as keyof LayersState] as boolean}
-          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
-        />
+        {/* GLOBAL — ZAAHI Listings are always on (loaded unconditionally
+            via loadZaahiPlots). Rendered as a static row at the top so
+            users see what's already visible on the map. */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            padding: "9px 14px",
+            borderTop: `1px solid ${c.border}`,
+            fontSize: 11,
+            color: c.text,
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>ZAAHI Listings (114)</span>
+          </span>
+          <span
+            title="Always visible — core ZAAHI inventory"
+            style={{
+              fontSize: 9,
+              letterSpacing: "0.08em",
+              color: c.textDim,
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontWeight: 700,
+              textTransform: "uppercase",
+              flexShrink: 0,
+            }}
+          >
+            Always on
+          </span>
+        </div>
 
-        <LayerGroup
-          c={c}
-          title="Master Plans"
-          open={groupOpen.master}
-          onToggle={() => setGroupOpen((g) => ({ ...g, master: !g.master }))}
-          search={layerSearch}
-          items={[
-            { key: "islands", label: "Dubai Islands" },
-            { key: "meydan", label: "Meydan Horizon" },
-            { key: "alFurjan", label: "Al Furjan" },
-            { key: "intlCity23", label: "International City 2 & 3" },
-            { key: "residential12", label: "Residential District I & II" },
-            { key: "d11", label: "D11 — Parcel L/D" },
-            { key: "nadAlHammer", label: "Nad Al Hammer" },
-          ]}
-          isOn={(k) => layers[k as keyof LayersState] as boolean}
-          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
-        />
-
-        <LayerGroup
-          c={c}
-          title="DDA Districts"
-          open={groupOpen.dda}
-          onToggle={() => setGroupOpen((g) => ({ ...g, dda: !g.dda }))}
-          search={layerSearch}
-          items={DDA_LAYERS.map((d) => ({ key: d.key as string, label: d.label }))}
-          isOn={(k) => layers[k as keyof LayersState] as boolean}
-          onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
-        />
+        {/* Country → category → layer hierarchy (Phase 1 RBAC scaffold).
+            Labels + lock tiers come from LAYER_META; counts/on summed
+            per country. Inside each country, categories render as
+            compact LayerGroup sub-sections (no per-category collapse —
+            the country collapse is the primary control). */}
+        {(() => {
+          type PanelItem = { key: string; label: string; requiredTier?: LayerLockTier };
+          const q = layerSearch.trim().toLowerCase();
+          const searchActive = q.length > 0;
+          // One label lookup fed from DDA_LAYERS + explicit overrides.
+          const labels: Record<string, string> = {};
+          for (const d of DDA_LAYERS) labels[d.key] = d.label;
+          Object.assign(labels, {
+            communities: "Communities",
+            roads: "Major Roads",
+            metro: "Metro Lines",
+            plotLabels: "Plot Numbers (zoom in)",
+            ddaProjects: "DDA Project Boundaries",
+            ddaFreeZones: "DDA Free Zones",
+            ddaLandPlots: "DDA Land Plots (99K)",
+            islands: "Dubai Islands",
+            meydan: "Meydan Horizon",
+            alFurjan: "Al Furjan",
+            intlCity23: "International City 2 & 3",
+            residential12: "Residential District I & II",
+            d11: "D11 — Parcel L/D",
+            nadAlHammer: "Nad Al Hammer",
+            adMunicipalities: "AD Municipalities",
+            adDistricts: "AD Districts",
+            adCommunities: "AD Communities",
+            adLandPlots: "AD Land Plots (362K)",
+            uaeDistricts: "UAE Districts",
+            saudiGovernorates: "Saudi Arabia Governorates",
+            riyadhZones: "Riyadh Zones",
+            omanLandPlots: "Oman Land Plots (95K)",
+          });
+          const grouped: Record<LayerCountry, Partial<Record<LayerCategory, PanelItem[]>>> = {
+            dubai: {}, abudhabi: {}, otheruae: {}, saudi: {}, oman: {},
+          };
+          for (const [key, meta] of Object.entries(LAYER_META)) {
+            (grouped[meta.country][meta.category] ??= []).push({
+              key, label: labels[key] ?? key, requiredTier: meta.tier,
+            });
+          }
+          return LAYER_COUNTRY_ORDER.map((country) => {
+            const cats = grouped[country];
+            const allInCountry: PanelItem[] = Object.values(cats).flat().filter((x): x is PanelItem => !!x);
+            const matches = searchActive
+              ? allInCountry.filter((i) => i.label.toLowerCase().includes(q))
+              : allInCountry;
+            if (searchActive && matches.length === 0) return null;
+            const onCount = allInCountry.filter((i) => layers[i.key as keyof LayersState] as boolean).length;
+            const total = allInCountry.length;
+            const open = searchActive || !!countryOpen[country];
+            return (
+              <CountryGroup
+                key={country}
+                c={c}
+                title={COUNTRY_LABELS[country]}
+                open={open}
+                searchActive={searchActive}
+                onToggle={() => setCountryOpen((s) => ({ ...s, [country]: !s[country] }))}
+                onCount={onCount}
+                total={total}
+              >
+                {LAYER_CATEGORY_ORDER.map((cat) => {
+                  const items = cats[cat];
+                  if (!items || items.length === 0) return null;
+                  return (
+                    <LayerGroup
+                      key={`${country}-${cat}`}
+                      c={c}
+                      title={CATEGORY_LABELS[cat]}
+                      open={true}
+                      onToggle={() => { /* categories are always open inside an open country */ }}
+                      hideCollapseCaret
+                      search={layerSearch}
+                      items={items}
+                      isOn={(k) => layers[k as keyof LayersState] as boolean}
+                      onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
+                    />
+                  );
+                })}
+              </CountryGroup>
+            );
+          });
+        })()}
 
         {/* DDA + AD Land toggles are in Base Layers above */}
       </div>
@@ -3702,11 +3960,13 @@ function LayerToggle({
   checked,
   onChange,
   color,
+  requiredTier,
 }: {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
   color: string;
+  requiredTier?: "GOLD" | "PLATINUM";
 }) {
   return (
     <label
@@ -3714,7 +3974,7 @@ function LayerToggle({
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "3px 14px",
+        padding: "3px 14px 3px 22px",
         fontSize: 11,
         cursor: "pointer",
         color,
@@ -3730,23 +3990,65 @@ function LayerToggle({
         }}
         style={{ accentColor: GOLD, width: 12, height: 12, margin: 0 }}
       />
-      {label}
+      <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+      {requiredTier && <LockBadge tier={requiredTier} />}
     </label>
   );
 }
 
+// Visual-only lock badge for Phase 1 — hover shows upgrade copy, click
+// deep-links to /join#gold or /join#platinum. Toggle still works; Phase
+// 3 will disable the checkbox once `useAccess()` lands.
+function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
+  const href = tier === "PLATINUM" ? "/join#platinum" : "/join#gold";
+  const accent = tier === "PLATINUM" ? "#B4E5FF" : GOLD;
+  return (
+    <a
+      href={href}
+      title={`Upgrade to ${tier} to unlock`}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        padding: "1px 5px",
+        border: `1px solid ${accent}`,
+        borderRadius: 3,
+        fontSize: 9,
+        letterSpacing: "0.08em",
+        color: accent,
+        textDecoration: "none",
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontWeight: 700,
+        flexShrink: 0,
+      }}
+    >
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+      {tier}
+    </a>
+  );
+}
+
 // ── Searchable, sortable, collapsible layer group with All/None ──
+// Used as a category sub-section inside a CountryGroup. Phase 1 adds
+// `requiredTier` (lock badge, visual only) + `hideCollapseCaret` (so
+// categories inside a country don't render a per-section ▸/▾ caret —
+// the country accordion is the primary collapse control).
 function LayerGroup({
-  c, title, open, onToggle, search, items, isOn, onChange,
+  c, title, open, onToggle, search, items, isOn, onChange, hideCollapseCaret,
 }: {
   c: ChromeTheme;
   title: string;
   open: boolean;
   onToggle: () => void;
   search: string;
-  items: Array<{ key: string; label: string }>;
+  items: Array<{ key: string; label: string; requiredTier?: "GOLD" | "PLATINUM" }>;
   isOn: (key: string) => boolean;
   onChange: (key: string, v: boolean) => void;
+  hideCollapseCaret?: boolean;
 }) {
   const q = search.trim().toLowerCase();
   const sorted = [...items].sort((a, b) => a.label.localeCompare(b.label));
@@ -3794,7 +4096,7 @@ function LayerGroup({
             gap: 6,
           }}
         >
-          <span>{effectivelyOpen ? "▾" : "▸"}</span>
+          {!hideCollapseCaret && <span>{effectivelyOpen ? "▾" : "▸"}</span>}
           <span>{title}</span>
           <span style={{ color: GOLD, fontFamily: '"SF Mono", Menlo, monospace', letterSpacing: 0 }}>
             ({onCount}/{total})
@@ -3822,11 +4124,67 @@ function LayerGroup({
           checked={isOn(i.key)}
           onChange={(v) => onChange(i.key, v)}
           color={c.text}
+          requiredTier={i.requiredTier}
         />
       ))}
     </div>
   );
 }
+
+// Country-level accordion header — wraps one or more LayerGroup
+// sub-sections (Base / DDA / Master Plans / Land Plots / …). Collapsible
+// via ▾/▸ caret; force-opens when search is active. Count shown as
+// ON/TOTAL across all layers in the country.
+function CountryGroup({
+  c, title, open, searchActive, onToggle, onCount, total, children,
+}: {
+  c: ChromeTheme;
+  title: string;
+  open: boolean;
+  searchActive: boolean;
+  onToggle: () => void;
+  onCount: number;
+  total: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        disabled={searchActive}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 6,
+          padding: "9px 12px",
+          background: "transparent",
+          border: 0,
+          borderTop: `1px solid ${c.border}`,
+          color: GOLD,
+          cursor: searchActive ? "default" : "pointer",
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: 11,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          fontWeight: 700,
+          textAlign: "left",
+        }}
+      >
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, color: c.textDim, width: 10 }}>{open ? "▾" : "▸"}</span>
+          <span>{title}</span>
+        </span>
+        <span style={{ color: c.textDim, fontFamily: '"SF Mono", Menlo, monospace', letterSpacing: 0, fontSize: 10, textTransform: "none" }}>
+          ({onCount}/{total})
+        </span>
+      </button>
+      {open && <div>{children}</div>}
+    </div>
+  );
+}
+
 // Tri-state section checkbox: ☐ none / ▪ some / ✓ all. Replaces the old
 // pair of "All" and "None" text buttons in each LayerGroup header.
 function SectionCheckbox({

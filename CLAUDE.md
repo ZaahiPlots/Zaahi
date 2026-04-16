@@ -369,12 +369,14 @@ Footprint каждого верхнего яруса получается чер
 - ВЫКЛЮЧЕНЫ по умолчанию: все DDA районы, мастер-планы, Communities, Major Roads, Metro и прочие overlays. Пользователь сам включает через Layers panel.
 
 ### Навигация по карте
-- WASD drone navigation — always-on на desktop (не активируется на touch/mobile).
-  - W/A/S/D — полёт в направлении камеры, Space — выше, Shift — ниже, Shift+WASD — ×3 скорость.
-  - Правая кнопка мыши (drag) — вращение камеры (bearing + pitch 0–85°).
+- WASD drone navigation — **toggleable**, default OFF на desktop (не активируется на touch/mobile). Пользователь включает через кнопку-дрон в правом вертикальном стакане под 2D/3D. Состояние сохраняется в `localStorage["zaahi-drone-mode"]`.
+  - OFF (default): стандартная MapLibre навигация, WASD/Space/Shift не перехватываются, правая кнопка мыши не захватывает курсор.
+  - ON: W/A/S/D (через `e.code`, layout-independent) — полёт в направлении камеры, Space — выше, Shift — ниже, Shift+WASD — ×3 turbo. Правая кнопка мыши → pointer lock → свободное вращение bearing + pitch (0–85°). Escape отпускает lock. Velocity-based физика с easing.
   - Левая кнопка — клик по участку (не трогать), стандартная MapLibre навигация работает параллельно.
   - Ignore keys когда фокус в input/textarea/contenteditable.
-  - Реализация: `src/lib/drone-controls.ts`, install в map-init useEffect, cleanup на unmount.
+  - При выключении: velocity сбрасывается в 0, keys Set очищается, pointer lock отпускается.
+  - Кнопка "D" на клавиатуре — только движение, НЕ переключает drone mode (переключение только через UI кнопку).
+  - Реализация: `src/lib/drone-controls.ts` (controller pattern: `{ enable, disable, destroy }`), install в map-init useEffect, state `droneEnabled` в `src/app/parcels/map/page.tsx`.
 
 ### UI
 - Hover на участок: мини-карточка (plotNumber | район | sqft | цена | landUse)
@@ -476,9 +478,14 @@ Footprint каждого верхнего яруса получается чер
 - [ ] Цвета 3D зданий соответствуют land use
 - [ ] Клик на участок открывает side panel с данными
 - [ ] Слои (Layers) панель открывается
+- [ ] Панель сгруппирована по country → category (Dubai/Abu Dhabi/Other UAE/Saudi/Oman)
+- [ ] Только страна, в которой находится пользователь по map center, раскрыта по умолчанию (на первом открытии)
+- [ ] Lock badges (🔒 GOLD / 🔒 PLATINUM) видны рядом с master plans + DDA 99K + AD PMTiles + Oman PMTiles + Riyadh Zones; click на badge открывает /join#gold (Phase 3 сделает их actually disabled)
+- [ ] Search в top панели фильтрует все страны, force-expand при наличии матчей
+- [ ] "ZAAHI Listings (114) — ALWAYS ON" индикатор в топе панели
 - [ ] По умолчанию видны ТОЛЬКО ZAAHI Plots (остальные слои off)
 - [ ] DDA Districts, мастер-планы, Communities, Roads НЕ загружаются автоматически
-- [ ] WASD drone navigation работает (desktop), правая кнопка мыши вращает камеру
+- [ ] Drone-mode кнопка (иконка дрон, под 2D/3D) toggle работает: OFF → серая + стандартная навигация; ON → gold + WASD/Space/Shift + правый клик = pointer lock rotate; состояние сохраняется в localStorage между reload
 - [ ] Toggle отдельного слоя работает (вкл/выкл)
 - [ ] Чекбокс секции (ALL) работает
 - [ ] Archibald (кот) иконка видна

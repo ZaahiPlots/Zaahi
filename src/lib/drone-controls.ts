@@ -1,22 +1,29 @@
-// ZAAHI — always-on WASD drone navigation for the parcels map.
+// ZAAHI — toggleable WASD drone navigation for the parcels map.
 //
-// Installs desktop-only keyboard flight controls + right-click rotate on
-// an existing MapLibre map instance. Call `installDroneControls(map)` on
-// map mount; the returned cleanup function MUST be called on unmount.
+// `installDroneControls(map)` wires listeners once, but they're gated by
+// an internal `enabled` flag that the caller flips via the returned
+// controller. Default is OFF. The map page renders a toggle button on
+// the chrome (near 2D/3D) and calls `enable()` / `disable()` when the
+// user clicks it.
 //
-// Controls:
-//   W/A/S/D  — forward / strafe left / backward / strafe right
+// Controls when enabled:
+//   W/A/S/D  — forward / strafe left / backward / strafe right (uses e.code)
 //   Space    — ascend   (zoom out by 0.05 per frame)
 //   Shift    — descend  (zoom in  by 0.05 per frame) — ONLY when no WASD
-//   Shift+W/A/S/D — ×3 speed
-//   Right-click drag   — rotate bearing + pitch (pitch clamped 0..85)
-//   Scroll / left-click / pinch — untouched, existing handlers intact
+//   Shift+W/A/S/D — ×3 speed (turbo)
+//   Right-click on canvas → requestPointerLock → free rotation via
+//     pointer-lock movementX/Y (bearing + pitch 0..85). Release with
+//     Escape or by disabling drone mode.
 //
 // Rules:
+//   - When disabled: keyboard + mouse handlers early-return. WASD/Space
+//     don't move the map, right-click falls through to the browser
+//     context menu / existing MapLibre behaviour.
 //   - Never interferes with left-click parcel handlers.
 //   - Ignores keys when an <input>/<textarea>/contenteditable has focus.
-//   - Skips install entirely on touch / coarse-pointer devices.
-//   - Cleanup is idempotent (React strict-mode safe).
+//   - Skips install on touch / coarse-pointer devices — the controller
+//     is returned as a no-op so the caller's code path stays the same.
+//   - Cleanup (`destroy`) is idempotent; React strict-mode safe.
 
 import type maplibregl from "maplibre-gl";
 
@@ -29,7 +36,14 @@ const EASING = 0.15;        // velocity easing factor per frame
 const ROTATE_BEARING_SENS = 0.3;  // deg per px
 const ROTATE_PITCH_SENS = 0.3;    // deg per px
 
-export function installDroneControls(map: maplibregl.Map): () => void {
+export type DroneController = {
+  enable(): void;
+  disable(): void;
+  isEnabled(): boolean;
+  destroy(): void;
+};
+
+export function installDroneControls(map: maplibregl.Map): DroneController {
   // Desktop-only gate. Store at setup time so nothing reacts to runtime
   // device changes (e.g. pairing a touchscreen mid-session).
   const isTouch = (() => {
@@ -45,22 +59,27 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     return false;
   })();
   if (isTouch) {
-    return () => {};
+    return {
+      enable() {},
+      disable() {},
+      isEnabled: () => false,
+      destroy() {},
+    };
   }
 
-  const keys = new Set<string>();
+  let enabled = false;
   let disposed = false;
   let rafId: number | null = null;
+
+  const keys = new Set<string>();
 
   // Smooth velocity — one value per axis, eased toward the target each frame.
   let vLng = 0;
   let vLat = 0;
   let vZoom = 0;
 
-  // Right-click drag state.
-  let rotating = false;
-  let lastX = 0;
-  let lastY = 0;
+  // Right-click / pointer-lock rotate state.
+  let pointerLocked = false;
 
   const container = map.getCanvasContainer();
 
@@ -74,21 +93,29 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     return false;
   }
 
+  // Use e.code so the mapping is layout-independent (AZERTY users get the
+  // same physical-key bindings as QWERTY).
+  function normalizeCode(e: KeyboardEvent): string | null {
+    if (e.code === "Space") return " ";
+    if (e.code === "ShiftLeft" || e.code === "ShiftRight") return "shift";
+    if (e.code === "KeyW") return "w";
+    if (e.code === "KeyA") return "a";
+    if (e.code === "KeyS") return "s";
+    if (e.code === "KeyD") return "d";
+    return null;
+  }
+
   function onKeyDown(e: KeyboardEvent) {
+    if (!enabled) return;
     if (isTypingTarget()) return;
-    const k = normalizeKey(e);
+    const k = normalizeCode(e);
     if (!k) return;
-    // Prevent page scroll on Space / arrow-like keys while flying.
-    if (k === " " || k === "shift" || ["w", "a", "s", "d"].includes(k)) {
-      // Only preventDefault for Space — it scrolls the page. Letters
-      // are already non-scrolling, Shift is a modifier we don't block.
-      if (k === " ") e.preventDefault();
-    }
+    if (k === " ") e.preventDefault(); // stop page-scroll on Space
     keys.add(k);
   }
 
   function onKeyUp(e: KeyboardEvent) {
-    const k = normalizeKey(e);
+    const k = normalizeCode(e);
     if (!k) return;
     keys.delete(k);
   }
@@ -97,37 +124,40 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     keys.clear();
   }
 
-  function normalizeKey(e: KeyboardEvent): string | null {
-    if (e.key === " " || e.code === "Space") return " ";
-    if (e.key === "Shift") return "shift";
-    const k = e.key.toLowerCase();
-    if (k === "w" || k === "a" || k === "s" || k === "d") return k;
-    return null;
-  }
-
-  // Right-click drag → rotate bearing + pitch. Left-click is untouched.
   function onContextMenu(e: MouseEvent) {
-    // Suppress browser context menu over the map so right-drag works.
+    if (!enabled) return;
+    // Suppress browser context menu over the map while flying so right-drag
+    // / pointer-lock rotation works.
     e.preventDefault();
   }
 
   function onMouseDown(e: MouseEvent) {
+    if (!enabled) return;
     if (e.button !== 2) return; // right-button only
-    rotating = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    // Capture pointer-ish behaviour: follow the mouse until mouseup even
-    // if the cursor leaves the canvas.
-    window.addEventListener("mousemove", onWindowMouseMove);
-    window.addEventListener("mouseup", onWindowMouseUp);
+    e.preventDefault();
+    // Request pointer lock on the canvas container. Browsers fire
+    // pointerlockchange async; our movement listener is always-on and
+    // gated by `pointerLocked`.
+    try {
+      container.requestPointerLock();
+    } catch {
+      /* some browsers reject outside user gesture — ignore */
+    }
   }
 
-  function onWindowMouseMove(e: MouseEvent) {
-    if (!rotating) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-    lastX = e.clientX;
-    lastY = e.clientY;
+  function onPointerLockChange() {
+    pointerLocked = document.pointerLockElement === container;
+  }
+
+  function onPointerLockError() {
+    pointerLocked = false;
+  }
+
+  function onLockedMouseMove(e: MouseEvent) {
+    if (!enabled || !pointerLocked) return;
+    const dx = e.movementX;
+    const dy = e.movementY;
+    if (!dx && !dy) return;
     const nextBearing = map.getBearing() - dx * ROTATE_BEARING_SENS;
     const nextPitchRaw = map.getPitch() + dy * ROTATE_PITCH_SENS;
     const nextPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, nextPitchRaw));
@@ -135,21 +165,24 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     map.setPitch(nextPitch);
   }
 
-  function onWindowMouseUp(e: MouseEvent) {
-    if (e.button !== 2 && rotating) {
-      // Non-right-button mouseup; keep rotating only if the right button
-      // is still down (rare). Simpler: end on any mouseup.
+  function releasePointerLock() {
+    try {
+      if (document.pointerLockElement === container) {
+        document.exitPointerLock();
+      }
+    } catch {
+      /* ignore */
     }
-    rotating = false;
-    window.removeEventListener("mousemove", onWindowMouseMove);
-    window.removeEventListener("mouseup", onWindowMouseUp);
+    pointerLocked = false;
   }
 
-  // Animation loop — reads the key Set, eases velocity toward the target,
-  // applies to map center / zoom each frame.
+  // Animation loop — runs always, but does nothing when disabled. Cheaper
+  // than tearing down rAF on every toggle.
   function tick() {
     if (disposed) return;
     rafId = requestAnimationFrame(tick);
+    if (!enabled) return;
+
     const zoom = map.getZoom();
     const bearingRad = (map.getBearing() * Math.PI) / 180;
     const zoomFactor = Math.pow(2, Math.min(SPEED_ZOOM_CAP, 20 - zoom));
@@ -159,7 +192,6 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     const shiftHeld = keys.has("shift");
     const mult = shiftHeld && hasMoveKey ? 3 : 1;
 
-    // Target velocity this frame.
     let tLng = 0;
     let tLat = 0;
     let tZoom = 0;
@@ -183,18 +215,13 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     tLng *= mult;
     tLat *= mult;
 
-    // Space → ascend (zoom out, smaller zoom value).
-    // Shift alone (no WASD) → descend (zoom in, larger zoom value).
     if (keys.has(" ")) tZoom -= ZOOM_STEP;
     if (shiftHeld && !hasMoveKey) tZoom += ZOOM_STEP;
 
-    // Easing.
     vLng += (tLng - vLng) * EASING;
     vLat += (tLat - vLat) * EASING;
     vZoom += (tZoom - vZoom) * EASING;
 
-    // Dead-zone — when both target and velocity are tiny, skip the map
-    // updates so we don't spam render requests while idle.
     const EPS = 1e-9;
     if (Math.abs(vLng) > EPS || Math.abs(vLat) > EPS) {
       const c = map.getCenter();
@@ -206,36 +233,54 @@ export function installDroneControls(map: maplibregl.Map): () => void {
     }
   }
 
-  // Wire everything up. Key listeners on window (so focus can be anywhere
-  // on the page that isn't an input). Mouse listeners on the map canvas
-  // container so we only intercept right-click over the map.
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", clearKeys);
   document.addEventListener("visibilitychange", clearKeys);
+  document.addEventListener("pointerlockchange", onPointerLockChange);
+  document.addEventListener("pointerlockerror", onPointerLockError);
+  document.addEventListener("mousemove", onLockedMouseMove);
   container.addEventListener("contextmenu", onContextMenu);
   container.addEventListener("mousedown", onMouseDown);
 
-  // Start the loop. If the map isn't loaded yet, the first few frames
-  // are cheap no-ops (getCenter/getBearing work pre-load).
   rafId = requestAnimationFrame(tick);
 
-  return () => {
-    if (disposed) return;
-    disposed = true;
-    if (rafId !== null) cancelAnimationFrame(rafId);
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
-    window.removeEventListener("blur", clearKeys);
-    document.removeEventListener("visibilitychange", clearKeys);
-    window.removeEventListener("mousemove", onWindowMouseMove);
-    window.removeEventListener("mouseup", onWindowMouseUp);
-    try {
-      container.removeEventListener("contextmenu", onContextMenu);
-      container.removeEventListener("mousedown", onMouseDown);
-    } catch {
-      /* container may already be gone if map.remove() ran first */
-    }
-    keys.clear();
+  return {
+    enable() {
+      if (disposed) return;
+      enabled = true;
+    },
+    disable() {
+      if (disposed) return;
+      enabled = false;
+      // Reset velocity + key state so a re-enable starts from a clean slate.
+      vLng = 0;
+      vLat = 0;
+      vZoom = 0;
+      keys.clear();
+      releasePointerLock();
+    },
+    isEnabled: () => enabled,
+    destroy() {
+      if (disposed) return;
+      disposed = true;
+      enabled = false;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", clearKeys);
+      document.removeEventListener("visibilitychange", clearKeys);
+      document.removeEventListener("pointerlockchange", onPointerLockChange);
+      document.removeEventListener("pointerlockerror", onPointerLockError);
+      document.removeEventListener("mousemove", onLockedMouseMove);
+      try {
+        container.removeEventListener("contextmenu", onContextMenu);
+        container.removeEventListener("mousedown", onMouseDown);
+      } catch {
+        /* container may already be gone if map.remove() ran first */
+      }
+      releasePointerLock();
+      keys.clear();
+    },
   };
 }
