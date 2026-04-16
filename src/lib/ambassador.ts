@@ -1,14 +1,19 @@
 // ── ZAAHI Ambassador Program ─────────────────────────────────────
-// 3-level referral system. Approved by founder 2026-04-14.
+// 3-level paid-tier ambassador program. Approved by founder 2026-04-15.
 //
-// Rates:
-//   Level 1 (direct referral):      30% of platform fee share
-//   Level 2 (referral of referral): 15%
-//   Level 3:                         5%
+// REPLACES the prior 30/15/5 free-referral model. Ambassadors now buy into
+// one of three lifetime-membership tiers (SILVER / GOLD / PLATINUM) via a
+// one-time USDT TRC-20 payment. Commission rates depend on the tier.
 //
-// Platform fee: 0.25% of agreedPriceInFils (per CLAUDE.md monetization).
-// Split into seller-half and buyer-half; each half is walked upline
-// independently through 3 ambassador levels.
+// Plan-aware rates (per level):
+//   SILVER   — L1 5% / L2 2% / L3 1%
+//   GOLD     — L1 10% / L2 4% / L3 1%
+//   PLATINUM — L1 15% / L2 6% / L3 1%
+//
+// Commission BASE is the ZAAHI service fee = 2% of deal value (NOT the old
+// 0.25% platform fee). This is frozen onto Deal.platformFeeFils at
+// DEAL_COMPLETED. The fee is split into seller-half and buyer-half, and each
+// half walks the referral chain independently through 3 levels.
 //
 // All amounts stored in fils (1 AED = 100 fils) as BigInt.
 // Commissions are IMMUTABLE once created — never updated or deleted.
@@ -19,13 +24,35 @@ import { createHash, randomBytes } from "node:crypto";
 
 // ── Constants ──
 
-// Commission rates by level. Keep in sync with CLAUDE.md § Ambassador Program.
-// Index 0 = Level 1, index 1 = Level 2, index 2 = Level 3.
-export const COMMISSION_RATES = [0.30, 0.15, 0.05] as const;
+// Plan-aware commission rates. Keep in sync with CLAUDE.md § Ambassador Program.
+export const PLAN_COMMISSION_RATES = {
+  SILVER:   { L1: 0.05, L2: 0.02, L3: 0.01 },
+  GOLD:     { L1: 0.10, L2: 0.04, L3: 0.01 },
+  PLATINUM: { L1: 0.15, L2: 0.06, L3: 0.01 },
+} as const;
+
+export type AmbassadorPlan = keyof typeof PLAN_COMMISSION_RATES;
+
+// ZAAHI service fee as fraction of deal value (2% per founder 2026-04-15).
+export const ZAAHI_SERVICE_FEE_RATE = 0.02;
+
+// ── Legacy exports (replaced 2026-04-15) ──
+// The old flat COMMISSION_RATES / PLATFORM_FEE_RATE are kept exported for
+// backward compatibility with the existing /ambassador dashboard + commission
+// awarder. The values here are the GOLD-tier defaults — the new awardCommissions
+// flow should look up rates via PLAN_COMMISSION_RATES[plan] once the User
+// model grows an `ambassadorPlan` column. Until then, any user flagged
+// `ambassadorActive=true` without an explicit plan is treated as GOLD.
+// DO NOT import COMMISSION_RATES in new code — use PLAN_COMMISSION_RATES.
+export const COMMISSION_RATES = [
+  PLAN_COMMISSION_RATES.GOLD.L1,
+  PLAN_COMMISSION_RATES.GOLD.L2,
+  PLAN_COMMISSION_RATES.GOLD.L3,
+] as const;
 export const MAX_LEVEL = 3;
 
-// Platform fee as fraction of agreed price (0.25% per CLAUDE.md monetization).
-export const PLATFORM_FEE_RATE = 0.0025;
+// Kept for backward compatibility. New callers should use ZAAHI_SERVICE_FEE_RATE.
+export const PLATFORM_FEE_RATE = ZAAHI_SERVICE_FEE_RATE;
 
 // Referral code format: 8 chars, uppercase alphanumeric, no 0/O/1/I/L for readability.
 const REFERRAL_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -56,12 +83,13 @@ export function hashIp(ip: string): string {
 }
 
 /**
- * Compute platform fee for a given agreed price. Returns BigInt fils.
- * Platform fee = agreedPrice × 0.25%.
+ * Compute ZAAHI service fee for a given agreed price. Returns BigInt fils.
+ * Service fee = agreedPrice × 2% (founder 2026-04-15 — replaces old 0.25%).
+ * Function name kept for backward compatibility with existing callers.
  */
 export function computePlatformFee(agreedPriceFils: bigint): bigint {
-  // 0.0025 = 25 / 10000. Use integer math to avoid floating point drift.
-  return (agreedPriceFils * BigInt(25)) / BigInt(10000);
+  // 0.02 = 200 / 10000. Use integer math to avoid floating point drift.
+  return (agreedPriceFils * BigInt(200)) / BigInt(10000);
 }
 
 // ── Referral code resolution ──

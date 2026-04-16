@@ -314,6 +314,29 @@ model Commission {
   @@index([status])
 }
 
+// Ambassador registration applications from the public /join page.
+// Paid-tier model (SILVER / GOLD / PLATINUM) — one-time USDT TRC-20 purchase
+// for lifetime membership. Commissions live on the Commission table once the
+// application is verified and the ambassador user is activated. Rows are
+// PENDING until admin verifies the USDT tx, then VERIFIED (ambassador enabled)
+// or REJECTED (payment not found / fraud).
+model AmbassadorApplication {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String
+  company       String?
+  experience    String?
+  plan          String // SILVER | GOLD | PLATINUM
+  txHash        String
+  status        String   @default("PENDING") // PENDING | VERIFIED | ACTIVE | REJECTED
+  checklistData Json? // 10 onboarding checkboxes — all must be true at submit
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+}
+
 // Analytics-only: records landing page hits on /r/[code].
 // Lightweight — no PII, ip is hashed. Safe to prune after 90 days.
 model ReferralClick {
