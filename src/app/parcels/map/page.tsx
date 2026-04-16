@@ -4398,6 +4398,23 @@ function HeaderBar({
     return sound.subscribe(setSoundOn);
   }, []);
 
+  // Admin detection — probes /api/admin/me on mount. If ok, shows the
+  // admin link in the header. Non-admins never see the link. Handled
+  // here rather than in a context so it stays a single-component concern.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch("/api/admin/me");
+        if (!cancelled && res.ok) setIsAdmin(true);
+      } catch {
+        /* non-admin; silently ignore */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const flash = (m: string) => {
     setMsg(m);
     setTimeout(() => setMsg(null), 3000);
@@ -4555,6 +4572,20 @@ function HeaderBar({
         >
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
+        {isAdmin && (
+          <a
+            href="/admin/ambassadors"
+            title="Admin — Ambassador applications"
+            aria-label="Admin"
+            style={{ ...hdrBtnStyle(c), textDecoration: "none", borderColor: GOLD, background: "rgba(200, 169, 110, 0.12)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.12)"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2 L4 6 V12 C4 17 7.5 20.5 12 22 C16.5 20.5 20 17 20 12 V6 Z" />
+            </svg>
+          </a>
+        )}
         <a
           href="/dashboard"
           title="Profile"

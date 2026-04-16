@@ -6,6 +6,64 @@ import { getApprovedUserId } from '@/lib/auth';
 import { resolveReferrer, wouldCreateCycle } from '@/lib/ambassador';
 
 /**
+ * If this user's email matches an APPROVED ambassador application that
+ * hasn't been linked to a user row yet, hook them up: copy the
+ * application's referralCode onto the User row, flip ambassadorActive=true,
+ * record linkedUserId on the application and move it into ACTIVE status.
+ *
+ * Runs every sync but is a no-op unless there's an APPROVED app with
+ * matching email and null linkedUserId. Errors are swallowed — the
+ * sync response must always succeed.
+ *
+ * Note: the schema adds admin-review fields on AmbassadorApplication
+ * (approvedBy, linkedUserId, etc., commit 4af728c). There is no
+ * `AMBASSADOR` value in the UserRole enum — instead we use the existing
+ * User.ambassadorActive boolean as the activation signal (matches
+ * activateAmbassador() in src/lib/ambassador.ts and the rest of the
+ * codebase).
+ */
+async function linkApprovedApplication(userId: string, email: string): Promise<void> {
+  try {
+    const app = await prisma.ambassadorApplication.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        status: "APPROVED",
+        linkedUserId: null,
+        referralCode: { not: null },
+      },
+      select: { id: true, referralCode: true },
+    });
+    if (!app || !app.referralCode) return;
+
+    // Both writes in one transaction so linkedUserId + user.referralCode
+    // stay consistent. If either side already has a different code,
+    // prefer the application's (admin-assigned) code.
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          referralCode: app.referralCode,
+          ambassadorActive: true,
+        },
+      }),
+      prisma.ambassadorApplication.update({
+        where: { id: app.id },
+        data: {
+          status: "ACTIVE",
+          linkedUserId: userId,
+        },
+      }),
+    ]);
+  } catch (e) {
+    // Swallow — the sync itself must not fail because of a link error.
+    // Common expected cause: user.referralCode @unique collision if the
+    // user already had one assigned before application was approved.
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[users/sync] ambassador application link skipped:", msg);
+  }
+}
+
+/**
  * POST /api/users/sync
  * Called by the client right after supabase.auth.signUp succeeds.
  * Creates (or updates) the matching row in our Prisma `User` table.
@@ -79,6 +137,10 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {});
   }
+
+  // Auto-link any APPROVED ambassador application matching this email.
+  // Must run AFTER upsert so there is always a User row to attach to.
+  await linkApprovedApplication(userId, email);
 
   const res = NextResponse.json(user, { status: 201 });
   // Clear the cookie regardless of outcome so subsequent signups don't reuse it
