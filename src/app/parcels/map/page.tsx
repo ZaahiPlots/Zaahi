@@ -1984,9 +1984,14 @@ function ParcelsMapPageInner() {
               visibility: "none",
             },
             paint: {
-              "text-color": isDark ? "#E8E0D0" : "#1A1A2E",
-              "text-halo-color": isDark ? "rgba(10,22,40,0.85)" : "rgba(255,255,255,0.9)",
-              "text-halo-width": 1.2,
+              // Warm off-white on a soft-blurred navy halo for a
+              // "frosted glass" feel without full CSS backdrop-filter
+              // (WebGL text can't have real CSS blur — text-halo-blur
+              // is the closest approximation we have).
+              "text-color": isDark ? "#f5f1e8" : "#1A1A2E",
+              "text-halo-color": isDark ? "rgba(10, 22, 40, 0.75)" : "rgba(255, 255, 255, 0.85)",
+              "text-halo-width": 1.8,
+              "text-halo-blur": 0.5,
             },
           });
         }
@@ -3654,16 +3659,24 @@ function ParcelsMapPageInner() {
         .maplibregl-ctrl-attrib a {
           color: ${GOLD} !important;
         }
+        /* ZAAHI Premium glass popup — applies to all hover popups
+           over DDA projects, free-zones, communities, roads, metro,
+           master plans, etc. Single className drives all of them. */
         .zaahi-popup .maplibregl-popup-content {
-          background: ${isDark ? "rgba(10,22,40,0.95)" : "rgba(255,255,255,0.97)"} !important;
-          color: ${c.text} !important;
-          border: 1px solid ${GOLD};
-          border-radius: 6px;
-          padding: 5px 8px;
-          font-size: 9px;
+          background: ${isDark ? "rgba(10, 22, 40, 0.75)" : "rgba(255, 255, 255, 0.72)"} !important;
+          backdrop-filter: blur(24px) saturate(150%);
+          -webkit-backdrop-filter: blur(24px) saturate(150%);
+          color: ${isDark ? "#f5f1e8" : c.text} !important;
+          border: 1px solid rgba(200, 169, 110, 0.25) !important;
+          border-radius: 10px;
+          padding: 6px 10px;
+          font-size: 10px;
+          letter-spacing: 0.02em;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         .zaahi-popup .maplibregl-popup-tip {
-          border-top-color: ${GOLD} !important;
+          border-top-color: rgba(200, 169, 110, 0.4) !important;
+          border-bottom-color: rgba(200, 169, 110, 0.4) !important;
         }
       `}</style>
       {zaahiHover && (
