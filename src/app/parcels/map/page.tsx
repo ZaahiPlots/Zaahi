@@ -3387,20 +3387,29 @@ function ParcelsMapPageInner() {
           position: "absolute",
           top: 64,
           left: 60,
-          width: 220,
+          width: 260,
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
-          background: c.bg,
-          border: `1px solid ${isDark ? GOLD : c.border}`,
-          borderRadius: 8,
+          background: "rgba(10, 22, 40, 0.75)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          borderRadius: 12,
           zIndex: 11,
-          boxShadow: c.headerShadow,
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
+          color: "rgba(255, 255, 255, 0.9)",
         }}
       >
         <div
           style={{
-            padding: "8px 14px",
-            borderBottom: `1px solid ${c.borderSubtle}`,
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            padding: "10px 14px",
+            background: "rgba(10, 22, 40, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -3419,31 +3428,37 @@ function ParcelsMapPageInner() {
             style={{
               background: "transparent",
               border: "none",
-              color: c.textDim,
+              color: "rgba(255, 255, 255, 0.55)",
               cursor: "pointer",
-              fontSize: 16,
+              fontSize: 18,
               lineHeight: 1,
               padding: 0,
+              transition: "color 150ms ease",
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = GOLD; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255, 255, 255, 0.55)"; }}
           >
             ×
           </button>
         </div>
 
         {/* Search */}
-        <div style={{ padding: "8px 10px", borderBottom: `1px solid ${c.borderSubtle}` }}>
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
-              padding: "5px 8px",
-              border: `1px solid ${c.border}`,
-              borderRadius: 6,
-              background: c.bg,
+              padding: "6px 10px",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: 8,
+              background: "rgba(255, 255, 255, 0.04)",
+              transition: "border-color 150ms ease, background 150ms ease",
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = GOLD; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; }}
           >
-            <span style={{ fontSize: 11, color: c.textDim }}>⌕</span>
+            <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.55)" }}>⌕</span>
             <input
               value={layerSearch}
               onChange={(e) => setLayerSearch(e.target.value)}
@@ -3452,17 +3467,18 @@ function ParcelsMapPageInner() {
                 flex: 1,
                 border: 0,
                 background: "transparent",
-                color: c.text,
+                color: "rgba(255, 255, 255, 0.9)",
                 fontSize: 11,
                 outline: "none",
                 minWidth: 0,
+                fontFamily: "inherit",
               }}
             />
             {layerSearch && (
               <button
                 onClick={() => setLayerSearch("")}
                 aria-label="Clear search"
-                style={{ background: "transparent", border: 0, color: c.textDim, cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}
+                style={{ background: "transparent", border: 0, color: "rgba(255, 255, 255, 0.55)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}
               >
                 ×
               </button>
@@ -3479,14 +3495,14 @@ function ParcelsMapPageInner() {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 8,
-            padding: "9px 14px",
-            borderTop: `1px solid ${c.border}`,
+            padding: "10px 14px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
             fontSize: 11,
-            color: c.text,
+            color: "rgba(255, 255, 255, 0.9)",
           }}
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: GOLD, flexShrink: 0, boxShadow: "0 0 8px rgba(200, 169, 110, 0.5)" }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>ZAAHI Listings (114)</span>
           </span>
           <span
@@ -3494,11 +3510,15 @@ function ParcelsMapPageInner() {
             style={{
               fontSize: 9,
               letterSpacing: "0.08em",
-              color: c.textDim,
+              color: GOLD,
               fontFamily: 'Georgia, "Times New Roman", serif',
               fontWeight: 700,
               textTransform: "uppercase",
               flexShrink: 0,
+              padding: "2px 6px",
+              border: "1px solid rgba(200, 169, 110, 0.3)",
+              borderRadius: 3,
+              background: "rgba(200, 169, 110, 0.08)",
             }}
           >
             Always on
@@ -3974,12 +3994,16 @@ function LayerToggle({
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "3px 14px 3px 22px",
+        padding: "5px 14px 5px 24px",
         fontSize: 11,
         cursor: "pointer",
-        color,
+        color: checked ? GOLD : color,
         lineHeight: 1.3,
+        borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
+        transition: "background 150ms ease, color 150ms ease",
       }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
     >
       <input
         type="checkbox"
@@ -3988,7 +4012,7 @@ function LayerToggle({
           sound.toggleSfx();
           onChange(e.target.checked);
         }}
-        style={{ accentColor: GOLD, width: 12, height: 12, margin: 0 }}
+        style={{ accentColor: GOLD, width: 13, height: 13, margin: 0, cursor: "pointer" }}
       />
       <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
       {requiredTier && <LockBadge tier={requiredTier} />}
@@ -4002,6 +4026,8 @@ function LayerToggle({
 function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
   const href = tier === "PLATINUM" ? "/join#platinum" : "/join#gold";
   const accent = tier === "PLATINUM" ? "#B4E5FF" : GOLD;
+  const bgTint = tier === "PLATINUM" ? "rgba(180, 229, 255, 0.1)" : "rgba(200, 169, 110, 0.12)";
+  const bgHover = tier === "PLATINUM" ? "rgba(180, 229, 255, 0.2)" : "rgba(200, 169, 110, 0.25)";
   return (
     <a
       href={href}
@@ -4011,17 +4037,21 @@ function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 3,
-        padding: "1px 5px",
+        padding: "2px 6px",
         border: `1px solid ${accent}`,
         borderRadius: 3,
         fontSize: 9,
         letterSpacing: "0.08em",
         color: accent,
+        background: bgTint,
         textDecoration: "none",
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontWeight: 700,
         flexShrink: 0,
+        transition: "background 150ms ease",
       }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = bgHover; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = bgTint; }}
     >
       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="4" y="11" width="16" height="10" rx="2" />
@@ -4066,13 +4096,14 @@ function LayerGroup({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "7px 12px 5px",
-          borderTop: `1px solid ${c.borderSubtle}`,
+          padding: "8px 12px 6px 20px",
+          background: "rgba(255, 255, 255, 0.02)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: 10,
-          letterSpacing: "0.12em",
+          letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: c.textDim,
+          color: "rgba(255, 255, 255, 0.55)",
           gap: 4,
         }}
       >
@@ -4083,7 +4114,7 @@ function LayerGroup({
             flex: 1,
             background: "transparent",
             border: 0,
-            color: c.textDim,
+            color: "rgba(255, 255, 255, 0.55)",
             cursor: q ? "default" : "pointer",
             padding: 0,
             textAlign: "left",
@@ -4123,7 +4154,7 @@ function LayerGroup({
           label={i.label}
           checked={isOn(i.key)}
           onChange={(v) => onChange(i.key, v)}
-          color={c.text}
+          color="rgba(255, 255, 255, 0.9)"
           requiredTier={i.requiredTier}
         />
       ))}
@@ -4136,7 +4167,7 @@ function LayerGroup({
 // via ▾/▸ caret; force-opens when search is active. Count shown as
 // ON/TOTAL across all layers in the country.
 function CountryGroup({
-  c, title, open, searchActive, onToggle, onCount, total, children,
+  c: _c, title, open, searchActive, onToggle, onCount, total, children,
 }: {
   c: ChromeTheme;
   title: string;
@@ -4147,6 +4178,7 @@ function CountryGroup({
   total: number;
   children: React.ReactNode;
 }) {
+  const anyOn = onCount > 0;
   return (
     <div>
       <button
@@ -4158,26 +4190,50 @@ function CountryGroup({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 6,
-          padding: "9px 12px",
-          background: "transparent",
+          padding: "11px 14px",
+          background: open ? "rgba(200, 169, 110, 0.06)" : "transparent",
           border: 0,
-          borderTop: `1px solid ${c.border}`,
-          color: GOLD,
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: open ? "1px solid rgba(255, 255, 255, 0.08)" : "none",
+          color: anyOn || open ? GOLD : "rgba(255, 255, 255, 0.75)",
           cursor: searchActive ? "default" : "pointer",
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: 11,
-          letterSpacing: "0.1em",
+          letterSpacing: "0.12em",
           textTransform: "uppercase",
           fontWeight: 700,
           textAlign: "left",
+          transition: "background 150ms ease, color 150ms ease",
+        }}
+        onMouseEnter={(e) => {
+          if (searchActive) return;
+          e.currentTarget.style.background = "rgba(200, 169, 110, 0.1)";
+          e.currentTarget.style.color = GOLD;
+        }}
+        onMouseLeave={(e) => {
+          if (searchActive) return;
+          e.currentTarget.style.background = open ? "rgba(200, 169, 110, 0.06)" : "transparent";
+          e.currentTarget.style.color = anyOn || open ? GOLD : "rgba(255, 255, 255, 0.75)";
         }}
       >
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, color: c.textDim, width: 10 }}>{open ? "▾" : "▸"}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 9, color: "rgba(255, 255, 255, 0.55)", width: 8, transition: "transform 200ms ease", transform: open ? "rotate(0deg)" : "rotate(-90deg)", display: "inline-block" }}>▾</span>
           <span>{title}</span>
         </span>
-        <span style={{ color: c.textDim, fontFamily: '"SF Mono", Menlo, monospace', letterSpacing: 0, fontSize: 10, textTransform: "none" }}>
-          ({onCount}/{total})
+        <span
+          style={{
+            color: anyOn ? GOLD : "rgba(255, 255, 255, 0.45)",
+            fontFamily: '"SF Mono", Menlo, monospace',
+            letterSpacing: 0,
+            fontSize: 10,
+            textTransform: "none",
+            padding: "1px 6px",
+            borderRadius: 3,
+            border: `1px solid ${anyOn ? "rgba(200, 169, 110, 0.3)" : "rgba(255, 255, 255, 0.1)"}`,
+            background: anyOn ? "rgba(200, 169, 110, 0.1)" : "rgba(255, 255, 255, 0.04)",
+          }}
+        >
+          {onCount}/{total}
         </span>
       </button>
       {open && <div>{children}</div>}
