@@ -32,3 +32,29 @@ Return checklist:
 When resuming, create new branch from research/wall-archibald-system, update research doc with deltas from pause period, then proceed to Sprint 1 spec.
 
 ---
+
+## UAE Government API Audit
+
+Completed: 2026-04-16
+Status: Report written, pending founder review
+
+Research artifact: docs/research/GOV_API_AUDIT_UAE.md
+Branch: research/gov-api-audit
+Purpose: Catalog all official UAE government APIs for land/real-estate data (DLD, Dubai Pulse, Abu Dhabi open data, federal sources) to inform data integration strategy for ZAAHI.
+
+Next step: Founder review of report and decision on which APIs to integrate first.
+
+---
+
+## UAE Compliance Desk Research (Draft)
+
+Archived: 2026-04-16
+Status: Draft from prior Claude session, not reviewed
+
+Research artifact: docs/research/UAE_COMPLIANCE_DRAFT.md
+Branch: research/uae-compliance-draft
+Purpose: Early desk research on UAE compliance landscape (scope unclear, predates current research structure).
+
+Next step: Founder decides — review and promote to formal research, or discard. No action required meanwhile.
+
+---
