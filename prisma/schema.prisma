@@ -95,6 +95,22 @@ model User {
   referredAt       DateTime?
   ambassadorActive Boolean   @default(false)
 
+  // ── Profile fields (added 2026-04-16 with dashboards Phase 1) ──
+  // All nullable/additive; safe to deploy with existing rows. The
+  // /dashboard profile form hydrates from these and persists via
+  // PATCH /api/me.
+  avatarUrl          String?
+  bio                String?
+  timezone           String?   // IANA, e.g. "Asia/Dubai"
+  language           String?   // "EN" | "AR" | "RU" | "UK" | "SQ" | "FR"
+  currency           String?   // "AED" | "USD" | "EUR"
+  companyName        String?
+  reraLicense        String?   // BROKER only
+  brnNumber          String?   // BROKER only
+  lastSeenAt         DateTime?
+  notificationPrefs  Json?     // { inApp: {...}, email: {...}, push: {...} }
+  onboardingCompleted Boolean  @default(false)
+
   parcels       Parcel[]      @relation("ParcelOwner")
   dealsAsSeller Deal[]        @relation("DealSeller")
   dealsAsBuyer  Deal[]        @relation("DealBuyer")
@@ -104,6 +120,13 @@ model User {
   referredBy  User?        @relation("UserReferrals", fields: [referredById], references: [id])
   referrals   User[]       @relation("UserReferrals")
   commissions Commission[]
+
+  // Phase 1 user-dashboard relations
+  savedParcels  SavedParcel[]
+  parcelViews   ParcelView[]
+  notifications Notification[]
+  activityLog   ActivityLog[]
+  savedSearches SavedSearch[]
 
   @@index([role])
   @@index([referredById])
@@ -129,6 +152,10 @@ model Parcel {
   deals          Deal[]
   documents      Document[]
   affectionPlans AffectionPlan[]
+
+  // Phase 1 user-dashboard relations
+  savedBy    SavedParcel[]
+  views      ParcelView[]
 
   @@unique([emirate, district, plotNumber])
   @@index([ownerId])
@@ -358,4 +385,96 @@ model ReferralClick {
 
   @@index([referralCode])
   @@index([createdAt])
+}
+
+// ── Phase 1 user-dashboard models ───────────────────────────────────
+// All added 2026-04-16 with USER_DASHBOARDS_RESEARCH.md Phase 1. Additive,
+// never modified after create (immutable audit trail for ParcelView /
+// ActivityLog / Notification; SavedParcel and SavedSearch rows get
+// CRUD'd normally).
+
+// BUYER / OWNER / anyone can save a parcel from the map or detail page.
+// @@unique([userId, parcelId]) — saving twice is a no-op upsert.
+model SavedParcel {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parcelId  String
+  parcel    Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, parcelId])
+  @@index([userId])
+  @@index([parcelId])
+}
+
+// Append-only view log. Drives OWNER "who viewed my plot" analytics
+// (aggregate only — no PII exposed to owner). Debounced on the client
+// so refreshing a page doesn't inflate counts.
+//   userId nullable — anonymous viewers logged with ipHash only.
+//   Retention: prune rows > 180 days in a scheduled job (Phase 6+).
+model ParcelView {
+  id        String   @id @default(cuid())
+  parcelId  String
+  parcel    Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ipHash    String?  // SHA256(ip+salt)
+  userAgent String?
+  viewedAt  DateTime @default(now())
+
+  @@index([parcelId, viewedAt])
+  @@index([userId, viewedAt])
+}
+
+// In-app notification inbox. `kind` is a machine-readable event type
+// (e.g. "PLOT_VIEW_SPIKE", "NEW_OFFER", "SAVED_SEARCH_MATCH"); payload
+// is JSON with contextual IDs the UI uses to render links. Email/push
+// delivery is a separate pipeline (Phase 6) — this table is the
+// source-of-truth inbox.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String    // uppercase snake_case
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// Lightweight user event stream — drives "Recent Activity" in dashboard.
+// `kind` parallels Notification.kind. `ref` is an optional link target
+// (e.g. parcelId or dealId). Payload is JSON for renderer context.
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  ref       String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// BUYER saved filter + optional bounding box. Triggers alerts when a
+// new plot matches (Phase 6 — alert delivery). Max 10 per user enforced
+// in API layer, not DB.
+//   filters: arbitrary JSON, validated by Zod server-side
+//   lastNotifiedAt: last time we emailed/pushed a match
+model SavedSearch {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  filters         Json
+  locationBounds  Json?     // { minLng, minLat, maxLng, maxLat }
+  lastNotifiedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
 }

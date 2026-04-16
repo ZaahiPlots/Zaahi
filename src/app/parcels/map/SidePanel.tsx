@@ -120,6 +120,8 @@ export default function SidePanel({
   const [offerOpen, setOfferOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
 
   useEffect(() => {
     supabaseBrowser.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -133,11 +135,46 @@ export default function SidePanel({
     setData(null);
     setDocsOpen(false);
     setFeasOpen(false);
+    setIsFavorite(false);
     apiFetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
       .then((d) => setData(d))
       .finally(() => setLoading(false));
   }, [parcelId]);
+
+  // Fetch favourite state whenever the parcel changes. Silent on errors
+  // (favourites are a nice-to-have, shouldn't block the panel).
+  useEffect(() => {
+    if (!parcelId || !signedIn) { setIsFavorite(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/me/favorites");
+        if (!r.ok) return;
+        const json = (await r.json()) as { items: Array<{ parcel: { id: string } }> };
+        if (!cancelled) {
+          setIsFavorite(json.items.some((x) => x.parcel.id === parcelId));
+        }
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
+  }, [parcelId, signedIn]);
+
+  async function toggleFavorite() {
+    if (!parcelId || !signedIn || favoriteBusy) return;
+    setFavoriteBusy(true);
+    const nextState = !isFavorite;
+    setIsFavorite(nextState); // optimistic
+    try {
+      await apiFetch(`/api/me/favorites/${parcelId}`, {
+        method: nextState ? "POST" : "DELETE",
+      });
+    } catch {
+      setIsFavorite(!nextState); // rollback
+    } finally {
+      setFavoriteBusy(false);
+    }
+  }
 
   const open = parcelId != null;
   const plan = data?.affectionPlans?.[0] ?? null;
@@ -213,6 +250,31 @@ export default function SidePanel({
             <div style={{ color: SUBTLE, fontSize: 11 }}>{loading ? "Loading…" : ""}</div>
           )}
         </div>
+        {data && signedIn && (
+          <button
+            onClick={toggleFavorite}
+            disabled={favoriteBusy}
+            title={isFavorite ? "Remove from favourites" : "Save to favourites"}
+            aria-label={isFavorite ? "Remove from favourites" : "Save to favourites"}
+            style={{
+              background: isFavorite ? "rgba(230, 57, 70, 0.15)" : "transparent",
+              border: `1px solid ${isFavorite ? "rgba(230, 57, 70, 0.5)" : LINE}`,
+              borderRadius: 8,
+              width: 32,
+              height: 32,
+              cursor: favoriteBusy ? "wait" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "background 150ms ease, border-color 150ms ease",
+              fontFamily: "inherit",
+              fontSize: 14,
+              color: isFavorite ? "#F87171" : SUBTLE,
+            }}
+          >
+            {isFavorite ? "♥" : "♡"}
+          </button>
+        )}
       </div>
 
       {data && (

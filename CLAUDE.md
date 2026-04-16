@@ -590,6 +590,12 @@ Commission rows **immutable** — никогда не обновлять `amount
 - All architectural decisions require founder approval
 - Agent communicates via CLAUDE.md and git commits only
 
+## Future work / backlog
+
+Отложенные задачи — в `BACKLOG.md`. Не брать без явного решения founder'а.
+Текущий backlog:
+- Vector basemap migration (MapTiler / Protomaps) — после Phase 1 Dashboards + Abu Dhabi migration
+
 ## SESSION STATUS — 2026-04-15
 
 ### База данных

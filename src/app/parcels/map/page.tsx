@@ -6,6 +6,7 @@ import { Protocol } from "pmtiles";
 import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
+import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import MiniMap from "./MiniMap";
 import TermsAcceptModal from "./TermsAcceptModal";
@@ -1353,6 +1354,16 @@ function ParcelsMapPageInner() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [selectedParcelId]);
+
+  // Record a ParcelView whenever the user opens a parcel (SidePanel
+  // becomes visible). The API throttles at 30s per (user, parcel) so
+  // re-opens don't inflate counts. Self-views are filtered out on the
+  // server. Best-effort — never blocks the UI.
+  useEffect(() => {
+    if (!selectedParcelId) return;
+    void apiFetch(`/api/parcels/${selectedParcelId}/view`, { method: "POST" }).catch(() => { /* silent */ });
+  }, [selectedParcelId]);
+
   const [zaahiHover, setZaahiHover] = useState<{
     x: number;
     y: number;
@@ -3984,6 +3995,7 @@ function ParcelsMapPageInner() {
           setSelectedParcelId(null);
         }}
       />
+      <WelcomeTour />
     </div>
   );
 }
