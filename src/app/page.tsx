@@ -145,6 +145,71 @@ export default function AuthPage() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      <style>{`
+        @keyframes zaahiBannerSlide {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+        .zaahi-banner-full { display: inline; }
+        .zaahi-banner-short { display: none; }
+        @media (max-width: 520px) {
+          .zaahi-banner-full { display: none; }
+          .zaahi-banner-short { display: inline; }
+        }
+      `}</style>
+
+      {/* Ambassador promo banner — fixed top, links to /join */}
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={() => router.push('/join')}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push('/join'); } }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background =
+            'linear-gradient(90deg, rgba(200,169,110,0.30) 0%, rgba(200,169,110,0.48) 50%, rgba(200,169,110,0.30) 100%)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background =
+            'linear-gradient(90deg, rgba(200,169,110,0.22) 0%, rgba(200,169,110,0.36) 50%, rgba(200,169,110,0.22) 100%)';
+        }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 48,
+          zIndex: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          padding: '0 16px',
+          background:
+            'linear-gradient(90deg, rgba(200,169,110,0.22) 0%, rgba(200,169,110,0.36) 50%, rgba(200,169,110,0.22) 100%)',
+          borderBottom: `1px solid ${GOLD}`,
+          color: '#FFFFFF',
+          fontSize: 13,
+          fontWeight: 500,
+          letterSpacing: '0.02em',
+          cursor: 'pointer',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          pointerEvents: 'auto',
+          transition: 'background 0.2s ease',
+          animation: 'zaahiBannerSlide 0.4s ease-out',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={GOLD} aria-hidden>
+          <path d="M12 2l2.39 7.36H22l-6.19 4.5L18.2 21 12 16.5 5.8 21l2.39-7.14L2 9.36h7.61L12 2z" />
+        </svg>
+        <span className="zaahi-banner-full">
+          Become a ZAAHI Ambassador — Earn on every land deal
+        </span>
+        <span className="zaahi-banner-short">Become Ambassador</span>
+        <span style={{ color: GOLD, fontSize: 16, fontWeight: 600 }} aria-hidden>→</span>
+      </div>
+
       {/* Layer 1 — Live satellite map (interactive) */}
       <div
         ref={mapContainer}
@@ -173,7 +238,7 @@ export default function AuthPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 16,
+          padding: '64px 16px 16px',
           zIndex: 10,
           pointerEvents: 'none',
         }}
@@ -344,7 +409,26 @@ export default function AuthPage() {
 
             <div
               style={{
-                marginTop: 24,
+                marginTop: 18,
+                textAlign: 'center',
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.6)',
+                fontFamily: 'inherit',
+              }}
+            >
+              New to ZAAHI?{' '}
+              <a
+                href="/join"
+                onClick={(e) => { e.preventDefault(); router.push('/join'); }}
+                style={{ color: GOLD, textDecoration: 'none', fontWeight: 600 }}
+              >
+                Become an Ambassador →
+              </a>
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
                 textAlign: 'center',
                 fontSize: 11,
                 color: 'rgba(255,255,255,0.4)',
