@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 export const runtime = 'nodejs';
 
@@ -194,6 +195,14 @@ export async function POST(req: NextRequest) {
         notes: body.description ?? null,
         raw: submissionPayload as unknown as Prisma.InputJsonValue,
       },
+    });
+
+    // Activity: LISTING_CREATED (submit flow — PENDING_REVIEW status).
+    void logActivity({
+      userId: callerId,
+      kind: 'LISTING_CREATED',
+      ref: parcel.id,
+      payload: { flow, status: parcel.status, district },
     });
 
     return NextResponse.json({ id: parcel.id, status: parcel.status });

@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       ipHash: hashIp(ip),
       userAgent,
     },
+  });
+
+  // Activity: PLOT_VIEW — inherits the 30s throttle from above (only
+  // fires when we actually recorded a ParcelView row).
+  void logActivity({
+    userId,
+    kind: "PLOT_VIEW",
+    ref: parcelId,
   });
 
   return NextResponse.json({ recorded: true });

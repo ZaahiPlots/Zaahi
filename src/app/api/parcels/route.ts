@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getApprovedUserId } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 // BigInt isn't JSON-serializable by default.
 function serialize<T>(value: T): T {
@@ -99,6 +100,13 @@ export async function POST(req: NextRequest) {
         currentValuation:
           currentValuation != null ? BigInt(currentValuation) : null,
       },
+    });
+    // Activity: LISTING_CREATED (direct-create path — VACANT status).
+    void logActivity({
+      userId,
+      kind: 'LISTING_CREATED',
+      ref: parcel.id,
+      payload: { flow: 'direct', status: parcel.status, emirate, district },
     });
     return NextResponse.json(serialize(parcel), { status: 201 });
   } catch (e) {

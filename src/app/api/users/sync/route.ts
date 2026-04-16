@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
 import { resolveReferrer, wouldCreateCycle } from '@/lib/ambassador';
+import { logActivity } from '@/lib/activity';
 
 /**
  * If this user's email matches an APPROVED ambassador application that
@@ -141,6 +142,15 @@ export async function POST(req: NextRequest) {
   // Auto-link any APPROVED ambassador application matching this email.
   // Must run AFTER upsert so there is always a User row to attach to.
   await linkApprovedApplication(userId, email);
+
+  // Activity: USER_LOGIN — fires on every sync call (signin + refresh
+  // on already-signed-in sessions). Over-counts slightly vs. pure
+  // login events; acceptable for Phase 1 data collection.
+  void logActivity({
+    userId,
+    kind: 'USER_LOGIN',
+    payload: { isNewUser: !existing },
+  });
 
   const res = NextResponse.json(user, { status: 201 });
   // Clear the cookie regardless of outcome so subsequent signups don't reuse it

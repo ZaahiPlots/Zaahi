@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const row = await prisma.savedParcel.create({
       data: { userId, parcelId },
       select: { id: true, createdAt: true },
+    });
+    // Activity: FAVORITE_ADDED — only on genuine new save (not the
+    // P2002 idempotent path, where nothing actually changed).
+    void logActivity({
+      userId,
+      kind: "FAVORITE_ADDED",
+      ref: parcelId,
     });
     return NextResponse.json({ saved: true, ...row });
   } catch (e: unknown) {
