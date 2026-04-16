@@ -3015,8 +3015,8 @@ function ParcelsMapPageInner() {
             left: "50%",
             transform: "translateX(-50%)",
             background: "rgba(10,22,40,0.7)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.9)",
             borderRadius: 12,
@@ -3072,19 +3072,19 @@ function ParcelsMapPageInner() {
           height: 30,
           borderRadius: 6,
           border: `1px solid rgba(200, 169, 110, 0.3)`,
-          background: "rgba(10, 22, 40, 0.4)",
+          background: "rgba(10, 22, 40, 0.5)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
-          boxShadow: "none",
+          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: 0,
-          transition: "border-color 150ms ease, background 150ms ease",
+          transition: "border-color 150ms ease, background 150ms ease, box-shadow 150ms ease",
         }}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -3107,18 +3107,18 @@ function ParcelsMapPageInner() {
           height: 30,
           borderRadius: 6,
           border: `1px solid rgba(200, 169, 110, 0.3)`,
-          background: "rgba(10, 22, 40, 0.4)",
+          background: "rgba(10, 22, 40, 0.5)",
           color: GOLD,
           cursor: "pointer",
           zIndex: 11,
-          boxShadow: "none",
+          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           transition: "border-color 150ms ease, background 150ms ease",
         }}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
@@ -3138,9 +3138,9 @@ function ParcelsMapPageInner() {
             maxHeight: "calc(100vh - 130px)",
             overflowY: "auto",
             background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            border: "1px solid rgba(200, 169, 110, 0.15)",
             borderRadius: 12,
             boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
             zIndex: 12,
@@ -3154,7 +3154,7 @@ function ParcelsMapPageInner() {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "10px 14px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              borderBottom: "1px solid rgba(200, 169, 110, 0.15)",
             }}
           >
             <div
@@ -3216,7 +3216,7 @@ function ParcelsMapPageInner() {
 
           <div
             style={{
-              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              borderTop: "1px solid rgba(200, 169, 110, 0.15)",
               padding: "10px 14px",
               fontSize: 10,
               color: "rgba(255, 255, 255, 0.55)",
@@ -3255,18 +3255,18 @@ function ParcelsMapPageInner() {
               height: 30,
               borderRadius: 6,
               border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.4)",
+              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.5)",
               color: baseMap === b ? "#0A1628" : c.text,
               cursor: "pointer",
               fontSize: 12,
-              boxShadow: "none",
+              boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
               transition: "border-color 150ms ease, background 150ms ease",
             }}
             onMouseEnter={(e) => {
               if (baseMap !== b) { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }
             }}
             onMouseLeave={(e) => {
-              if (baseMap !== b) { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }
+              if (baseMap !== b) { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }
             }}
           >
             {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
@@ -3344,14 +3344,14 @@ function ParcelsMapPageInner() {
             height: 30,
             borderRadius: 6,
             border: `1px solid ${droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.4)",
+            background: droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
             color: droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 0,
-            boxShadow: "none",
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
             transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
           }}
           onMouseEnter={(e) => {
@@ -3361,7 +3361,7 @@ function ParcelsMapPageInner() {
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.4)";
+            e.currentTarget.style.background = droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
             e.currentTarget.style.color = droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)";
           }}
         >
@@ -3391,13 +3391,13 @@ function ParcelsMapPageInner() {
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
           background: "rgba(10, 22, 40, 0.75)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          borderRadius: 12,
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          border: "1px solid rgba(200, 169, 110, 0.15)",
+          borderRadius: 16,
           zIndex: 11,
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
-          color: "rgba(255, 255, 255, 0.9)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          color: "#f5f1e8",
         }}
       >
         <div
@@ -3407,8 +3407,8 @@ function ParcelsMapPageInner() {
             zIndex: 2,
             padding: "10px 14px",
             background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
@@ -3450,13 +3450,13 @@ function ParcelsMapPageInner() {
               alignItems: "center",
               gap: 6,
               padding: "6px 10px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(200, 169, 110, 0.15)",
               borderRadius: 8,
               background: "rgba(255, 255, 255, 0.04)",
               transition: "border-color 150ms ease, background 150ms ease",
             }}
             onFocus={(e) => { e.currentTarget.style.borderColor = GOLD; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.15)"; }}
           >
             <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.55)" }}>⌕</span>
             <input
@@ -3674,8 +3674,8 @@ function ParcelsMapPageInner() {
             top: zaahiHover.y + 14, // map container now starts at top:0
             width: 200,
             background: "rgba(10, 22, 40, 0.75)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             color: "#FFFFFF",
             border: "1px solid rgba(255,255,255,0.1)",
             borderLeft: `3px solid ${GOLD}`,
@@ -3711,8 +3711,8 @@ function ParcelsMapPageInner() {
             top: ddaLandHover.y + 14,
             width: 210,
             background: "rgba(10, 22, 40, 0.75)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             color: "#FFFFFF",
             border: "1px solid rgba(255,255,255,0.1)",
             borderLeft: "3px solid #4A90D9",
@@ -3784,8 +3784,8 @@ function ParcelsMapPageInner() {
             rowGap: 6,
             padding: 8,
             background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 12,
             boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
@@ -3925,8 +3925,8 @@ function ParcelsMapPageInner() {
             borderRadius: 8,
             border: `1px solid ${miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
             background: miniOpen ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             color: GOLD,
             cursor: "pointer",
             display: "flex",
@@ -4229,7 +4229,7 @@ function CountryGroup({
             textTransform: "none",
             padding: "1px 6px",
             borderRadius: 3,
-            border: `1px solid ${anyOn ? "rgba(200, 169, 110, 0.3)" : "rgba(255, 255, 255, 0.1)"}`,
+            border: `1px solid ${anyOn ? "rgba(200, 169, 110, 0.4)" : "rgba(200, 169, 110, 0.15)"}`,
             background: anyOn ? "rgba(200, 169, 110, 0.1)" : "rgba(255, 255, 255, 0.04)",
           }}
         >
@@ -4351,7 +4351,7 @@ function ChromeBtn({
         height: 30,
         borderRadius: 6,
         border: `1px solid rgba(200, 169, 110, 0.3)`,
-        background: "rgba(10, 22, 40, 0.4)",
+        background: "rgba(10, 22, 40, 0.5)",
         color: GOLD,
         cursor: "pointer",
         display: "flex",
@@ -4359,12 +4359,12 @@ function ChromeBtn({
         justifyContent: "center",
         fontSize: 15,
         fontWeight: 700,
-        boxShadow: "none",
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         padding: 0,
         transition: "border-color 150ms ease, background 150ms ease",
       }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
     >
       {children}
     </button>
@@ -4482,7 +4482,7 @@ function HeaderBar({
         alignItems: "center",
         padding: "0 12px",
         zIndex: 10,
-        boxShadow: "none",
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         gap: 10,
         // Mobile fallback: horizontal scroll instead of squishing the
         // search inputs together. Touch users can swipe to reach the
@@ -4536,7 +4536,7 @@ function HeaderBar({
           title="Add Plot"
           style={hdrBtnStyle(c)}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
         >
           <span style={{ fontSize: 15, color: GOLD, fontWeight: 700 }}>+</span>
         </button>
@@ -4568,7 +4568,7 @@ function HeaderBar({
           aria-label={soundOn ? "Mute" : "Unmute"}
           style={hdrBtnStyle(c)}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
         >
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
@@ -4591,7 +4591,7 @@ function HeaderBar({
           title="Profile"
           style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
         >
           <span style={{ fontSize: 13 }}>👤</span>
         </a>
@@ -4611,11 +4611,11 @@ function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
     padding: 0,
     borderRadius: 6,
     border: `1px solid rgba(200, 169, 110, 0.3)`,
-    background: "rgba(10, 22, 40, 0.4)",
+    background: "rgba(10, 22, 40, 0.5)",
     color: c.text,
     fontSize: 11,
     fontWeight: 600,
-    boxShadow: "none",
+    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
     cursor: "pointer",
     transition: "border-color 150ms ease, background 150ms ease",
   };
@@ -4651,7 +4651,7 @@ function FindLauncher({
         onClick={() => setOpen(true)}
         style={hdrBtnStyle(c)}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
       >
         <span style={{ fontSize: 12 }}>🔍</span>
       </button>
@@ -4668,9 +4668,9 @@ function FindLauncher({
           padding: "0 4px 0 8px",
           borderRadius: 6,
           border: `1px solid ${error ? "#EF4444" : GOLD}`,
-          background: "rgba(10, 22, 40, 0.4)",
+          background: "rgba(10, 22, 40, 0.5)",
           color: c.text,
-          boxShadow: "none",
+          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           gap: 4,
         }}
       >
@@ -4733,7 +4733,7 @@ function FindLauncher({
             fontSize: 10,
             fontWeight: 600,
             textAlign: "center",
-            boxShadow: "none",
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           }}
         >
           {error}
@@ -4765,7 +4765,7 @@ function HdrField({
         onClick={() => setExpanded(true)}
         style={hdrBtnStyle(c)}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
       >
         <span style={{ fontSize: 13, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
       </button>
@@ -4782,14 +4782,14 @@ function HdrField({
         padding: "0 4px 0 8px",
         borderRadius: 6,
         border: `1px solid rgba(200, 169, 110, 0.3)`,
-        background: "rgba(10, 22, 40, 0.4)",
+        background: "rgba(10, 22, 40, 0.5)",
         color: c.text,
-        boxShadow: "none",
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         gap: 4,
         transition: "border-color 150ms ease, background 150ms ease",
       }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.4)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
     >
       <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
       {label && <span style={{ fontSize: 10, fontWeight: 600, color: c.text }}>{label}</span>}
@@ -4944,7 +4944,7 @@ function MiniRailBtn({
     height: 30,
     borderRadius: 6,
     border: `1px solid ${active ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-    background: active ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.4)",
+    background: active ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.5)",
     color: GOLD,
     cursor: "pointer",
     display: "flex",
@@ -4961,7 +4961,7 @@ function MiniRailBtn({
     e.currentTarget.style.borderColor = active ? GOLD : "rgba(200, 169, 110, 0.3)";
     e.currentTarget.style.background = active
       ? "rgba(200,169,110,0.25)"
-      : "rgba(10, 22, 40, 0.4)";
+      : "rgba(10, 22, 40, 0.5)";
   };
   if (asSpan) {
     return (

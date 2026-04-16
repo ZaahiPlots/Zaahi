@@ -21,10 +21,10 @@ const GOLD = "#C8A96E";
 const GOLD_BRIGHT = "#E8C77A";
 const NAVY = "#1A1A2E";
 const TEAL = "#1B4965";
-const TXT = "#FFFFFF";
-const DIM = "rgba(255,255,255,0.72)";
-const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.12)";
+const TXT = "#f5f1e8";
+const DIM = "rgba(245, 241, 232, 0.72)";
+const SUBTLE = "rgba(245, 241, 232, 0.55)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 const GREEN = "#2D6A4F";
 
 // ── Wallet / payment constants (founder 2026-04-15) ──
@@ -164,12 +164,12 @@ const PLANS: Plan[] = [
 
 // ── Shared glass card style ──
 const GLASS: React.CSSProperties = {
-  background: "rgba(10, 22, 40, 0.4)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255, 255, 255, 0.1)",
+  background: "rgba(10, 22, 40, 0.5)",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  border: "1px solid rgba(200, 169, 110, 0.15)",
   borderRadius: 14,
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+  boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
   color: TXT,
 };
 
@@ -283,10 +283,10 @@ function PricingCard({ plan, onSelect }: { plan: Plan; onSelect: (p: Plan) => vo
         padding: popular ? 36 : 28,
         border: popular
           ? `2px solid ${GOLD_BRIGHT}`
-          : `1px solid rgba(255, 255, 255, 0.1)`,
+          : `1px solid rgba(200, 169, 110, 0.15)`,
         boxShadow: popular
-          ? `0 12px 48px rgba(232, 199, 122, 0.22), 0 0 0 1px ${GOLD}44 inset`
-          : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          ? `0 16px 48px rgba(232, 199, 122, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12)`
+          : "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
         transform: popular ? "scale(1.02)" : "none",
         transition: "transform 200ms ease, box-shadow 200ms ease",
         display: "flex",
@@ -748,8 +748,8 @@ function PaymentModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
         position: "fixed",
         inset: 0,
         background: "rgba(0, 0, 0, 0.65)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        backdropFilter: "blur(24px) saturate(150%)",
+        WebkitBackdropFilter: "blur(24px) saturate(150%)",
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
@@ -764,9 +764,11 @@ function PaymentModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
           width: "100%",
           maxWidth: 560,
           background: "rgba(10, 22, 40, 0.85)",
-          border: `1px solid ${GOLD}55`,
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          border: "1px solid rgba(200, 169, 110, 0.25)",
           borderRadius: 16,
-          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           padding: 32,
           color: TXT,
           position: "relative",

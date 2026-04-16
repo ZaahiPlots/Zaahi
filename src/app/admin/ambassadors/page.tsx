@@ -182,14 +182,14 @@ export default function AmbassadorAdminPage() {
           top: 0,
           zIndex: 5,
           background: "rgba(10, 22, 40, 0.85)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          borderBottom: "1px solid rgba(200, 169, 110, 0.12)",
           padding: "18px 20px",
           marginBottom: 20,
-          borderRadius: 12,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
+          borderRadius: 16,
+          border: "1px solid rgba(200, 169, 110, 0.15)",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -210,7 +210,7 @@ export default function AmbassadorAdminPage() {
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               padding: "6px 12px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(200, 169, 110, 0.15)",
               borderRadius: 6,
               transition: "color 150ms ease, border-color 150ms ease",
             }}
@@ -235,7 +235,7 @@ export default function AmbassadorAdminPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 2, borderBottom: "1px solid rgba(255, 255, 255, 0.08)", marginBottom: 14, overflowX: "auto" }}>
+      <div style={{ display: "flex", gap: 2, borderBottom: "1px solid rgba(200, 169, 110, 0.12)", marginBottom: 14, overflowX: "auto" }}>
         {TABS.map((t) => {
           const active = tab === t.key;
           return (
@@ -275,7 +275,7 @@ export default function AmbassadorAdminPage() {
           style={{
             width: "100%",
             padding: "10px 14px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(200, 169, 110, 0.15)",
             borderRadius: 8,
             background: "rgba(255, 255, 255, 0.04)",
             color: "rgba(255, 255, 255, 0.92)",
@@ -293,11 +293,12 @@ export default function AmbassadorAdminPage() {
       <div
         style={{
           background: "rgba(10, 22, 40, 0.5)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: 12,
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          border: "1px solid rgba(200, 169, 110, 0.15)",
+          borderRadius: 14,
           overflow: "hidden",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
         }}
       >
         <div style={{ overflowX: "auto" }}>

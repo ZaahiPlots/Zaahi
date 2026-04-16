@@ -9,13 +9,15 @@ import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
-// White text on dark translucent panel (matches landing page auth card).
+// Updated 2026-04-16: warm off-white text + gold-tinted lines, matches
+// the design tokens in src/app/globals.css (--text-primary, --glass-*).
 const GOLD = "#C8A96E";
+const GOLD_TEXT = "#e8d5a8";
 const NAVY = "#1A1A2E";
-const TXT = "#FFFFFF";
-const DIM = "rgba(255,255,255,0.75)";
-const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.1)";
+const TXT = "#f5f1e8";
+const DIM = "rgba(245, 241, 232, 0.75)";
+const SUBTLE = "rgba(245, 241, 232, 0.55)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 
 // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
 // remove, or recolor without explicit founder approval. Mirrors
@@ -158,10 +160,10 @@ export default function SidePanel({
     <aside
       style={{
         background: "rgba(10, 22, 40, 0.75)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
-        boxShadow: "-8px 0 40px rgba(0, 0, 0, 0.3)",
+        backdropFilter: "blur(24px) saturate(150%)",
+        WebkitBackdropFilter: "blur(24px) saturate(150%)",
+        borderLeft: "1px solid rgba(200, 169, 110, 0.15)",
+        boxShadow: "-12px 0 48px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.08)",
         color: TXT,
       }}
       // Mobile (< sm): bottom sheet — slides up from the bottom, takes
@@ -185,8 +187,8 @@ export default function SidePanel({
         className="sticky top-0 px-4 py-3 flex items-center gap-2"
         style={{
           background: "rgba(10, 22, 40, 0.85)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
           borderBottom: `1px solid ${LINE}`,
           zIndex: 5,
         }}
@@ -305,8 +307,8 @@ export default function SidePanel({
                 textTransform: "uppercase",
                 cursor: pdfBusy ? "wait" : "pointer",
                 opacity: pdfBusy ? 0.7 : 1,
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
+                backdropFilter: "blur(24px) saturate(150%)",
+                WebkitBackdropFilter: "blur(24px) saturate(150%)",
                 transition: "background 150ms ease, border-color 150ms ease",
                 display: "flex",
                 alignItems: "center",
@@ -590,10 +592,10 @@ export default function SidePanel({
             right: 0,
             padding: 14,
             background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
             borderTop: `1px solid ${LINE}`,
-            boxShadow: "0 -8px 24px rgba(0,0,0,0.25)",
+            boxShadow: "0 -12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           }}
         >
           <button

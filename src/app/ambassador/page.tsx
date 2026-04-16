@@ -24,29 +24,29 @@ import { apiFetch } from "@/lib/api-fetch";
 const GOLD = "#C8A96E";
 const NAVY = "#1A1A2E";
 const TEAL = "#1B4965";
-const TXT = "#FFFFFF";
-const SUBTLE = "rgba(255,255,255,0.55)";
-const DIM = "rgba(255,255,255,0.7)";
-const LINE = "rgba(255,255,255,0.12)";
+const TXT = "#f5f1e8";
+const SUBTLE = "rgba(245, 241, 232, 0.55)";
+const DIM = "rgba(245, 241, 232, 0.7)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 const GREEN = "#2D6A4F";
 const RED = "#E63946";
 const AMBER = "#E67E22";
 
-// Shared glass card style — matches landing page auth card.
+// Shared glass card style — ZAAHI Premium Frosted Glass tokens.
 const GLASS_CARD: React.CSSProperties = {
-  background: "rgba(0, 0, 0, 0.3)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255, 255, 255, 0.12)",
+  background: "rgba(10, 22, 40, 0.5)",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  border: "1px solid rgba(200, 169, 110, 0.15)",
   borderRadius: 14,
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+  boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
   color: TXT,
 };
 
 const GLASS_SUBCARD: React.CSSProperties = {
   background: "rgba(255, 255, 255, 0.04)",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
-  borderRadius: 10,
+  border: "1px solid rgba(200, 169, 110, 0.1)",
+  borderRadius: 12,
   color: TXT,
 };
 

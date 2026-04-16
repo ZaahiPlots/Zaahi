@@ -70,9 +70,9 @@ async function uploadDoc(
 }
 
 const GOLD = "#C8A96E";
-const TXT = "#FFFFFF";
+const TXT = "#f5f1e8";
 const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.1)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 
 type Role = "broker" | "owner" | null;
 
@@ -129,12 +129,12 @@ export default function AddPlotModal({
         style={{
           width: 480,
           maxHeight: "80vh",
-          background: "rgba(10, 22, 40, 0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderRadius: 12,
+          background: "rgba(10, 22, 40, 0.5)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          borderRadius: 16,
           border: `1px solid ${LINE}`,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: TXT,
           display: "flex",
           flexDirection: "column",

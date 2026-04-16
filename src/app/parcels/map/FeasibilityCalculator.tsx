@@ -20,10 +20,10 @@ import {
 
 // ── Palette (ZAAHI Style Guide) ─────────────────────────────────────
 const GOLD = "#C8A96E";
-const TXT = "#FFFFFF";
-const DIM = "rgba(255,255,255,0.70)";
-const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.10)";
+const TXT = "#f5f1e8";
+const DIM = "rgba(245, 241, 232, 0.70)";
+const SUBTLE = "rgba(245, 241, 232, 0.55)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 const GREEN = "#4CAF50";
 const GRAY = "#888888";
 
@@ -563,13 +563,13 @@ export default function FeasibilityCalculator(props: Props) {
 
   // ── Styles ───────────────────────────────────────────────────────
   const shellStyle: React.CSSProperties = {
-    background: "rgba(10, 22, 40, 0.40)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
+    background: "rgba(10, 22, 40, 0.5)",
+    backdropFilter: "blur(24px) saturate(150%)",
+    WebkitBackdropFilter: "blur(24px) saturate(150%)",
     border: `1px solid ${LINE}`,
-    borderRadius: 12,
+    borderRadius: 16,
     color: TXT,
-    boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+    boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",

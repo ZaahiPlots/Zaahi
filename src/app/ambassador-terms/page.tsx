@@ -13,8 +13,8 @@ import Footer from '@/components/Footer';
 
 const GOLD = '#C8A96E';
 const BG = '#0A0F1E';
-const TEXT = 'rgba(255,255,255,0.85)';
-const TEXT_DIM = 'rgba(255,255,255,0.55)';
+const TEXT = 'rgba(245, 241, 232, 0.85)';
+const TEXT_DIM = 'rgba(245, 241, 232, 0.55)';
 
 const sections: { num: string; id: string; title: string }[] = [
   { num: '1', id: 'overview', title: 'Overview & Acceptance' },

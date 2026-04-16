@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const GOLD = "#C8A96E";
-const TXT = "#FFFFFF";
-const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.1)";
+const TXT = "#f5f1e8";
+const SUBTLE = "rgba(245, 241, 232, 0.55)";
+const LINE = "rgba(200, 169, 110, 0.15)";
 
 interface Props {
   parcelId: string;
@@ -106,16 +106,16 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "rgba(10, 22, 40, 0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
+          background: "rgba(10, 22, 40, 0.5)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
           border: `1px solid ${LINE}`,
-          borderRadius: 12,
+          borderRadius: 16,
           width: "100%",
           maxWidth: 480,
           maxHeight: "90vh",
           overflowY: "auto",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: TXT,
         }}
       >

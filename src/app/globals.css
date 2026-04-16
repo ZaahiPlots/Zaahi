@@ -1,1 +1,148 @@
 @import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────
+ * ZAAHI Premium Glass design tokens — founder spec 2026-04-16.
+ *
+ * Single source of truth for the "frosted glass" visual language used
+ * everywhere on the platform: map chrome, admin panel, modals,
+ * marketing cards. All inline-style callsites that previously hardcoded
+ * rgba / blur / box-shadow values should migrate to these variables
+ * so a future tweak is a one-file change.
+ *
+ * Palette:
+ *   --glass-bg           primary translucent navy for panels
+ *   --glass-bg-deep      denser variant for sticky headers / dropdowns
+ *   --glass-border       gold-tinted default border (replaces white)
+ *   --glass-border-hover gold-tinted hover border
+ *   --glass-border-active selected / pressed state
+ *   --glass-shadow       elevation for cards (drop + inset top highlight)
+ *   --glass-shadow-sm    elevation for buttons
+ *   --glass-shadow-lg    floating heavy cards / modals
+ *   --glass-blur         24px blur + 150% saturate (luxury feel)
+ *
+ * Text:
+ *   --text-primary       warm off-white #f5f1e8
+ *   --text-secondary     55% warm off-white
+ *   --text-muted         40% warm off-white
+ *   --text-gold          warm gold #e8d5a8 for emphasis
+ *   --text-gold-label    80% muted gold for section labels
+ *
+ * Gold core stays #C8A96E (never change — founder brand).
+ * ──────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Gold core — DO NOT change without founder approval */
+  --gold-primary: #C8A96E;
+  --gold-text: #e8d5a8;
+
+  /* Glass backgrounds */
+  --glass-bg: rgba(10, 22, 40, 0.5);
+  --glass-bg-deep: rgba(10, 22, 40, 0.85);
+  --glass-bg-hover: rgba(10, 22, 40, 0.6);
+
+  /* Glass borders (gold-tinted — primary brand signal) */
+  --glass-border: 1px solid rgba(200, 169, 110, 0.15);
+  --glass-border-hover: 1px solid rgba(200, 169, 110, 0.25);
+  --glass-border-active: 1px solid rgba(200, 169, 110, 0.4);
+
+  /* Raw border color values (for callers that construct their own border) */
+  --glass-border-color: rgba(200, 169, 110, 0.15);
+  --glass-border-color-hover: rgba(200, 169, 110, 0.25);
+  --glass-border-color-active: rgba(200, 169, 110, 0.4);
+
+  /* Elevation */
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Blur — 24px + saturate(150%) for luxury frosted-glass feel */
+  --glass-blur: blur(24px) saturate(150%);
+  --glass-blur-lg: blur(32px) saturate(160%);
+
+  /* Radius scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+
+  /* Text colors (warm palette — replaces cold white) */
+  --text-primary: #f5f1e8;
+  --text-secondary: rgba(245, 241, 232, 0.55);
+  --text-muted: rgba(245, 241, 232, 0.4);
+  --text-gold: #e8d5a8;
+  --text-gold-label: rgba(200, 169, 110, 0.8);
+
+  /* Gold accents */
+  --gold-bg-soft: rgba(200, 169, 110, 0.08);
+  --gold-bg-hover: rgba(200, 169, 110, 0.15);
+  --gold-bg-active: rgba(200, 169, 110, 0.25);
+}
+
+/* Reusable utility classes — opt-in, don't replace inline styles unless
+ * the callsite is already using className. */
+.zaahi-glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+.zaahi-glass-deep {
+  background: var(--glass-bg-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+.zaahi-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-gold-label);
+  font-weight: 700;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.zaahi-btn-primary {
+  background: rgba(200, 169, 110, 0.2);
+  border: 1px solid rgba(200, 169, 110, 0.4);
+  color: var(--gold-text);
+  letter-spacing: 0.12em;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 20px rgba(200, 169, 110, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: background 200ms ease-out, border-color 200ms ease-out, transform 200ms ease-out, box-shadow 200ms ease-out;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.zaahi-btn-primary:hover {
+  background: rgba(200, 169, 110, 0.3);
+  border-color: rgba(200, 169, 110, 0.6);
+  transform: translateY(-2px);
+}
+.zaahi-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 100ms;
+}
+
+.zaahi-btn-secondary {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  transition: background 200ms ease-out, border-color 200ms ease-out;
+  cursor: pointer;
+  font-size: 11px;
+}
+.zaahi-btn-secondary:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-color-hover);
+}

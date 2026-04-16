@@ -67,11 +67,11 @@ export function RejectModal({
         style={{
           width: "min(520px, calc(100vw - 32px))",
           background: "rgba(10, 22, 40, 0.9)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          border: "1px solid rgba(200, 169, 110, 0.15)",
           borderRadius: 14,
-          boxShadow: "0 12px 48px rgba(0, 0, 0, 0.5)",
+          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: "rgba(255, 255, 255, 0.92)",
           overflow: "hidden",
         }}
@@ -97,7 +97,7 @@ export function RejectModal({
               style={{
                 padding: "9px 12px",
                 background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(200, 169, 110, 0.15)",
                 borderRadius: 8,
                 color: "rgba(255, 255, 255, 0.92)",
                 fontSize: 13,
@@ -128,7 +128,7 @@ export function RejectModal({
               style={{
                 padding: "10px 12px",
                 background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(200, 169, 110, 0.15)",
                 borderRadius: 8,
                 color: "rgba(255, 255, 255, 0.92)",
                 fontSize: 12,
