@@ -16,10 +16,15 @@ import { NextRequest, NextResponse } from 'next/server';
  * - /api/auth      — reserved for future server-side auth callbacks.
  * - /api/notify-admin — anonymous "request access" notification posted from
  *                       the public sign-up form. Body is logged only.
+ * - /api/ambassador/register — public ambassador application submitted from
+ *                       the /join landing page. Paid-tier USDT purchase;
+ *                       row is stored as PENDING until admin verifies the
+ *                       on-chain transfer. Founder 2026-04-15.
  */
 const PUBLIC_API = [
   '/api/auth',
   '/api/notify-admin',
+  '/api/ambassador/register',
 ];
 
 // HEAD is included so browser preflights / link checkers don't 401.

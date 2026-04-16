@@ -8,6 +8,7 @@ import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
 import AddPlotModal from "./AddPlotModal";
 import MiniMap from "./MiniMap";
+import TermsAcceptModal from "./TermsAcceptModal";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
@@ -3590,6 +3591,20 @@ function ParcelsMapPageInner() {
               </svg>
             </MiniRailBtn>
             <Link
+              href="/join"
+              title="Become Ambassador"
+              aria-label="Become Ambassador"
+              style={{ display: "block", textDecoration: "none" }}
+              tabIndex={miniOpen ? 0 : -1}
+            >
+              <MiniRailBtn title="Become Ambassador" active={false} onClick={() => {}} asSpan>
+                {/* Sparkle / star — paid-tier ambassador entry point */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l2.39 6.95L22 10l-5.5 4.55L18 22l-6-3.6L6 22l1.5-7.45L2 10l7.61-1.05L12 2z" />
+                </svg>
+              </MiniRailBtn>
+            </Link>
+            <Link
               href="/ambassador"
               title="Ambassador Program"
               aria-label="Ambassador Program"
@@ -4534,6 +4549,8 @@ export default function ParcelsMapPage() {
   return (
     <AuthGuard>
       <ParcelsMapPageInner />
+      {/* Terms-accept gate (first-visit only — persisted in localStorage). */}
+      <TermsAcceptModal />
     </AuthGuard>
   );
 }
