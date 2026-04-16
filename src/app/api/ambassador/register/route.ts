@@ -18,6 +18,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
+import { sendTelegramMessage, escapeMarkdownV2 } from "@/lib/telegram";
+import { renderNewApplicationEmail } from "@/lib/email-templates/new-application";
+import { renderApplicationReceivedEmail } from "@/lib/email-templates/application-received";
+import { PLAN_PRICES_AED, type AmbassadorPlan } from "@/lib/ambassador";
 
 // 10-item onboarding checklist. Keys MUST match what the /join modal sends.
 // Every key has to come back as `true` for the application to be accepted.
@@ -68,16 +73,15 @@ function redactPhone(p: string): string {
   return `***${p.slice(-4)}`;
 }
 
-async function notifyAdmin(summary: {
+async function logAdminSummary(summary: {
   plan: string;
   name: string;
   emailRedacted: string;
   phoneRedacted: string;
   applicationId: string;
 }): Promise<void> {
-  // Best-effort admin notification. Matches the redacted-log shape used by
-  // `src/app/api/notify-admin/route.ts`. Never throws — submit flow must
-  // succeed even if notification isn't wired up.
+  // Redacted-log summary matching `src/app/api/notify-admin/route.ts`.
+  // Vercel log is the fallback channel when Resend/Telegram aren't configured.
   try {
     console.log("=== NEW AMBASSADOR APPLICATION ===");
     console.log(`Plan: ${summary.plan}`);
@@ -89,6 +93,104 @@ async function notifyAdmin(summary: {
   } catch {
     // swallow — notification is not revenue-path critical
   }
+}
+
+// Build a MarkdownV2-safe Telegram message for a new application.
+function buildTelegramMessage(args: {
+  applicationId: string;
+  name: string;
+  email: string;
+  phone: string;
+  plan: string;
+  amountAed: number;
+  txHash: string;
+}): { text: string; keyboard: { text: string; url: string }[][] } {
+  const base = process.env.NEXT_PUBLIC_BASE_URL || "https://zaahi.io";
+  const e = escapeMarkdownV2;
+  const lines = [
+    `*New ambassador application*`,
+    ``,
+    `${e("Plan:")} *${e(args.plan)}* \\(${e(args.amountAed.toLocaleString("en-US"))} AED\\)`,
+    `${e("Name:")} ${e(args.name)}`,
+    `${e("Email:")} ${e(args.email)}`,
+    `${e("Phone:")} ${e(args.phone)}`,
+    `${e("TX:")} \`${e(args.txHash)}\``,
+    `${e("ID:")} \`${e(args.applicationId)}\``,
+  ];
+  return {
+    text: lines.join("\n"),
+    keyboard: [
+      [
+        { text: "Open admin panel", url: `${base}/admin/ambassadors#${args.applicationId}` },
+        { text: "Tronscan", url: `https://tronscan.org/#/transaction/${args.txHash}` },
+      ],
+    ],
+  };
+}
+
+async function fireNotifications(payload: {
+  applicationId: string;
+  name: string;
+  email: string;
+  phone: string;
+  company?: string | null;
+  experience?: string | null;
+  plan: AmbassadorPlan;
+  txHash: string;
+  checklistData: Record<string, boolean>;
+  submittedAt: Date;
+}): Promise<void> {
+  const amountAed = PLAN_PRICES_AED[payload.plan];
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@zaahi.io";
+
+  const adminMail = renderNewApplicationEmail({
+    applicationId: payload.applicationId,
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    company: payload.company,
+    experience: payload.experience,
+    plan: payload.plan,
+    amountAed,
+    txHash: payload.txHash,
+    submittedAt: payload.submittedAt,
+    checklistData: payload.checklistData,
+  });
+
+  const candidateMail = renderApplicationReceivedEmail({
+    name: payload.name,
+    plan: payload.plan,
+    amountAed,
+    txHash: payload.txHash,
+    applicationId: payload.applicationId,
+  });
+
+  const tg = buildTelegramMessage({
+    applicationId: payload.applicationId,
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    plan: payload.plan,
+    amountAed,
+    txHash: payload.txHash,
+  });
+
+  const results = await Promise.allSettled([
+    sendEmail({ to: adminEmail, subject: adminMail.subject, html: adminMail.html, replyTo: payload.email }),
+    sendEmail({ to: payload.email, subject: candidateMail.subject, html: candidateMail.html }),
+    sendTelegramMessage({ text: tg.text, parseMode: "MarkdownV2", inlineKeyboard: tg.keyboard }),
+  ]);
+  const labels = ["admin-email", "candidate-email", "telegram"];
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") {
+      const v = r.value as { ok: boolean; skipped?: boolean; error?: string };
+      if (v.ok) console.log(`[ambassador/register] ${labels[i]} ok`);
+      else if (v.skipped) console.log(`[ambassador/register] ${labels[i]} skipped (env missing)`);
+      else console.warn(`[ambassador/register] ${labels[i]} failed:`, v.error);
+    } else {
+      console.warn(`[ambassador/register] ${labels[i]} rejected:`, r.reason);
+    }
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -146,13 +248,26 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
-    // Fire-and-forget admin notification. No await to keep p50 low.
-    void notifyAdmin({
+    // Fire-and-forget admin log + notifications. No await — keep p50 low.
+    // Application row is the source of truth; notifications are additive.
+    void logAdminSummary({
       plan: data.plan,
       name: data.name,
       emailRedacted: redactEmail(data.email),
       phoneRedacted: redactPhone(data.phone),
       applicationId: created.id,
+    });
+    void fireNotifications({
+      applicationId: created.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      company: data.company ?? null,
+      experience: data.experience ?? null,
+      plan: data.plan,
+      txHash: data.txHash,
+      checklistData: data.checklistData as Record<string, boolean>,
+      submittedAt: new Date(),
     });
 
     return NextResponse.json({ ok: true, id: created.id });

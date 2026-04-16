@@ -321,18 +321,27 @@ model Commission {
 // PENDING until admin verifies the USDT tx, then VERIFIED (ambassador enabled)
 // or REJECTED (payment not found / fraud).
 model AmbassadorApplication {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  phone         String
-  company       String?
-  experience    String?
-  plan          String // SILVER | GOLD | PLATINUM
-  txHash        String
-  status        String   @default("PENDING") // PENDING | VERIFIED | ACTIVE | REJECTED
-  checklistData Json? // 10 onboarding checkboxes — all must be true at submit
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  phone           String
+  company         String?
+  experience      String?
+  plan            String // SILVER | GOLD | PLATINUM
+  txHash          String
+  status          String    @default("PENDING") // PENDING | VERIFIED | ACTIVE | REJECTED
+  checklistData   Json? // 10 onboarding checkboxes — all must be true at submit
+  // ── Admin review (added 2026-04-15 with admin panel) ──
+  // All fields are nullable — populated only when admin acts on the application.
+  referralCode    String?   @unique // assigned on approval, merged to User.referralCode at sync
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String? // admin user id (supabase sub) or email
+  rejectedAt      DateTime?
+  rejectedBy      String?
+  linkedUserId    String? // populated when the approved applicant eventually signs up
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([status])
 }

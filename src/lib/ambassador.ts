@@ -31,6 +31,23 @@ export const PLAN_COMMISSION_RATES = {
   PLATINUM: { L1: 0.15, L2: 0.06, L3: 0.01 },
 } as const;
 
+// Tier prices in AED. Do NOT change without founder approval.
+// Mirror of /join `PLANS[].aed`. Used server-side for revenue stats in the
+// admin panel and template interpolation in approval emails.
+export const PLAN_PRICES_AED = {
+  SILVER: 1000,
+  GOLD: 5000,
+  PLATINUM: 15000,
+} as const;
+
+// Approximate USDT-equivalent at 3.67 AED/USD (stable peg). For display only —
+// the source-of-truth amount is AED.
+export const PLAN_PRICES_USDT = {
+  SILVER: 272,
+  GOLD: 1361,
+  PLATINUM: 4084,
+} as const;
+
 export type AmbassadorPlan = keyof typeof PLAN_COMMISSION_RATES;
 
 // ZAAHI service fee as fraction of deal value (2% per founder 2026-04-15).
