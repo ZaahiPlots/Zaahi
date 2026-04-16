@@ -139,3 +139,46 @@ Build: PASS (`npm run build` exit 0, zero warnings)
 - SidePanel favorite: `src/app/parcels/map/SidePanel.tsx:166-177,253,275`.
 
 — End of audit.
+
+---
+
+## Addendum — second-pass verification (same agent, separate investigation path)
+
+Independently verified the primary BLOCKER via direct `PrismaClient` probe using `.env.local` DATABASE_URL at 2026-04-16 ~20:20 local:
+
+```
+User.count                    : OK  1
+Parcel.count                  : OK  114
+AmbassadorApplication.count   : OK  0
+Deal.count                    : OK  0
+ActivityLog.count             : FAIL (public.ActivityLog does not exist)
+Notification.count            : FAIL
+SavedParcel.count             : FAIL
+ParcelView.count              : FAIL
+SavedSearch.count             : FAIL
+User.avatarUrl access         : FAIL
+AmbassadorApplication.approvedAt access: OK (earlier migration 4af728c landed)
+```
+
+**Confirms B1.** The Phase 1 migration (`20260416160000_user_dashboards_phase_1`) has not been applied. The earlier ambassador admin-review migration (`20260415140000_ambassador_application_admin_fields`, commit `4af728c`) IS applied, which is why the `/admin/ambassadors` panel works but `/dashboard` does not.
+
+**Secondary nuance on 3D duplication:** the PMTiles 3D extrusion layer defaults to `visibility: "none"` (`src/app/parcels/map/page.tsx` addLandTileSource call site, layout config). It only renders if the user manually toggles the "DDA Land Plots" layer in the Layers panel. So the latent filter bug does **not** fire by default — reinforcing the main report's "MITIGATED" assessment for the demo path.
+
+**HTTP probes of production (Frankfurt → Dubai):**
+
+| URL | Status | Time |
+|---|---|---|
+| `GET /` | 200 | 5.8 s cold / 0.3 s warm |
+| `GET /parcels/map` | 200 | 0.17 s warm |
+| `GET /join` | 200 | 0.79 s |
+| `GET /api/layers/communities` | 200 | 6.0 s cold |
+| `GET /api/me` (no auth) | 401 | 0.16 s (correct behaviour) |
+| `GET /api/admin/me` (no auth) | 401 | 0.14 s (correct behaviour) |
+
+Landing + `/parcels/map` + `/join` HTML contain no `REPLACE_ME`, `undefined`, `NaN`, or `Lorem ipsum` tokens.
+
+**One additional practical recommendation:** warm the production cache 30 s before the demo by issuing a single anonymous `GET` to `/`, `/parcels/map`, and `/join` from your machine — the first cold request took ~6 s vs sub-second subsequent. Avoids the investor seeing the loading splash.
+
+**Convergent conclusion:** run `npx prisma migrate deploy` tonight. Verify `ANTHROPIC_API_KEY` on Vercel. Warm the cache. Follow the main report's demo script. Nothing else needs touching in the remaining window.
+
+— End of addendum.
