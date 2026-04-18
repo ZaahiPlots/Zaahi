@@ -1,9 +1,16 @@
-# Zhan Ryspayev — Founder Protection Addendum
+# Z A A H I
 
-**Prepared for:** the Shareholders Agreement schedule
-**Subject:** Zhan Ryspayev, Founder, CEO/CTO
-**Status:** Template structure — exact contractual language to be drafted by UAE corporate counsel at SHA execution (Weeks 6–10).
+*Real Estate OS*
+
+---
+
+**Document:** Founder Protection Addendum — Zhan Ryspayev
+**Prepared for:** Rudi (Principal Investor); the Shareholders Agreement schedule
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
 **Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Subject:** Zhan Ryspayev, Founder, CEO/CTO
+**Status:** Template structure — exact contractual language subject to counsel review (Weeks 6–10 formal SHA)
 
 ---
 
@@ -113,11 +120,12 @@ These are illustrative. The final calibration is agreed at SHA execution.
 
 ### 2.4 Conditions
 
-- Payable while Zhan is actively engaged as CEO/CTO of the Platform (including CTO-only, CEO-only, or combined roles during different phases).
+- Payable **monthly from the Platform (ADGM HoldCo) operating account; pro-rated for partial months**.
+- Payable while Zhan is actively engaged as CEO/CTO of the Platform (CTO-only, CEO-only, or combined roles during different phases).
 - Suspended if Zhan voluntarily takes extended leave of absence exceeding 30 consecutive days (except for medically-justified leave or Board-approved sabbatical).
 - **Terminated** if Zhan voluntarily resigns.
-- **Terminated** if Zhan is terminated for Cause (as defined in the SHA).
-- **Continued for 6 months as severance** if Zhan is terminated without Cause.
+- **Terminated** if Zhan is terminated for Cause (as defined in the Shareholders Agreement).
+- **6 months' severance** paid as a lump sum or monthly continuation if Zhan is terminated without Cause.
 
 ### 2.5 Priority
 

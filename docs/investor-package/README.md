@@ -1,18 +1,25 @@
-# ZAAHI — Investor Package (Monday 2026-04-21)
+# Z A A H I
 
-**Prepared for:** Rudi (silent investor)
-**Prepared by:** Zhan Ryspayev, Founder & CEO/CTO · Dymo Tsvyk, Co-founder
-**Status:** DRAFT — All legal documents require UAE counsel review before execution
-**Branch:** `drafts/investor-package-monday`
+*Real Estate OS*
+
+---
+
+**Document:** Investor Package Index
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
 **Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Agency registration begins:** Monday 2026-04-21
+**Branch:** `drafts/investor-package-monday`
+**Status:** DRAFT — all legal documents subject to UAE counsel review before execution
 
 ---
 
 ## Purpose
 
-This package supports the formal close of Rudi's AED 1,000,000 investment into ZAAHI. All documents are designed for the Monday 2026-04-21 meeting and the 6–8 week formal close that follows.
+This package supports the formal close of Rudi's AED 1,000,000 investment into ZAAHI. Documents are designed for the **Sunday 2026-04-19 meeting at 15:00 in Al Jurf**, the Monday 2026-04-21 agency-registration kickoff, and the 6–10 week formal close that follows.
 
-ZAAHI is an operating company with a live production platform (`zaahi.io`) and a concrete commercial plan. The documents in this package reflect that maturity. Nothing here treats ZAAHI as an early-stage startup seeking first funding — the investment is a formalisation of a partnership that emerged organically after Rudi experienced the product and technology.
+ZAAHI is an operating company with a live production platform at [zaahi.io](https://www.zaahi.io) and a concrete commercial plan. The documents reflect that maturity. The investment formalises a partnership that emerged organically after Rudi experienced the product and technology on April 17, 2026.
 
 ### Positioning note
 
@@ -52,32 +59,67 @@ Allow ~90 minutes for full package review.
 
 ---
 
-## Monday 2026-04-21 meeting agenda (2 hours)
+## Sunday 2026-04-19 Al Jurf meeting — minute-by-minute agenda (2 hours)
 
-| Time | Segment | Outcome |
-|---|---|---|
-| 0:00 – 0:30 | **Pitch deck walkthrough** (Zhan + Dymo) | Rudi has complete understanding of product, market, and strategy. |
-| 0:30 – 1:00 | **Term Sheet review** (all three) | Each clause confirmed or flagged for counsel clarification. |
-| 1:00 – 1:30 | **Financial model discussion** (Zhan leads) | Year 1 projections and Year 1–5 trajectory confirmed or adjusted. |
-| 1:30 – 2:00 | **MOU signing + next steps** | MOU executed. Week 1 counsel engagement agreed. Monday + 6–8 weeks formal close schedule confirmed. |
+Start: 15:00. End: 17:00. Venue: Al Jurf (Abu Dhabi Emirate).
+
+| Time | Minutes | Segment | Lead | Outcome |
+|---|---|---|---|---|
+| 15:00 – 15:05 | 5 | Welcome + context-setting | Zhan + Dymo | Rudi is oriented; the package is in hand |
+| 15:05 – 15:15 | 10 | Product live demo on a laptop | Zhan | `zaahi.io` behaves exactly as April 17 — no new claims, only the existing product |
+| 15:15 – 15:35 | 20 | Pitch deck walkthrough (slides 1–18) | Zhan + Dymo | Complete understanding of product, market, team, moat, strategy |
+| 15:35 – 15:50 | 15 | Master Tree v3 visual — the 10-year roadmap | Zhan | Rudi sees what the AED 1 M unlocks beyond Year 1 |
+| 15:50 – 16:15 | 25 | Term Sheet clause-by-clause review | Dymo leads | Each clause confirmed by Rudi or flagged for Week 1 counsel clarification |
+| 16:15 – 16:35 | 20 | Financial model discussion; scenarios; sensitivity | Zhan leads | Year 1 projections and Year 1–5 trajectory agreed or adjusted; Rudi sees the worked waterfall |
+| 16:35 – 16:50 | 15 | Q&A session — any remaining questions from Rudi | All three | No unanswered question goes home |
+| 16:50 – 17:00 | 10 | **MOU signature — Al Jurf** | All three | MOU signed; counsel engagement confirmed for Week 1; Monday 2026-04-21 registration agreed |
 
 ---
 
 ## Signing sequence
 
 ```
-Monday 2026-04-21      → MOU signed by all three parties
-Week 1 (Apr 22–25)     → UAE counsel engaged (Crimson Legal OR Kayrouz & Associates,
-                         AED 10–25k tier, fast turnaround)
-Week 1 (Apr 25)        → Post-Money SAFE executed after counsel review;
-                         AED 1,000,000 wired to agreed holding structure
-Weeks 2–8              → Entity formation: Dubai Mainland LLC (OpCo / Agency);
-                         ADGM HoldCo (Platform) opens after first agency deal
-Weeks 6–10             → Shareholders Agreement drafted (top-tier counsel:
-                         Al Tamimi OR Hadef & Partners, AED 100–200k tier)
-Weeks 8–12             → SHA signed; SAFE converts to preferred shares at
-                         Rudi's election OR held to next priced round
+Sunday 2026-04-19       → MOU signed by all three parties at Al Jurf
+Monday 2026-04-21       → Agency registration begins (DED name reservation,
+                          RERA pre-application, UAE counsel kickoff)
+Week 1 (Apr 28 – May 4) → UAE counsel engaged (Crimson Legal OR
+                          Kayrouz & Associates, AED 10–25k tier)
+Week 1 (Apr 28 – May 4) → Post-Money SAFE executed after counsel review;
+                          AED 1,000,000 wired to agreed holding structure
+Weeks 2–8 (May – Jun)   → Entity formation: Dubai Mainland LLC (Agency);
+                          Al Jurf office operational; first agent hired
+Weeks 6–10 (Jun – Jul)  → Shareholders Agreement drafted and executed
+                          (top-tier counsel: Al Tamimi OR Hadef & Partners,
+                          AED 100–200k tier)
+Month 5 (Sep 2026)      → First agency deal target (DLD transfer certificate);
+                          ADGM HoldCo formation triggered
+Q3 2026                 → First quarterly dividend distribution
+Q1 2027                 → Series A preparation begins
 ```
+
+---
+
+## What Rudi takes home Sunday 2026-04-19
+
+A printed and bound physical package containing, in the following order:
+
+1. This **README.md** — orientation and agenda.
+2. **EXECUTIVE_SUMMARY.md** — one page.
+3. **PITCH_DECK_v1.md** — 18 slides printed one-per-page on A4 landscape, full-colour (or PDF on tablet).
+4. **MOU_RUDI.md** — to be signed (three signature blocks + optional witness).
+5. **TERM_SHEET.md** — for clause-by-clause review.
+6. **FINANCIAL_MODEL_V1.md** — specification (with the Excel / Google Sheets file URL on the cover page).
+7. **LAUNCH_PLAN.md** — operational 12-month roadmap.
+8. **PROFIT_DISTRIBUTION_MECHANICS.md** — dividend mechanics with worked example.
+9. **ZHAN_PROTECTIONS.md** — founder protection addendum.
+10. **Q_AND_A_PREP.md** — Rudi's anticipated questions, answered.
+
+Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · Sunday 2026-04-19 · Al Jurf" in subtle gold footer.
+
+Also provided:
+- A USB-C memory stick with the same content as PDF + Excel model.
+- A link to a Google Drive shared folder with live versions (view-access controlled).
+- A signed paper copy of the MOU (three signed originals — one per Party).
 
 ---
 

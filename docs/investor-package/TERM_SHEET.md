@@ -1,22 +1,32 @@
-# Term Sheet — ZAAHI Investment
+# Z A A H I
 
-**Instrument:** Post-Money SAFE (Y Combinator 2018 standard, adapted to UAE / ADGM law)
-**Prepared for:** Rudi — Partner at Equilibrium Advisory Group (Investor)
-**Prepared by:** Zhan Ryspayev, Founder, CEO/CTO · Dymo Tsvyk, Co-founder, Operations Principal
-**Date:** 2026-04-21
-**Status:** DRAFT — for discussion Monday 2026-04-21; to be executed Week 1 after UAE legal counsel review.
+*Real Estate OS*
 
 ---
 
+**Document:** Term Sheet
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Instrument:** Post-Money SAFE (Y Combinator 2018 standard, adapted to UAE / ADGM law)
+**Status:** DRAFT — subject to UAE legal counsel review before Week 1 execution (Apr 28 – May 4)
+
+---
+
+## Framing
+
+The terms below are structured to provide Rudi maximum investor comfort while preserving founder operational authority. Anti-dilution, liquidation preference, Most Favoured Nation treatment, and a Year 7 redemption right are set at investor-favourable levels. Governance gives Rudi board visibility without veto power — respecting that operational speed is critical to platform execution. The 1.5× non-participating liquidation preference, full-ratchet anti-dilution to IPO, super pro-rata rights up to 15 %, exclusion from drag-along, and comprehensive information rights (monthly + quarterly + annual + optional real-time bank access + 48-hour material-event notifications) collectively eliminate reasonable reasons for Rudi not to sign.
+
 ## Orientation
 
-This Term Sheet sets out the indicative commercial terms for Rudi's AED 1,000,000 investment in ZAAHI. Each clause below is presented in three layers:
+This Term Sheet sets out the indicative commercial terms for Rudi's **AED 1,000,000** investment in ZAAHI. Each clause is presented in three layers:
 
-- **Legal language** — the clause as it is expected to appear in the Post-Money SAFE and Shareholders Agreement, subject to counsel drafting.
+- **Legal language** — the clause as expected to appear in the Post-Money SAFE and Shareholders Agreement, subject to counsel drafting. *[Exact contractual language subject to counsel review — Week 6-10 formal SHA.]*
 - **Plain English** — what the clause means in practice.
-- **Rationale** — why the clause is structured this way, with reference to the investor-protection design philosophy of this package.
+- **Rationale** — why the clause is structured this way.
 
-No term in this document is binding until the Post-Money SAFE is executed. The MOU dated 2026-04-21 (`MOU_RUDI.md`) confirms the Parties' intent to move from this Term Sheet to a signed SAFE within one week of MOU execution, subject to counsel review.
+No term in this document is binding until the Post-Money SAFE is executed. The MOU signed Sunday 2026-04-19 (`MOU_RUDI.md`) confirms the Parties' intent to execute the SAFE within one week of MOU signing (target: Week 1, Apr 28 – May 4), subject to UAE counsel review.
 
 ---
 
@@ -36,13 +46,13 @@ The two-entity structure separates regulated brokerage activity (which must be h
 ## 2. Investment Amount
 
 **Legal language.**
-> The Investor shall invest AED 1,000,000 (one million United Arab Emirates dirhams) (the "Purchase Amount") in a single tranche, payable to the Company on the Closing Date.
+> The Investor shall invest AED 1,000,000 (one million United Arab Emirates dirhams) (the "Purchase Amount") in a single tranche, payable by wire transfer on the Closing Date to an account held by "ZAAHI Holding (in formation)" — a temporary escrow account pending ADGM entity registration, or directly to the Agency LLC bank account if open at time of closing, subject to counsel-approved holding-structure arrangements.
 
 **Plain English.**
-Rudi invests AED 1 million, paid once at closing.
+Rudi wires AED 1,000,000 once, at closing, to an agreed temporary holding account until the ADGM entity opens its own bank account.
 
 **Rationale.**
-AED 1 million is the agreed capital required to launch the Agency (see `PITCH_DECK_v1.md` slide 16 Use of Funds) and to validate the Company at a formal post-money valuation.
+A single-tranche structure avoids the administrative and tax complexity of staged drawdowns. The temporary holding arrangement bridges the 4–8 week entity-formation window. UAE counsel confirms the exact account structure during Week 1 SAFE execution to ensure no funds are at risk and the instrument remains enforceable.
 
 ---
 
@@ -386,6 +396,30 @@ UAE corporate tax was introduced in 2023 (9 % above AED 375,000 taxable income, 
 ## 28. Non-Binding Status
 
 Except for the binding Exclusivity and Confidentiality provisions set out in the Memorandum of Understanding dated 2026-04-21, this Term Sheet is non-binding. Each Party may withdraw at any time prior to execution of the Post-Money SAFE, provided each Party negotiates in good faith.
+
+---
+
+## Defined Terms
+
+For clarity in this Term Sheet and the subsequent Post-Money SAFE and Shareholders Agreement, the following terms carry the specified meanings:
+
+- **Agency.** ZAAHI Agency, a Dubai Mainland LLC, registration commencing Monday 2026-04-21.
+- **Platform.** ZAAHI Platform, an ADGM Limited company, incorporation triggered by closing of the first agency deal (DLD transfer certificate issued).
+- **Company.** Together, the Agency and the Platform; or the relevant one as context requires.
+- **Closing Date.** The date on which the Post-Money SAFE is executed and Rudi's AED 1,000,000 is wired.
+- **Effective Date.** The date on which the Shareholders Agreement is executed.
+- **Purchase Amount.** AED 1,000,000.
+- **Post-Money Valuation Cap.** AED 10,000,000.
+- **Investor Shares.** The Preferred Shares to be issued to Rudi on conversion of the SAFE, representing 10.0 % fully-diluted ownership of each of the Agency and the Platform at the time of conversion.
+- **Founders.** Zhan Ryspayev and Dymo Tsvyk, collectively.
+- **Equity Financing.** A bona fide priced equity round of not less than USD 1,000,000, led by an institutional investor, at which time the SAFE converts to preferred shares.
+- **Series A.** A priced equity financing of not less than USD 2,000,000 led by an institutional investor — one of the three triggers for Zhan's Performance Bonus Shares per `ZHAN_PROTECTIONS.md` §1.
+- **Platform ARR.** Annual Recurring Revenue of the Platform, measured over the trailing 12 months, including recurring subscription and service-fee streams; excluding one-off commission revenue.
+- **Liquidity Event.** An Initial Public Offering, change of control, sale of substantially all assets, or similar transaction.
+- **Dissolution Event.** Voluntary or involuntary winding-up of the Company.
+- **Material Event.** As defined in Clause 15(e): any litigation or regulatory action > AED 100,000 in dispute value; any financing transaction > AED 500,000; receipt of any acquisition or strategic-partnership offer; Founder resignation or termination; material breach of any material contract; data breach; loss of a material licence.
+- **Cause.** Material breach of the Founder's employment or director duties, conviction of a serious offence, or other grounds as defined in the Shareholders Agreement.
+- **Fair Market Value.** For redemption purposes under Clause 10: the price at which a willing buyer and willing seller, each fully informed, would transact the shares — as determined by a mutually-appointed valuer (or, failing agreement, by an independent valuer nominated by the Dubai International Arbitration Centre).
 
 ---
 

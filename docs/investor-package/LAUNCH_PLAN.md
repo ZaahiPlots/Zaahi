@@ -1,8 +1,15 @@
-# Launch Plan — First 12 Months
+# Z A A H I
 
-**Prepared by:** Zhan Ryspayev · Dymo Tsvyk
+*Real Estate OS*
+
+---
+
+**Document:** Launch Plan — First 12 Months
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
 **Date:** 2026-04-18
-**Status:** Operational playbook. Each milestone has an owner, budget, dependencies, and success criteria.
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Status:** Operational playbook — each milestone has a responsible party, budget impact, dependencies, and success criterion
 
 ---
 
@@ -23,41 +30,39 @@ Key roles referenced:
 
 Phase goal: **legal entity and capital structure in motion; Al Jurf office lease secured; first agent hire identified.**
 
-### Week 1 (Apr 21–27, 2026)
+### Pre-Week 1: Sunday 2026-04-19 + Monday 2026-04-21
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
-| MOU signed by all three Parties | Zhan + Dymo + Rudi | — | Meeting Monday 2026-04-21 | All three signatures on `MOU_RUDI.md` |
-| UAE legal counsel engaged (fast-track firm for Week 1 deliverables) | Zhan | 10,000 (retainer) | MOU signed | Retainer letter signed; counsel receives Term Sheet and SAFE draft for review |
+| MOU signed by all three Parties at Al Jurf | Zhan · Dymo · Rudi | — | Sunday 2026-04-19 15:00 meeting | Three signatures on `MOU_RUDI.md` |
+| Agency registration activities kickoff — Monday 2026-04-21 | Dymo | 1,000 | MOU signed | DED name reservation initiated; UAE counsel engagement scheduled |
+
+### Week 1 (Apr 28 – May 4, 2026)
+
+| Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
+|---|---|---|---|---|
+| UAE legal counsel engaged (fast-track firm: Crimson Legal OR Kayrouz & Associates) | Zhan | 10,000 (retainer) | MOU signed | Retainer letter signed; counsel receives Term Sheet and SAFE draft for review |
 | Post-Money SAFE reviewed and finalised by counsel | Legal | 15,000 | Counsel engaged | Counsel-approved SAFE ready for signing |
-| UAE tax counsel consultation (separate firm or partner at same firm) | Legal | 5,000 | Counsel engaged | Written opinion on SAFE tax treatment |
-| Dubai Mainland LLC name reservation | Dymo | 1,000 | Counsel guidance on name | DED name reservation confirmed |
+| UAE tax counsel consultation (partner at same firm or separate specialist) | Legal | 5,000 | Counsel engaged | Written opinion on SAFE tax treatment |
+| Post-Money SAFE executed; AED 1,000,000 wired | Zhan · Dymo · Rudi | — | Counsel-approved SAFE | Funds received in temporary holding |
 
-**Week 1 budget: AED 31,000.**
+**Pre-Week 1 + Week 1 budget: AED 31,000.**
 
-### Week 2 (Apr 28 – May 4, 2026)
+### Week 2 (May 5–11, 2026)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
-| Post-Money SAFE executed; AED 1,000,000 wired to temporary holding structure (escrow until LLC formed, or directly to LLC if formed on time) | All three Parties | — | Counsel-approved SAFE + tax opinion | Funds received |
 | Dubai Mainland LLC incorporation application submitted to DED | Dymo + Legal | 20,000 | Name reservation | Application receipt from DED |
 | Articles of Association drafted | Legal | 25,000 | LLC application | AoA ready for DED review |
 | Corporate bank account application initiated (Mashreq Neo, Wio Business, or Emirates NBD) | Dymo | 2,000 | LLC application in progress | Application receipt from bank |
-
-**Week 2 budget: AED 47,000.**
-
-### Week 3 (May 5–11, 2026)
-
-| Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
-|---|---|---|---|---|
 | RERA company broker licence application | Dymo + Legal | 12,900 | LLC in progress; founders' individual cards documented | RERA application receipt |
 | Professional Indemnity insurance quotes received | Dymo | — | Company name confirmed | At least 3 quotes in hand |
 | Accounting software setup (Xero or Zoho Books) | Zhan | 2,000 | LLC in progress | Books of account initialised |
 | Al Jurf office site visits (3–5 locations) | Dymo | — | — | Shortlist of 2 locations |
 
-**Week 3 budget: AED 14,900.**
+**Week 2 budget: AED 61,900.**
 
-### Week 4 (May 12–18, 2026)
+### Week 3 (May 12–18, 2026)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
@@ -67,7 +72,7 @@ Phase goal: **legal entity and capital structure in motion; Al Jurf office lease
 | First Trakheesi advertising permit system registration | Dymo | 1,000 | RERA company licence in progress | Trakheesi login active |
 | First agent candidate(s) interviewed (sourced via LinkedIn + personal network) | Dymo + Zhan | — | — | 2–3 shortlisted candidates |
 
-**Week 4 budget: AED 50,000.**
+**Week 3 budget: AED 50,000.**
 
 **Phase 1 cumulative spend: ~AED 142,900.**
 
@@ -241,4 +246,14 @@ Phase goal: **4–6 additional deals closed (8–9 total Year 1); Ambassador pro
 
 ---
 
-*End of Launch Plan. To be reviewed monthly by Zhan + Dymo; quarterly with Rudi at Board meetings; refreshed at Year 1 anniversary (Apr 2027) with Year 2 extension.*
+---
+
+## Commitment
+
+**First agency deal target: Month 5 post-registration (September 2026). First dividend distribution: Q3 2026. Platform HoldCo (ADGM) formation: triggered by first DLD transfer certificate.**
+
+These three commitments are the measurable anchors of this Launch Plan. Every milestone above serves to make them executable.
+
+---
+
+*End of Launch Plan. Reviewed monthly by Zhan + Dymo; quarterly with Rudi at Board meetings; refreshed at Year 1 anniversary (Apr 2027) with Year 2 extension.*

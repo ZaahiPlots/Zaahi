@@ -1,40 +1,53 @@
-# ZAAHI — Executive Summary
+# Z A A H I
 
-**The Real Estate OS for UAE**
-
-**Prepared for:** Rudi — Silent Investor | 2026-04-21
-**Founders:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
-**Status:** Operating company · live platform at `zaahi.io` · first formal investment formalisation
+*Real Estate OS*
 
 ---
 
-**ZAAHI is the horizontal operating system for the UAE real estate market — a unified platform that brings land plots, off-plan units, developers, brokers, owners, buyers, institutional investors, and governmental authorities onto a single technology layer. Live in production today; architected to cover the full 85-module scope of the real estate value chain over a ten-year horizon.**
+**Document:** Executive Summary
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Status:** DRAFT — legal documents subject to UAE counsel review
+
+---
+
+## One hook. One deal. One page.
+
+**UAE real estate is a AED 760 billion annual transaction market fragmented across ten government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.**
+
+Live today at [zaahi.io](https://www.zaahi.io). Live in Al Jurf on Monday. Rudi's AED 1,000,000 formalises the partnership that the April 17 demo made inevitable.
 
 ---
 
 ## The Challenge
 
-The UAE real estate market — AED 682.6 billion in transaction volume in 2025 and on pace to exceed AED 1 trillion in 2026 — remains structurally fragmented. Dubai Land Department, Real Estate Regulatory Agency, Dubai Development Authority, Abu Dhabi Municipality, individual developers, and hundreds of brokerages each operate in separate data silos. A single property transaction today requires a buyer or broker to navigate between ten or more disconnected systems. Foreign and institutional capital arrive with enthusiasm but leave with friction stories. Artificial intelligence, blockchain audit trails, and 3D geographic intelligence remain absent or experimental across the category.
+The UAE real estate market — AED 682.6 billion in 2025, on pace to exceed AED 1 trillion in 2026 — operates across disconnected silos: DLD, RERA, DDA, Abu Dhabi Municipality, ADGM, DIFC, VARA, and hundreds of brokerages. A single transaction touches ten or more systems. Foreign capital arrives with enthusiasm and leaves with friction stories. AI, blockchain, and 3D geographic intelligence remain experimental. The platform that unifies this market wins the decade.
 
-## Our Platform
+## The Platform
 
-ZAAHI is built on a canonical architecture called the Master Tree — 85 integrated modules organised into 12 functional blocks (Assets, Participants, Transactions, Technology, Infrastructure, Finance, Development, Governance, Intelligence, Ecosystem, Access, Operations). The architecture is additive by design: every new country, participant type, or asset class is a plugin that integrates without disturbing the core. The platform is in production at `zaahi.io` with 114 verified parcels, 556,000 plots mapped across Dubai, Abu Dhabi, and Oman, full 3D ZAAHI Signature visualisation, a multilingual AI assistant (Archibald), and Phase 1 user dashboards for owners, buyers, and brokers. Approximately 6–8% of the Master Tree is live today; the remaining 92% is sequenced across the roadmap and funded from operating cash flow.
+ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 functional blocks (Assets, Participants, Transactions, Technology, Infrastructure, Finance, Development, Governance, Intelligence, Ecosystem, Access, Operations). The architecture is additive: each new country, participant, or asset class is a plugin that does not disturb the core.
+
+Production today at `zaahi.io`: 114 verified parcels, 556,000 plots mapped across Dubai + Abu Dhabi + Oman, 3D ZAAHI Signature visualisation (podium / body / crown), multilingual Archibald AI assistant, tiered Ambassador program generating revenue, Phase 1 dashboards for Owners, Buyers, and Brokers. 6–8 % of the Master Tree is live; the remaining 92 % is sequenced across the roadmap and funded from operating cash flow.
 
 ## The Market
 
-UAE residential and commercial real estate together comprise a Total Addressable Market exceeding AED 2 trillion in asset value and AED 760 billion in annual transaction flow. Dubai alone recorded 215,060 sales transactions in 2025 and AED 252 billion in Q1 2026 — a 31 % year-on-year increase in value. Our Serviceable Addressable Market — platform-native transactions, AI advisory, broker SaaS, developer tools, and tokenised real estate services — is conservatively sized at AED 30 billion of annual transaction value within the first five years. Our Serviceable Obtainable Market in Year 1 is AED 100 million of agency transaction volume, scaling to AED 5 billion by Year 3.
+- **TAM:** AED 2 trillion UAE real estate asset market.
+- **SAM:** AED 760 billion annual transaction flow (Dubai AED 682.6 B in 2025; Q1 2026 AED 252 B, +31 % YoY).
+- **SOM:** AED 100 M Year 1 agency transaction volume, AED 5 B Year 3, category-leading position by Year 5.
 
 ## Where We Are Today
 
-- **Platform live in production** — `zaahi.io` operational since 2026, 114 parcels loaded, 18 pages, 266 API endpoints, 15 data entities, 12 database migrations.
-- **Agency activation ready** — Zhan and Dymo hold individual RERA broker licences. Al Jurf office identified between Dubai and Abu Dhabi; Dubai Mainland LLC forms Monday 2026-04-21 to hold the RERA company broker licence.
-- **Validated by investment** — the investor demo on 2026-04-17 led directly to Rudi's AED 1 million commitment. This package formalises that commitment.
+- **Platform live in production.** `zaahi.io` · 114 parcels · 18 pages · 266 API endpoints · 15 data entities · 12 database migrations.
+- **Agency activation ready.** Zhan and Dymo hold individual RERA broker licences. Al Jurf office secured. Dubai Mainland LLC forms **Monday 2026-04-21** to hold the RERA company broker licence.
+- **Validated by capital.** The April 17, 2026 demo led directly to Rudi's AED 1,000,000 commitment. This package formalises that partnership.
 
 ## The Dual Revenue Engine
 
-**Agency (immediate)** — Dubai Mainland LLC operating from an Al Jurf office, brokering land plots (10–30 million AED average deal size, 2 % commission) and off-plan units (1.5–20 million AED average, 3–5 % commission). Conservative Year 1 target: 6–9 deals at an average commission of AED 300,000, producing AED 1.8–2.7 million gross revenue. 70 % of agency net profit is reinvested into platform development. Agency is the cash engine; the platform is the asset.
+**Agency — Immediate cash.** Dubai Mainland LLC from Al Jurf. Land plots (10–30 M AED average, 2 % commission) and off-plan units (1.5–20 M AED average, 3–5 % commission). Year 1 conservative base case: 8 deals × AED 320,000 blended commission = **AED 2.56 M gross**. 70 % of net profit reinvested into platform development.
 
-**Platform (scalable)** — ADGM HoldCo opens with the first agency deal. Revenue lines include a 2 % transaction fee on deals routed through the platform, tiered Ambassador memberships already live in production, SaaS subscriptions for brokerages and developers (from Year 2), premium AI-agent access, and data-licensing to institutional investors. The Master Tree enumerates 21 distinct revenue streams, sequenced over five years.
+**Platform — Scalable asset.** ADGM HoldCo opens with the first agency deal. 21 architected revenue streams: 2 % ZAAHI service fee on platform-routed deals, tiered Ambassador memberships, broker + developer SaaS (Year 2), premium AI-agent access, data-licensing to institutional investors. Agency is the engine; the platform is the asset.
 
 ## The Team
 
@@ -42,55 +55,78 @@ UAE residential and commercial real estate together comprise a Total Addressable
 
 **Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed.
 
-**Rudi — Silent-Partner Investor, Board Member.** Partner at Equilibrium Advisory Group. One board seat of three (no veto; majority rules). No operational role. No consent rights over ordinary-course business. Comprehensive information rights, profit share, and a deliberately investor-favourable protection package. Rudi's capital enables the agency launch and validates the company at a formal post-money valuation.
+**Rudi — Principal Investor, Board Member.** Partner at Equilibrium Advisory Group. One board seat of three (no veto; simple majority rules). No operational role. Institutional-grade minority protection package (detailed below).
 
-## Financial Snapshot (Year 1)
+## Financial Snapshot (Year 1 base case)
 
-Conservative base-case projection: AED 1.8–2.7 million in gross agency commission; AED 0.5–0.8 million in platform ambassador fees; total revenue AED 2.3–3.5 million. Operating costs AED 1.4–1.9 million (founder compensation, agent hires, Al Jurf office, marketing, legal, tech infrastructure). Net profit AED 0.9–1.6 million. Quarterly dividend distribution commences Q3 2026 after the first closed deals.
+| Line | AED |
+|---|---|
+| Gross agency commission | 2,560,000 |
+| Platform revenue | 450,000 |
+| **Total revenue** | **3,010,000** |
+| Operating costs | 1,735,000 |
+| **Net profit** | **1,275,000** |
+| **Rudi distribution (10 %)** | **127,500** |
+
+First dividend Q3 2026 after the first closed deals. **All projections are conservative baseline. Ambitious-case scenarios (+100 %) available on request.**
 
 ## The Investment
 
-Rudi's commitment is **AED 1,000,000 one-time**, allocated 100 % to agency launch (entity formation, RERA licensing, Al Jurf office, first agent hire, working capital). Rudi receives an institutional-grade minority-investor protection package:
+**AED 1,000,000 one-time.** Allocated 100 % to agency launch: entity formation, RERA licensing, Al Jurf office, first agent hire, marketing, working capital. Rudi receives an institutional-grade minority-investor protection package:
 
-**Equity**
-- **10 % equity in the Agency** (Dubai Mainland LLC), with full anti-dilution to IPO.
-- **10 % equity in the Platform** (ADGM HoldCo), with full anti-dilution to IPO.
-- **Super pro-rata rights** to increase holdings to up to 15 % in future rounds at Rudi's option.
+### Equity
+- **10 % of the Agency** (Dubai Mainland LLC) — full-ratchet anti-dilution to IPO.
+- **10 % of the Platform** (ADGM HoldCo) — full-ratchet anti-dilution to IPO.
+- **Super pro-rata rights** to up to 15 % in future rounds.
 
-**Economic**
-- **10 % of per-deal net profit**, declared quarterly as dividends under a Dividend Policy codified in the Shareholders Agreement.
-- **1.5× non-participating liquidation preference** on conversion of the SAFE to preferred shares.
-- **Most Favoured Nation (MFN)** — if any future investor receives more favourable terms within 24 months, Rudi automatically inherits those terms.
+### Economic
+- **10 % of per-deal net profit** declared quarterly under the SHA Dividend Policy.
+- **1.5× non-participating liquidation preference.**
+- **Most Favoured Nation** — any future investor's more favourable term within 24 months accrues automatically to Rudi.
 
-**Governance**
-- **One board seat of three** (alongside Zhan and Dymo). No veto right; decisions by simple majority of 2 of 3.
-- **Excluded from drag-along** — Rudi chooses whether to sell or hold when founders exit.
+### Governance
+- **One board seat of three** (Zhan, Dymo, Rudi). Decisions by simple majority of 2 of 3. No veto.
+- **Excluded from drag-along** — Rudi's sole discretion on any founder-led sale.
 
-**Information**
-- **Monthly** management summaries (within 15 days of month end).
-- **Quarterly** full unaudited accounts (within 45 days).
-- **Annual** audited financial statements (within 90 days).
-- **Real-time** read-only access to operating bank account statements (optional, at Rudi's election).
-- **Immediate** (48-hour) notification of material events.
+### Information
+- **Monthly** management summaries (15 days post-month).
+- **Quarterly** full unaudited accounts (45 days post-quarter).
+- **Annual** audited financials (90 days post-year).
+- **Real-time** read-only bank account access (optional).
+- **Immediate** 48-hour material-event notifications.
 
-**Exit**
-- **Redemption right from Year 7** — Rudi may request buyback at Fair Market Value; Company has 12 months to arrange financing. A guaranteed exit floor independent of M&A timing.
+### Exit
+- **Redemption right from Year 7** at Fair Market Value; Company has 12 months to finance. Guaranteed exit floor.
 - **Right of First Refusal** on transfers after Year 2.
 
-Rudi carries no operational role, no employment obligation, no follow-on capital commitment, and no consent right over ordinary-course business. The package is designed as a maximum-comfort structure for a silent-partner investor who prefers transparency and exit optionality over day-to-day control.
+Rudi carries no operational role, no employment obligation, no follow-on capital commitment, and no consent right over ordinary-course business.
 
-Instrument: **Post-Money SAFE (Y Combinator 2018 standard, adapted for UAE / ADGM law)**, with a **post-money valuation cap of AED 10,000,000** yielding exactly 10 % ownership on conversion. Conversion occurs at the next priced equity financing of ≥ USD 1 million or at a liquidity event. A Memorandum of Understanding is signed Monday 2026-04-21; the SAFE is executed Week 1 after UAE counsel review; full Shareholders Agreement is drafted over the following 6–8 weeks.
+**Instrument:** Post-Money SAFE (Y Combinator 2018 standard, adapted for UAE / ADGM law). **Post-money valuation cap:** AED 10,000,000 yielding exactly 10 % on conversion. Conversion at the first priced equity financing ≥ USD 1 million or at a liquidity event.
 
 ## Why Now
 
-Three forces converge in 2026. First, the UAE real estate market is hitting record transaction volumes and structural reforms are accelerating (100 % foreign ownership of RE brokerages since 2021; DLD tokenisation sandbox live since 2025; VARA rulebook stable since Q1 2026). Second, the Al Jurf corridor between Dubai and Abu Dhabi is emerging as the next premium-development axis, anchored by Aldar's Al Jurf mixed-use masterplan and a new wave of off-plan launches. Third, technology adoption in UAE real estate has passed the inflection point — AI, blockchain, 3D visualisation, and mobile-first workflows are no longer experimental but expected. The companies that build the category-defining operating system during this window capture the decade ahead. ZAAHI is positioned to be that company.
+UAE real estate is entering its second decade of institutionalisation — DLD digital transformation, tokenisation frameworks (VARA stable Q1 2026), 100 % foreign ownership of RE brokerages since 2021, Golden-Visa-driven demand, AED 2 trillion asset market, the Al Jurf corridor emerging as the next premium-development axis. ZAAHI is the operating system this market has been waiting for, built by RERA-licensed founders with thirty-five combined years of real estate experience and a working production platform.
 
 ---
 
-**Contact:** `zhanrysbayev@gmail.com` · `d.tsvyk@gmail.com`
-**Platform:** [`zaahi.io`](https://www.zaahi.io)
-**Classification:** CONFIDENTIAL — Prepared for Rudi Monday 2026-04-21
+## Timeline
+
+| Event | Date |
+|---|---|
+| Executive meeting + MOU signing | **Sunday 2026-04-19, 15:00, Al Jurf** |
+| Agency registration begins | **Monday 2026-04-21** |
+| UAE counsel engaged; Post-Money SAFE executed | **Week 1 (Apr 28 – May 4)** |
+| Formal Shareholders Agreement | **Weeks 6–10 (Jun – Jul 2026)** |
+| First agency deal target | **Month 5 (September 2026)** |
+| First dividend distribution | **Q3 2026** |
 
 ---
 
-*This Executive Summary accompanies the full investor package in `docs/investor-package/`. It is a confidential document. No part of its content constitutes a binding offer or representation; all formal commercial terms are documented in the accompanying Term Sheet, Memorandum of Understanding, and Shareholders Agreement (to be executed 6–8 weeks post the MOU).*
+**Rudi's AED 1,000,000 enables ZAAHI agency launch and participation in long-term platform value creation.**
+
+---
+
+**Contact.** `zhanrysbayev@gmail.com` · `d.tsvyk@gmail.com` · [`zaahi.io`](https://www.zaahi.io)
+**Classification.** CONFIDENTIAL — prepared for Rudi, Sunday 2026-04-19, Al Jurf.
+
+*No part of this Executive Summary constitutes a binding offer. Formal commercial terms are documented in the accompanying Memorandum of Understanding (signed Sunday 2026-04-19), Term Sheet, Post-Money SAFE (executed Week 1), and Shareholders Agreement (executed Weeks 6–10).*

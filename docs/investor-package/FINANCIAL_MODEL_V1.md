@@ -1,9 +1,23 @@
-# Financial Model V1 — Excel / Google Sheets Template Structure
+# Z A A H I
 
-**Purpose:** A unified financial model for ZAAHI Year 1–Year 5, sized at a level of detail appropriate for a AED 10 M post-money round.
-**Form:** Markdown specification of tab structure, formulas, and assumptions. To be rendered into Excel / Google Sheets by Zhan and Dymo before Monday 2026-04-21 (or Week 1 post-MOU).
-**Audience:** Rudi; UAE legal and tax counsel; future Series A investors.
-**Status:** Template structure — assumptions are placeholders for Zhan + Dymo to calibrate. All computed outputs are formula-driven; no hardcoded result cells.
+*Real Estate OS*
+
+---
+
+**Document:** Financial Model V1 — Excel / Google Sheets Template Structure
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Form:** Markdown specification of tab structure, formulas, and assumptions — to be rendered into Excel / Google Sheets before the Sunday meeting (or Week 1 post-MOU)
+**Audience:** Rudi; UAE legal and tax counsel; future Series A investors
+**Status:** Template structure — assumptions calibrated by Zhan + Dymo; all computed outputs are formula-driven (no hardcoded result cells)
+
+---
+
+## All projections are CONSERVATIVE baseline. Ambitious-case scenarios (+100 %) are available upon request.
+
+The model is built so that every output cell references the Assumptions tab. The scenario toggle in Tab 6 selects Conservative (−50 %), Base, or Aggressive (+100 %) without rewriting formulas. Defended numbers, traceable sources, zero bravado.
 
 ---
 
@@ -246,6 +260,25 @@ For exit at various valuations, Rudi's 1.5× non-participating liquidation prefe
 
 ---
 
+## Tab 6a — Sensitivity Analysis (stress test)
+
+Three stress scenarios side-by-side with Base:
+
+| Parameter | Base | Stress A: Deal volume −50 % | Stress B: Deal size −30 % | Stress C: Both combined |
+|---|---|---|---|---|
+| Year 1 deals | 8 | 4 | 8 | 4 |
+| Avg deal commission | AED 320,000 | AED 320,000 | AED 224,000 | AED 224,000 |
+| Year 1 agency revenue | 2,560,000 | 1,280,000 | 1,792,000 | 896,000 |
+| Year 1 platform revenue | 450,000 | 450,000 | 450,000 | 450,000 |
+| Year 1 total revenue | 3,010,000 | 1,730,000 | 2,242,000 | 1,346,000 |
+| Year 1 OpEx | 1,735,000 | 1,600,000 (minor cuts) | 1,735,000 | 1,500,000 (tighter) |
+| Year 1 net profit | 1,275,000 | 130,000 | 507,000 | (154,000) (slight loss) |
+| Runway at month 12 | Healthy | Cash ≈ AED 1.1 M | Cash ≈ AED 1.5 M | Cash ≈ AED 900 K |
+
+**Runway calculation.** Months until the Agency is self-sustaining without additional capital = (Starting cash − cumulative net outflow) / monthly burn. Base case: Agency is self-sustaining from Month 4 onward (operating breakeven). In Stress C (both combined), the Agency would need a bridge of AED 300–500 K or cost cuts by Month 10 to extend runway past Year 1.
+
+---
+
 ## Tab 6 — Scenarios
 
 ### Conservative (–50 % on deal count; flat costs)
@@ -343,4 +376,4 @@ For exit at various valuations, Rudi's 1.5× non-participating liquidation prefe
 
 ---
 
-*End of Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo before Monday 2026-04-21 (or Week 1 post-MOU).*
+*End of Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo before the Sunday 2026-04-19 Al Jurf meeting (or Week 1 post-MOU).*

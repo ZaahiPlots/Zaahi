@@ -1,6 +1,17 @@
-# ZAAHI — Pitch Deck v1
+# Z A A H I
 
-**Markdown source · 18 slides · to be rendered in Figma / Keynote to ZAAHI brand guidelines**
+*Real Estate OS*
+
+---
+
+**Document:** Pitch Deck v1 (markdown source, 18 slides)
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Date:** 2026-04-18
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Status:** Source for Figma / Keynote rendering before Sunday meeting
+
+---
 
 **Brand guidelines for rendering:** Georgia serif for titles, `-apple-system` / Inter sans for body; ZAAHI palette (gold `#C8A96E` accent on navy `#1A1A2E` or white-glass backgrounds); glassmorphism cards with `backdrop-filter: blur(16px)` and gold-tinted 1 px borders; uppercase letter-spaced labels for section markers; numbers large (font-weight 800, `-0.02em` letter-spacing).
 
@@ -12,9 +23,9 @@
 
 **The Real Estate OS for UAE**
 
-*[Logo placeholder — ZAAHI wordmark in gold on dark navy ground. Below wordmark: tagline. Bottom-left: `Confidential — Prepared for Rudi · 2026-04-21`. Bottom-right: `zaahi.io`.]*
+*[Logo placeholder — ZAAHI wordmark in gold on dark navy ground. Below wordmark: tagline. Bottom-left: `Confidential — Prepared for Rudi · Sunday 2026-04-19 · Al Jurf`. Bottom-right: `zaahi.io`.]*
 
-*Presenter notes: 5 seconds. Pause. Do not read the tagline. Let the product speak — open `zaahi.io` on the screen behind the deck if possible.*
+*Emotional beat: trust and poise. 5 seconds. Pause. Do not read the tagline. Let the product speak — open `zaahi.io` on the screen behind the deck if possible.*
 
 ---
 
@@ -86,15 +97,15 @@
 
 ## Slide 6 — Demo Validation
 
-### **April 17 2026 — investor demo. One week later — AED 1,000,000 commitment from Rudi.**
+### **April 17, 2026: Rudi experienced live demo of zaahi.io. Within 24 hours: verbal commitment. Sunday April 19: this package formalises that partnership.**
 
-- Demo script rehearsed; live product walked through.
-- Every claim in the deck reconciled with code in production.
-- Outcome: first formal investment commitment secured in week one of discussion.
+- **April 17, 2026** — investor demo. Live product walked through, every claim reconciled with production code.
+- **April 18, 2026** — verbal commitment. AED 1,000,000, 10 % Agency, 10 % Platform, full anti-dilution to IPO.
+- **Sunday April 19, 2026** — MOU signed, Al Jurf. Monday April 21: Agency registration begins.
 
-*Visual note: simple timeline. Left: "2026-04-17 · Demo delivered." Middle: "Product behaves as promised." Right: "2026-04-21 · Commitment formalised in this document." Thin gold line connecting them.*
+*Visual note: precise three-point timeline. Left: "Apr 17 · Demo delivered" (with zaahi.io screenshot). Middle: "Apr 18 · Commitment secured" (with handshake symbol in gold). Right: "Apr 19 · MOU signed, Al Jurf" (with pen / signature symbol). Thin gold line connecting them.*
 
-*Presenter notes: Do not dwell. This is the slide that acknowledges: the reason we are sitting here is because the product worked. Rudi knows this. Acknowledge it gracefully and move on.*
+*Emotional beat: earned confidence. The reason we are sitting here is because the product worked. Acknowledge it directly — do not apologise, do not oversell.*
 
 ---
 
@@ -183,13 +194,13 @@ Key points:
 
 ## Slide 12 — Competitive Moat
 
-### **Five defensible advantages — none of which can be replicated overnight.**
+### **Five defensible advantages — none replicable overnight.**
 
-1. **Master Tree architecture** — 85-section, 12-block, plugin-per-country design. No competitor in the region has committed to this scope. A competitor starting today cannot catch up; every decision they make compromises future integration.
-2. **3D ZAAHI Signature visualisation** — proprietary podium / body / crown rendering pattern for every plot. Founder-designed. Instantly recognisable. Not replicable from a template library.
-3. **Self-sovereignty roadmap** — full migration path to own data centres, own AI, own blockchain validators. Every tool chosen is portable by design. Over five years this differentiates ZAAHI from every SaaS-locked competitor.
-4. **Founder domain depth** — 17 years real estate (Zhan) + 18 years global operations (Dymo) + both RERA-licensed + full-stack engineering capability. This profile is uniquely rare.
-5. **Tiered Ambassador economics** — production-grade three-tier referral system integrated with commission calculation. Flywheel effect: each ambassador brings referrals who become ambassadors. Revenue-aligned growth without paid-CAC-heavy marketing.
+1. **3D ZAAHI Signature is proprietary.** Podium / body / crown rendering — founder-designed, instantly recognisable, not pullable from any template library. Every plot on `zaahi.io` renders in this signature style. Competitors would need a year of design + engineering investment to match, and would still not own the brand equity.
+2. **Master Tree architecture (85 sections, 12 blocks) is a 10-year product roadmap no competitor has drafted.** A competitor starting today cannot catch up; every decision they make compromises future integration. The tree is additive-only by design — we can ship section by section, year by year, without architectural rewrites.
+3. **Self-sovereignty positioning differentiates from US-based platforms that cannot operate long-term in UAE under data residency.** ZAAHI's migration path from rented cloud to own data centres (Q3 2026 Equinix Dubai → Phase 2–5) is architected from day one. A Propy or Opendoor expanding here cannot plausibly replicate this.
+4. **Founder domain depth.** 17 years real estate (Zhan) + 18 years global operations (Dymo) + both RERA-licensed + full-stack engineering capability in one CEO/CTO. This combination is uniquely rare in the UAE proptech landscape.
+5. **Tiered Ambassador economics in production.** SILVER / GOLD / PLATINUM with L1 / L2 / L3 commissions, already paid-tier, revenue-generating. Flywheel effect: ambassadors bring referrals who become ambassadors. Revenue-aligned growth without paid-CAC-heavy marketing.
 
 *Visual note: a shield icon with five engraved lines, each one a moat element. Subtle gold filigree. Around the shield: silhouetted logos of competitors (Bayut, Property Finder, Huspy, PRYPCO, Propy) greyed out.*
 
@@ -285,7 +296,7 @@ Key points:
 - Post-money valuation cap: AED 10,000,000
 - Discount: not applicable (cap governs)
 - Conversion trigger: next priced equity financing ≥ USD 1 M, liquidity event, or dissolution
-- Target close: MOU Monday 2026-04-21; SAFE execution Week 1 post-counsel review; formal Shareholders Agreement Weeks 6–10
+- Target close: MOU Sunday 2026-04-19 (Al Jurf); agency registration Monday 2026-04-21; SAFE execution Week 1 post-counsel review; formal Shareholders Agreement Weeks 6–10
 
 **Equity structure at close**
 
@@ -317,22 +328,24 @@ Key points:
 
 ## Slide 18 — Next Steps
 
-### **Today — Monday 2026-04-21. Weekly milestones through the formal close.**
+### **Sunday 2026-04-19: MOU signed. Monday 2026-04-21: Agency registration begins. Week 1 (Apr 28): Post-Money SAFE executed. Weeks 6–10: Formal SHA. Month 5 (Sep 2026): First agency deal target.**
 
 | Date | Deliverable | Party responsible |
 |---|---|---|
-| **Mon 2026-04-21** | MOU signed by Zhan, Dymo, and Rudi | All three |
-| **Mon–Fri W1** | UAE legal counsel engaged; SAFE executed; AED 1 M wired to agreed holding structure | Zhan + Dymo |
-| **Weeks 2–4** | Dubai Mainland LLC incorporated; RERA company broker licence application filed; corporate bank account opened | Zhan + Dymo + Legal |
-| **Weeks 5–8** | Al Jurf office leased and fitted out; first agent hired; Trakheesi permits activated; first listings live | Dymo |
-| **Weeks 6–10** | Shareholders Agreement drafted and signed; ADGM HoldCo formation initiated on first agency deal closure | Legal + All three |
-| **Months 4–6** | First 2–3 deals closed; first dividend declared (Q3 2026) | Dymo + Zhan |
-| **Months 7–12** | Scale to 6–9 deals total; Ambassador program expands; platform §02 Residential and §08 Off-Plan development accelerates | All three |
-| **Q1 2027** | Series A preparation begins | Zhan |
+| **Sunday 2026-04-19** | MOU signed at Al Jurf | Zhan · Dymo · Rudi |
+| **Monday 2026-04-21** | Agency registration begins: DED name reservation, RERA pre-application, UAE counsel engagement kickoff | Zhan · Dymo · Legal |
+| **Week 1 (Apr 28 – May 4)** | UAE counsel review complete; Post-Money SAFE executed; AED 1,000,000 wired | Legal · All three |
+| **Weeks 2–4 (May)** | Dubai Mainland LLC incorporated; RERA company broker licence application filed; corporate bank account opened | Dymo · Legal |
+| **Weeks 5–8 (May – Jun)** | Al Jurf office operational; first agent hired; Trakheesi permits activated; first listings live | Dymo |
+| **Weeks 6–10 (Jun – Jul)** | Shareholders Agreement executed; ADGM HoldCo formation primed | Legal · All three |
+| **Month 5 (September 2026)** | First agency deal closed (DLD transfer certificate issued); ADGM HoldCo formation triggered | Dymo · Zhan |
+| **Q3 2026** | First quarterly dividend declared and distributed | Board |
+| **Months 7–12 (Oct 2026 – Mar 2027)** | 8–9 deals total Year 1; Ambassador program expanded; Master Tree §02 Residential + §08 Off-Plan shipped; blockchain audit-trail deployed | All three |
+| **Q1 2027** | Series A preparation; target close Q2 – Q3 2027 | Zhan + Dymo |
 
-*Visual note: Gantt-style horizontal bars over a Monday-2026-04-21-to-Q1-2027 timeline. Each bar in ZAAHI gold, with rounded corners. Today (2026-04-21) marked with a vertical gold line labelled "MOU day".*
+*Visual note: Gantt-style horizontal bars over a Sunday-2026-04-19-to-Q3-2027 timeline. Each bar in ZAAHI gold, with rounded corners. Today (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line on 2026-04-21 marked "Agency registration begins".*
 
-*Presenter notes: Close the deck by saying: "We are prepared to execute every line on this chart. The MOU in your hand is the first of them. Everything else follows from Monday."*
+*Emotional beat: executional certainty. Close the deck by saying: "We are prepared to execute every line on this chart. The MOU is the first. Every subsequent item has a named owner and a dated target."*
 
 ---
 

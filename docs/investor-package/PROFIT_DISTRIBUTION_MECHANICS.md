@@ -1,9 +1,17 @@
-# Profit Distribution Mechanics — Option B (Dividend Policy in SHA)
+# Z A A H I
 
-**Purpose:** Detailed mechanics for the per-deal 10 / 10 / 10 / 70 profit distribution, codified as a Dividend Policy in the Shareholders Agreement.
-**Prepared by:** Zhan Ryspayev · Dymo Tsvyk
+*Real Estate OS*
+
+---
+
+**Document:** Profit Distribution Mechanics — Option B (Dividend Policy in SHA)
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
 **Date:** 2026-04-18
-**Status:** Template structure — actual clause language to be drafted by UAE corporate counsel at formal SHA execution (Weeks 6–10).
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Status:** Template structure — exact contractual language subject to counsel review (Weeks 6–10 formal SHA)
+**First distribution target:** Q3 2026 (following the first DLD transfer certificate)
+**Minimum Reserve Rule:** 3 months operating expenses retained before quarterly distribution
 
 ---
 
@@ -226,6 +234,30 @@ If the Board is deadlocked (e.g., one director absent, 1-1 vote), the following 
 ---
 
 ## 8. Scenarios
+
+### 8.0 Worked example — single AED 2,000,000 gross-commission quarter
+
+For clarity, assume one AED 2,000,000 gross commission figure aggregated for a quarter (illustrative — not tied to any specific deal mix):
+
+| Step | AED | Explanation |
+|---|---|---|
+| Gross commission | 2,000,000 | Client payments received during the quarter |
+| Less: direct costs | 100,000 | Trakheesi permits, client entertainment, external DD, notary — 5 % |
+| Less: allocated OpEx | 435,000 | 3 months × AED 145,000 quarterly allocation |
+| Less: Corporate Tax (9 % above AED 375 K threshold) | 88,650 | Provisional; may be AED 0 if under SBR in Year 1 |
+| Less: VAT reconciliation | 0 | Pass-through; collected and paid to FTA |
+| Less: Contractual Operating Reserve top-up | 0 | Assumed already maintained |
+| Less: Statutory Reserve | ~10,000 | 10 % of annual net profit, reduced pro-rata for the quarter |
+| **Distributable Net Profit** | **~1,366,350** | |
+| Rudi distribution (10 %) | 136,635 | Paid as Preferred Share dividend |
+| Dymo distribution (10 %) | 136,635 | Paid as Common Share dividend |
+| Zhan distribution (10 %) | 136,635 | Paid as Common Share dividend |
+| Platform Development Fund (70 %) | 956,445 | Transferred to ADGM HoldCo via service agreement |
+| **Total distributed** | **1,366,350** | ✓ Sums to Distributable Net Profit |
+
+**What Rudi sees in his bank account that quarter: AED 136,635.**
+
+---
 
 ### 8.1 First quarter with positive profit
 

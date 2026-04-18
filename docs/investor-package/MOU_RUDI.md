@@ -1,27 +1,38 @@
-# Memorandum of Understanding
+# Z A A H I
 
-**Parties:**
+*Real Estate OS*
+
+---
+
+**Document:** Memorandum of Understanding
+**Prepared for:** Rudi (Principal Investor)
+**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Date:** Sunday, 19 April 2026
+**Location:** Al Jurf, Abu Dhabi Emirate, UAE
+**Status:** Non-binding memorandum except Clauses 10 (Exclusivity) and 11 (Confidentiality) — subject to UAE counsel review
+
+---
+
+## Parties
+
 - **Zhan Ryspayev** — Founder, CEO/CTO of ZAAHI ("**Zhan**")
 - **Dymo Tsvyk** — Co-founder, Operations Principal of ZAAHI ("**Dymo**")
-- **Rudi** — Partner at Equilibrium Advisory Group, in his capacity as investor ("**Rudi**")
+- **Rudi** — Partner at Equilibrium Advisory Group, acting as Principal Investor ("**Rudi**")
 
 (each a "**Party**", together the "**Parties**")
-
-**Date of execution:** 2026-04-21
-**Location:** [To be filled at signing — e.g., Dubai / Al Jurf / Abu Dhabi]
-**Status:** Non-binding memorandum except Clauses 10 (Exclusivity) and 11 (Confidentiality).
 
 ---
 
 ## Preamble
 
-Zhan and Dymo are the founders of ZAAHI, a real estate operating system for the United Arab Emirates, currently operating the production platform at `zaahi.io`. The Parties have agreed in principle that Rudi will invest AED 1,000,000 (one million United Arab Emirates dirhams) to formalise a partnership across both the operating agency business (to be incorporated as a Dubai Mainland LLC) and the platform company (to be incorporated as an ADGM entity upon the closing of the first agency deal).
+This Memorandum of Understanding reflects a considered partnership between the founders of ZAAHI — a fully operating technology company with a live production platform at `zaahi.io` — and Rudi, a principal investor whose contribution enables ZAAHI's structured expansion into agency operations in Al Jurf while protecting both platform development and investor economic interests.
 
-This Memorandum of Understanding ("**MOU**") records the principal terms on which the Parties intend to proceed. It is NOT a binding agreement with respect to the investment, equity structure, or any other commercial term except the limited binding provisions expressly identified in Clauses 10 and 11 below.
+The Parties have agreed in principle that Rudi will invest AED 1,000,000 (one million United Arab Emirates dirhams) to formalise a partnership across two legal entities: the agency (to be incorporated as a Dubai Mainland LLC with registration commencing Monday 2026-04-21) and the platform (to be incorporated as an ADGM entity upon closing of the first agency deal, targeted September 2026).
 
-All binding commercial terms will be set out in:
-- a Post-Money SAFE (Y Combinator 2018 standard, adapted for UAE / ADGM law), to be executed within one week of this MOU following review by UAE legal counsel; and
-- a formal Shareholders Agreement, to be executed within 6–8 weeks of this MOU upon entity formation and UAE counsel drafting.
+This MOU records the principal terms on which the Parties intend to proceed. Except for Clauses 10 (Exclusivity) and 11 (Confidentiality), **this MOU is NOT a binding agreement** with respect to the investment, equity structure, or any other commercial term. Exact contractual language is subject to UAE counsel review and will be embodied in:
+
+- a Post-Money SAFE (Y Combinator 2018 standard, adapted for UAE / ADGM law), to be executed within one week of this MOU (target: Week 1, Apr 28 – May 4); and
+- a formal Shareholders Agreement, to be executed within 6–10 weeks of this MOU following entity formation and counsel drafting.
 
 ---
 
@@ -111,15 +122,17 @@ The Parties agree to the following indicative timeline:
 
 | Milestone | Target |
 |---|---|
-| MOU signed | 2026-04-21 (today) |
-| UAE legal counsel engaged | Week 1 |
+| MOU signed | Sunday 2026-04-19 (today) |
+| Agency registration begins | Monday 2026-04-21 |
+| UAE legal counsel engaged | Week 1 (Apr 28 – May 4) |
 | Post-Money SAFE executed; AED 1 M wired | Week 1 (subject to counsel clearance) |
-| Dubai Mainland LLC incorporated | Weeks 2–4 |
-| RERA company broker licence issued; Broker Cards issued | Weeks 4–8 |
-| Shareholders Agreement signed | Weeks 6–10 |
-| Al Jurf office operational | Weeks 5–8 |
-| First agency deal closed (trigger for ADGM HoldCo formation) | Months 3–5 |
-| ADGM HoldCo incorporated | Months 3–6 |
+| Dubai Mainland LLC incorporated | Weeks 2–4 (May) |
+| RERA company broker licence issued; Broker Cards issued | Weeks 4–8 (May – Jun) |
+| Al Jurf office operational | Weeks 5–8 (May – Jun) |
+| Shareholders Agreement signed | Weeks 6–10 (Jun – Jul) |
+| First agency deal closed (trigger for ADGM HoldCo formation) | Month 5 target (September 2026) |
+| ADGM HoldCo incorporated | Months 5–6 (Sep – Oct 2026) |
+| First quarterly dividend distribution | Q3 2026 |
 
 Conditions precedent to execution of the Post-Money SAFE:
 
@@ -162,28 +175,42 @@ This MOU may be executed in counterparts, each of which shall constitute an orig
 
 ## Signatures
 
-**Zhan Ryspayev** — Founder, CEO/CTO
-
-Signature: _________________________
-
-Date: 2026-04-21
+Signed at Al Jurf, Abu Dhabi Emirate, UAE, on Sunday, 19 April 2026.
 
 ---
 
-**Dymo Tsvyk** — Co-founder, Operations Principal
+**ZHAN RYSPAYEV** — Founder, CEO/CTO of ZAAHI
 
 Signature: _________________________
 
-Date: 2026-04-21
+Date: _________________________
 
 ---
 
-**Rudi** — Partner at Equilibrium Advisory Group (in his capacity as Investor)
+**DYMO TSVYK** — Co-founder, Operations Principal of ZAAHI
 
 Signature: _________________________
 
-Date: 2026-04-21
+Date: _________________________
 
 ---
 
-*End of Memorandum of Understanding. To be followed by Post-Money SAFE (Week 1) and Shareholders Agreement (Weeks 6–10), each to be reviewed and executed with UAE legal counsel.*
+**RUDI** — Partner at Equilibrium Advisory Group, acting as Principal Investor
+
+Signature: _________________________
+
+Date: _________________________
+
+---
+
+**Witness** (optional)
+
+Name: _________________________
+
+Signature: _________________________
+
+Date: _________________________
+
+---
+
+*End of Memorandum of Understanding. Followed by Post-Money SAFE (Week 1, Apr 28 – May 4) and Shareholders Agreement (Weeks 6–10), each reviewed and executed with UAE legal counsel.*
