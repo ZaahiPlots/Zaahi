@@ -5,10 +5,11 @@
 ---
 
 **Document:** Profit Distribution Mechanics — Option B (Dividend Policy in SHA)
-**Prepared for:** Rudi (Principal Investor)
-**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
+**Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
 **Date:** 2026-04-18
-**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf, Abu Dhabi, UAE
+**Parties to the Dividend Policy:** Zharkyn Ryspayev ("Zhan"), Dmytro Tsvyk ("Dymo"), and Rodolphe Belin ("Rudi")
 **Status:** Template structure — exact contractual language subject to counsel review (Weeks 6–10 formal SHA)
 **First distribution target:** Q3 2026 (following the first DLD transfer certificate)
 **Minimum Reserve Rule:** 3 months operating expenses retained before quarterly distribution

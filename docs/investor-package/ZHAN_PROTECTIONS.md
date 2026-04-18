@@ -4,12 +4,12 @@
 
 ---
 
-**Document:** Founder Protection Addendum — Zhan Ryspayev
-**Prepared for:** Rudi (Principal Investor); the Shareholders Agreement schedule
-**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Document:** Founder Protection Addendum — Zharkyn Ryspayev ("Zhan")
+**Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor; the Shareholders Agreement schedule
+**Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
 **Date:** 2026-04-18
-**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
-**Subject:** Zhan Ryspayev, Founder, CEO/CTO
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf, Abu Dhabi, UAE
+**Subject:** **Zharkyn Ryspayev** (hereinafter "Zhan"), Founder, CEO/CTO
 **Status:** Template structure — exact contractual language subject to counsel review (Weeks 6–10 formal SHA)
 
 ---

@@ -5,19 +5,21 @@
 ---
 
 **Document:** Memorandum of Understanding
-**Prepared for:** Rudi (Principal Investor)
-**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
+**Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
 **Date:** Sunday, 19 April 2026
-**Location:** Al Jurf, Abu Dhabi Emirate, UAE
+**Location:** Al Jurf, Abu Dhabi, UAE
 **Status:** Non-binding memorandum except Clauses 10 (Exclusivity) and 11 (Confidentiality) — subject to UAE counsel review
 
 ---
 
 ## Parties
 
-- **Zhan Ryspayev** — Founder, CEO/CTO of ZAAHI ("**Zhan**")
-- **Dymo Tsvyk** — Co-founder, Operations Principal of ZAAHI ("**Dymo**")
-- **Rudi** — Partner at Equilibrium Advisory Group, acting as Principal Investor ("**Rudi**")
+This Memorandum of Understanding is entered into between:
+
+- **Zharkyn Ryspayev** (hereinafter "**Zhan**"), Founder and CEO/CTO of ZAAHI;
+- **Dmytro Tsvyk** (hereinafter "**Dymo**"), Co-founder and Operations Principal of ZAAHI; and
+- **Rodolphe Belin** (hereinafter "**Rudi**"), Principal Investor and Partner at Equilibrium Advisory Group.
 
 (each a "**Party**", together the "**Parties**")
 
@@ -175,31 +177,37 @@ This MOU may be executed in counterparts, each of which shall constitute an orig
 
 ## Signatures
 
-Signed at Al Jurf, Abu Dhabi Emirate, UAE, on Sunday, 19 April 2026.
+Signed at **Al Jurf, Abu Dhabi, UAE**, on **Sunday, 19 April 2026**.
 
 ---
 
-**ZHAN RYSPAYEV** — Founder, CEO/CTO of ZAAHI
+**ZHARKYN RYSPAYEV**
 
-Signature: _________________________
+Founder & CEO/CTO of ZAAHI
 
 Date: _________________________
+
+Signature: _________________________
 
 ---
 
-**DYMO TSVYK** — Co-founder, Operations Principal of ZAAHI
+**DMYTRO TSVYK**
 
-Signature: _________________________
+Co-founder & Operations Principal of ZAAHI
 
 Date: _________________________
+
+Signature: _________________________
 
 ---
 
-**RUDI** — Partner at Equilibrium Advisory Group, acting as Principal Investor
+**RODOLPHE BELIN**
 
-Signature: _________________________
+Principal Investor · Partner at Equilibrium Advisory Group
 
 Date: _________________________
+
+Signature: _________________________
 
 ---
 
@@ -207,9 +215,9 @@ Date: _________________________
 
 Name: _________________________
 
-Signature: _________________________
-
 Date: _________________________
+
+Signature: _________________________
 
 ---
 

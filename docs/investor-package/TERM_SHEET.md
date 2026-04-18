@@ -5,10 +5,10 @@
 ---
 
 **Document:** Term Sheet
-**Prepared for:** Rudi (Principal Investor)
-**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
+**Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
+**Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
 **Date:** 2026-04-18
-**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf
+**Meeting:** Sunday 2026-04-19, 15:00 · Al Jurf, Abu Dhabi, UAE
 **Instrument:** Post-Money SAFE (Y Combinator 2018 standard, adapted to UAE / ADGM law)
 **Status:** DRAFT — subject to UAE legal counsel review before Week 1 execution (Apr 28 – May 4)
 
@@ -33,10 +33,10 @@ No term in this document is binding until the Post-Money SAFE is executed. The M
 ## 1. Parties
 
 **Legal language.**
-> The Company: ZAAHI Agency (to be incorporated as a Dubai Mainland LLC) and, upon the closing of the first agency deal, ZAAHI Platform (to be incorporated as an ADGM Limited company) (together the "Company"). The Founders: Zhan Ryspayev ("Zhan") and Dymo Tsvyk ("Dymo"). The Investor: Rudi, acting in his personal capacity unless he notifies the Company in writing of an alternative investment vehicle (e.g., family office or SPV) prior to SAFE execution.
+> The Company: ZAAHI Agency (to be incorporated as a Dubai Mainland LLC) and, upon the closing of the first agency deal, ZAAHI Platform (to be incorporated as an ADGM Limited company) (together the "Company"). The Founders: **Zharkyn Ryspayev** (hereinafter "Zhan") and **Dmytro Tsvyk** (hereinafter "Dymo"). The Investor: **Rodolphe Belin** (hereinafter "Rudi"), Partner at Equilibrium Advisory Group, acting in his personal capacity unless he notifies the Company in writing of an alternative investment vehicle (e.g., family office or SPV) prior to SAFE execution.
 
 **Plain English.**
-ZAAHI comprises two legal entities: the Agency (Dubai Mainland LLC, forms immediately on Monday) and the Platform (ADGM Limited, forms on the first agency deal closure). Rudi's rights apply to both. The Founders are Zhan and Dymo.
+ZAAHI comprises two legal entities: the Agency (Dubai Mainland LLC, registration begins Monday 2026-04-21) and the Platform (ADGM Limited, forms on the first agency deal closure). Rudi's rights apply to both. The Founders are Zhan (Zharkyn Ryspayev) and Dymo (Dmytro Tsvyk).
 
 **Rationale.**
 The two-entity structure separates regulated brokerage activity (which must be held in a Dubai Mainland LLC for RERA purposes) from intellectual property and investor equity (held in an ADGM entity, which provides English common law and institutional-grade governance). Rudi's 10 % equity in each entity is protected by the same set of covenants, applied in parallel across both companies.
