@@ -232,7 +232,9 @@ Key points:
 
 - **Rudi — Board Member, Silent-Partner Investor.** Partner at Equilibrium Advisory Group. One board seat of three. No operational role. Provides AED 1,000,000 capital for agency launch and validates the company at a formal post-money valuation of AED 10 M.
 
-*Visual note: three circles in a triangle. Each labelled with name, title, and one credential bullet. Connected by gold lines representing the governance structure — Zhan + Dymo form the operating axis; Rudi is the third board seat, equidistant from both.*
+**Both founders have symmetric performance-based protection packages.** Zhan is protected at the Platform (Performance Bonus Shares up to 15 % cumulative on the Platform, Salary Floor paid from the Platform); Dymo is protected at the Agency (Performance Bonus Shares up to 15 % cumulative on the Agency, Salary Floor paid from the Agency). Both packages mirror each other in structure and value — differing only in the entity anchor. See `ZHAN_PROTECTIONS.md` and `DYMO_PROTECTIONS.md`.
+
+*Visual note: three circles in a triangle. Each labelled with name, title, and one credential bullet. Connected by gold lines representing the governance structure — Zhan + Dymo form the operating axis; Rudi is the third board seat, equidistant from both. Beneath the triangle, a thin gold caption: "Symmetric founder protections: Zhan on Platform, Dymo on Agency."*
 
 *Presenter notes: Say: "Rudi, you are on this slide — not because you have an operational role, but because your board seat and capital make this company complete. Without you, we launch the agency six months later and with less certainty. With you, we launch Monday."*
 

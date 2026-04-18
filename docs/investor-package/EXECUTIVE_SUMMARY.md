@@ -57,6 +57,8 @@ Production today at `zaahi.io`: 114 verified parcels, 556,000 plots mapped acros
 
 **Rudi — Principal Investor, Board Member.** Partner at Equilibrium Advisory Group. One board seat of three (no veto; simple majority rules). No operational role. Institutional-grade minority protection package (detailed below).
 
+*Both founders (Zhan and Dymo) hold symmetric performance-based protection packages: Performance Bonus Shares up to 15 % cumulative in their respective entity (Zhan on the Platform, Dymo on the Agency), Founder / Co-founder Salary Floor, and standard Tag-Along + ROFR on Rudi transfers. See `ZHAN_PROTECTIONS.md` and `DYMO_PROTECTIONS.md`.*
+
 ## Financial Snapshot (Year 1 base case)
 
 | Line | AED |

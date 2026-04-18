@@ -39,23 +39,26 @@ The package is built around a single goal: **Rudi reads these documents and has 
 | 6 | `FINANCIAL_MODEL_V1.md` | Excel template structure (8 tabs). Zhan + Dymo populate assumptions; model computes waterfall, runway, breakeven. | No — for discussion & Excel build |
 | 7 | `LAUNCH_PLAN.md` | Week-by-week roadmap for first 12 months. Phase 1 Foundation → Phase 4 Scaling. Responsibility, budget, dependencies. | No — operational playbook |
 | 8 | `PROFIT_DISTRIBUTION_MECHANICS.md` | How the 10/10/10/70 per-deal distribution works in practice. Option B (Dividend Policy in SHA). Legal framework, tax treatment, quarterly cadence. | No — to inform SHA drafting |
-| 9 | `ZHAN_PROTECTIONS.md` | Founder protection addendum: Performance Bonus Shares (+5% per trigger, 15% cap), Founder Salary Floor (AED 30–50k/mo), Tag-Along + ROFR on Rudi transfers. | No — to inform SHA drafting |
+| 9 | `ZHAN_PROTECTIONS.md` | Zhan Ryspayev protection addendum (Platform-focused): Performance Bonus Shares (+5 % per trigger, 15 % cap, Platform entity), Founder Salary Floor from Platform (AED 30–50k/mo), Tag-Along + ROFR on Rudi transfers. | No — to inform SHA drafting |
+| 10 | `DYMO_PROTECTIONS.md` | Dymo Tsvyk protection addendum (Agency-focused, symmetric to Zhan's): Performance Bonus Shares (+5 % per trigger, 15 % cap, Agency entity), Co-founder Salary Floor from Agency (AED 30–50k/mo), Tag-Along + ROFR on Rudi transfers. | No — to inform SHA drafting |
 
 ---
 
 ## Reading order for Rudi
 
-Allow ~90 minutes for full package review.
+Allow ~95 minutes for full package review.
 
 1. **EXECUTIVE_SUMMARY.md** (5 min) — the one-pager. Sets context and confirms the ask.
 2. **PITCH_DECK_v1.md** (15 min) — the full narrative.
-3. **MOU_RUDI.md** (5 min) — the document Rudi signs Monday.
+3. **MOU_RUDI.md** (5 min) — the document Rudi signs Sunday.
 4. **TERM_SHEET.md** (20 min) — the formal commercial terms.
 5. **FINANCIAL_MODEL_V1.md** (10 min) — the economics.
-6. **ZHAN_PROTECTIONS.md** (10 min) — the founder-specific protections.
-7. **PROFIT_DISTRIBUTION_MECHANICS.md** (10 min) — the quarterly dividend flow.
-8. **LAUNCH_PLAN.md** (15 min) — the execution roadmap.
-9. **README.md** (this document, 5 min) — agenda + Q&A.
+6. **ZHAN_PROTECTIONS.md** (10 min) — Zhan's Platform-anchored founder protections.
+7. **DYMO_PROTECTIONS.md** (10 min) — Dymo's Agency-anchored founder protections (symmetric to Zhan's).
+8. **PROFIT_DISTRIBUTION_MECHANICS.md** (10 min) — the quarterly dividend flow.
+9. **LAUNCH_PLAN.md** (15 min) — the execution roadmap.
+10. **Q_AND_A_PREP.md** (5 min) — anticipated questions with direct answers.
+11. **README.md** (this document, 5 min) — agenda + Q&A.
 
 ---
 
@@ -111,8 +114,9 @@ A printed and bound physical package containing, in the following order:
 6. **FINANCIAL_MODEL_V1.md** — specification (with the Excel / Google Sheets file URL on the cover page).
 7. **LAUNCH_PLAN.md** — operational 12-month roadmap.
 8. **PROFIT_DISTRIBUTION_MECHANICS.md** — dividend mechanics with worked example.
-9. **ZHAN_PROTECTIONS.md** — founder protection addendum.
-10. **Q_AND_A_PREP.md** — Rudi's anticipated questions, answered.
+9. **ZHAN_PROTECTIONS.md** — Zhan's Platform-anchored protection addendum.
+10. **DYMO_PROTECTIONS.md** — Dymo's Agency-anchored protection addendum (symmetric to Zhan's).
+11. **Q_AND_A_PREP.md** — Rudi's anticipated questions, answered.
 
 Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · Sunday 2026-04-19 · Al Jurf" in subtle gold footer.
 
@@ -220,8 +224,8 @@ A: They are the only parties with unconditional commitment to ZAAHI today. Futur
 These are the principles informing every document in this package. They are not up for re-negotiation Monday; only the exact mechanics within them are.
 
 1. **Rudi is a silent-partner investor with board representation.** One board seat of three (no veto; majority rules). No operational role. No consent required for ordinary-course business. Comprehensive transparency (monthly, quarterly, annual, real-time optional), 10 % of profits, protected equity with 1.5× liquidation preference, MFN, redemption right from Year 7, super pro-rata up to 15 %, excluded from drag-along.
-2. **Zhan holds absolute operational authority over the platform** (ADGM HoldCo), protected by a 10% floor and performance bonus shares.
-3. **Dymo holds absolute operational authority over the agency** (Dubai Mainland LLC), protected by 45% equity in OpCo.
+2. **Zhan holds absolute operational authority over the platform** (ADGM HoldCo), protected by a 10 % floor on Platform equity, Performance Bonus Shares in the Platform (up to 15 % cumulative), and a Founder Salary Floor paid from the Platform.
+3. **Dymo holds absolute operational authority over the agency** (Dubai Mainland LLC), protected by 45 % base Agency equity with full-ratchet anti-dilution to IPO, Performance Bonus Shares in the Agency (up to 15 % cumulative, symmetric to Zhan's Platform bonus), and a Co-founder Salary Floor paid from the Agency.
 4. **Every agency deal profit is split 10/10/10/70.** Rudi, Dymo, Zhan — 10% each. The remaining 70% funds platform development.
 5. **ZAAHI is one company, two entities.** The agency is the immediate revenue engine; the platform is the long-horizon asset. Neither is separable from the other in the founder vision.
 6. **Self-sovereignty is architectural.** Every piece of tooling ZAAHI uses is chosen with a migration path to own infrastructure.

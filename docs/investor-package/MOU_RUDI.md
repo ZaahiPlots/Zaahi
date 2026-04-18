@@ -108,7 +108,7 @@ The Company shall provide Rudi with:
 
 - Zhan and Dymo shall subject their existing and future shares to **4-year reverse vesting with a 1-year cliff**, starting from the Effective Date of the Shareholders Agreement. Single-trigger acceleration on involuntary termination without cause; double-trigger acceleration (change-of-control + termination) on acquisition.
 - Rudi's shares shall be **fully vested immediately** upon execution of the Post-Money SAFE.
-- The Parties separately acknowledge and intend to codify in the Shareholders Agreement the Zhan-specific protection package set out in `ZHAN_PROTECTIONS.md`, namely: (i) Performance Bonus Shares (+5 % per trigger, maximum 15 % cumulative), (ii) Founder Salary Floor (AED 30,000–50,000 per month), and (iii) Tag-Along + Right of First Refusal on any Rudi share transfer.
+- The Parties separately acknowledge and intend to codify in the Shareholders Agreement **symmetric** founder protection packages for Zhan (`ZHAN_PROTECTIONS.md`, Platform-anchored) and Dymo (`DYMO_PROTECTIONS.md`, Agency-anchored). Both packages comprise: (i) Performance Bonus Shares of +5 % per trigger with a 15 % cumulative cap in the Founder's respective lead entity, (ii) Founder / Co-founder Salary Floor of AED 30,000–50,000 per month payable from the respective lead entity with 6 months' severance on termination without Cause, and (iii) Tag-Along and Right of First Refusal on any share transfer by Rudi.
 
 ## 8. Pre-Existing Intellectual Property
 

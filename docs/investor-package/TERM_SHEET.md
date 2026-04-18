@@ -298,16 +298,29 @@ Founder vesting is mandatory in every investor-grade venture structure. It prote
 
 ---
 
-## 20. Founder Salary, Protections, and Performance Bonus
+## 20. Founder Salaries, Protections, and Performance Bonuses (Symmetric — Zhan and Dymo)
+
+### 20A. Zhan protections (Platform-focused)
 
 **Legal language.**
-> The Company shall, in the Shareholders Agreement, codify the Founder protection package for Zhan as set out in `ZHAN_PROTECTIONS.md`, comprising: (i) Performance Bonus Shares (additional equity of 5.0 % per trigger, maximum cumulative 15.0 %, triggered by (a) Platform Annual Recurring Revenue of AED 10,000,000 or more, (b) 100 agency deals closed, or (c) successful completion of a Series A equity financing of not less than USD 2,000,000); (ii) Founder Salary Floor of AED 30,000–50,000 per month (to be specifically calibrated at SHA execution), payable while Zhan is actively engaged as CEO/CTO of the Platform; and (iii) Tag-Along and Right of First Refusal rights on any share transfer by the Investor.
+> The Company shall, in the Shareholders Agreement, codify the Founder protection package for Zhan as set out in `ZHAN_PROTECTIONS.md`, comprising: (i) Performance Bonus Shares in the Platform (ADGM HoldCo) (additional equity of 5.0 % per trigger, maximum cumulative 15.0 %, triggered by (a) Platform Annual Recurring Revenue of AED 10,000,000 or more, (b) 100 agency deals closed, or (c) successful completion of a Series A equity financing of not less than USD 2,000,000); (ii) Founder Salary Floor of AED 30,000–50,000 per month payable monthly from the Platform operating account while Zhan is actively engaged as CEO/CTO, with 6 months' severance if terminated without Cause; and (iii) Tag-Along and Right of First Refusal rights on any share transfer by the Investor.
 
 **Plain English.**
-Zhan has three additional protections written into the SHA: a performance bonus of +5 % equity per milestone (max 15 %), a guaranteed minimum salary of AED 30–50k per month while he runs the platform, and the right to match or tag along on any share sale Rudi makes. These protect Zhan as the founder; they don't take anything away from Rudi.
+Zhan receives three Platform-anchored protections: performance bonus equity up to 15 % in the Platform, a guaranteed monthly salary from the Platform while he serves as CEO/CTO, and matching rights on Rudi transfers.
 
 **Rationale.**
-Founder protections are a peer-level topic to investor protections. Both sides need structural safeguards for the partnership to be durable. Zhan's protections are designed to keep him engaged and aligned for the long horizon of the Master Tree roadmap. None of the three protections reduce Rudi's economic entitlements; they draw on the 70 % platform development pool.
+Zhan's protections are anchored to the Platform because he leads the Platform as CEO/CTO. The bonus triggers reflect milestones where Zhan's technical leadership directly drives value.
+
+### 20B. Dymo protections (Agency-focused — symmetric)
+
+**Legal language.**
+> The Company shall, in the Shareholders Agreement, codify the Co-founder protection package for Dymo as set out in `DYMO_PROTECTIONS.md`, comprising: (i) Performance Bonus Shares in the Agency (Dubai Mainland LLC) (additional equity of 5.0 % per trigger, maximum cumulative 15.0 %, triggered by (a) 100 agency deals closed, (b) Agency annual revenue of AED 10,000,000 or more, or (c) successful completion of a Series A equity financing of not less than USD 2,000,000); (ii) Co-founder Salary Floor of AED 30,000–50,000 per month payable monthly from the Agency operating account while Dymo is actively engaged as Operations Principal, with 6 months' severance if terminated without Cause; and (iii) Tag-Along and Right of First Refusal rights on any share transfer by the Investor.
+
+**Plain English.**
+Dymo receives three Agency-anchored protections mirroring Zhan's: performance bonus equity up to 15 % in the Agency, a guaranteed monthly salary from the Agency while he serves as Operations Principal, and matching rights on Rudi transfers. Dymo's bonus is Agency-anchored because he leads the Agency.
+
+**Rationale.**
+Both founders need structural safeguards for a durable partnership. The packages are symmetric by design: each founder's bonus is anchored to the entity he leads. The 100-agency-deals and Series A triggers fire both bonuses simultaneously because both milestones require joint effort. Neither package reduces Rudi's economic entitlements; both draw from founder base equity pools or treasury reserves, with Rudi's full-ratchet anti-dilution preserved throughout.
 
 ---
 
@@ -390,7 +403,7 @@ UAE corporate tax was introduced in 2023 (9 % above AED 375,000 taxable income, 
 - Dubai Mainland LLC (Agency) incorporated and RERA company broker licence application in progress.
 - Corporate bank account opened.
 - Initial counsel-drafted Shareholders Agreement delivered and agreed by all Parties.
-- Applicable Shareholder Agreement schedules populated: non-compete exceptions for Dymo; Zhan protections formalised; Dividend Policy detailed mechanics.
+- Applicable Shareholder Agreement schedules populated: non-compete exceptions for Dymo; Zhan and Dymo founder-protection addenda formalised (`ZHAN_PROTECTIONS.md`, `DYMO_PROTECTIONS.md`); Dividend Policy detailed mechanics.
 - UBO filings prepared for submission post-execution.
 
 ## 28. Non-Binding Status
