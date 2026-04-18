@@ -23,7 +23,7 @@ ZAAHI is an operating company with a live production platform at [zaahi.io](http
 
 ### Positioning note
 
-The package reflects a **controlling-investor-to-equal-partnership hybrid** structure. Rudi enters as the controlling Agency investor (80 %) during the payback period; the Agency rebalances to a three-way equal partnership (33.34 % Rudi / 33.33 % Dymo / 33.33 % Zhan) on the earlier of (a) AED 2,000,000 cumulative distributions to Rudi or (b) 5 years since SAFE execution. Platform (ADGM HoldCo) is majority-owned by Zhan (80 %) throughout — Platform does not go through Sunset. The Platform is the IPO path; the Agency is the operational cash engine. Every Agency deal routes 70 % of net profit to Platform development via a tax-deductible inter-company Service Fee and 10 % each to Rudi, Dymo, Zhan in personal cash distributions. Tax-efficient by design: target combined effective tax rate 0–9 % across Agency, Platform, and shareholder layers.
+The package reflects a **controlling-investor-to-equal-partnership hybrid** structure. Rudi enters as the controlling Agency investor (80 %) during the payback period; the Agency rebalances to a three-way equal partnership (33.34 % Rudi / 33.33 % Dymo / 33.33 % Zhan) on the earlier of (a) AED 2,000,000 cumulative distributions to Rudi or (b) 5 years since SAFE execution. **Base case: Financial Trigger fires mid-Year 3.** Platform (ADGM HoldCo) is majority-owned by Zhan (80 %) throughout — Platform does not go through Sunset. The Platform is the IPO path (**10-year projected total return: AED 437 M on AED 1 M = 437× MOIC, ~80 % IRR**); the Agency is the operational cash engine targeting AED 7.8 M Year 1 revenue on 12 premium land plot deals + 2 off-plan floors. Every Agency deal routes 70 % of net profit to Platform development via a tax-deductible inter-company Service Fee and 10 % each to Rudi, Dymo, Zhan in personal cash distributions. Tax-efficient by design: target combined effective tax rate **~2–4 %** across Agency, Platform, and shareholder layers (v5 — SBR not applicable Y1).
 
 ---
 
@@ -36,13 +36,13 @@ The package reflects a **controlling-investor-to-equal-partnership hybrid** stru
 | 3 | `PITCH_DECK_v1.md` | 18-slide narrative (markdown source for Figma render). | No — presentation |
 | 4 | `MOU_RUDI.md` | Non-binding Memorandum of Understanding. Rudi signs Sunday; covers structure, Sunset, vesting, IP transfer. | **Yes — Sunday 19 April** |
 | 5 | `TERM_SHEET.md` | Indicative commercial terms for the Post-Money SAFE. Clause-by-clause legal / plain English / rationale. | No — counsel-reviewed and signed post-MOU |
-| 6 | `FINANCIAL_MODEL_V1.md` | Excel template structure. Revenue, OpEx, cashflow, 4 Sunset scenarios, Platform IPO scenarios, tax efficiency. | No — for discussion & Excel build |
-| 7 | `LAUNCH_PLAN.md` | Operational playbook for the first 12 months. | No — operational reference |
+| 6 | `FINANCIAL_MODEL_V1.md` | v5 Excel template structure. Revenue (12 plots + 2 floors Y1 → AED 190 M Y5), OpEx, cashflow, 4 Sunset scenarios (Financial Trigger mid-Y3 base), Platform IPO scenarios (AED 5.6 B base IPO), tax efficiency. | No — for discussion & Excel build |
+| 7 | `LAUNCH_PLAN.md` | Operational playbook for the first 12 months (v5 — 12 premium plots + 2 off-plan floors Y1 target, AED 7.8 M Agency revenue). | No — operational reference |
 | 8 | `PROFIT_DISTRIBUTION_MECHANICS.md` | How the 70 / 10 / 10 / 10 split works; Sunset mechanics; three-layer tax efficiency design. | No — informs SHA drafting |
 | 9 | `ZHAN_PROTECTIONS.md` | Founder protection addendum — Zhan (Salary Floor + Tag-Along / ROFR). | No — informs SHA drafting |
 | 10 | `DYMO_PROTECTIONS.md` | Co-founder protection addendum — Dymo (symmetric to Zhan, Agency-anchored). | No — informs SHA drafting |
 | 11 | `Q_AND_A_PREP.md` | Anticipated Rudi questions with direct answers. | No — internal prep |
-| 12 | `P_AND_L_STATEMENT.md` | Professional P&L statement — unicorn-tier, Series-A-due-diligence-grade. Year 1–5 projections with scenario analysis, sensitivity analysis, 21-stream revenue detail, Rule of 40 benchmarking, Platform IPO exit scenarios, and comparable-company analysis against 17 public + private PropTech benchmarks. Supported by `research/P_AND_L_RESEARCH.md`. | No — financial reference |
+| 12 | `P_AND_L_STATEMENT.md` | Professional P&L statement v5 realistic — Series-A-due-diligence-grade. Year 1 target **AED 8.3 M revenue** and Year 5 target **AED 190 M revenue**. Includes tier-based subscription model (Developer / Broker / Architect / Investor / Owner), single-tier RERA-compliant referral program, scenario analysis, sensitivity analysis, 21-stream revenue detail, Rule of 40 benchmarking, Platform IPO exit scenarios (**437× 10-year Rudi return base case**), and comparable-company analysis against 17 public + private PropTech benchmarks. Supported by `research/P_AND_L_RESEARCH.md`. | No — financial reference |
 
 ---
 
@@ -160,7 +160,7 @@ Full list with detailed answers in `Q_AND_A_PREP.md`. Abridged here:
 ### On ZAAHI product
 
 **Q: What is actually live today?**
-A: `zaahi.io` in production with 114 parcels, 556,000 plots mapped across Dubai + Abu Dhabi + Oman via PMTiles, 3D ZAAHI Signature, Phase 1 dashboards (Owner/Buyer/Broker), tiered Ambassador program generating platform fees, Archibald AI assistant, feasibility calculator.
+A: `zaahi.io` in production with 114 parcels, 556,000 plots mapped across Dubai + Abu Dhabi + Oman via PMTiles, 3D ZAAHI Signature, Phase 1 dashboards (Owner/Buyer/Broker), RERA-compliant single-tier referral program (commission-based), tier-based role subscriptions (Developer / Broker / Architect / Investor / Owner), Archibald AI assistant, feasibility calculator.
 
 **Q: How much of the Master Tree is built?**
 A: Approximately 6–8 % by section count. 2 of 85 sections fully built, 19 partial, 16 stubbed, 48 not started.
@@ -192,7 +192,7 @@ A: **Platform IPO Years 5–10.** Agency is an operational brokerage (not public
 ### On tax
 
 **Q: How much of my profit share reaches me after tax?**
-A: UAE has no personal income tax. Three-layer design: Agency SBR 0 % Y1; Platform QFZP 0 % on qualifying income; shareholder 0 % UAE. Target combined 0–9 % effective rate. Of every AED 1 M gross Agency profit, ~AED 910 K–1 M flows to Platform + shareholders after UAE tax.
+A: UAE has no personal income tax. Three-layer design (v5): Agency 9 % CT (SBR not applicable at Y1 revenue AED 7.8 M > AED 3 M threshold) with 70 % Service Fee deduction reducing effective rate to ~2 %; Platform QFZP 0 % on qualifying income; shareholder 0 % UAE. Target combined **~2–4 %** effective rate. Of every AED 1 M gross Agency profit, ~AED 965 K–980 K flows to Platform + shareholders after UAE tax.
 
 ---
 
@@ -206,7 +206,7 @@ These inform every document in this package.
 4. **Sunset triggers automatic: earlier of AED 2 M cumulative OR 5-year anniversary.** No Board discretion; self-executing SHA clause.
 5. **Anti-dilution: Platform only, weighted-average up to Series A first closing only.** Pro-rata rights after Series A. Agency has no anti-dilution (no Series rounds planned).
 6. **ZAAHI is one company, two entities.** Agency is the immediate revenue engine; Platform is the long-horizon asset with IPO path.
-7. **Tax efficiency by design** — three-layer strategy (SBR Y1 + QFZP Platform + 0 % personal) targets 0–9 % combined effective rate.
+7. **Tax efficiency by design** — three-layer strategy (Agency 9 % CT with 70 % Service Fee deduction + QFZP Platform + 0 % personal; TP local file from Y1) targets ~2–4 % combined effective rate.
 8. **Additive only for Master Tree.** 85 sections are the canonical surface.
 
 ---

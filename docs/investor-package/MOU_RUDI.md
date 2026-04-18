@@ -35,7 +35,7 @@ ZAAHI is an operating technology company with a live platform at `zaahi.io`. The
 
 Rudi intends to invest AED 1,000,000 (one million United Arab Emirates dirhams) (the "**Investment**"), to be paid in a single tranche after entity formation. The Investment shall be allocated 100 % to agency launch: entity formation and licensing, RERA company broker licence and Broker Cards, office and working capital, first agent hire, and marketing launch. Platform-company operations will be funded from agency net profits thereafter (see §3).
 
-Agency implied post-money valuation: **AED 1,250,000** (AED 1 M for 80 %). Platform 10 % grant to Rudi at Platform formation as part of the overall deal structure.
+Agency implied post-money valuation: **AED 1,250,000** (AED 1 M for 80 %). *Note: this valuation reflects pre-operational status of Agency (entity formation + RERA licensing phase). Post-revenue valuation expected AED 25–40 M in Year 2 at a 3–5× revenue multiple on projected Y1 realised revenue of AED 8.3 M (per v5 base case in `P_AND_L_STATEMENT.md` and `FINANCIAL_MODEL_V1.md`).* Platform 10 % grant to Rudi at Platform formation as part of the overall deal structure.
 
 ---
 
@@ -149,7 +149,7 @@ Rudi's equity is exempt from vesting — fully vested on issuance.
 
 ## 7. IP Transfer
 
-Zhan shall irrevocably assign to the Platform (ADGM HoldCo), on or before the Effective Date of the Shareholders Agreement and at no additional consideration, all pre-existing intellectual property related to ZAAHI, including: the software codebase of `zaahi.io`; the Master Tree v3 document; the ZAAHI brand, wordmark, and 3D ZAAHI Signature visualisation; the parcels database (114 verified parcels); the PMTiles coverage across Dubai, Abu Dhabi, and Oman (556 000 plots); the Ambassador program architecture; the Archibald AI integration; the domain `zaahi.io` and related domains and social handles. Zhan represents and warrants that he owns all such IP free of encumbrance.
+Zhan shall irrevocably assign to the Platform (ADGM HoldCo), on or before the Effective Date of the Shareholders Agreement and at no additional consideration, all pre-existing intellectual property related to ZAAHI, including: the software codebase of `zaahi.io`; the Master Tree v3 document; the ZAAHI brand, wordmark, and 3D ZAAHI Signature visualisation; the parcels database (114 verified parcels); the PMTiles coverage across Dubai, Abu Dhabi, and Oman (556 000 plots); the tier-based subscription + single-tier RERA-compliant referral program architecture; the Archibald AI integration; the domain `zaahi.io` and related domains and social handles. Zhan represents and warrants that he owns all such IP free of encumbrance.
 
 ---
 

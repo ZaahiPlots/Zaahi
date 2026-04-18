@@ -277,7 +277,7 @@ Simplified, symmetric founder package.
 ## 16. IP Assignment
 
 **Legal language.**
-> Zhan shall, on or before the Effective Date of the Shareholders Agreement, irrevocably assign to the Platform (ADGM HoldCo) at no additional consideration all pre-existing intellectual property relating to ZAAHI, including: the software codebase of `zaahi.io`; the Master Tree v3 document; the ZAAHI brand, wordmark, and 3D ZAAHI Signature; the parcels database (114 verified parcels); the PMTiles coverage (556 000 plots across Dubai, Abu Dhabi, and Oman); the Ambassador program architecture; the Archibald AI integration; the domain `zaahi.io` and related domains and social handles. Zhan represents and warrants that he owns all such IP free of encumbrance.
+> Zhan shall, on or before the Effective Date of the Shareholders Agreement, irrevocably assign to the Platform (ADGM HoldCo) at no additional consideration all pre-existing intellectual property relating to ZAAHI, including: the software codebase of `zaahi.io`; the Master Tree v3 document; the ZAAHI brand, wordmark, and 3D ZAAHI Signature; the parcels database (114 verified parcels); the PMTiles coverage (556 000 plots across Dubai, Abu Dhabi, and Oman); the tier-based subscription + single-tier RERA-compliant referral program architecture; the Archibald AI integration; the domain `zaahi.io` and related domains and social handles. Zhan represents and warrants that he owns all such IP free of encumbrance.
 
 **Plain English.**
 Zhan transfers all ZAAHI-related IP to the Platform company for no extra money. Non-negotiable.
@@ -329,13 +329,13 @@ Enforceable, internationally recognised.
 ## 20. Tax Treatment
 
 **Legal language.**
-> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment, and Small Business Relief availability (Year 1 expected). The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8.
+> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment, and UAE Transfer Pricing documentation requirements from Year 1 (related-party transactions under the 70 % inter-company Service Fee exceed the AED 3.75 M per-category threshold from Year 1 on the v5 base case). Under v5 realistic projections, Year 1 Agency revenue exceeds the AED 3 M Small Business Relief threshold, so CT 9 % applies from Year 1 with the 70 % Service Fee deduction reducing effective Agency CT to ~2 % of gross Agency profit. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8.
 
 **Plain English.**
-Tax structuring confirmed by counsel before signing. Three-layer minimisation: Agency Small Business Relief in Year 1; Platform as Qualifying Free Zone Person (0 % on qualifying income); UAE has no personal income tax on shareholder distributions.
+Tax structuring confirmed by counsel before signing. Year 1 Agency tax treatment: CT 9 % applies (revenue exceeds AED 3 M SBR threshold). Service Fee deduction reduces effective rate to ~2 %. Transfer Pricing local file required from Year 1. Platform QFZP target 0 % on qualifying income. UAE has no personal income tax on shareholder distributions.
 
 **Rationale.**
-Target combined effective tax rate: 0–9 % across the structure.
+Target combined effective tax rate: ~2–4 % across the structure (v5 realistic, updated from v4's 0–9 % target).
 
 ---
 
@@ -414,7 +414,7 @@ Except for the binding Exclusivity and Confidentiality provisions set out in the
 | IP assignment | To Platform at nil consideration | §16 |
 | Non-compete | 12-month post-departure | §17 |
 | Dispute resolution | ADGM arbitration | §19 |
-| Tax strategy | Three-layer (SBR Y1 + QFZP Platform + 0 % personal) | §20 |
+| Tax strategy | Three-layer (Agency 9 % CT post-SBR Y1 + QFZP Platform + 0 % personal; ~2–4 % combined effective) | §20 |
 
 ---
 

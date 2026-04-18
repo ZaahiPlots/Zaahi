@@ -65,9 +65,9 @@
 - **TAM** — UAE real estate asset market: **AED 2+ trillion** in installed property value.
 - **SAM** — platform-addressable transaction flow: **AED 760+ billion** annually (Dubai + Abu Dhabi + other emirates).
 - **SOM** — ZAAHI platform-and-agency capture:
-  - Year 1: AED 100 M transaction volume (concentrated on agency, plus ambassador-driven platform fees).
+  - Year 1: AED 390 M transaction volume (12 premium plots + 2 off-plan floors, plus 40-subscriber platform seed).
   - Year 3: AED 5 B transaction volume.
-  - Year 5+: category-leading position.
+  - Year 5+: AED 15 B+ transaction volume; category-leading position.
 - Q1 2026 alone: AED 252 B, +31 % YoY. Market acceleration, not deceleration.
 
 *Visual note: three concentric rings. Outer ring (TAM) in a pale gold. Middle ring (SAM) in ZAAHI gold `#C8A96E`. Inner solid disc (SOM Year 1 / Year 3 / Year 5 layered in deepening gold). Annotations pointing to each ring with the AED figure.*
@@ -84,12 +84,12 @@
 - 556,000 plots mapped across Dubai, Abu Dhabi, and Oman via PMTiles.
 - 3D ZAAHI Signature visualisation — proprietary podium / body / crown building rendering.
 - Archibald multilingual AI assistant live.
-- Ambassador program (tiered SILVER / GOLD / PLATINUM) live and generating platform fees.
+- RERA-compliant single-tier referral program live (commission-based from 2 % ZAAHI Service Fee on closed deals; no subscription).
 - Feasibility Calculator live for off-plan evaluation.
 - Phase 1 dashboards live for Owner, Buyer, Broker roles.
 - Full glassmorphism UI — the visual language is ZAAHI's commercial signature.
 
-*Visual note: a 2×2 grid of real `zaahi.io` screenshots (not mocks). Top-left: 3D map of Dubai with 114 parcels highlighted in gold. Top-right: parcel detail side-panel with affection plan and 3D render. Bottom-left: Archibald chat conversation in progress. Bottom-right: Ambassador program dashboard. Subtle gold borders on each screenshot to match product UI.*
+*Visual note: a 2×2 grid of real `zaahi.io` screenshots (not mocks). Top-left: 3D map of Dubai with 114 parcels highlighted in gold. Top-right: parcel detail side-panel with affection plan and 3D render. Bottom-left: Archibald chat conversation in progress. Bottom-right: Referral program dashboard + tier subscription options. Subtle gold borders on each screenshot to match product UI.*
 
 *Presenter notes: This is the slide where Rudi has already been converted. He saw the live demo on April 17. Remind him briefly: "The product you saw operating on the screen last week is what is on this slide. It is not going to be; it is."*
 
@@ -100,7 +100,7 @@
 ### **April 17, 2026: Rudi experienced live demo of zaahi.io. Within 24 hours: verbal commitment. Sunday April 19: this package formalises that partnership.**
 
 - **April 17, 2026** — investor demo. Live product walked through, every claim reconciled with production code.
-- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; corporate structure finalised April 19 with controlling investor position during payback (80 % Agency) and equal partnership thereafter (33.34 % post-Sunset), plus 10 % Platform perpetual.
+- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; corporate structure finalised April 19 with controlling investor position during payback (80 % Agency) and equal partnership thereafter (33.34 % post-Sunset), plus 10 % Platform perpetual. Monetization model finalised: single-tier RERA-compliant referral program + tier-based role subscriptions (Developer AED 50k/yr · Broker AED 20k/yr · Architect AED 10k/yr · Investor/Buyer AED 5k/yr · Land Owner AED 3k/yr).
 - **Sunday April 19, 2026** — MOU signed, Al Jurf. Monday April 21: Agency formation documents submitted.
 
 *Visual note: precise three-point timeline. Left: "Apr 17 · Demo delivered" (with zaahi.io screenshot). Middle: "Apr 18 · Commitment secured" (with handshake symbol in gold). Right: "Apr 19 · MOU signed, Al Jurf" (with pen / signature symbol). Thin gold line connecting them.*
@@ -131,8 +131,8 @@ Key points:
 
 | Engine | Asset | Revenue model | Time to revenue |
 |---|---|---|---|
-| **Agency** | Dubai Mainland LLC | Brokerage commission on land plots (2 %) and off-plan (3–5 %) | Weeks |
-| **Platform** | ADGM HoldCo, live at `zaahi.io` | 21 revenue streams architected: 2 % ZAAHI service fee, tiered ambassador memberships, SaaS subscriptions (broker / developer / owner), AI premium access, data licensing | Months to years |
+| **Agency** | Dubai Mainland LLC | Brokerage commission on premium land plots (2 %) and off-plan floors (3–5 %) | Weeks |
+| **Platform** | ADGM HoldCo, live at `zaahi.io` | 21 revenue streams architected: 2 % ZAAHI Service Fee on platform-routed deals, tier-based role subscriptions (Developer / Broker / Architect / Investor / Owner), AI premium access, data licensing; RERA-compliant single-tier referral program | Months to years |
 
 - Agency funds the platform. 70 % of every agency net profit flows into platform development.
 - Platform compounds. Each new section unlocks new revenue streams and new moat.
@@ -146,13 +146,13 @@ Key points:
 
 ## Slide 9 — Agency (Dubai Mainland LLC)
 
-### **Rudi 80 % pre-Sunset → 33.34 % post-Sunset · plots + off-plan · 6–9 deals Year 1 · RERA-licensed founders.**
+### **Rudi 80 % pre-Sunset → 33.34 % post-Sunset · premium plots + off-plan floors · 12 deals + 2 floors Year 1 · AED 7.8 M Y1 revenue · RERA-licensed founders.**
 
-- **Cap table pre-Sunset (Years 0–5 or until AED 2 M cumulative to Rudi):** **Rudi 80 % · Dymo 10 % · Zhan 10 %**. Rudi is the controlling investor during the payback period.
+- **Cap table pre-Sunset (Years 0–3 or until AED 2 M cumulative to Rudi):** **Rudi 80 % · Dymo 10 % · Zhan 10 %**. Rudi is the controlling investor during the payback period.
 - **Cap table post-Sunset (automatic rebalance):** **Rudi 33.34 % · Dymo 33.33 % · Zhan 33.33 %**. Three-way equal partnership once Rudi has been made whole (2× return OR 5 years, whichever earlier).
-- **Sunset trigger:** earlier of (a) AED 2 M cumulative distributions to Rudi from both entities OR (b) 5-year anniversary of SAFE Closing Date. Automatic on business day following trigger; no Board resolution needed.
-- **Focus** — land plots (10–30 M AED average, 2 % commission) and off-plan units (1.5–20 M AED average, 3–5 % commission).
-- **Year 1 conservative target** — 6–9 closed deals at AED 300,000 average commission = AED 1.8–2.7 M gross revenue.
+- **Sunset trigger:** earlier of (a) AED 2 M cumulative distributions to Rudi from both entities OR (b) 5-year anniversary of SAFE Closing Date. Automatic on business day following trigger; no Board resolution needed. **Base case Financial Trigger: mid-Year 3.**
+- **Focus** — premium land plots (AED 500 M – 2 B range, 1–2 % commission; average targeted deal AED 22.5 M → AED 450 k commission) and off-plan floor-level sales (10–20 units per floor, AED 30 M floor size, 4 % commission → AED 1.2 M).
+- **Year 1 base target** — 12 premium plot deals + 2 off-plan floors = AED 7.8 M Agency gross revenue.
 - **Operators** — Dymo (Co-founder, 18+ years global ops, Dubai RE since 2018) leads day-to-day; Zhan (Founder, CEO/CTO, 17 years RE) retains strategic oversight. Both RERA-licensed.
 - **Regulatory path** — Agency formation documents submitted Monday 2026-04-21; LLC registration 2–4 weeks; RERA company broker licence and Broker Cards in parallel; Trakheesi permits per listing; DLD Broker Permit.
 
@@ -167,10 +167,11 @@ Key points:
 ### **Zhan 80 % · Dymo 10 % · Rudi 10 % · 21 revenue streams. Platform entity opens with the first agency deal.**
 
 - **Cap table** — **Zhan 80 %** (founder controls Platform) · **Dymo 10 %** · **Rudi 10 %** (lifetime upside).
-- **Live today:** 2 % ZAAHI service fee on platform-routed deals · tiered Ambassador memberships.
-- **Year 1 launch pipeline:** broker SaaS subscription · developer SaaS subscription · Archibald AI premium access.
-- **Year 2 pipeline:** data licensing to institutional investors · API marketplace access · tokenised deal-facilitation.
-- **Year 3–5 pipeline:** remainder of the 21 streams — fractional ownership, auction fees, robotics contracts, satellite data, country-data licences.
+- **Live today:** 2 % ZAAHI Service Fee on platform-routed deals · RERA-compliant single-tier referral program (commission-based, no subscription).
+- **Year 1 monetization** — tier-based role subscriptions: **Developer AED 50 k/yr · Broker AED 20 k/yr · Architect AED 10 k/yr · Investor/Buyer AED 5 k/yr · Land Owner AED 3 k/yr.** Target Y1 enrolment: 40 subscribers across tiers. Y1 Platform revenue AED 510 k.
+- **Year 2 pipeline:** Archibald AI premium access + API usage · data licensing to institutional investors · government document facilitation.
+- **Year 3–5 pipeline:** remainder of the 21 streams — fractional ownership, auction fees, robotics contracts, satellite data, country-data licences, NFT/tokenised marketplace (VARA-dependent).
+- **Year 5 Platform target:** AED 60 M revenue; 500 active subscribers.
 - **Platform entity** opens with the first agency deal closure (June – July 2026 target).
 
 *Visual note: cap-table pie chart (Zhan 80 % gold dominant, Dymo + Rudi 10 % each slivers). Fan of 21 revenue-stream cards: top two in solid gold (live), next three half-gold (Year 1), next three outlined (Year 2), remaining thirteen ghost (Year 3–5).*
@@ -184,7 +185,7 @@ Key points:
 ### **The product is operating. The market is responding.**
 
 - **Platform** — `zaahi.io` in production; 114 parcels live; 556,000 plots mapped across Dubai, Abu Dhabi, Oman; 266 API endpoints; 18 pages; 15 Prisma data entities; 12 production migrations.
-- **Ambassador program** — tiered SILVER / GOLD / PLATINUM memberships live; payment flow via USDT TRC-20; admin approval pipeline operational.
+- **Referral program** — RERA-compliant single-tier commission-based program live; referrers earn from 2 % ZAAHI Service Fee on closed deals (zero subscription cost to referrers); admin approval pipeline operational.
 - **Brand** — ZAAHI Signature 3D rendering (proprietary), glassmorphism visual language, multilingual (EN, AR, RU, UK, SQ, FR).
 - **Demo track record** — successful investor demo 2026-04-17, immediate commitment secured.
 - **Pipeline** — agency launch funnel identified: plot owners across Dubai and Abu Dhabi, off-plan developers, HNWI foreign-buyer inquiries routed through Archibald.
@@ -203,7 +204,7 @@ Key points:
 2. **Master Tree architecture (85 sections, 12 blocks) is a 10-year product roadmap no competitor has drafted.** A competitor starting today cannot catch up; every decision they make compromises future integration. The tree is additive-only by design — we can ship section by section, year by year, without architectural rewrites.
 3. **Self-sovereignty positioning differentiates from US-based platforms that cannot operate long-term in UAE under data residency.** ZAAHI's migration path from rented cloud to own data centres (Q3 2026 Equinix Dubai → Phase 2–5) is architected from day one. A Propy or Opendoor expanding here cannot plausibly replicate this.
 4. **Founder domain depth.** 17 years real estate (Zhan) + 18 years global operations (Dymo) + both RERA-licensed + full-stack engineering capability in one CEO/CTO. This combination is uniquely rare in the UAE proptech landscape.
-5. **Tiered Ambassador economics in production.** SILVER / GOLD / PLATINUM with L1 / L2 / L3 commissions, already paid-tier, revenue-generating. Flywheel effect: ambassadors bring referrals who become ambassadors. Revenue-aligned growth without paid-CAC-heavy marketing.
+5. **Tier-based subscription + commission referral economics in production.** Role-specific subscriptions (Developer 50 k · Broker 20 k · Architect 10 k · Investor 5 k · Owner 3 k per year) capture high-intent participants across the full real-estate value chain. Single-tier RERA-compliant referral program adds commission-based viral growth. Revenue-aligned growth without paid-CAC-heavy marketing.
 
 *Visual note: a shield icon with five engraved lines, each one a moat element. Subtle gold filigree. Around the shield: silhouetted logos of competitors (Bayut, Property Finder, Huspy, PRYPCO, Propy) greyed out.*
 
@@ -215,8 +216,8 @@ Key points:
 
 ### **Three channels, each layered on the one before.**
 
-- **Channel 1 — Founder-led agency (Months 1–12).** Zhan and Dymo close deals directly, leveraging existing relationships and RERA credentials. Plots + off-plan across Dubai and Abu Dhabi. First 6–9 deals prove the model; each generates platform-dev funding and data for the platform.
-- **Channel 2 — Platform invitations to partner brokerages (Months 12–24).** Once the agency has closed meaningful volume, ZAAHI invites 10–20 boutique brokerages to onboard onto the platform as SaaS subscribers. Ambassador-sourced referrals power customer acquisition.
+- **Channel 1 — Founder-led agency (Months 1–12).** Zhan and Dymo close deals directly, leveraging existing relationships and RERA credentials. Premium plots + off-plan floors across Dubai and Abu Dhabi. First 12 premium-plot deals + 2 off-plan floors in Year 1 prove the model; each generates platform-dev funding and data for the platform.
+- **Channel 2 — Platform invitations to partner brokerages (Months 6–24).** Tier-based subscriptions open from Month 1 to founder-network seed users (40 Y1); paid marketing opens Month 12+ to broader brokerage community. Referral-sourced signups power early growth without paid-CAC.
 - **Channel 3 — Institutional and developer tier (Year 2+).** Direct sales to family offices, sovereign funds, and master developers. Archibald AI + data licensing + API marketplace. This is where platform revenue scales from thousands to millions.
 
 *Visual note: three horizontal bars stacked. Bar 1 (agency) thick in the early months, tapering as bars 2 and 3 layer in. Bar 2 (brokerages) begins thin at Month 12 and thickens. Bar 3 (institutional) begins at Month 18 and compounds. X-axis: Months 1–36. Y-axis: revenue contribution.*
@@ -245,26 +246,28 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 ## Slide 15 — Financials
 
-### **Conservative Year 1 base case: AED 2.3–3.5 M revenue · AED 0.9–1.6 M net profit · dividend distribution from first closed deal.**
+### **v5 realistic Year 1 base case: AED 8.3 M revenue · AED 5 M EBITDA · AED 407 k Year 1 distribution to Rudi · AED 437 M 10-year projected total return (437×).**
 
-| Line (AED 000s) | Year 1 | Year 2 | Year 3 |
-|---|---|---|---|
-| Agency gross commission | 1,800 – 2,700 | 5,000 – 8,000 | 12,000 – 18,000 |
-| Platform revenue | 500 – 800 | 2,000 – 4,000 | 8,000 – 16,000 |
-| **Total revenue** | **2,300 – 3,500** | **7,000 – 12,000** | **20,000 – 34,000** |
-| Operating costs | 1,400 – 1,900 | 3,500 – 5,000 | 8,000 – 12,000 |
-| **Net profit** | **900 – 1,600** | **3,500 – 7,000** | **12,000 – 22,000** |
-| Distribution to Rudi (10 % of net) | 90 – 160 | 350 – 700 | 1,200 – 2,200 |
+| Line (AED '000) | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
+|---|---:|---:|---:|---:|---:|
+| Agency revenue (premium plots + off-plan floors) | 7,800 | 15,500 | 33,500 | 65,000 | 130,000 |
+| Platform revenue (subscriptions + transaction fee + data) | 510 | 3,500 | 8,500 | 25,000 | 60,000 |
+| **Total revenue** | **8,310** | **19,000** | **42,000** | **90,000** | **190,000** |
+| EBITDA | 5,000 | 10,200 | 22,000 | 47,000 | 95,000 |
+| Distributable Net Profit | 4,068 | 8,100 | 17,500 | 37,000 | 76,000 |
+| **Rudi 10 % cash distribution** | **407** | **810** | **1,750** | **3,700** | **7,600** |
+| Rudi cumulative distributions | 407 | 1,217 | 2,967 | 6,667 | 14,267 |
 
-*Assumptions and sensitivities: full financial model with conservative / base / aggressive scenarios in `FINANCIAL_MODEL_V1.md`. All figures conservative; no reliance on platform-subscription penetration above 1 % of UAE brokerages.*
+*Assumptions: 12 premium plot deals + 2 off-plan floors Y1. Full 16-section professional P&L with conservative / base / aggressive scenarios and sensitivity analysis in `P_AND_L_STATEMENT.md`; Excel template in `FINANCIAL_MODEL_V1.md`.*
 
-- Breakeven: Month 6–9 (base case).
-- Runway before breakeven: covered in full by Rudi's AED 1 M injection plus first agency deal revenue.
+- **Operating breakeven: Month 2** (first deal closes from Dymo's founder-network pipeline).
+- **Sunset Financial Trigger (AED 2 M cumulative to Rudi): mid-Year 3 base case.**
+- **10-year total return to Rudi (Base): AED 437 M (437× MOIC, ~80 % IRR)** = ~AED 115 M Agency + Platform cash distributions + ~AED 322 M Platform IPO proceeds at Y10.
 - Dividend mechanics: quarterly, Dividend Policy codified in SHA. First distribution follows the first closed agency deal (June – July 2026 target) on the quarterly cadence thereafter.
 
-*Visual note: a three-column bar chart showing Year 1 / Year 2 / Year 3 net profit in AED thousands. Rudi's 10 % share highlighted as a thin gold ribbon on top of each bar.*
+*Visual note: a five-column bar chart showing Year 1 – Year 5 Distributable Net Profit in AED thousands. Rudi's 10 % share highlighted as a thin gold ribbon on top of each bar. Cumulative curve overlaid with AED 2 M Financial Trigger line.*
 
-*Presenter notes: These numbers are deliberately conservative. Say: "Every number here is a base case you can defend to a banker. The aggressive case on slide 15 of the financial model doubles these. We have deliberately chosen not to show that in the deck because we want you to invest on the base case and be pleasantly surprised, not the reverse."*
+*Presenter notes: Say: "Year 1 is 12 premium plot deals plus 2 off-plan floors — that's founder-confirmed deal pipeline from Dymo's Equilibrium Advisory network, not aspirational. Your Year 1 distribution is AED 407 k. Sunset Financial Trigger fires mid-Year 3. Your 10-year total return, modelled conservatively, is AED 437 M — 437 times your AED 1 M. The Platform IPO is the largest contributor at Y10."*
 
 ---
 
@@ -298,9 +301,11 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 **The instrument — Post-Money SAFE (YC 2018 standard, adapted to UAE / ADGM law)**
 
-- Agency implied post-money: **AED 1,250,000** (Rudi's AED 1 M for 80 %)
+- Agency implied post-money: **AED 1,250,000** (Rudi's AED 1 M for 80 %) — reflects pre-operational status
+- Post-revenue valuation expected Y2: AED 25–40 M (3–5× revenue multiple on Y1 realised AED 8.3 M)
 - Platform 10 % granted at Platform formation (upon first agency deal closure)
 - Conversion trigger: entity formation + SAFE execution
+- **Economic highlights:** Year 1 Rudi distribution **AED 407 k** · Sunset Financial Trigger **mid-Year 3** · 10-year projected total return **AED 437 M (437× MOIC, ~80 % IRR)**
 - Target close: MOU Sunday 2026-04-19 (Al Jurf); Agency formation documents submitted Monday 2026-04-21; SAFE execution upon LLC active; formal Shareholders Agreement thereafter
 
 **Equity structure — Agency (pre-Sunset)**
@@ -350,10 +355,11 @@ Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Age
 
 **Tax efficiency (three-layer)**
 
-- **Agency:** UAE CT 9 % above AED 375 K; Small Business Relief (0 %) Year 1 if revenue ≤ AED 3 M; 70 % Service Fee is deductible.
+- **Agency:** UAE CT 9 % above AED 375 K. **SBR not applicable Y1** (Agency revenue AED 7.8 M > AED 3 M threshold). 70 % Service Fee is deductible; effective Agency CT rate ~2 % of gross Agency profit.
 - **Platform:** ADGM QFZP targets 0 % on qualifying income.
 - **Shareholder:** UAE has no personal income tax and no dividend withholding.
-- Target combined effective tax: **0–9 %**.
+- **Transfer Pricing:** local file required from Year 1 (related-party transactions exceed AED 3.75 M threshold).
+- Target combined effective tax: **~2–4 %**.
 
 **What Rudi does not carry**
 
@@ -378,7 +384,7 @@ Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Age
 | **Weeks following entity completion** | Office secured; first agent hired; Trakheesi permits; first listings live; Shareholders Agreement drafting in progress | Dymo · Legal |
 | **June – July 2026 target** | First agency deal closed (DLD transfer certificate); ADGM HoldCo (Platform) formation triggered and completed | Dymo · Zhan · Legal |
 | **After first closed deal** | First agency profit distribution on quarterly cadence; IP transfer to ADGM HoldCo executed | Board |
-| **Months 6–12** | 6–9 deals total Year 1 (base case 8); Ambassador program expanded; Master Tree §02 Residential + §08 Off-Plan deployed; blockchain audit-trail live | All three |
+| **Months 6–12** | 12 premium plot deals + 2 off-plan floors total Year 1 (base case AED 7.8 M Agency revenue); referral program expanded; tier-subscription enrolment scales to 40 Y1-end; Master Tree §02 Residential + §08 Off-Plan deployed; blockchain audit-trail live | All three |
 | **Later** | Shareholders Agreement executed with top-tier counsel; Platform Series A preparation | Legal · Zhan · Dymo |
 | **Sunset trigger (earlier of)** | AED 2 M cumulative to Rudi OR 5th anniversary of SAFE Closing | Automatic |
 
@@ -392,7 +398,7 @@ Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Age
 
 - **A1** — Full Master Tree diagram (85 sections, 12 blocks).
 - **A2** — Gap analysis summary table (2 full / 19 partial / 16 stubbed / 48 not started).
-- **A3** — Detailed Ambassador program mechanics.
+- **A3** — Detailed tier-subscription + single-tier referral program mechanics.
 - **A4** — Blockchain strategy (audit-trail only, Option A per `BLOCKCHAIN_DEEP_DIVE.md`).
 - **A5** — Self-sovereignty migration roadmap (Phase 1–5).
 - **A6** — UAE regulatory map (VARA, ADGM FSRA, DFSA, CBUAE, DLD, RERA, DDA, TAMM, Dubai Pulse).
