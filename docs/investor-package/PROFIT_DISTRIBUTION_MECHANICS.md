@@ -236,27 +236,69 @@ If the Board is deadlocked (e.g., one director absent, 1-1 vote), the following 
 
 ## 8. Scenarios
 
-### 8.0 Worked example — single AED 2,000,000 gross-commission quarter
+### 8.0 Worked example A — AED 2,000,000 **Net Profit** (simple case, reserve already maintained)
 
-For clarity, assume one AED 2,000,000 gross commission figure aggregated for a quarter (illustrative — not tied to any specific deal mix):
+The cleanest framing. Assume the Company has already calculated Net Profit for a quarter at AED 2,000,000 (after deducting costs, OpEx, and any applicable Corporate Tax), and the Contractual Operating Reserve (3 months of OpEx ≈ AED 435,000) is already fully maintained from prior quarters.
+
+In this case, Distributable Net Profit = Net Profit, and the split is direct:
+
+| Recipient | Share | AED |
+|---|---|---|
+| **Rudi** | 10 % | **200,000** |
+| **Dymo** | 10 % | 200,000 |
+| **Zhan** | 10 % | 200,000 |
+| **Platform Development Fund** | 70 % | 1,400,000 |
+| **Total** | 100 % | 2,000,000 |
+
+**What Rudi sees in his bank account that quarter: AED 200,000.**
+
+---
+
+### 8.0b Worked example B — AED 2,000,000 **Net Profit** (reserve needs topping up)
+
+If the Contractual Operating Reserve is below the AED 435,000 threshold (e.g., after an exceptional expense), the reserve is topped up first, reducing the amount available for distribution.
+
+Assume reserve currently at AED 235,000 (AED 200,000 short of the AED 435,000 threshold):
 
 | Step | AED | Explanation |
 |---|---|---|
-| Gross commission | 2,000,000 | Client payments received during the quarter |
-| Less: direct costs | 100,000 | Trakheesi permits, client entertainment, external DD, notary — 5 % |
-| Less: allocated OpEx | 435,000 | 3 months × AED 145,000 quarterly allocation |
-| Less: Corporate Tax (9 % above AED 375 K threshold) | 88,650 | Provisional; may be AED 0 if under SBR in Year 1 |
-| Less: VAT reconciliation | 0 | Pass-through; collected and paid to FTA |
-| Less: Contractual Operating Reserve top-up | 0 | Assumed already maintained |
-| Less: Statutory Reserve | ~10,000 | 10 % of annual net profit, reduced pro-rata for the quarter |
-| **Distributable Net Profit** | **~1,366,350** | |
-| Rudi distribution (10 %) | 136,635 | Paid as Preferred Share dividend |
-| Dymo distribution (10 %) | 136,635 | Paid as Common Share dividend |
-| Zhan distribution (10 %) | 136,635 | Paid as Common Share dividend |
-| Platform Development Fund (70 %) | 956,445 | Transferred to ADGM HoldCo via service agreement |
-| **Total distributed** | **1,366,350** | ✓ Sums to Distributable Net Profit |
+| Net Profit | 2,000,000 | Post-OpEx, post-CT |
+| Less: Contractual Operating Reserve top-up | 200,000 | Restore reserve to AED 435,000 |
+| Less: Statutory Reserve (10 % of quarterly net profit) | 200,000 | UAE Commercial Companies Law |
+| **Distributable Net Profit** | **1,600,000** | |
+| Rudi distribution (10 %) | 160,000 | Preferred Share dividend |
+| Dymo distribution (10 %) | 160,000 | Common Share dividend |
+| Zhan distribution (10 %) | 160,000 | Common Share dividend |
+| Platform Development Fund (70 %) | 1,120,000 | Transferred to ADGM HoldCo |
+| **Total distributed** | **1,600,000** | ✓ |
 
-**What Rudi sees in his bank account that quarter: AED 136,635.**
+**What Rudi sees in his bank account that quarter: AED 160,000.**
+
+---
+
+### 8.0c Detailed walkthrough — AED 2,000,000 **Gross Commission** → Net Profit → Distribution
+
+For reference, here is the full build from gross commission to final distribution, showing every deduction:
+
+| Step | AED | Explanation |
+|---|---|---|
+| Gross commission revenue | 2,000,000 | Client payments received during the quarter |
+| Less: direct costs | 100,000 | Trakheesi permits, client entertainment, external DD, notary — ~5 % |
+| Less: allocated OpEx | 435,000 | 3 months × AED 145,000 monthly Year-1 OpEx |
+| **Pre-tax profit** | **1,465,000** | |
+| Less: Corporate Tax (9 % of amount above AED 375 K threshold) | 98,100 | 9 % × (1,465,000 − 375,000) = 98,100. CT may be AED 0 under Small Business Relief if Year-1 revenue ≤ AED 3 M |
+| Less: VAT reconciliation | 0 | Pass-through; collected from client and remitted to FTA |
+| **Net Profit (after tax)** | **1,366,900** | |
+| Less: Statutory Reserve (10 % of annual net profit, pro-rated) | ~10,000 | UAE Commercial Companies Law |
+| Less: Contractual Operating Reserve top-up | 0 | Assumed already maintained |
+| **Distributable Net Profit** | **1,356,900** | |
+| Rudi distribution (10 %) | 135,690 | Preferred Share dividend |
+| Dymo distribution (10 %) | 135,690 | Common Share dividend |
+| Zhan distribution (10 %) | 135,690 | Common Share dividend |
+| Platform Development Fund (70 %) | 949,830 | Transferred to ADGM HoldCo via Service Agreement |
+| **Total distributed** | **1,356,900** | ✓ Sums to Distributable Net Profit |
+
+**Under Small Business Relief (Year 1 expected): Corporate Tax = AED 0, Net Profit = AED 1,465,000, Distributable = AED 1,455,000 (after statutory reserve), and Rudi distribution = AED 145,500.**
 
 ---
 

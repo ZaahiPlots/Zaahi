@@ -342,7 +342,7 @@ Key points:
 | **Weeks 6–10 (Jun – Jul)** | Shareholders Agreement executed; ADGM HoldCo formation primed | Legal · All three |
 | **Month 5 (September 2026)** | First agency deal closed (DLD transfer certificate issued); ADGM HoldCo formation triggered | Dymo · Zhan |
 | **Q3 2026** | First quarterly dividend declared and distributed | Board |
-| **Months 7–12 (Oct 2026 – Mar 2027)** | 8–9 deals total Year 1; Ambassador program expanded; Master Tree §02 Residential + §08 Off-Plan shipped; blockchain audit-trail deployed | All three |
+| **Months 7–12 (Oct 2026 – Mar 2027)** | 6–9 deals total Year 1 (base case 8); Ambassador program expanded; Master Tree §02 Residential + §08 Off-Plan shipped; blockchain audit-trail deployed | All three |
 | **Q1 2027** | Series A preparation; target close Q2 – Q3 2027 | Zhan + Dymo |
 
 *Visual note: Gantt-style horizontal bars over a Sunday-2026-04-19-to-Q3-2027 timeline. Each bar in ZAAHI gold, with rounded corners. Today (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line on 2026-04-21 marked "Agency registration begins".*

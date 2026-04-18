@@ -134,11 +134,11 @@ Phase goal: **Al Jurf office operational; first agent hired; Trakheesi listings 
 
 ---
 
-## Phase 3 — First Deals (Months 4–6, July – Sep 2026)
+## Phase 3 — First Deals (Months 3–5, July – September 2026)
 
 Phase goal: **2–3 deals closed; first dividend distribution; ADGM HoldCo formation triggered on first deal closure; Platform §02 + §08 development acceleration.**
 
-### Month 4 (July 2026)
+### Month 3 (July 2026)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
@@ -148,35 +148,33 @@ Phase goal: **2–3 deals closed; first dividend distribution; ADGM HoldCo forma
 | Master Tree §02 Residential MVP development: dedicated `Residential` entity + filter controls | Zhan | — | Dev time | Residential listings toggle live on `zaahi.io` |
 | Shareholders Agreement signed by all three Parties | Legal + all three | 30,000 (final retainer) | SHA v3 reviewed | SHA executed |
 
-### Month 5 (August 2026)
+### Month 4 (August 2026)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
-| **First deal closed (DLD transfer certificate issued)** | Dymo | — | MOU → escrow → DLD | Commission collected; books updated |
-| **ADGM HoldCo incorporation initiated** | Zhan + Legal | 30,000 | First deal closed | ADGM application submitted |
 | Second deal MOU signed | Dymo | — | Pipeline | Second MOU in escrow |
 | Master Tree §08 Off-Plan MVP development: off-plan-specific flows + Oqood registry placeholder | Zhan | — | Dev time | Off-plan category live on `zaahi.io` |
-| Marketing: case study content published (first closed deal, anonymised) | Dymo | 10,000 | First deal closed | Case study published on LinkedIn + zaahi.io/blog |
+| Marketing: case study content drafted (pre-publication, first deal approaching close) | Dymo | 10,000 | Pipeline maturity | Draft case-study content for Sep publication |
+| Al Jurf agent pipeline review | Dymo + Zhan | — | — | Pipeline visibility confirmed |
 
-### Month 6 (September 2026)
+### Month 5 (September 2026) — **First agency deal target**
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
-| Third deal closed | Dymo | — | Pipeline | Third DLD transfer certificate |
-| **First quarterly dividend declaration (Q3 2026)** | Board (Zhan, Dymo, Rudi) | — | 2–3 deals closed; SHA dividend policy | Board resolution; distribution processed |
-| ADGM HoldCo incorporation completed | Zhan + Legal | 10,000 (completion) | ADGM processing | HoldCo active |
-| IP Assignment executed: all ZAAHI IP transferred from Zhan personally to Platform (ADGM HoldCo) | Legal + Zhan | 15,000 | HoldCo active | Executed IP assignment deed |
-| Q2 2026 full quarterly report sent to Rudi (within 45 days of quarter end) | Zhan | — | Month accounts | Quarterly report delivered |
+| **First agency deal closed (DLD transfer certificate issued)** | Dymo | — | MOU → escrow → DLD | Commission collected; books updated |
+| **ADGM HoldCo incorporation initiated** | Zhan + Legal | 30,000 | First deal closed | ADGM application submitted |
+| Q3 2026 dividend event generated (first closed deal creates distributable profit for the quarter — formal declaration follows quarterly cadence per `PROFIT_DISTRIBUTION_MECHANICS.md` §4) | Zhan + Dymo | — | First deal closed | Q3 accounts prepared by 31 October; Board resolution by 15 November; payment by 30 November |
+| Marketing: case study content published (first closed deal, anonymised) | Dymo | — | First deal closed | Case study published on LinkedIn + zaahi.io/blog |
 
 **Phase 3 cumulative spend: ~AED 300,000 (mostly funded from Phase 3 agency revenue, not Rudi capital).**
 
 ---
 
-## Phase 4 — Scaling (Months 7–12, October 2026 – March 2027)
+## Phase 4 — Scaling (Months 6–12, October 2026 – April 2027)
 
 Phase goal: **4–6 additional deals closed (8–9 total Year 1); Ambassador program simplified model live; broker/developer SaaS launched; Series A preparation initiated.**
 
-### Months 7–9 (October – December 2026)
+### Months 6–9 (October – December 2026)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
@@ -186,7 +184,7 @@ Phase goal: **4–6 additional deals closed (8–9 total Year 1); Ambassador pro
 | Platform broker SaaS MVP launched (invite-only to 10 partner brokerages) | Zhan | — | Dev time | 5 brokerages using broker dashboard |
 | Q4 2026 dividend distribution (Q4 numbers) | Board | — | Q4 deal closures | Distribution processed in Jan 2027 |
 
-### Months 10–12 (January – March 2027)
+### Months 10–12 (January – April 2027)
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
@@ -213,7 +211,7 @@ Phase goal: **4–6 additional deals closed (8–9 total Year 1); Ambassador pro
 | Rudi total distribution | AED 115,000 – 150,000 (across 3 quarterly payments) |
 | Platform Development Fund accumulation | AED 800,000 – 1,050,000 |
 | Dubai Mainland LLC operating | Yes |
-| ADGM HoldCo operating | Yes (opened Month 5–6) |
+| ADGM HoldCo operating | Yes (incorporation initiated Month 5 on first deal close, completed Month 5–6) |
 | Ambassador program simplified tier | Live |
 | Broker SaaS | 5+ brokerage users |
 | Developer SaaS | 3+ developer partners |
