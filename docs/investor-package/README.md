@@ -42,23 +42,25 @@ The package reflects a **controlling-investor-to-equal-partnership hybrid** stru
 | 9 | `ZHAN_PROTECTIONS.md` | Founder protection addendum — Zhan (Salary Floor + Tag-Along / ROFR). | No — informs SHA drafting |
 | 10 | `DYMO_PROTECTIONS.md` | Co-founder protection addendum — Dymo (symmetric to Zhan, Agency-anchored). | No — informs SHA drafting |
 | 11 | `Q_AND_A_PREP.md` | Anticipated Rudi questions with direct answers. | No — internal prep |
+| 12 | `P_AND_L_STATEMENT.md` | Professional P&L statement — unicorn-tier, Series-A-due-diligence-grade. Year 1–5 projections with scenario analysis, sensitivity analysis, 21-stream revenue detail, Rule of 40 benchmarking, Platform IPO exit scenarios, and comparable-company analysis against 17 public + private PropTech benchmarks. Supported by `research/P_AND_L_RESEARCH.md`. | No — financial reference |
 
 ---
 
 ## Reading order for Rudi
 
-Allow ~90 minutes for full package review.
+Allow ~120 minutes for full package review.
 
 1. **EXECUTIVE_SUMMARY.md** (5 min)
 2. **PITCH_DECK_v1.md** (15 min)
 3. **MOU_RUDI.md** (5 min) — the document Rudi signs Sunday
 4. **TERM_SHEET.md** (20 min)
 5. **FINANCIAL_MODEL_V1.md** (10 min)
-6. **PROFIT_DISTRIBUTION_MECHANICS.md** (10 min) — Sunset mechanics + Tax Efficiency
-7. **ZHAN_PROTECTIONS.md** (5 min)
-8. **DYMO_PROTECTIONS.md** (5 min)
-9. **LAUNCH_PLAN.md** (10 min)
-10. **Q_AND_A_PREP.md** (5 min)
+6. **P_AND_L_STATEMENT.md** (25 min) — detailed financial projections with benchmarks
+7. **PROFIT_DISTRIBUTION_MECHANICS.md** (10 min) — Sunset mechanics + Tax Efficiency
+8. **ZHAN_PROTECTIONS.md** (5 min)
+9. **DYMO_PROTECTIONS.md** (5 min)
+10. **LAUNCH_PLAN.md** (10 min)
+11. **Q_AND_A_PREP.md** (5 min)
 
 ---
 
@@ -119,11 +121,12 @@ A printed and bound physical package in the following order:
 4. **MOU_RUDI.md** — to be signed (three signature blocks + optional witness).
 5. **TERM_SHEET.md** — for clause-by-clause review.
 6. **FINANCIAL_MODEL_V1.md** — specification (with Excel / Google Sheets file URL on the cover page).
-7. **LAUNCH_PLAN.md** — operational 12-month roadmap.
-8. **PROFIT_DISTRIBUTION_MECHANICS.md** — dividend mechanics + Sunset mechanics + tax design.
-9. **ZHAN_PROTECTIONS.md** — Zhan's protection addendum.
-10. **DYMO_PROTECTIONS.md** — Dymo's protection addendum.
-11. **Q_AND_A_PREP.md** — anticipated questions, answered.
+7. **P_AND_L_STATEMENT.md** — professional P&L with scenario / sensitivity analysis and PropTech comparable benchmarks.
+8. **LAUNCH_PLAN.md** — operational 12-month roadmap.
+9. **PROFIT_DISTRIBUTION_MECHANICS.md** — dividend mechanics + Sunset mechanics + tax design.
+10. **ZHAN_PROTECTIONS.md** — Zhan's protection addendum.
+11. **DYMO_PROTECTIONS.md** — Dymo's protection addendum.
+12. **Q_AND_A_PREP.md** — anticipated questions, answered.
 
 Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · Sunday 2026-04-19 · Al Jurf" in subtle gold footer.
 
