@@ -25,8 +25,9 @@ The two protections are:
 
 These protections are independent of and additional to:
 
-- Dymo's base equity (33.33 % of Agency as equal partner; 10 % of Platform) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
-- Dymo's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §5).
+- Dymo's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 10 % of Platform perpetual) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
+- Dymo's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per `MOU_RUDI.md` §4).
+- Dymo's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §6).
 - Dymo's non-compete and non-solicit commitments (per `TERM_SHEET.md`).
 
 These protections are codified in a dedicated schedule to the Shareholders Agreement, approved by all three Shareholders. They do not reduce Rudi's economic entitlements or governance rights.
@@ -96,14 +97,15 @@ Detailed exercise language is deferred to SHA drafting by UAE counsel.
 
 | Protection | Value | Section |
 |---|---|---|
-| Equity — Agency | 33.33 % (one of three equal partners) | `MOU_RUDI.md` §2 |
-| Equity — Platform | 10.0 % | `MOU_RUDI.md` §2 |
+| Equity — Agency (pre-Sunset) | 10.0 % | `MOU_RUDI.md` §2 |
+| Equity — Agency (post-Sunset) | 33.33 % | `MOU_RUDI.md` §4 |
+| Equity — Platform | 10.0 % (perpetual) | `MOU_RUDI.md` §2 |
 | Co-founder Salary Floor | AED 30,000 – 50,000 / month from Agency | This Addendum §1 |
 | Severance without Cause | 6 months (lump sum or continuation) | This Addendum §1.4 |
 | Tag-Along on Rudi transfers | Proportional participation | This Addendum §2 |
 | ROFR on Rudi transfers | 30-day option to match | This Addendum §2 |
-| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §5 |
-| Non-compete | 12-month post-departure | `TERM_SHEET.md` §16 |
+| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §6 |
+| Non-compete | 12-month post-departure | `TERM_SHEET.md` §17 |
 
 ---
 

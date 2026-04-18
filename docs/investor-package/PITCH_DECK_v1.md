@@ -100,7 +100,7 @@
 ### **April 17, 2026: Rudi experienced live demo of zaahi.io. Within 24 hours: verbal commitment. Sunday April 19: this package formalises that partnership.**
 
 - **April 17, 2026** — investor demo. Live product walked through, every claim reconciled with production code.
-- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; equal-partners Agency structure (33.33 % each — Rudi, Dymo, Zhan) with Platform 10 % grant to Rudi; corporate structure finalised April 19.
+- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; corporate structure finalised April 19 with controlling investor position during payback (80 % Agency) and equal partnership thereafter (33.34 % post-Sunset), plus 10 % Platform perpetual.
 - **Sunday April 19, 2026** — MOU signed, Al Jurf. Monday April 21: Agency formation documents submitted.
 
 *Visual note: precise three-point timeline. Left: "Apr 17 · Demo delivered" (with zaahi.io screenshot). Middle: "Apr 18 · Commitment secured" (with handshake symbol in gold). Right: "Apr 19 · MOU signed, Al Jurf" (with pen / signature symbol). Thin gold line connecting them.*
@@ -146,17 +146,19 @@ Key points:
 
 ## Slide 9 — Agency (Dubai Mainland LLC)
 
-### **Equal three-way partnership · 33.33 % each · plots + off-plan · 6–9 deals Year 1 · RERA-licensed founders.**
+### **Rudi 80 % pre-Sunset → 33.34 % post-Sunset · plots + off-plan · 6–9 deals Year 1 · RERA-licensed founders.**
 
-- **Cap table** — **Rudi 33.33 % · Dymo 33.33 % · Zhan 33.34 %** (one-third each; 0.01 pp rounding attributed to Zhan).
+- **Cap table pre-Sunset (Years 0–5 or until AED 2 M cumulative to Rudi):** **Rudi 80 % · Dymo 10 % · Zhan 10 %**. Rudi is the controlling investor during the payback period.
+- **Cap table post-Sunset (automatic rebalance):** **Rudi 33.34 % · Dymo 33.33 % · Zhan 33.33 %**. Three-way equal partnership once Rudi has been made whole (2× return OR 5 years, whichever earlier).
+- **Sunset trigger:** earlier of (a) AED 2 M cumulative distributions to Rudi from both entities OR (b) 5-year anniversary of SAFE Closing Date. Automatic on business day following trigger; no Board resolution needed.
 - **Focus** — land plots (10–30 M AED average, 2 % commission) and off-plan units (1.5–20 M AED average, 3–5 % commission).
 - **Year 1 conservative target** — 6–9 closed deals at AED 300,000 average commission = AED 1.8–2.7 M gross revenue.
 - **Operators** — Dymo (Co-founder, 18+ years global ops, Dubai RE since 2018) leads day-to-day; Zhan (Founder, CEO/CTO, 17 years RE) retains strategic oversight. Both RERA-licensed.
 - **Regulatory path** — Agency formation documents submitted Monday 2026-04-21; LLC registration 2–4 weeks; RERA company broker licence and Broker Cards in parallel; Trakheesi permits per listing; DLD Broker Permit.
 
-*Visual note: cap-table pie chart with three equal gold slices (Rudi / Dymo / Zhan). Inset: Dymo and Zhan's RERA licence credential markers. Small callout: "Office location TBD — Dubai or Abu Dhabi Mainland; Al Jurf Sunday meeting is a signing venue, not the operating office."*
+*Visual note: two cap-table pie charts side-by-side. Left: "Pre-Sunset (Years 0–5)" with Rudi 80 % gold dominant, Dymo + Zhan 10 % slivers. Centre arrow labelled "Sunset: 2× return OR 5 years". Right: "Post-Sunset" with three equal gold slices (Rudi 33.34, Dymo 33.33, Zhan 33.33). Small callout: "Office location TBD — Dubai or Abu Dhabi Mainland; Al Jurf Sunday meeting is a signing venue, not the operating office."*
 
-*Presenter notes: The equal partnership is deliberate. Say: "Rudi brings the capital that makes the Agency possible. Dymo brings operational execution and RERA licensing. Zhan brings the platform IP and technical foundation. Equal stakes reflect equal commitment. 70 % of every profit goes to Platform development — so the Agency funds the long-term asset we all co-own."*
+*Presenter notes: Say: "Your AED 1 M buys 80 % of the Agency during the payback period. After you've been paid back 2× in cash distributions, or after five years — whichever comes first — the Agency rebalances to a three-way equal partnership. The 0.01 pp tiebreaker goes to you in recognition of the capital you put in. Platform stays at 80 % my / 10 % Dymo / 10 % yours throughout; Platform does not go through Sunset. 70 % of every Agency profit funds the Platform. That's the deal."*
 
 ---
 
@@ -231,11 +233,11 @@ Key points:
 
 - **Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed.
 
-- **Rudi — Principal Investor, Equal Agency Partner, Platform Minority.** Partner at Equilibrium Advisory Group. 33.33 % of Agency (equal three-way partnership with Dymo and Zhan); 10 % of Platform for life; one board seat of three. AED 1,000,000 commitment.
+- **Rudi — Principal Investor, Board Member.** Partner at Equilibrium Advisory Group. 80 % Agency (controlling during payback) → 33.34 % Agency (equal partner post-Sunset); 10 % Platform for life; one board seat of three. AED 1,000,000 commitment.
 
-Three equal Agency partners; Platform led by Zhan (80 % majority reflecting founder technical authorship). Both founders have symmetric salary-and-transfer protection packages (Salary Floor paid from the entity they lead; Tag-Along + ROFR on Rudi share transfers). See `ZHAN_PROTECTIONS.md` and `DYMO_PROTECTIONS.md`.
+Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, perpetual — Zhan built the platform). Both founders have symmetric salary-and-transfer protection packages (Salary Floor paid from the entity they lead; Tag-Along + ROFR on Rudi share transfers). See `ZHAN_PROTECTIONS.md` and `DYMO_PROTECTIONS.md`.
 
-*Visual note: three circles in an equilateral triangle with identical diameters (Agency equal partnership). Each labelled with name, title, and one credential bullet. Beneath the triangle: a separate caption showing Platform cap (Zhan 80 %, Dymo + Rudi 10 % each).*
+*Visual note: three circles in a triangle. Each labelled with name, title, and one credential bullet. Beneath the triangle: caption "Agency: Rudi controls pre-Sunset → equal post-Sunset · Platform: Zhan 80 % throughout".*
 
 *Presenter notes: Say: "Rudi, you are on this slide — not because you have an operational role, but because your board seat and capital make this company complete. Without you, we launch the agency six months later and with less certainty. With you, we launch Monday."*
 
@@ -292,21 +294,41 @@ Three equal Agency partners; Platform led by Zhan (80 % majority reflecting foun
 
 ## Slide 17 — The Ask
 
-### **AED 1,000,000 · 33.33 % of Agency (equal three-way partnership) · 10 % of Platform for life · tax-efficient structure.**
+### **AED 1,000,000 · 80 % Agency (pre-Sunset) → 33.34 % (post-Sunset) · 10 % Platform for life · IPO path through Platform.**
 
 **The instrument — Post-Money SAFE (YC 2018 standard, adapted to UAE / ADGM law)**
 
-- Agency implied post-money: **AED 3,000,000** (Rudi's AED 1 M for 33.33 %)
-- Platform 10 % granted as part of overall deal structure at Platform formation
+- Agency implied post-money: **AED 1,250,000** (Rudi's AED 1 M for 80 %)
+- Platform 10 % granted at Platform formation (upon first agency deal closure)
 - Conversion trigger: entity formation + SAFE execution
 - Target close: MOU Sunday 2026-04-19 (Al Jurf); Agency formation documents submitted Monday 2026-04-21; SAFE execution upon LLC active; formal Shareholders Agreement thereafter
 
-**Equity structure at close**
+**Equity structure — Agency (pre-Sunset)**
 
-- Agency (Dubai Mainland LLC): **Rudi 33.33 % · Dymo 33.33 % · Zhan 33.34 %** (equal three-way partnership)
-- Platform (ADGM HoldCo, opens on first agency deal): **Zhan 80 % · Dymo 10 % · Rudi 10 %**
+| Rudi | Dymo | Zhan |
+|---|---|---|
+| **80 %** | 10 % | 10 % |
 
-**Profit distribution (every closed Agency deal, fixed for lifetime)**
+**Equity structure — Agency (post-Sunset, automatic rebalance)**
+
+| Rudi | Dymo | Zhan |
+|---|---|---|
+| **33.34 %** | 33.33 % | 33.33 % |
+
+**Equity structure — Platform (ADGM HoldCo, perpetual)**
+
+| Zhan | Dymo | Rudi |
+|---|---|---|
+| **80 %** | 10 % | 10 % |
+
+**Sunset Clause (earlier of)**
+
+- **(a)** Rudi receives cumulative cash distributions totalling **AED 2,000,000** from both entities; OR
+- **(b)** **5 years** since SAFE execution.
+
+Upon trigger: Agency rebalances 80/10/10 → 33.34/33.33/33.33. Platform cap unchanged. Profit split unchanged (70/10/10/10).
+
+**Profit distribution (Agency, every closed deal, fixed for lifetime)**
 
 - **Platform Development Fund: 70 %** (tax-deductible inter-company Service Fee)
 - **Rudi: 10 %** · **Dymo: 10 %** · **Zhan: 10 %**
@@ -314,27 +336,32 @@ Three equal Agency partners; Platform led by Zhan (80 % majority reflecting foun
 **Rudi's protection package**
 
 - **Governance.** One board seat of three. Simple-majority Board decisions (2 of 3).
-- **Reserved matters** (SHA amendment, sale, dissolution) require approval of at least 2 of 3 Shareholders.
-- **Liquidation preference.** **1× non-participating** on any Liquidity Event.
-- **Anti-dilution.** **Weighted-average (broad-based)** until Series A first closing; **pro-rata rights** thereafter (at own cost, to maintain 10 % floor).
-- **MFN.** For **12 months** post-Closing, any more favourable economic term granted to a future investor accrues automatically to Rudi.
-- **Information rights.** Monthly summaries + quarterly accounts + annual audited financials + 48-hour material-event notices.
-- **IP assignment.** All ZAAHI platform IP transferred to ADGM HoldCo (which Rudi holds 10 % of) before SHA execution.
+- **Reserved matters.** Agency pre-Sunset: Rudi's 80 % controls. Agency post-Sunset: at least 2 of 3 Shareholders. Platform: Zhan's 80 % controls (perpetual).
+- **Liquidation preference.** 1× non-participating on any Liquidity Event.
+- **Anti-dilution — Agency.** None (no Series rounds planned).
+- **Anti-dilution — Platform.** Weighted-average (broad-based) until Series A first closing; pro-rata rights thereafter.
+- **MFN.** 12 months post-Closing.
+- **Information rights.** Monthly + quarterly + annual + 48 h material events + Sunset ledger.
+- **IP assignment.** All ZAAHI platform IP to ADGM HoldCo before SHA execution.
+
+**IPO path — through Platform**
+
+Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Agency is an operational brokerage, not publicly traded. Rudi's 10 % Platform participates in the IPO outcome; weighted-average anti-dilution protects through Series A; pro-rata rights after.
 
 **Tax efficiency (three-layer)**
 
-- **Agency**: UAE CT 9 % above AED 375 K; Small Business Relief (0 %) Year 1 if revenue ≤ AED 3 M; 70 % Service Fee to Platform is deductible.
-- **Platform**: ADGM QFZP targets 0 % on qualifying income.
-- **Shareholder**: UAE has no personal income tax and no dividend withholding.
-- Target combined effective tax: **0–9 %**. Of every AED 1 M gross Agency profit, ~AED 910 K–1 M flows to Platform + shareholders.
+- **Agency:** UAE CT 9 % above AED 375 K; Small Business Relief (0 %) Year 1 if revenue ≤ AED 3 M; 70 % Service Fee is deductible.
+- **Platform:** ADGM QFZP targets 0 % on qualifying income.
+- **Shareholder:** UAE has no personal income tax and no dividend withholding.
+- Target combined effective tax: **0–9 %**.
 
 **What Rudi does not carry**
 
-- No operational role. No employment obligation. No follow-on capital commitment. No unilateral veto.
+- No operational role. No employment obligation. No follow-on capital commitment. No unilateral veto post-Sunset.
 
-*Visual note: clean deal-page layout. Left column: "what Rudi gives" (AED 1,000,000). Right column: equity + profit + protections + tax summary. Thin gold rule separating the columns.*
+*Visual note: clean deal-page layout. Left column: "what Rudi gives" (AED 1,000,000). Right column: two Agency cap tables (pre/post Sunset) + Platform cap + profit + protections + IPO + tax summary. Thin gold rule separating the columns.*
 
-*Presenter notes: This is the key slide. Pause. Say: "Three equal partners in the Agency. Platform is Zhan's house, you and Dymo each get 10 % of it for life. Every deal, 70 % funds the Platform, 10 % each to us three personally. The tax design targets zero to nine percent combined — UAE's Small Business Relief, ADGM's Qualifying Free Zone, and no personal income tax. Structure aligns us all for the long run."*
+*Presenter notes: Say: "You're the controlling Agency investor during payback. Once you've been paid back two times in cash or five years pass, we become three equal partners — you keep a whisker of a tiebreaker. Platform is a separate company — I run it, you and Dymo each hold 10 % for life. Platform is the IPO path, Agency is the cash engine. Tax is zero to nine percent combined. That's the structure."*
 
 ---
 
@@ -352,9 +379,10 @@ Three equal Agency partners; Platform led by Zhan (80 % majority reflecting foun
 | **June – July 2026 target** | First agency deal closed (DLD transfer certificate); ADGM HoldCo (Platform) formation triggered and completed | Dymo · Zhan · Legal |
 | **After first closed deal** | First agency profit distribution on quarterly cadence; IP transfer to ADGM HoldCo executed | Board |
 | **Months 6–12** | 6–9 deals total Year 1 (base case 8); Ambassador program expanded; Master Tree §02 Residential + §08 Off-Plan deployed; blockchain audit-trail live | All three |
-| **Later** | Shareholders Agreement executed with top-tier counsel; Series A preparation | Legal · Zhan · Dymo |
+| **Later** | Shareholders Agreement executed with top-tier counsel; Platform Series A preparation | Legal · Zhan · Dymo |
+| **Sunset trigger (earlier of)** | AED 2 M cumulative to Rudi OR 5th anniversary of SAFE Closing | Automatic |
 
-*Visual note: Gantt-style horizontal bars over a Sunday-2026-04-19-to-Year-3 timeline. Each bar in ZAAHI gold. Today (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line at 2026-04-21 marked "Agency formation documents submitted". A third at June 2026 marked "First deal target — Platform formation".*
+*Visual note: Gantt-style horizontal bars over a Sunday-2026-04-19-to-Year-5 timeline. Each bar in ZAAHI gold. Today (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line at 2026-04-21 marked "Agency formation documents submitted". A third at June 2026 marked "First deal target — Platform formation". A fourth dotted line at Year 5 marked "Sunset latest trigger".*
 
 *Emotional beat: executional certainty. Close the deck by saying: "We are prepared to execute every line on this chart. The MOU is the first. Every subsequent item has a named owner and a dated target."*
 

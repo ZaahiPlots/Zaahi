@@ -20,9 +20,9 @@
 
 The Shareholders Agreement will codify a fixed Dividend Policy splitting Agency net profit in the ratio **70 / 10 / 10 / 10** — 70 % to the Platform Development Fund (ADGM HoldCo), and 10 % each to Rudi, Dymo, and Zhan.
 
-The logic: Rudi, Dymo, and Zhan are equal Agency partners (33.33 % each). All three contractually commit 70 percentage points of every profit distribution to the Platform company — this is the **platform-financing mechanism**. Each of the three then receives 10 % of Agency net profit in personal cash distributions. Rudi additionally holds 10 % of the Platform (separate from Agency distributions) and a 1× non-participating liquidation preference at any exit.
+The logic: Rudi holds 80 % of the Agency during the payback period (pre-Sunset) and converts to 33.34 % after Sunset (equal partnership with Dymo and Zhan at 33.33 % each). Regardless of phase, the Parties contractually commit 70 percentage points of every Agency profit distribution to the Platform company — the **platform-financing mechanism**. Each of the three Parties then receives 10 % of Agency net profit in personal cash distributions, identical pre- and post-Sunset. Rudi additionally holds 10 % of the Platform (perpetual, unaffected by Sunset) and a 1× non-participating liquidation preference at any exit.
 
-The 70 / 10 / 10 / 10 split is **fixed in the SHA for the lifetime of the Agency** and does not change. The Platform continues to receive 70 % of Agency profit in perpetuity via a tax-deductible inter-company Service Fee (see §3 and §8 Tax Efficiency Design).
+The 70 / 10 / 10 / 10 split is **fixed in the SHA for the lifetime of the Agency** and is identical pre- and post-Sunset. Sunset changes the Agency **equity cap table** (80/10/10 → 33.34/33.33/33.33); it does NOT change the profit-distribution split. The Platform continues to receive 70 % of Agency profit in perpetuity via a tax-deductible inter-company Service Fee (see §3 and §9 Tax Efficiency Design).
 
 ---
 
@@ -182,7 +182,7 @@ The Board meets at least once per quarter, within 45 days of quarter end, with t
 
 - Quorum: 2 of 3 directors (Zhan, Dymo, Rudi).
 - Voting: simple majority at board level.
-- Reserved matters (sale, dissolution, SHA amendment) require approval of at least 2 of 3 Shareholders (Rudi, Dymo, Zhan) per `TERM_SHEET.md` §9. Because Agency equity is equal (33.33 % each), per-Shareholder voting and pro-rata voting produce the same outcome — any two Shareholders agreeing carries the motion.
+- Reserved matters (sale, dissolution, SHA amendment) follow the phase-dependent rules in `TERM_SHEET.md` §10: pre-Sunset Agency — Rudi's 80 % shareholder vote controls; post-Sunset Agency — at least 2 of 3 Shareholders must agree; Platform (perpetual) — Zhan's 80 % controls.
 
 ### 5.3 What Rudi sees
 
@@ -226,7 +226,34 @@ If the Board deadlocks (one director absent, 1-1 vote):
 
 ---
 
-## 8. Tax Efficiency Design (three-layer strategy)
+## 8. Sunset mechanics and the Dividend Policy
+
+The Sunset Clause (per `MOU_RUDI.md` §4) is triggered by the **earlier** of:
+
+- **(a)** Cumulative cash distributions to Rudi from both entities reach **AED 2,000,000**; OR
+- **(b)** **5 years** since SAFE execution.
+
+**What changes at Sunset:** Agency equity cap table (80 / 10 / 10 → **33.34 / 33.33 / 33.33**, with 0.01 pp tiebreaker attributed to Rudi).
+
+**What does NOT change at Sunset:**
+
+- Profit distribution split: 70 / 10 / 10 / 10 continues unchanged.
+- Platform cap table: Zhan 80 % / Dymo 10 % / Rudi 10 % continues unchanged.
+- Quarterly cadence, reserve rule, Board approval process, information rights — all continue unchanged.
+
+**What changes in governance at Sunset:** Agency shareholder-vote majority passes from Rudi's 80 % to the requirement that at least 2 of 3 Shareholders agree (voting by number of Shareholders; equal equity makes per-Shareholder and pro-rata voting produce the same result). Rudi retains his one board seat. Platform governance is unchanged (Zhan 80 % controls Platform reserved matters throughout).
+
+**Tracking:** The Company maintains a **rolling Sunset ledger**, updated after each quarterly distribution and confirmed by the annual audit. The ledger is shared with Rudi as part of quarterly management accounts per `TERM_SHEET.md` §12(e), showing:
+
+- Cumulative distributions paid to Rudi from both entities since Closing, in AED and as a percentage of the AED 2,000,000 Financial Trigger.
+- Months elapsed since SAFE execution, as a counter toward the 60-month Time Trigger.
+- Projected trigger date extrapolated from current distribution velocity.
+
+When either trigger is met, the Agency cap-table transition executes automatically at the next business day — no Board vote required, no discretion applied. Counsel to confirm share-transfer documents execute automatically per SHA clause without additional Board resolution.
+
+---
+
+## 9. Tax Efficiency Design (three-layer strategy)
 
 The profit-distribution structure is deliberately engineered to minimise UAE tax burden across three layers — Agency, Platform, and Shareholder. Target combined effective tax rate: **0–9 %** on Agency gross profit flowing through to Platform + personal distributions.
 
@@ -283,7 +310,7 @@ If any of these conditions fail, the effective rate rises toward the 9 % UAE Cor
 
 ---
 
-## 9. Open items for UAE counsel
+## 10. Open items for UAE counsel
 
 Items to be confirmed at SHA execution:
 

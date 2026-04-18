@@ -165,6 +165,8 @@ Phase goal: **Additional 5–8 deals closed (target 8–9 total Year 1); second 
 | Headcount | 3 (Zhan, Dymo, Agent #1) → 4 (plus Agent #2) |
 | Cash on balance sheet (end Year 1) | AED 2,000,000+ |
 | Rudi Year 1 distribution (10 % of net profit) | ~AED 115,000 – 150,000 |
+| Cumulative Rudi distributions (toward AED 2 M Sunset Financial Trigger) | ~AED 115,000 – 150,000 of AED 2,000,000 |
+| Sunset Time Trigger | 5th anniversary of SAFE Closing Date |
 
 ---
 

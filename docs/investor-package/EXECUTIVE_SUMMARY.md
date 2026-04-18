@@ -15,7 +15,7 @@
 
 ## One hook. One deal. One page.
 
-**UAE real estate is a AED 760 billion annual transaction market fragmented across government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.** Live today at [zaahi.io](https://www.zaahi.io). Rudi's AED 1,000,000 launches the Agency as an equal three-way partnership with Dymo and Zhan (33.33 % each); funds platform development from 70 % of every Agency profit; and grants Rudi 10 % of the Platform for life. No sunset, no automatic rebalance, no majority-investor dynamics — three partners aligned on one shared outcome.
+**UAE real estate is a AED 760 billion annual transaction market fragmented across government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.** Live today at [zaahi.io](https://www.zaahi.io). Rudi's AED 1,000,000 takes controlling investor position in the Agency (80 %) during the payback period, converts to an equal three-way partnership (33.34 %) on the earlier of 2× cumulative return or 5 years, and grants Rudi 10 % of the Platform for life. The Platform carries the IPO path; the Agency is the operational cash engine.
 
 ---
 
@@ -33,20 +33,37 @@ ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 fun
 
 **Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed.
 
-**Rudi — Principal Investor, Equal Agency Partner, Platform Minority.** AED 1,000,000 commitment; one-third of the Agency; 10 % of the Platform; one board seat of three.
+**Rudi — Principal Investor, Board Member.** AED 1,000,000 commitment; controlling Agency investor during payback; equal Agency partner after Sunset; 10 % Platform for life; one board seat of three.
 
 ## The Deal
 
-### Equity
+### Equity — Agency (pre-Sunset, Years 0–5 or until Financial Trigger)
 
-| Entity | Rudi | Dymo | Zhan |
-|---|---|---|---|
-| **Agency** (Dubai Mainland LLC) | **33.33 %** | 33.33 % | 33.34 % |
-| **Platform** (ADGM HoldCo) | 10 % | 10 % | **80 %** |
+| Rudi | Dymo | Zhan |
+|---|---|---|
+| **80 %** | 10 % | 10 % |
 
-Agency implied post-money valuation: **AED 3,000,000**.
+### Equity — Agency (post-Sunset, automatic rebalance)
 
-### Profit distribution (Agency, per quarter)
+| Rudi | Dymo | Zhan |
+|---|---|---|
+| **33.34 %** | 33.33 % | 33.33 % |
+
+### Equity — Platform (ADGM HoldCo, perpetual)
+
+| Zhan | Dymo | Rudi |
+|---|---|---|
+| **80 %** | 10 % | 10 % |
+
+### Sunset Clause
+
+Triggers on the **earlier** of:
+- **(a)** Rudi receives cumulative distributions from both entities totalling **AED 2,000,000**; OR
+- **(b)** **5 years** since SAFE execution.
+
+Upon trigger: Agency rebalances 80/10/10 → 33.34/33.33/33.33. **Platform cap table unchanged. Profit split unchanged.**
+
+### Profit distribution (Agency, per quarter — fixed for lifetime, pre- and post-Sunset)
 
 | Destination | Share |
 |---|---|
@@ -55,24 +72,29 @@ Agency implied post-money valuation: **AED 3,000,000**.
 | Dymo | 10 % |
 | Zhan | 10 % |
 
-Fixed ratio, for the lifetime of the Agency. The 70 % flow is a tax-deductible inter-company Service Fee that funds platform development.
+The 70 % flow is a tax-deductible inter-company Service Fee that funds platform development.
 
 ### Protections
 
 - 1× non-participating liquidation preference
-- Weighted-average anti-dilution until Series A first closing; pro-rata rights thereafter
+- **Anti-dilution — Agency:** None (no Series rounds planned)
+- **Anti-dilution — Platform:** Weighted-average until Series A first closing; pro-rata rights thereafter
 - Most Favoured Nation for 12 months
-- Board seat (three directors; simple majority at board level; reserved matters require approval of at least 2 of 3 Shareholders)
-- Monthly, quarterly, and annual information rights; immediate notification of material events
+- Board seat (three directors; simple majority at Board; Reserved Matters shareholder vote — Rudi 80 % controls Agency pre-Sunset; 2 of 3 Shareholders post-Sunset; Zhan 80 % controls Platform always)
+- Monthly, quarterly, annual information rights + 48-hour material-event notices + Sunset ledger
 - 2-year founder vesting with 6-month cliff (Dymo and Zhan; Rudi fully vested)
+
+### IPO path
+
+**Through the Platform only.** The Agency operates as a brokerage — cash engine, not publicly traded. The Platform (ADGM HoldCo) is the long-horizon asset that raises Series A / B / C and targets IPO Years 5–10. Rudi's 10 % Platform participates in the IPO outcome; weighted-average anti-dilution protects through Series A; pro-rata rights after.
 
 ## Tax efficiency (three-layer design)
 
 - **Agency** (Dubai Mainland LLC): 9 % UAE Corporate Tax above AED 375,000 taxable income; Small Business Relief (0 % CT) Year 1 if revenue ≤ AED 3 M; 70 % inter-company Service Fee is a deductible expense.
 - **Platform** (ADGM HoldCo): Qualifying Free Zone Person status targets 0 % on qualifying income.
-- **Shareholders**: UAE has no personal income tax and no dividend withholding. Rudi's foreign tax residence (to be confirmed) determines any external withholding.
+- **Shareholders**: UAE has no personal income tax and no dividend withholding.
 
-Target combined effective tax burden: **0–9 %** across the structure. Of every AED 1,000,000 gross Agency profit, approximately AED 910,000–1,000,000 flows to Platform + shareholders after UAE tax. Full detail in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and new §8 Tax Efficiency Design.
+Target combined effective tax burden: **0–9 %** across the structure. Full detail in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8 Tax Efficiency Design.
 
 ---
 
@@ -84,7 +106,8 @@ Target combined effective tax burden: **0–9 %** across the structure. Of every
 - **Upon entity completion** — Post-Money SAFE executed; AED 1 M wired
 - **June – July 2026** — First agency deal target; ADGM HoldCo (Platform) incorporated upon first closed deal
 - **July – August 2026** — First agency profit distribution
-- **Ongoing** — Quarterly distributions; 70 % to Platform; 10 % each to Rudi, Dymo, Zhan; platform development from Agency cash flow
+- **5th anniversary of Closing** — Sunset latest trigger (Time Trigger)
+- **Years 5–10** — Platform Series rounds and potential IPO
 
 ---
 

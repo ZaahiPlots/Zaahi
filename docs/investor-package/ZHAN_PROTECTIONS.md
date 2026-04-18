@@ -23,9 +23,10 @@ This document specifies two founder-specific protections for Zharkyn Ryspayev as
 
 These protections are independent of and additional to:
 
-- Zhan's base equity (33.34 % of Agency as equal partner; 80 % of Platform as controlling founder) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
-- Zhan's majority control of the Platform (80 % makes Platform shareholder decisions Zhan's call).
-- Zhan's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §5).
+- Zhan's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 80 % of Platform perpetual) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
+- Zhan's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per `MOU_RUDI.md` §4).
+- Zhan's majority control of the Platform (80 % makes Platform shareholder decisions Zhan's call throughout).
+- Zhan's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §6).
 - Zhan's non-compete and non-solicit commitments (per `TERM_SHEET.md`).
 
 These protections are codified in a dedicated schedule to the Shareholders Agreement, approved by all three Shareholders. They do not reduce Rudi's economic entitlements or governance rights.
@@ -95,15 +96,16 @@ Detailed exercise language is deferred to SHA drafting by UAE counsel.
 
 | Protection | Value | Section |
 |---|---|---|
-| Equity — Agency | 33.34 % (one of three equal partners) | `MOU_RUDI.md` §2 |
-| Equity — Platform | 80.0 % (controlling) | `MOU_RUDI.md` §2 |
+| Equity — Agency (pre-Sunset) | 10.0 % | `MOU_RUDI.md` §2 |
+| Equity — Agency (post-Sunset) | 33.33 % | `MOU_RUDI.md` §4 |
+| Equity — Platform | 80.0 % (controlling, perpetual) | `MOU_RUDI.md` §2 |
 | Founder Salary Floor | AED 30,000 – 50,000 / month from Platform | This Addendum §1 |
 | Severance without Cause | 6 months (lump sum or continuation) | This Addendum §1.4 |
 | Tag-Along on Rudi transfers | Proportional participation | This Addendum §2 |
 | ROFR on Rudi transfers | 30-day option to match | This Addendum §2 |
-| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §5 |
-| Non-compete | 12-month post-departure | `TERM_SHEET.md` §16 |
-| IP ownership | Assigned to Platform at nil consideration | `MOU_RUDI.md` §6 |
+| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §6 |
+| Non-compete | 12-month post-departure | `TERM_SHEET.md` §17 |
+| IP ownership | Assigned to Platform at nil consideration | `MOU_RUDI.md` §7 |
 
 ---
 
