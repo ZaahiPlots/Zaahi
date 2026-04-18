@@ -15,7 +15,7 @@
 
 ## One hook. One deal. One page.
 
-**UAE real estate is a AED 760 billion annual transaction market fragmented across government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.** Live today at [zaahi.io](https://www.zaahi.io). Rudi's AED 1,000,000 launches the agency arm, funds platform development from 70 % of every agency profit, and takes Rudi to majority control of the agency with a built-in sunset mechanism that converts to minority once Rudi has received 2× in cumulative distributions — or after five years — whichever comes first.
+**UAE real estate is a AED 760 billion annual transaction market fragmented across government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.** Live today at [zaahi.io](https://www.zaahi.io). Rudi's AED 1,000,000 launches the Agency as an equal three-way partnership with Dymo and Zhan (33.33 % each); funds platform development from 70 % of every Agency profit; and grants Rudi 10 % of the Platform for life. No sunset, no automatic rebalance, no majority-investor dynamics — three partners aligned on one shared outcome.
 
 ---
 
@@ -33,7 +33,7 @@ ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 fun
 
 **Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed.
 
-**Rudi — Principal Investor, Board Member.** AED 1,000,000 commitment; majority owner of the agency until Sunset; one board seat of three.
+**Rudi — Principal Investor, Equal Agency Partner, Platform Minority.** AED 1,000,000 commitment; one-third of the Agency; 10 % of the Platform; one board seat of three.
 
 ## The Deal
 
@@ -41,10 +41,12 @@ ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 fun
 
 | Entity | Rudi | Dymo | Zhan |
 |---|---|---|---|
-| **Agency** (Dubai Mainland LLC) | **80 %** | 10 % | 10 % |
+| **Agency** (Dubai Mainland LLC) | **33.33 %** | 33.33 % | 33.34 % |
 | **Platform** (ADGM HoldCo) | 10 % | 10 % | **80 %** |
 
-### Profit distribution (agency, per quarterly distribution)
+Agency implied post-money valuation: **AED 3,000,000**.
+
+### Profit distribution (Agency, per quarter)
 
 | Destination | Share |
 |---|---|
@@ -53,20 +55,24 @@ ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 fun
 | Dymo | 10 % |
 | Zhan | 10 % |
 
-### Sunset Clause — control returns to founders
-
-Triggers on the earlier of **(a)** Rudi receiving cumulative distributions from both entities totalling **AED 2,000,000** (2× Investment), or **(b)** **five years** since SAFE execution. Upon trigger, Rudi's agency equity automatically reduces from 80 % to 10 %. The released 70 percentage points redistribute equally to Dymo (+35 pp) and Zhan (+35 pp). Post-sunset agency cap table: Rudi 10 % · Dymo 45 % · Zhan 45 %. Platform cap table and the 70 / 10 / 10 / 10 profit split are unchanged post-sunset — Rudi retains his 10 % profit share and his 10 % Platform upside.
+Fixed ratio, for the lifetime of the Agency. The 70 % flow is a tax-deductible inter-company Service Fee that funds platform development.
 
 ### Protections
 
 - 1× non-participating liquidation preference
+- Weighted-average anti-dilution until Series A first closing; pro-rata rights thereafter
 - Most Favoured Nation for 12 months
-- Board seat (three directors; simple majority at board level; shareholder majority on reserved matters)
+- Board seat (three directors; simple majority at board level; reserved matters require approval of at least 2 of 3 Shareholders)
 - Monthly, quarterly, and annual information rights; immediate notification of material events
+- 2-year founder vesting with 6-month cliff (Dymo and Zhan; Rudi fully vested)
 
-### Founder vesting
+## Tax efficiency (three-layer design)
 
-Zhan and Dymo: **2 years reverse vesting, 6-month cliff** on all equity in both entities. Rudi's equity is fully vested on issuance.
+- **Agency** (Dubai Mainland LLC): 9 % UAE Corporate Tax above AED 375,000 taxable income; Small Business Relief (0 % CT) Year 1 if revenue ≤ AED 3 M; 70 % inter-company Service Fee is a deductible expense.
+- **Platform** (ADGM HoldCo): Qualifying Free Zone Person status targets 0 % on qualifying income.
+- **Shareholders**: UAE has no personal income tax and no dividend withholding. Rudi's foreign tax residence (to be confirmed) determines any external withholding.
+
+Target combined effective tax burden: **0–9 %** across the structure. Of every AED 1,000,000 gross Agency profit, approximately AED 910,000–1,000,000 flows to Platform + shareholders after UAE tax. Full detail in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and new §8 Tax Efficiency Design.
 
 ---
 
@@ -78,7 +84,7 @@ Zhan and Dymo: **2 years reverse vesting, 6-month cliff** on all equity in both 
 - **Upon entity completion** — Post-Money SAFE executed; AED 1 M wired
 - **June – July 2026** — First agency deal target; ADGM HoldCo (Platform) incorporated upon first closed deal
 - **July – August 2026** — First agency profit distribution
-- **Ongoing** — Quarterly distributions; platform development funded from 70 % share; Sunset triggers on earlier of AED 2 M cumulative distributions to Rudi OR 5 years since SAFE execution
+- **Ongoing** — Quarterly distributions; 70 % to Platform; 10 % each to Rudi, Dymo, Zhan; platform development from Agency cash flow
 
 ---
 

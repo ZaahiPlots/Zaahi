@@ -17,7 +17,7 @@
 
 ## All projections are CONSERVATIVE baseline. Ambitious-case scenarios (+100 %) are available upon request.
 
-The model is built so that every output cell references the Assumptions tab. The scenario toggle in Tab 6 selects Conservative (−50 %), Base, or Aggressive (+100 %) without rewriting formulas. The Distribution Waterfall in Tab 5 models four distinct **Sunset scenarios** — Fast (Y2–3), Base (Y5 Time Trigger), Slow (Y5 Time Trigger, stress), and Never (hypothetical, time trigger removed).
+The model is built so that every output cell references the Assumptions tab. The scenario toggle in Tab 6 selects Conservative (−50 %), Base, or Aggressive (+100 %) without rewriting formulas. The Distribution Waterfall in Tab 5 computes Rudi's 10 %-of-Agency-profit distributions in perpetuity plus exit scenarios. Tab 8 models the three-layer tax efficiency (SBR Y1 + QFZP Platform + 0 % personal).
 
 ---
 
@@ -31,11 +31,11 @@ The workbook consists of 9 tabs, structured so that changing any input in Tab 1 
 | 2 | Revenue Projections | Monthly Year 1 + Quarterly Years 2–5 | Output |
 | 3 | OpEx | Headcount, office, marketing, legal, tech, insurance | Mixed |
 | 4 | Cashflow | Monthly Year 1 + Quarterly Years 2–5 | Output |
-| 5 | **Distribution Waterfall (4 Sunset scenarios)** | Rudi's cumulative returns; Sunset trigger timing; post-sunset mechanics | Output |
+| 5 | **Distribution Waterfall** | Rudi's perpetual 10 % Agency profit share + exit scenarios | Output |
 | 6 | Scenarios | Conservative / Base / Aggressive toggle | Output |
 | 6a | Sensitivity Analysis | Stress tests (deal volume, deal size, combined) | Output |
 | 7 | Breakeven Analysis | Operating / capital / profit breakeven per scenario | Output |
-| 8 | KPIs (incl. Sunset tracking) | CAC, LTV, deal velocity, Sunset ledger | Output |
+| 8 | KPIs + Tax Efficiency Analysis | CAC, LTV, deal velocity, SBR/QFZP/shareholder tax impact | Output |
 
 ---
 
@@ -82,16 +82,14 @@ See Tab 3 for breakdown.
 - Working capital reserve target: AED 200,000 minimum.
 - 3-month operating reserve: AED 435,000 minimum.
 
-### 1.6 Sunset Clause parameters (NEW)
+### 1.6 Equity structure (FIXED — no automatic rebalance)
 
 | Parameter | Value |
 |---|---|
-| Financial trigger (AED cumulative to Rudi) | 2,000,000 |
-| Time trigger (years since SAFE) | 5 |
-| Sunset is earlier of (a) or (b) | always |
-| Post-sunset Agency cap | Rudi 10 % · Dymo 45 % · Zhan 45 % |
-| Post-sunset Platform cap | Unchanged (Zhan 80 % · Dymo 10 % · Rudi 10 %) |
-| Post-sunset profit split | Unchanged (70 / 10 / 10 / 10) |
+| Agency cap | Rudi 33.33 % · Dymo 33.33 % · Zhan 33.34 % |
+| Platform cap | Zhan 80 % · Dymo 10 % · Rudi 10 % |
+| Profit distribution | 70 % Platform / 10 % Rudi / 10 % Dymo / 10 % Zhan |
+| Agency post-money implied | AED 3,000,000 |
 
 ---
 
@@ -165,83 +163,41 @@ Operating breakeven: **Month 4** (first deal). Capital breakeven: **Month 11**.
 
 ---
 
-## Tab 5 — Distribution Waterfall (4 Sunset Scenarios)
+## Tab 5 — Distribution Waterfall
 
-This is the **key tab for Rudi**. Each row calculates Rudi's cumulative cash distributions across both entities and tracks the Sunset trigger timing.
+Rudi receives **10 % of Agency net profit in perpetuity** (no sunset, no automatic rebalance). The 70 % Platform flow is a tax-deductible inter-company Service Fee that funds long-term platform development — Rudi participates in that accumulation via his 10 % Platform equity (separate from Agency distributions). Founders (Dymo and Zhan) each receive 10 % identically to Rudi.
 
-**Profit split reminder:** 70 % Platform, 10 % Rudi, 10 % Dymo, 10 % Zhan (fixed pre- and post-Sunset).
+### Base case — Year 1 to Year 5 (10 % of Agency Net Profit to Rudi per year)
 
-### Scenario 1 — Fast Sunset (Financial Trigger Y2–Y3)
+| Year | Agency Net Profit (AED) | Rudi distribution (10 %) | Cumulative Rudi |
+|---|---|---|---|
+| Y1 | 1,275,000 | 127,500 | 127,500 |
+| Y2 | 2,550,000 | 255,000 | 382,500 |
+| Y3 | 6,400,000 | 640,000 | 1,022,500 |
+| Y4 | 12,800,000 | 1,280,000 | 2,302,500 |
+| Y5 | 21,250,000 | 2,125,000 | 4,427,500 |
+| Y6–15 | scaling continuing | 10 % ongoing | continuing |
+| **Lifetime Rudi (Y1–Y15 est.)** | | | **AED 15–25 M** |
 
-Ambitious case: agency grows +100 % vs base (16 deals Year 1, 48 Year 2, etc.).
+Plus: Platform distributions (if declared) attributable to Rudi's 10 % Platform equity, layered on top.
 
-| Year | Agency Net Profit (AED) | Rudi distribution (10 %) | Cumulative Rudi | Trigger? |
+### Exit proceeds distribution (at any Liquidity Event)
+
+Rudi receives the greater of:
+- **1× non-participating liquidation preference:** AED 1,000,000 return of Investment (downside floor); OR
+- **Pro-rata share of proceeds:** 33.33 % of Agency sale proceeds + 10 % of Platform sale proceeds (upside).
+
+Rudi elects whichever is higher at the time of the event. Founders receive their pro-rata share of remaining proceeds after Rudi's election.
+
+### Exit scenarios (example: Agency sold at Year 5 for AED 100 M; Platform at AED 200 M separately)
+
+| Exit path | Rudi pro-rata | Rudi liq-pref | Rudi elects | Total Rudi |
 |---|---|---|---|---|
-| Y1 | 2,550,000 | 255,000 | 255,000 | No |
-| Y2 | 5,100,000 | 510,000 | 765,000 | No |
-| Y3 | 12,750,000 | 1,275,000 | **2,040,000** | **✓ Financial Trigger fires mid-Y3** |
-| Y4 post-sunset | 25,500,000 | 2,550,000 | 4,590,000 | — (Rudi continues at 10 %) |
-| Y5 post-sunset | 42,500,000 | 4,250,000 | 8,840,000 | — |
-| Y6-15 post-sunset | — | ongoing 10 % / year | continuing | — |
-| **Lifetime Rudi (Y1-Y15 incl. post-sunset)** | | | **~AED 30M+** | |
+| Agency AED 100 M sale | 33.33 M (33.33 %) | 1 M (1×) | Pro-rata | 33.33 M |
+| Platform AED 200 M sale | 20 M (10 %) | n/a (Platform not preferred) | Pro-rata | 20 M |
+| Combined (both sold) | 53.33 M | — | Pro-rata both | ~53 M |
 
-**Outcome:** Rudi receives 2× back mid-Y3; sunset fires; Rudi continues receiving 10 % of Agency profits for the Agency's lifetime plus 10 % of Platform distributions.
-
-### Scenario 2 — Base Case Sunset (Time Trigger Y5)
-
-Base case: 8 deals Y1 → 200 deals Y5, Agency Net Profit growth as in Tab 2.
-
-| Year | Agency Net Profit (AED) | Rudi distribution (10 %) | Cumulative Rudi | Trigger? |
-|---|---|---|---|---|
-| Y1 | 1,275,000 | 127,500 | 127,500 | No |
-| Y2 | 2,550,000 | 255,000 | 382,500 | No |
-| Y3 | 6,400,000 | 640,000 | 1,022,500 | No |
-| Y4 | 12,800,000 | 1,280,000 | 2,302,500 | **✓ Financial Trigger fires mid-Y4** |
-| Y5 | 21,250,000 | 2,125,000 | 4,427,500 | (sunset has fired; Rudi continues 10 %) |
-| Y6-15 post-sunset | — | ongoing | continuing | — |
-
-**Outcome:** Financial Trigger fires mid-Y4 (before Time Trigger Y5). Rudi receives 2× within ~4 years in base case. Lifetime Rudi including post-sunset Agency 10 % and Platform 10 %: **~AED 15–25M**.
-
-### Scenario 3 — Slow Sunset (Stress case — Time Trigger Y5)
-
-Stress C: deal volume –50 %, deal size –30 % (combined shock). Agency Net Profit grows slowly.
-
-| Year | Agency Net Profit (AED) | Rudi distribution (10 %) | Cumulative Rudi | Trigger? |
-|---|---|---|---|---|
-| Y1 | –154,000 | 0 (loss year) | 0 | No |
-| Y2 | 300,000 | 30,000 | 30,000 | No |
-| Y3 | 900,000 | 90,000 | 120,000 | No |
-| Y4 | 1,800,000 | 180,000 | 300,000 | No |
-| Y5 | 3,200,000 | 320,000 | **620,000** | **✓ Time Trigger fires Y5** (Financial Trigger not met) |
-| Y6-15 post-sunset | — | ongoing 10 % | continuing | — |
-
-**Outcome:** Financial Trigger (AED 2 M cumulative) not reached by Year 5 — only AED 620 k cumulative. Time Trigger fires automatically at Y5. Rudi converts to 10 % Agency minority. Liquidation preference (1× = AED 1 M) remains as floor on any sale. Rudi continues to receive 10 % of Agency profits post-sunset plus 10 % Platform for life.
-
-**This scenario explains why the time-based trigger was added — it guarantees the control return happens regardless of financial velocity.**
-
-### Scenario 4 — Never Sunset (hypothetical — time trigger removed for comparison)
-
-What if only the Financial Trigger existed (no 5-year cap)? Using Scenario 3 cash flows (slow):
-
-| Year | Agency Net Profit | Rudi distribution | Cumulative Rudi | Trigger? |
-|---|---|---|---|---|
-| Y5 | 3,200,000 | 320,000 | 620,000 | No |
-| Y6 | 5,000,000 | 500,000 | 1,120,000 | No |
-| Y7 | 7,500,000 | 750,000 | 1,870,000 | No |
-| Y8 | 10,000,000 | 1,000,000 | **2,870,000** | **✓ Financial Trigger would fire Y8** |
-
-**Outcome:** In the stress case without a time cap, Rudi stays 80 % owner until Year 8 — too long. The 5-year time cap prevents this: Rudi converts to 10 % at Year 5 regardless, and continues receiving 10 % of Agency profits.
-
-**This scenario is for illustration only — the actual deal includes the time cap.**
-
-### Waterfall summary (Rudi's outcome across scenarios)
-
-| Scenario | Sunset trigger | Time of sunset | Rudi cumulative at sunset | Post-sunset lifetime Rudi (est.) |
-|---|---|---|---|---|
-| 1 — Fast | Financial | Mid-Y3 | AED 2 M | AED 30 M+ |
-| 2 — Base | Financial | Mid-Y4 | AED 2 M | AED 15–25 M |
-| 3 — Slow | Time | Y5 | AED 620 k | AED 5–10 M (plus liq pref AED 1 M floor) |
-| 4 — Never (hypothetical) | N/A | — | — | would stay 80 % indefinitely — avoided by time cap |
+Rudi's lifetime economic outcome = Agency quarterly distributions + Platform distributions + eventual exit proceeds.
 
 ---
 
@@ -256,7 +212,6 @@ Conservative / Base / Aggressive side-by-side:
 | Year 1 total revenue | 1,505,000 | 3,010,000 | 5,820,000 |
 | Year 1 net profit | –95,000 | 1,275,000 | 3,620,000 |
 | Rudi Year 1 distribution | 0 | 127,500 | 362,000 |
-| Expected Sunset scenario | 3 (Slow, Time trigger Y5) | 2 (Base, Financial Y4) | 1 (Fast, Financial Y2–3) |
 
 ---
 
@@ -271,7 +226,6 @@ Conservative / Base / Aggressive side-by-side:
 | Year 1 OpEx | 1,735,000 | 1,600,000 | 1,735,000 | 1,500,000 |
 | Year 1 net profit | 1,275,000 | 130,000 | 507,000 | –154,000 |
 | Runway end of Y1 | Healthy | AED 1.1 M | AED 1.5 M | AED 900 k |
-| Sunset scenario | 2 (Base) | 3 (Slow, Time Y5) | 2 (Base, Financial Y4) | 3 (Slow, Time Y5) |
 
 **Runway calculation.** Months until Agency is self-sustaining = (Starting cash − cumulative net outflow) / monthly burn. Base case: Agency self-sustaining from Month 4 onward. Stress C: bridge of AED 300–500 k or cost cuts by Month 10 to extend past Year 1.
 
@@ -287,7 +241,7 @@ Conservative / Base / Aggressive side-by-side:
 
 ---
 
-## Tab 8 — KPIs (incl. Sunset ledger)
+## Tab 8 — KPIs + Tax Efficiency Analysis
 
 ### Agency KPIs
 
@@ -296,12 +250,18 @@ Conservative / Base / Aggressive side-by-side:
 - Gross margin per deal: 60–65 %.
 - Cost per acquired deal: target < AED 25,000 by Y2.
 
-### Sunset KPIs (NEW — tracked monthly)
+### Tax Efficiency Analysis (three-layer)
 
-- **Cumulative cash distributions to Rudi (across both entities)** — running total toward the AED 2 M Financial Trigger.
-- **Time elapsed since SAFE execution** — running counter toward the 5-year Time Trigger.
-- **Projected Sunset trigger date** — model extrapolation based on current cash-distribution velocity.
-- **Sunset-scenario mapping** — current business trajectory mapped to Scenario 1 / 2 / 3.
+Tracks the effective tax burden under the three-layer design (see `PROFIT_DISTRIBUTION_MECHANICS.md` §8).
+
+| Layer | Year 1 (SBR expected) | Year 2+ (post-SBR) |
+|---|---|---|
+| **Agency CT** — 9 % above AED 375 K, with SBR | **0 %** (SBR Y1 if revenue ≤ AED 3 M) | ~2.7 % effective on gross Agency profit (9 % × retained 30 %) |
+| **Platform CT** — if QFZP qualifying | **0 %** on Service Fee income | **0 %** on qualifying income; 9 % on non-qualifying |
+| **Shareholder** — UAE personal | **0 %** | **0 %** |
+| **Combined effective tax on Rudi's AED 100 K distribution** | **0 %** | **~0–3 %** |
+
+Dashboard row: "Year [N] effective tax burden on Rudi distribution: X %. Platform Service Fee deducted at Agency level: AED Y. Platform QFZP status confirmed: Yes/No."
 
 ### Platform KPIs
 
@@ -326,10 +286,10 @@ Conservative / Base / Aggressive side-by-side:
 ## Notes for model build
 
 1. **Formulas, not hardcodes.** Every output references Tab 1 Assumptions.
-2. **Named ranges:** `AvgDealSize`, `CommissionRate`, `ZhanSalary`, `RudiSunsetCumulative`, `SunsetFinTrigger`, `SunsetTimeTrigger`.
+2. **Named ranges:** `AvgDealSize`, `CommissionRate`, `ZhanSalary`, `RudiCumulative`, `AgencyNetProfit`, `PlatformServiceFee`, `EffectiveTaxRate`.
 3. **Scenario switch:** single dropdown cell (Conservative / Base / Aggressive) toggles assumption set.
-4. **Sunset tracker:** dedicated row on Dashboard showing "AED X of AED 2,000,000 toward Financial Trigger · Y months of 60 months toward Time Trigger · projected sunset: [date]."
-5. **Output sheet (Dashboard):** headline metrics only (Y1 revenue, Y1 net profit, breakeven month, cash end of year, Rudi cumulative, projected sunset trigger, sunset scenario).
+4. **Tax tracker:** dedicated row on Dashboard showing "Year [N] effective tax burden on Rudi distribution: X %. Platform QFZP status: [confirmed / pending]. Agency SBR eligible: [yes / graduated]."
+5. **Output sheet (Dashboard):** headline metrics only (Y1 revenue, Y1 net profit, breakeven month, cash end of year, Rudi cumulative distribution, effective tax burden).
 6. **Version control:** each iteration saved with date suffix.
 
 ---

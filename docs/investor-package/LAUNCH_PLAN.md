@@ -164,7 +164,7 @@ Phase goal: **Additional 5–8 deals closed (target 8–9 total Year 1); second 
 | Blockchain audit-trail | Live on Polygon PoS mainnet |
 | Headcount | 3 (Zhan, Dymo, Agent #1) → 4 (plus Agent #2) |
 | Cash on balance sheet (end Year 1) | AED 2,000,000+ |
-| Cumulative Rudi distributions (toward AED 2 M sunset trigger) | ~AED 115,000 – 150,000 of AED 2,000,000 |
+| Rudi Year 1 distribution (10 % of net profit) | ~AED 115,000 – 150,000 |
 
 ---
 
@@ -185,8 +185,8 @@ Phase goal: **Additional 5–8 deals closed (target 8–9 total Year 1); second 
 - **Risk:** Platform development starves while agency takes priority.
   **Mitigation:** 70 % of agency net profit flows to Platform Development Fund per SHA Dividend Policy; Zhan retains protected time for platform work; quarterly platform-progress reviews.
 
-- **Risk:** Sunset trigger fires unexpectedly early (if agency revenue compounds rapidly).
-  **Mitigation:** This is a positive outcome for Rudi (fast payback) — the Sunset is a planned transition; Dymo and Zhan inherit majority Agency control as designed; no operational disruption.
+- **Risk:** Agency revenue compounds faster or slower than base case.
+  **Mitigation:** Conservative Year 1 base case (8 deals) is defensible in stress; aggressive case (16 deals) is fully investable without structural change. Distribution ratio and equity cap are fixed regardless of velocity.
 
 ---
 

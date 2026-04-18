@@ -20,9 +20,9 @@
 
 The Shareholders Agreement will codify a fixed Dividend Policy splitting Agency net profit in the ratio **70 / 10 / 10 / 10** — 70 % to the Platform Development Fund (ADGM HoldCo), and 10 % each to Rudi, Dymo, and Zhan.
 
-The logic: Rudi holds 80 % of the Agency's equity but contractually commits 70 percentage points of every profit distribution to the Platform company. This is the **platform-financing mechanism**. Rudi still receives 10 % of every Agency profit in personal cash, separate from his Platform upside (10 % of ADGM HoldCo), plus a 1× non-participating liquidation preference at any exit.
+The logic: Rudi, Dymo, and Zhan are equal Agency partners (33.33 % each). All three contractually commit 70 percentage points of every profit distribution to the Platform company — this is the **platform-financing mechanism**. Each of the three then receives 10 % of Agency net profit in personal cash distributions. Rudi additionally holds 10 % of the Platform (separate from Agency distributions) and a 1× non-participating liquidation preference at any exit.
 
-The 70 / 10 / 10 / 10 split is **fixed in the SHA for the lifetime of the Agency, including post-Sunset**. When the Sunset Clause triggers (Rudi 80 % Agency → 10 %), the equity cap table changes to Rudi 10 % / Dymo 45 % / Zhan 45 %, but the profit distribution split does not change — the Platform continues to receive 70 % of Agency profit in perpetuity.
+The 70 / 10 / 10 / 10 split is **fixed in the SHA for the lifetime of the Agency** and does not change. The Platform continues to receive 70 % of Agency profit in perpetuity via a tax-deductible inter-company Service Fee (see §3 and §8 Tax Efficiency Design).
 
 ---
 
@@ -65,7 +65,7 @@ Where:
 - **Statutory Reserve** — 10 % of annual net profit to a non-distributable legal reserve until it equals 50 % of issued share capital (per UAE Commercial Companies Law).
 - **Contractual Operating Reserve** — a rolling cash balance of at least 3 months of forecast OpEx. Year 1 target: AED 435,000 minimum.
 
-### 2.2 Distribution formula (pre- and post-Sunset)
+### 2.2 Distribution formula
 
 Once Distributable Net Profit is determined for the quarter, it is split as follows:
 
@@ -77,7 +77,7 @@ Once Distributable Net Profit is determined for the quarter, it is split as foll
 | **Zhan** | 10 % |
 | **Total** | 100 % |
 
-This split applies **pre-Sunset and post-Sunset identically**. Sunset changes the **equity cap table** (Rudi Agency 80 % → 10 %) but does **not** change the profit-distribution split. Rudi continues to receive 10 % of Agency profits for the life of the Agency.
+This split is fixed for the lifetime of the Agency. Rudi receives 10 % of Agency profits in personal cash distributions. The 70 % Platform flow is a tax-deductible Service Fee (see §8).
 
 ### 2.3 Worked example — single quarter with AED 2,000,000 Net Profit
 
@@ -91,7 +91,7 @@ Clean case — reserve already maintained, no top-up needed:
 | Zhan | 10 % | 200,000 |
 | **Total** | 100 % | 2,000,000 |
 
-**Rudi receives AED 200,000 that quarter.** Distributions like this accumulate toward the AED 2 M Sunset trigger (earlier of that or 5-year cap).
+**Rudi receives AED 200,000 that quarter.** Dymo and Zhan each also receive AED 200,000; AED 1,400,000 flows to the Platform Development Fund.
 
 ### 2.4 Detailed walkthrough — AED 2,000,000 Gross Commission → Distributable Net Profit
 
@@ -182,7 +182,7 @@ The Board meets at least once per quarter, within 45 days of quarter end, with t
 
 - Quorum: 2 of 3 directors (Zhan, Dymo, Rudi).
 - Voting: simple majority at board level.
-- Reserved matters (sale, dissolution, SHA amendment) are decided by shareholder vote — Rudi's 80 % Agency holding controls pre-Sunset; post-Sunset, Dymo + Zhan collectively hold 90 % and control.
+- Reserved matters (sale, dissolution, SHA amendment) require approval of at least 2 of 3 Shareholders (Rudi, Dymo, Zhan) per `TERM_SHEET.md` §9. Because Agency equity is equal (33.33 % each), per-Shareholder voting and pro-rata voting produce the same outcome — any two Shareholders agreeing carries the motion.
 
 ### 5.3 What Rudi sees
 
@@ -226,24 +226,60 @@ If the Board deadlocks (one director absent, 1-1 vote):
 
 ---
 
-## 8. Sunset mechanics and the Dividend Policy
+## 8. Tax Efficiency Design (three-layer strategy)
 
-The Sunset Clause (per `MOU_RUDI.md` §4) is triggered by the **earlier** of:
+The profit-distribution structure is deliberately engineered to minimise UAE tax burden across three layers — Agency, Platform, and Shareholder. Target combined effective tax rate: **0–9 %** on Agency gross profit flowing through to Platform + personal distributions.
 
-- **(a)** Cumulative cash distributions to Rudi from both entities reach **AED 2,000,000**; OR
-- **(b)** **5 years** since SAFE execution.
+### 8.1 Layer 1 — Agency (Dubai Mainland LLC)
 
-**What changes at Sunset:** Agency cap table (80 / 10 / 10 → 10 / 45 / 45).
+- **UAE Corporate Tax:** 9 % on taxable income above AED 375,000 per annum (introduced 2023 under Federal Decree-Law 47/2022).
+- **Small Business Relief (SBR):** 0 % CT in Year 1 expected — applicable if Agency revenue ≤ AED 3,000,000 over the tax period. Base case Year 1 revenue = AED 3.01 M (very close to threshold; counsel to confirm treatment if near-threshold).
+- **70 % Service Fee to Platform:** deductible Agency expense. Every AED 1 paid to Platform as Service Fee reduces Agency taxable income by AED 1, directly shielding that amount from Agency CT.
+- **VAT:** 5 % on commercial brokerage services. Pass-through (collected from client, remitted to FTA). Does not reduce distributable profit.
+- **Net Agency CT burden:** Year 1 likely AED 0 via SBR; Year 2+ after SBR graduates, CT applies only to the ~30 % of Agency profit retained (not flowed to Platform), so effective Agency CT ≈ 9 % × 30 % = **2.7 %** of gross Agency profit.
 
-**What does NOT change at Sunset:**
+### 8.2 Layer 2 — Platform (ADGM HoldCo)
 
-- Profit distribution split: 70 / 10 / 10 / 10 continues unchanged.
-- Platform cap table: Zhan 80 % / Dymo 10 % / Rudi 10 % continues unchanged.
-- Quarterly cadence, reserve rule, Board approval process, information rights — all continue unchanged.
+- **ADGM Qualifying Free Zone Person (QFZP):** targets **0 % CT on qualifying income**, 9 % on non-qualifying. The inter-company Service Fee income from the Agency is expected to qualify if transfer-pricing documentation is properly prepared (arm's-length study required under UAE CT for related-party transactions — a standard counsel deliverable).
+- **Alternative if QFZP status is not achievable or not elected:** standard 9 % CT above AED 375,000.
+- **VAT on inter-company services:** 5 % standard rate between related UAE entities (or zero-rated if specific criteria met). Effectively neutral at the consolidated level.
+- **Net Platform CT burden:** target **0 %** on Service Fee income via QFZP.
 
-**What changes in governance at Sunset:** Agency shareholder-vote majority passes from Rudi (80 %) to Dymo + Zhan (90 % collectively). Rudi retains one board seat for observational rights but does not control Agency reserved matters post-Sunset. Platform governance is unchanged (Zhan always controls Platform).
+### 8.3 Layer 3 — Shareholder (personal)
 
-**Tracking:** The Company maintains a rolling ledger of cumulative distributions to Rudi, updated after each quarterly distribution, confirmed by the annual audit. The ledger is shared with Rudi as part of quarterly management accounts. When either trigger is met, the Agency cap table transition executes automatically at the next business day — no Board vote required, no discretion applied.
+- **UAE personal income tax:** there is no personal income tax in the UAE. Dividend distributions paid to UAE-resident shareholders are not taxed at the individual level.
+- **UAE withholding tax on dividends:** there is no domestic withholding tax on dividends paid to UAE-resident shareholders.
+- **Cross-border implication:** Rudi's foreign tax residence (France or elsewhere — to be confirmed with Rudi's personal tax advisor) determines any external withholding or foreign tax obligation. UAE has a broad treaty network; specific treatment depends on Rudi's residence country.
+
+### 8.4 Consolidated example — AED 1,000,000 gross Agency profit
+
+Assume Year 2 (post-SBR; Agency subject to standard 9 % CT on retained 30 %):
+
+| Step | AED | Notes |
+|---|---|---|
+| Gross Agency profit (pre-tax, post-OpEx) | 1,000,000 | |
+| Less: 70 % Service Fee to Platform (deductible) | 700,000 | Reduces Agency taxable income |
+| Agency taxable income retained | 300,000 | Subject to 9 % CT above AED 375 K threshold |
+| Agency CT | ~0 | If total annual taxable income ≤ AED 375 K threshold on retained portion; otherwise 9 % × (taxable − 375 K) |
+| **Net Agency distributable** | **~300,000** | Distributed 10 / 10 / 10 to Rudi, Dymo, Zhan = 100 k each |
+| Platform received (Service Fee) | 700,000 | |
+| Platform CT (if QFZP qualifying) | 0 | 0 % on qualifying income |
+| Platform CT (if not qualifying) | ~29,250 | 9 % × (700 K − 375 K) = 29,250 |
+| **Net to Platform entity** | **670,750 – 700,000** | Accumulates in Platform for development |
+| Shareholder-level tax (UAE) | 0 | No personal income tax |
+| **Rudi's personal take-home from 100,000 distribution** | **~100,000** | Subject to foreign withholding if applicable |
+
+**Summary:** of every AED 1,000,000 gross Agency profit, approximately **AED 970,000 – 1,000,000** flows to the Platform + shareholders after UAE-level tax. Effective combined UAE tax burden: **0 – 3 %**.
+
+### 8.5 Conditions for the 0-9 % target
+
+The low effective rate depends on three counsel-confirmed determinations:
+
+1. **Agency qualifies for SBR in Year 1** (revenue ≤ AED 3 M) — expected.
+2. **Platform achieves QFZP status** on the inter-company Service Fee income — requires arm's-length transfer-pricing documentation and compliant business conduct; counsel deliverable at SHA execution.
+3. **Service Fee is recognised as deductible** at Agency level under UAE CT rules for related-party transactions — standard treatment with proper documentation.
+
+If any of these conditions fail, the effective rate rises toward the 9 % UAE Corporate Tax rate. Conservative planning scenario: 9 % effective at Agency level only; 9 % effective at Platform level; combined ~9–18 % worst-case. Base case: 0–3 %.
 
 ---
 
@@ -254,10 +290,10 @@ Items to be confirmed at SHA execution:
 1. **Exact clause language** — Dividend Policy mechanics; interaction with UAE Commercial Companies Law statutory reserve.
 2. **Service Agreement vs Capital Contribution** — confirmed choice between Options A and B for the 70 % inter-company flow.
 3. **Transfer-pricing documentation** — arm's-length study supporting the 70 %-of-net-profit service fee.
-4. **VAT treatment** — pass-through confirmation at calculation stage.
-5. **Sunset ledger** — legal mechanics of the automatic Agency cap-table transition; required share-transfer documents; counsel sign-off on automatic transfer without additional Board resolution.
-6. **Small Business Relief eligibility** — confirmation of Year 1 eligibility (revenue ≤ AED 3 M) and Year 2 transition planning.
-7. **Cross-border considerations** — if Rudi is tax-resident outside UAE, any withholding considerations on dividends.
+4. **VAT treatment** — pass-through confirmation at calculation stage; inter-company zero-rating feasibility.
+5. **Small Business Relief eligibility** — confirmation of Year 1 eligibility (revenue ≤ AED 3 M) and Year 2 transition planning.
+6. **QFZP status for Platform** — counsel determination on qualifying-income characterisation; transfer-pricing documentation deliverable.
+7. **Cross-border considerations** — if Rudi is tax-resident outside UAE, any foreign withholding or treaty considerations on dividends.
 
 ---
 

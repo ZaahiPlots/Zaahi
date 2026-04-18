@@ -16,9 +16,9 @@
 
 ## Framing
 
-The terms below implement a **majority-investor / sunset-to-founders** structure. Rudi acquires **80 % of the Agency** (Dubai Mainland LLC) and **10 % of the Platform** (ADGM HoldCo) for an AED 1,000,000 commitment. His Agency majority converts to a 10 % minority automatically on the earlier of (a) AED 2,000,000 cumulative distributions received or (b) 5 years since SAFE execution.
+The terms below implement a **three-way equal-partnership Agency** (Rudi, Dymo, Zhan each 33.33 %) with a **Platform majority held by Zhan** (80 %, Dymo + Rudi 10 % each). Rudi contributes AED 1,000,000 cash; founders contribute operational execution, IP, RERA licensing, and ongoing platform development. Every Agency deal routes 70 % of net profit into the Platform entity via a tax-deductible inter-company Service Fee, and 10 % each to Rudi, Dymo, and Zhan in personal distributions.
 
-Rudi's downside is protected by: 80 % Agency control pre-Sunset, 1× non-participating liquidation preference, 10 % Platform lifetime, 12-month MFN. Founders' upside is protected by: majority-by-role (Zhan on Platform, Dymo on Agency Operations), post-Sunset Agency control (45 % each), and standard 2-year / 6-month-cliff vesting on their founder equity. The package is intentionally simple — no full-ratchet anti-dilution, no redemption beyond Sunset, no super pro-rata, no tag-along / drag-along enumeration at Term Sheet level (deferred to SHA drafting by UAE counsel).
+No sunset clause. No automatic rebalance. The three-way partnership is stable for the lifetime of the Agency. Rudi's protections are designed as minority minority-investor protections appropriate for a one-third holder: weighted-average anti-dilution (up to Series A first closing), pro-rata participation rights thereafter, 1× non-participating liquidation preference, 12-month MFN, one board seat of three.
 
 ## Orientation
 
@@ -35,13 +35,13 @@ No term is binding until the Post-Money SAFE is executed. The MOU signed Sunday 
 ## 1. Parties
 
 **Legal language.**
-> The Company: ZAAHI Agency (to be incorporated as a Dubai Mainland LLC) and, upon the closing of the first agency deal, ZAAHI Platform (to be incorporated as an ADGM Limited company) (together the "Company"). The Founders: **Zharkyn Ryspayev** (hereinafter "Zhan") and **Dmytro Tsvyk** (hereinafter "Dymo"). The Investor: **Rodolphe Belin** (hereinafter "Rudi"), Partner at Equilibrium Advisory Group, acting in his personal capacity unless he notifies the Company in writing of an alternative investment vehicle prior to SAFE execution.
+> The Company: ZAAHI Agency (to be incorporated as a Dubai Mainland LLC) and, upon the closing of the first agency deal, ZAAHI Platform (to be incorporated as an ADGM Limited company) (together the "Company"). The Founders: **Zharkyn Ryspayev** (hereinafter "Zhan") and **Dmytro Tsvyk** (hereinafter "Dymo"). The Investor: **Rodolphe Belin** (hereinafter "Rudi"), acting in his personal capacity unless he notifies the Company in writing of an alternative investment vehicle prior to SAFE execution.
 
 **Plain English.**
 Two entities: Agency (Dubai Mainland LLC, formation documents submitted Monday 2026-04-21; LLC registration 2–4 weeks thereafter) and Platform (ADGM Limited, forms on first agency deal closure). Founders are Zhan and Dymo. Rudi is the Investor.
 
 **Rationale.**
-Dual-entity structure separates regulated brokerage (must be Dubai Mainland LLC for RERA) from platform IP and investor upside (ADGM for English common law and institutional investor comfort).
+Dual-entity structure separates regulated brokerage (must be Dubai Mainland LLC for RERA) from platform IP and investor upside (ADGM for English common law and institutional-investor comfort).
 
 ---
 
@@ -61,45 +61,26 @@ Single tranche — no staged drawdowns. Temporary holding bridges the entity-for
 ## 3. Equity at Conversion
 
 **Legal language.**
-> On conversion, the Company shall issue to the Investor such number of Preferred Shares as represents: (a) **80.0 % of the fully-diluted equity of the Agency** (Dubai Mainland LLC); and (b) **10.0 % of the fully-diluted equity of the Platform** (ADGM Limited), upon Platform formation.
+> On conversion, the Company shall issue to the Investor such number of Preferred Shares as represents: (a) **33.33 % of the fully-diluted equity of the Agency** (Dubai Mainland LLC); and (b) **10.0 % of the fully-diluted equity of the Platform** (ADGM Limited), upon Platform formation.
+>
+> Agency cap table at Closing: Rudi 33.33 %, Dymo 33.33 %, Zhan 33.34 % (rounding attributed to Zhan by arithmetic convention).
+>
+> Platform cap table at formation: Zhan 80 %, Dymo 10 %, Rudi 10 %.
 
 **Plain English.**
-Rudi's AED 1 M buys 80 % of the Agency and 10 % of the Platform. Platform issuance happens at Platform formation (triggered by the first agency deal).
+Rudi's AED 1 M buys one-third of the Agency (equal partnership with Dymo and Zhan) and 10 % of the Platform. Platform issuance happens at Platform formation (triggered by the first agency deal).
 
 **Rationale.**
-The 80 % Agency reflects Rudi's sole-capital-risk position. The 10 % Platform grant is a package term reflecting that the Platform is funded from Agency cash flow (70 % of every Agency profit) — Rudi participates in the Platform outcome without separately paying for Platform equity.
-
-Agency post-money valuation implied: **AED 1,250,000** (AED 1 M / 80 %). Platform valuation at formation is not a separately-priced transaction — the 10 % is granted as part of this deal.
+**Agency post-money valuation: AED 3,000,000** (AED 1 M / 33.33 %). Equal three-way partnership reflects a shared-risk structure: Rudi contributes capital; founders contribute operational execution, IP, and ongoing platform development. The 10 % Platform grant to Rudi is a package term reflecting that the Platform is funded from Agency cash flow (70 % of every Agency profit) — Rudi participates in the Platform outcome without separately paying for Platform equity.
 
 ---
 
-## 4. Sunset Clause
+## 4. Profit Distribution (Agency, per quarter)
 
 **Legal language.**
-> The Agency equity cap table shall automatically rebalance from (Rudi 80 %, Dymo 10 %, Zhan 10 %) to (Rudi 10 %, Dymo 45 %, Zhan 45 %) upon the earlier of:
+> For each calendar quarter of the Agency, net profit (Distributable Net Profit as defined in the Shareholders Agreement Dividend Policy) shall be distributed in the following fixed ratio:
 >
-> (a) the date on which cumulative cash distributions paid by both the Agency and the Platform to the Investor since the Closing Date reach AED 2,000,000 (the "**Financial Trigger**"); or
->
-> (b) the fifth anniversary of the Closing Date (the "**Time Trigger**").
->
-> Cumulative cash distributions shall include: agency profit distributions (10 % share), platform dividends (if declared), and any buyback or redemption payments. Cumulative cash distributions shall exclude: paper valuation of shares, unrealised gains. The rebalance shall execute on the business day following the trigger event, without further Board or shareholder resolution.
->
-> The Platform cap table, the profit-distribution ratio set out in §5, and the Investor's 10 % Platform equity shall be **unchanged** by the Sunset event.
-
-**Plain English.**
-When Rudi has received either AED 2 M cumulatively (from both entities combined) OR 5 years have passed since SAFE execution — whichever happens first — his 80 % Agency position automatically converts to 10 %. The 70 percentage points released split equally: +35 to Dymo and +35 to Zhan. The Platform cap table and the profit split stay the same. Rudi keeps receiving 10 % of Agency profits and 10 % of Platform upside for life.
-
-**Rationale.**
-This is the core of the deal. Rudi gets majority control during payback, guaranteed cash-return path (2× at minimum exit + 10 % perpetual + Platform upside), and a hard time cap (5 years) so control return is certain. Founders get back operational majority of Agency without owing Rudi additional value — the 2× return is his exit mechanism.
-
----
-
-## 5. Profit Distribution (Agency, per quarter)
-
-**Legal language.**
-> For each calendar quarter of the Agency, net profit (Distributable Net Profit as defined in the Shareholders Agreement Dividend Policy) shall be distributed in the following fixed ratio, applicable pre- and post-Sunset identically:
->
-> - 70 % to the Platform Development Fund (ADGM HoldCo)
+> - 70 % to the Platform Development Fund (ADGM HoldCo), paid as a Service Fee (deductible expense of the Agency)
 > - 10 % to the Investor (Rudi)
 > - 10 % to Dymo
 > - 10 % to Zhan
@@ -107,14 +88,14 @@ This is the core of the deal. Rudi gets majority control during payback, guarant
 > Distribution is declared quarterly by the Board following the Dividend Policy cadence. Detail is set out in `PROFIT_DISTRIBUTION_MECHANICS.md`.
 
 **Plain English.**
-After costs, taxes, and reserves, Agency profit is split 70 to Platform, 10 each to Rudi, Dymo, and Zhan. Every quarter. This ratio is fixed in the SHA and continues unchanged post-Sunset — Platform keeps receiving 70 % forever, and Rudi keeps receiving 10 % of Agency profits forever.
+After costs, taxes, and reserves, Agency profit is split 70 to Platform, 10 each to Rudi, Dymo, and Zhan. Every quarter. This ratio is fixed in the SHA and does not change.
 
 **Rationale.**
-This is the platform-financing mechanism. Rudi as 80 % Agency owner contractually commits 70 pp of his economic interest to Platform development. The fixed ratio is structural — not discretionary — and does not change on Sunset because the purpose (Platform funding) does not change.
+Rudi's 10 % profit share equals his 33.33 % equity share diluted only by the 70 % platform-financing mechanism — he receives the same personal distribution as Dymo and Zhan, and the Platform (which he holds 10 % of) receives the 70 % for long-term development. The 70 % inter-company flow is structured as a Service Fee (deductible at Agency level) to minimise UAE Corporate Tax burden (see `PROFIT_DISTRIBUTION_MECHANICS.md` §3).
 
 ---
 
-## 6. Liquidation Preference
+## 5. Liquidation Preference
 
 **Legal language.**
 > In the event of a Liquidity Event or Dissolution Event affecting either entity, the Investor shall be entitled to receive, in priority to the holders of Common Shares, an amount equal to **1.0× the Purchase Amount** (i.e., AED 1,000,000), plus any declared but unpaid dividends, being a **non-participating** liquidation preference.
@@ -122,79 +103,81 @@ This is the platform-financing mechanism. Rudi as 80 % Agency owner contractuall
 > The Investor shall elect between (a) receiving the 1× non-participating liquidation preference, or (b) converting to Common Shares and receiving the pro-rata distribution, whichever yields the higher return — not both.
 
 **Plain English.**
-On sale, IPO, or wind-up of either entity, Rudi receives the greater of: (a) his AED 1 M back, or (b) his pro-rata share of proceeds. This protects downside in a low-value exit.
+On sale, IPO, or wind-up of either entity, Rudi receives the greater of: (a) his AED 1 M back, or (b) his pro-rata share of proceeds. Protects downside in a low-value exit.
 
 **Rationale.**
-Industry-standard 1× non-participating is simple, fair, and aligned with Rudi's majority-investor position. No participating preference (which would give Rudi both 1× and pro-rata — overcompensating given his 80 % Agency stake already).
+Industry-standard 1× non-participating is fair and simple. Does not overcompensate Rudi in upside scenarios (no participating preference).
 
 ---
 
-## 7. Anti-Dilution
+## 6. Anti-Dilution
 
 **Legal language.**
-> No contractual anti-dilution protection applies. The Investor's economic interests are preserved pre-Sunset by the Investor's 80 % Agency majority (which controls shareholder votes on future issuances) and post-Sunset by the Investor's Platform 10 % equity (subject to standard UAE company-law shareholder pre-emption rights on new issuances unless waived).
+> The Investor's shareholding shall be protected by **weighted-average anti-dilution** (broad-based) applicable to any issuance of equity, SAFE, convertible note, or similar instrument at a valuation below the Agency post-money valuation cap (AED 3,000,000). The weighted-average formula shall be the standard broad-based weighted-average protection calculated over the fully-diluted capitalization.
+>
+> Weighted-average anti-dilution shall apply up to and including the first closing of a priced equity financing of not less than USD 2,000,000 ("Series A"). After the Series A first closing, anti-dilution protection shall terminate and the Investor shall have **pro-rata participation rights** instead — the right (but not the obligation) to purchase, at the Investor's own expense and on the same terms as the new investor, up to such number of new securities as is necessary to maintain the Investor's then-current ownership percentage (subject to a 10 % floor as a minimum).
 
 **Plain English.**
-No full-ratchet or weighted-average anti-dilution clause. Rudi's 80 % majority in Agency pre-Sunset means he controls whether the company issues new Agency shares. Post-Sunset, his 10 % minority is treated like any other minority shareholder — standard pre-emption rights only.
+If ZAAHI raises money at a lower valuation than the AED 3 M implied at Rudi's Closing, Rudi is partially compensated via weighted-average adjustment (he gets some additional shares at no extra cost). This protection lasts until the Series A round. After Series A, Rudi has standard pro-rata rights — he can invest alongside new investors at the same price to keep his percentage, but pays his own money.
 
 **Rationale.**
-Full-ratchet anti-dilution was designed for minority VC investors needing protection against later down-rounds. Rudi is a majority investor pre-Sunset (controls issuance directly) and a defined-percentage minority post-Sunset (his 10 % post-Sunset is by design, not dilution). No anti-dilution clause is needed — it would be either redundant or structurally misaligned.
+Weighted-average (not full-ratchet) is appropriate for an equal-partnership structure where Rudi is one of three shareholders. It provides meaningful downside protection without over-compensating at the expense of founders. The Series A cutover transitions from anti-dilution to pro-rata participation, which is standard for institutional-round investors.
 
 ---
 
-## 8. Most Favoured Nation (MFN)
+## 7. Most Favoured Nation (MFN)
 
 **Legal language.**
-> For a period of twelve (12) months from the Closing Date, if the Company issues any equity, SAFE, convertible note, or other security on terms more favourable to the purchaser than the terms granted to the Investor hereunder (including without limitation lower valuation cap, higher liquidation preference multiple, more favourable economic protection, or broader information rights), the Investor shall automatically be entitled to amend this SAFE (and, post-conversion, the Investor's Preferred Share rights) to incorporate such more favourable terms at no additional consideration.
+> For a period of twelve (12) months from the Closing Date, if the Company issues any equity, SAFE, convertible note, or other security on terms more favourable to the purchaser than the terms granted to the Investor hereunder (including without limitation lower valuation cap, higher liquidation preference multiple, or more favourable economic protection), the Investor shall automatically be entitled to amend this SAFE (and, post-conversion, the Investor's Preferred Share rights) to incorporate such more favourable terms at no additional consideration.
 
 **Plain English.**
 If ZAAHI raises from another investor on better economic terms within 12 months after Rudi's Closing, Rudi automatically gets those better terms too.
 
 **Rationale.**
-Standard MFN. 12-month window is reasonable for a majority-investor position; reduces Rudi's concern that a later minority investor gets preferential treatment.
+Standard MFN. 12-month window is reasonable; reduces Rudi's concern that a later investor gets preferential treatment.
 
 ---
 
-## 9. Governance — Board Composition
+## 8. Governance — Board Composition
 
 **Legal language.**
-> The Board of Directors of each of the Agency and the Platform shall comprise three (3) directors: Zhan, Dymo, and Rudi. The quorum for any Board meeting shall be two directors present in person, by video conference, or by written consent. All ordinary Board decisions shall be by simple majority (2 of 3). Reserved matters (see §10) shall require shareholder approval. No director shall have a veto, casting vote, or blocking right at Board level.
+> The Board of Directors of each of the Agency and the Platform shall comprise three (3) directors: Zhan, Dymo, and Rudi. The quorum for any Board meeting shall be two directors present in person, by video conference, or by written consent. All ordinary Board decisions shall be by simple majority (2 of 3). Reserved matters (see §9) shall require shareholder approval. No director shall have a veto, casting vote, or blocking right at Board level.
 
 **Plain English.**
-Three directors — Zhan, Dymo, Rudi. Two-thirds majority on any Board decision. Reserved matters go to shareholder vote (where Rudi's 80 % Agency controls pre-Sunset, and Zhan's 80 % Platform controls at all times).
+Three directors — Zhan, Dymo, Rudi. Two-thirds majority on any Board decision. Reserved matters go to shareholder vote.
 
 **Rationale.**
-Three-seat board with Rudi as the third seat gives transparency and voice without operational paralysis. Shareholder-level votes on reserved matters follow capital ownership — pre-Sunset Rudi is majority Agency, post-Sunset Dymo + Zhan combine to 90 %.
+Three-seat board with Rudi as the third seat gives transparency and voice without operational paralysis. Neither Rudi alone nor any single founder can unilaterally block Board decisions, preserving operational speed.
 
 ---
 
-## 10. Reserved Matters
+## 9. Reserved Matters
 
 **Legal language.**
-> The following matters shall require shareholder approval (by simple majority of votes cast) for each entity separately: (a) any amendment to the Shareholders Agreement or the Articles of Association that adversely affects a Shareholder; (b) any voluntary dissolution, liquidation, or winding-up of the Company; (c) any sale of all or substantially all of the Company's assets, or any merger, consolidation, or change of control transaction. No other matter, including ordinary-course operational decisions, financing, hiring, compensation, product scope, or capital expenditure, shall require shareholder approval beyond Board majority.
+> The following matters shall require approval by at least two (2) Shareholders (voting by number of Shareholders, not by percentage): (a) any amendment to the Shareholders Agreement or the Articles of Association that adversely affects a Shareholder; (b) any voluntary dissolution, liquidation, or winding-up of the Company; (c) any sale of all or substantially all of the Company's assets, or any merger, consolidation, or change of control transaction. No other matter — including ordinary-course operational decisions, financing, hiring, compensation, product scope, or capital expenditure — shall require shareholder approval beyond Board majority.
 
 **Plain English.**
-Three things go to shareholder vote: SHA/AoA amendment, wind-up, and sale. Everything else is Board majority (2 of 3). Pre-Sunset on Agency reserved matters, Rudi (80 %) controls. Post-Sunset, Dymo + Zhan (90 %) control. On Platform reserved matters, Zhan (80 %) controls at all times.
+Three things require the approval of at least two of the three Shareholders: SHA/AoA amendment, wind-up, and sale. Everything else is Board majority (2 of 3). Because voting is by number of Shareholders (not by ownership percentage), each Shareholder has one vote on reserved matters — Rudi, Dymo, and Zhan each count as 1.
 
 **Rationale.**
-Minimum set of matters where shareholder approval is practically required under UAE law. All other matters are Board-level to preserve operational speed.
+With a 33/33/33 equity structure, percentage-based voting produces the same result as per-shareholder voting (any two of three can pass; no one alone blocks). Per-shareholder framing is cleaner and emphasises the equal-partnership nature. Rudi retains voice but cannot veto; founders together can always pass reserved matters; Rudi with one founder can also pass them.
 
 ---
 
-## 11. Dividend Policy (codified in SHA)
+## 10. Dividend Policy (codified in SHA)
 
 **Legal language.**
-> The Company shall adopt and maintain a Dividend Policy as set out in Schedule [X] of the Shareholders Agreement. The Dividend Policy shall provide: (a) quarterly declaration of Distributable Net Profit after corporate tax, operating expenses, a reasonable cash reserve (3 months of OpEx), and mandatory statutory reserves; (b) distribution of Distributable Net Profit in the ratio 70 / 10 / 10 / 10 — 70 % to Platform Development Fund, 10 % each to Rudi, Dymo, Zhan; (c) Board approval of each quarterly declaration; (d) the ratio is fixed and continues pre- and post-Sunset. Full mechanics in `PROFIT_DISTRIBUTION_MECHANICS.md`.
+> The Company shall adopt and maintain a Dividend Policy as set out in Schedule [X] of the Shareholders Agreement. The Dividend Policy shall provide: (a) quarterly declaration of Distributable Net Profit after corporate tax, operating expenses, a reasonable cash reserve (3 months of OpEx), and mandatory statutory reserves; (b) distribution of Distributable Net Profit in the ratio 70 / 10 / 10 / 10 — 70 % to Platform Development Fund, 10 % each to Rudi, Dymo, Zhan; (c) Board approval of each quarterly declaration; (d) the ratio is fixed for the lifetime of the Agency. Full mechanics in `PROFIT_DISTRIBUTION_MECHANICS.md`.
 
 **Plain English.**
 Every quarter, after costs and taxes and a 3-month operating-cash buffer, 70 % of net profit goes to the Platform, 10 % each to Rudi, Dymo, Zhan.
 
 **Rationale.**
-Option B (Dividend Policy in SHA) — transparent, auditable, and legally enforceable.
+Dividend Policy in the SHA is transparent, auditable, and legally enforceable. The 70 % inter-company Service Fee flow is deductible at the Agency level — key part of the three-layer tax minimisation strategy (see `PROFIT_DISTRIBUTION_MECHANICS.md` §3).
 
 ---
 
-## 12. Information Rights
+## 11. Information Rights
 
 **Legal language.**
 > The Company shall provide the Investor with:
@@ -208,27 +191,27 @@ Option B (Dividend Policy in SHA) — transparent, auditable, and legally enforc
 > (d) **immediate** notification within forty-eight (48) hours of any Material Event, being: any litigation or regulatory action involving the Company in excess of AED 100,000 in dispute value; any financing transaction in excess of AED 500,000; the receipt of any acquisition or strategic-partnership offer; the resignation or termination of either Founder; any material breach of any material contract; any data breach or regulatory penalty; any loss of a material licence or permit.
 
 **Plain English.**
-Rudi receives a one-page monthly summary; full quarterly financials; annual audited statements; 48-hour notice of anything material.
+Rudi receives a monthly summary, quarterly financials, annual audited statements, and 48-hour notice of anything material.
 
 **Rationale.**
-Four-layer information package appropriate for a majority investor. Standard at this scale.
+Four-layer information package standard for an equal-partnership shareholder.
 
 ---
 
-## 13. Transfer Restrictions, Tag-Along, ROFR
+## 12. Transfer Restrictions, Tag-Along, ROFR
 
 **Legal language.**
-> The Parties shall include in the Shareholders Agreement customary transfer restrictions, Company-level and Shareholder-level Rights of First Refusal, and Tag-Along provisions, exact language to be drafted by UAE counsel. The intent is: (a) a 2-year lock from Closing on Investor transfers except permitted transfers (to wholly-owned entities, family-estate planning, or with consent); (b) 30-day ROFR for the Company and then the other Shareholders pro-rata on any proposed transfer; (c) Tag-Along rights for Founders on Investor transfers; (d) Rudi is not subject to drag-along.
+> The Parties shall include in the Shareholders Agreement customary transfer restrictions, Company-level and Shareholder-level Rights of First Refusal, and Tag-Along provisions, exact language to be drafted by UAE counsel. Intent: (a) a 2-year lock from Closing on Investor transfers except permitted transfers (to wholly-owned entities, family-estate planning, or with consent); (b) 30-day ROFR for the Company and then the other Shareholders pro-rata on any proposed transfer; (c) Tag-Along rights for all non-selling Shareholders on any proposed transfer by any Shareholder; (d) no drag-along obligation imposed on any Shareholder without their consent.
 
 **Plain English.**
-Standard transfer mechanics — lock, ROFR, Tag-Along — but exact language left to counsel. Rudi is not forced to sell if founders find a buyer for the whole company.
+Standard transfer mechanics — 2-year lock, ROFR, Tag-Along — exact language at SHA drafting. No forced drag-along; equal partners each decide independently.
 
 **Rationale.**
-These mechanics are standard and deeper language is counsel's job at SHA drafting, not Term Sheet's.
+Appropriate for a three-way equal partnership; preserves each Party's ability to hold or sell independently.
 
 ---
 
-## 14. Founder Vesting
+## 13. Founder Vesting
 
 **Legal language.**
 > Zhan and Dymo shall subject their existing and future shares in each entity to reverse vesting over two (2) years from the Effective Date, with a six (6)-month cliff. Upon involuntary termination without Cause (as defined in the SHA), twenty-five per cent (25 %) of then-unvested shares shall accelerate. Upon a change of control combined with termination (the "double-trigger"), 100 % of unvested shares shall accelerate. The Investor's shares shall be fully vested immediately on Closing.
@@ -237,11 +220,11 @@ These mechanics are standard and deeper language is counsel's job at SHA draftin
 Zhan and Dymo each have a 2-year vesting clock with a 6-month cliff. If either leaves in the first 6 months, they lose all unvested equity. After 6 months, equity vests monthly to full vesting at 24 months. Rudi's equity is fully vested from day one.
 
 **Rationale.**
-Shorter vesting schedule (2 years vs the more common 4 years) reflects the shorter-time-horizon nature of this deal — the Sunset fires at Year 5 latest, so a 4-year vesting would overlap too heavily with the sunset event. 2-year vesting with 6-month cliff balances founder commitment with the deal structure.
+2-year vesting with 6-month cliff balances founder commitment with a reasonable time horizon. Rudi's equity is not vested because he is providing capital upfront, not labour over time.
 
 ---
 
-## 15. Founder Salary and Severance
+## 14. Founder Salary and Severance
 
 **Legal language.**
 > The Company shall, in the Shareholders Agreement, codify the founder protection packages for Zhan (per `ZHAN_PROTECTIONS.md`) and Dymo (per `DYMO_PROTECTIONS.md`), each comprising:
@@ -253,14 +236,14 @@ Shorter vesting schedule (2 years vs the more common 4 years) reflects the short
 > (c) Tag-Along rights and Right of First Refusal on Investor share transfers.
 
 **Plain English.**
-Each founder gets a guaranteed monthly salary from the entity they lead, 6 months' severance if terminated without cause, and matching rights on Rudi transfers. No performance-bonus equity — founders' upside is through base equity, post-Sunset Agency uplift (for Dymo and Zhan), and Platform majority (for Zhan).
+Each founder gets a guaranteed monthly salary from the entity they lead, 6 months' severance if terminated without cause, and matching rights on Rudi transfers. No performance-bonus equity.
 
 **Rationale.**
-Simplified package. No Performance Bonus Shares in this deal structure — the Sunset Clause is Dymo's and Zhan's Agency-upside mechanism, and Zhan's 80 % Platform is his long-term reward.
+Simplified, symmetric founder package.
 
 ---
 
-## 16. IP Assignment
+## 15. IP Assignment
 
 **Legal language.**
 > Zhan shall, on or before the Effective Date of the Shareholders Agreement, irrevocably assign to the Platform (ADGM HoldCo) at no additional consideration all pre-existing intellectual property relating to ZAAHI, including: the software codebase of `zaahi.io`; the Master Tree v3 document; the ZAAHI brand, wordmark, and 3D ZAAHI Signature; the parcels database (114 verified parcels); the PMTiles coverage (556 000 plots across Dubai, Abu Dhabi, and Oman); the Ambassador program architecture; the Archibald AI integration; the domain `zaahi.io` and related domains and social handles. Zhan represents and warrants that he owns all such IP free of encumbrance.
@@ -273,7 +256,7 @@ Universal condition precedent in any venture investment where founders built pro
 
 ---
 
-## 17. Non-Compete and Non-Solicit
+## 16. Non-Compete and Non-Solicit
 
 **Legal language.**
 > During the term of their engagement with the Company and for a period of twelve (12) months thereafter, Zhan and Dymo shall not: (a) directly or indirectly engage in, or hold any beneficial interest exceeding five per cent (5.0 %) in, any business that competes with ZAAHI in UAE real estate platforms or brokerage; or (b) solicit any Company employee, agent, customer, or supplier. Dymo's existing real estate advisory and agency relationships outside ZAAHI shall be scheduled and excluded from this restriction.
@@ -286,10 +269,10 @@ Standard founder non-compete.
 
 ---
 
-## 18. Representations and Warranties
+## 17. Representations and Warranties
 
 **Legal language.**
-> The Founders represent and warrant to the Investor as of the Closing Date that: (a) they own the pre-existing IP described in §16 free of encumbrance; (b) neither of them is party to any litigation or dispute that would materially affect the Company; (c) all information provided to the Investor in connection with this investment is accurate in all material respects; (d) they have the corporate power and authority to enter into this SAFE; (e) the Company is not in breach of any material contract or regulation.
+> The Founders represent and warrant to the Investor as of the Closing Date that: (a) they own the pre-existing IP described in §15 free of encumbrance; (b) neither of them is party to any litigation or dispute that would materially affect the Company; (c) all information provided to the Investor in connection with this investment is accurate in all material respects; (d) they have the corporate power and authority to enter into this SAFE; (e) the Company is not in breach of any material contract or regulation.
 
 **Plain English.**
 Founders formally warrant that what they've told Rudi is accurate.
@@ -299,54 +282,54 @@ Standard.
 
 ---
 
-## 19. Governing Law and Dispute Resolution
+## 18. Governing Law and Dispute Resolution
 
 **Legal language.**
-> This SAFE and the Shareholders Agreement shall be governed by the laws of Abu Dhabi Global Market (applying English common law principles). Disputes shall be finally resolved by arbitration under the rules of the ADGM Arbitration Centre, with Abu Dhabi as the seat of arbitration, the English language, and a tribunal of three arbitrators appointed in accordance with those rules. The Parties hereby submit to the exclusive jurisdiction of the ADGM courts for matters outside the scope of arbitration.
+> This SAFE and the Shareholders Agreement shall be governed by the laws of Abu Dhabi Global Market (applying English common law principles). Disputes shall be finally resolved by arbitration under the rules of the ADGM Arbitration Centre, with Abu Dhabi as the seat of arbitration, the English language, and a tribunal of three arbitrators appointed in accordance with those rules.
 
 **Plain English.**
-ADGM arbitration under English common law. The gold standard for UAE venture structuring.
+ADGM arbitration under English common law.
 
 **Rationale.**
-Enforceable, internationally recognised, specialised tribunals.
+Enforceable, internationally recognised.
 
 ---
 
-## 20. Tax Treatment
+## 19. Tax Treatment
 
 **Legal language.**
-> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), and any ADGM-specific tax treatment. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure consistent with the commercial intent.
+> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment, and Small Business Relief availability (Year 1 expected). The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in `PROFIT_DISTRIBUTION_MECHANICS.md` §3.
 
 **Plain English.**
-Tax structuring confirmed by counsel before signing. Parties cooperate to minimise tax while keeping economic intent intact.
+Tax structuring confirmed by counsel before signing. Three-layer minimisation: Agency Small Business Relief in Year 1; Platform as Qualifying Free Zone Person (0 % on qualifying income); UAE has no personal income tax on shareholder distributions.
 
 **Rationale.**
-UAE CT introduced 2023 (9 % above AED 375,000; SBR for small businesses; QFZP for qualifying free zone entities). Counsel review is a condition precedent.
+UAE CT introduced 2023. SBR + QFZP + no personal income tax = target combined effective tax rate 0–9 % across the structure. Counsel review is a condition precedent.
 
 ---
 
-## 21. Conditions Precedent to SAFE Execution
+## 20. Conditions Precedent to SAFE Execution
 
 - Satisfactory due diligence by the Investor and his advisers.
 - UAE legal counsel review of this Term Sheet, the SAFE document, and the draft Shareholders Agreement principles.
-- UAE tax counsel review per §20.
-- Delivery by Zhan of evidence of pre-existing IP ownership per §16.
-- Agreement of the final Agency post-money valuation (indicatively AED 1,250,000) and Platform equity grant structure.
+- UAE tax counsel review per §19.
+- Delivery by Zhan of evidence of pre-existing IP ownership per §15.
+- Agreement of the final Agency post-money valuation (indicatively AED 3,000,000) and Platform equity grant structure.
 - No material adverse change in the ZAAHI business.
 
 ---
 
-## 22. Conditions Precedent to Shareholders Agreement Execution
+## 21. Conditions Precedent to Shareholders Agreement Execution
 
 - Dubai Mainland LLC (Agency) incorporated and RERA company broker licence application in progress.
 - Corporate bank account opened.
 - Initial counsel-drafted Shareholders Agreement delivered and agreed by all Parties.
-- Applicable Shareholder Agreement schedules populated: founder-protection addenda (`ZHAN_PROTECTIONS.md`, `DYMO_PROTECTIONS.md`); Dividend Policy detailed mechanics; Sunset ledger mechanics.
+- Applicable Shareholder Agreement schedules populated: founder-protection addenda (`ZHAN_PROTECTIONS.md`, `DYMO_PROTECTIONS.md`); Dividend Policy detailed mechanics.
 - UBO filings prepared for submission post-execution.
 
 ---
 
-## 23. Non-Binding Status
+## 22. Non-Binding Status
 
 Except for the binding Exclusivity and Confidentiality provisions set out in the Memorandum of Understanding dated Sunday 19 April 2026, this Term Sheet is non-binding. Each Party may withdraw prior to execution of the Post-Money SAFE, provided each Party negotiates in good faith.
 
@@ -360,16 +343,15 @@ Except for the binding Exclusivity and Confidentiality provisions set out in the
 - **Closing Date.** The date on which the Post-Money SAFE is executed and Rudi's AED 1,000,000 is wired.
 - **Effective Date.** The date on which the Shareholders Agreement is executed.
 - **Purchase Amount.** AED 1,000,000.
-- **Investor Shares.** The Preferred Shares issued to Rudi on SAFE conversion: 80 % of Agency and 10 % of Platform at Platform formation.
+- **Investor Shares.** The Preferred Shares issued to Rudi on SAFE conversion: 33.33 % of Agency and 10 % of Platform at Platform formation.
 - **Founders.** Zhan (Zharkyn Ryspayev) and Dymo (Dmytro Tsvyk), collectively.
-- **Sunset / Sunset Trigger.** The automatic Agency cap-table rebalance per §4.
-- **Financial Trigger.** AED 2,000,000 cumulative cash distributions to Rudi.
-- **Time Trigger.** Fifth anniversary of the Closing Date.
+- **Series A.** A priced equity financing of not less than USD 2,000,000 led by an institutional investor.
 - **Distributable Net Profit.** Agency quarterly net profit after costs, OpEx, tax, statutory reserve, and 3-month operating reserve, per `PROFIT_DISTRIBUTION_MECHANICS.md` §2.1.
 - **Liquidity Event.** An IPO, change of control, sale of substantially all assets, or similar transaction.
 - **Dissolution Event.** Voluntary or involuntary winding-up of the Company.
-- **Material Event.** As defined in §12(d).
+- **Material Event.** As defined in §11(d).
 - **Cause.** Material breach of a Founder's employment or director duties, conviction of a serious offence, or other grounds defined in the Shareholders Agreement.
+- **Reserved Matters.** The three matters listed in §9: SHA/AoA amendment, dissolution, sale.
 
 ---
 
@@ -378,22 +360,24 @@ Except for the binding Exclusivity and Confidentiality provisions set out in the
 | Element | Term | Clause |
 |---|---|---|
 | Investment | AED 1,000,000 one-time | §2 |
-| Equity — Agency (pre-Sunset) | 80.0 % | §3 |
-| Equity — Agency (post-Sunset) | 10.0 % | §4 |
+| Equity — Agency | 33.33 % (one-third, equal with Dymo and Zhan) | §3 |
 | Equity — Platform (lifetime) | 10.0 % | §3 |
-| Sunset trigger (earlier of) | AED 2,000,000 cumulative distributions OR 5 years | §4 |
-| Profit distribution (quarterly, pre- and post-Sunset) | 70 % Platform / 10 % Rudi / 10 % Dymo / 10 % Zhan | §5 / §11 |
-| Liquidation preference | 1× non-participating | §6 |
-| Anti-dilution | None | §7 |
-| MFN | 12 months | §8 |
-| Board seat | 1 of 3 (Zhan, Dymo, Rudi) | §9 |
-| Reserved matters | SHA amendment, dissolution, sale | §10 |
-| Information rights | Monthly + quarterly + annual + 48 h material events | §12 |
-| Founder vesting (Zhan, Dymo) | 2 years / 6-month cliff | §14 |
-| Founder salary | AED 30,000 – 50,000 / month from respective entity | §15 |
-| IP assignment | To Platform at nil consideration | §16 |
-| Non-compete | 12-month post-departure | §17 |
-| Dispute resolution | ADGM arbitration | §19 |
+| Agency implied post-money | AED 3,000,000 | §3 |
+| Profit distribution (quarterly) | 70 % Platform / 10 % Rudi / 10 % Dymo / 10 % Zhan | §4 / §10 |
+| Liquidation preference | 1× non-participating | §5 |
+| Anti-dilution | Weighted-average (broad-based), until Series A | §6 |
+| Pro-rata rights | After Series A, at own cost, to maintain 10 % floor | §6 |
+| MFN | 12 months | §7 |
+| Board seat | 1 of 3 (Zhan, Dymo, Rudi) | §8 |
+| Reserved matters | Approval by at least 2 Shareholders (out of 3) | §9 |
+| Information rights | Monthly + quarterly + annual + 48 h material events | §11 |
+| Transfer restrictions | 2-year lock + ROFR + Tag-Along; no drag-along | §12 |
+| Founder vesting (Zhan, Dymo) | 2 years / 6-month cliff | §13 |
+| Founder salary | AED 30,000 – 50,000 / month from respective entity | §14 |
+| IP assignment | To Platform at nil consideration | §15 |
+| Non-compete | 12-month post-departure | §16 |
+| Dispute resolution | ADGM arbitration | §18 |
+| Tax strategy | Three-layer (SBR Y1 + QFZP Platform + 0 % personal) | §19 |
 
 ---
 
