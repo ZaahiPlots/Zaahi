@@ -100,7 +100,7 @@
 ### **April 17, 2026: Rudi experienced live demo of zaahi.io. Within 24 hours: verbal commitment. Sunday April 19: this package formalises that partnership.**
 
 - **April 17, 2026** — investor demo. Live product walked through, every claim reconciled with production code.
-- **April 18, 2026** — verbal commitment. AED 1,000,000, 10 % Agency, 10 % Platform, full anti-dilution to IPO.
+- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; economic participation of 10 % of Agency profits and 10 % Platform equity agreed; corporate structure finalised April 19.
 - **Sunday April 19, 2026** — MOU signed, Al Jurf. Monday April 21: Agency formation documents submitted.
 
 *Visual note: precise three-point timeline. Left: "Apr 17 · Demo delivered" (with zaahi.io screenshot). Middle: "Apr 18 · Commitment secured" (with handshake symbol in gold). Right: "Apr 19 · MOU signed, Al Jurf" (with pen / signature symbol). Thin gold line connecting them.*
@@ -121,7 +121,7 @@ Key points:
 - **Canonical source of truth** — the Master Tree document (`docs/architecture/MASTER_TREE_final.md`) is the reference for every architectural decision in the company.
 - **Currently live: ~6–8 % by section count, higher by user-visible weight.** Gap analysis available as appendix.
 
-*Presenter notes: This is the "why we are worth AED 10 M post-money today" slide. The audacity of the scope is the investment thesis. Say: "What you saw at demo was Block A Assets and part of Block B Participants. There are ten more blocks behind it. Each one is a product. Each one, over ten years, is a category."*
+*Presenter notes: This is the "why we are building a decade-long asset" slide. The audacity of the scope is the investment thesis. Say: "What you saw at demo was Block A Assets and part of Block B Participants. There are ten more blocks behind it. Each one is a product. Each one, over ten years, is a category."*
 
 ---
 

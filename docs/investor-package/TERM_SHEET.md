@@ -38,7 +38,7 @@ No term is binding until the Post-Money SAFE is executed. The MOU signed Sunday 
 > The Company: ZAAHI Agency (to be incorporated as a Dubai Mainland LLC) and, upon the closing of the first agency deal, ZAAHI Platform (to be incorporated as an ADGM Limited company) (together the "Company"). The Founders: **Zharkyn Ryspayev** (hereinafter "Zhan") and **Dmytro Tsvyk** (hereinafter "Dymo"). The Investor: **Rodolphe Belin** (hereinafter "Rudi"), Partner at Equilibrium Advisory Group, acting in his personal capacity unless he notifies the Company in writing of an alternative investment vehicle prior to SAFE execution.
 
 **Plain English.**
-Two entities: Agency (Dubai Mainland LLC, registration begins Monday 2026-04-21) and Platform (ADGM Limited, forms on first agency deal closure). Founders are Zhan and Dymo. Rudi is the Investor.
+Two entities: Agency (Dubai Mainland LLC, formation documents submitted Monday 2026-04-21; LLC registration 2–4 weeks thereafter) and Platform (ADGM Limited, forms on first agency deal closure). Founders are Zhan and Dymo. Rudi is the Investor.
 
 **Rationale.**
 Dual-entity structure separates regulated brokerage (must be Dubai Mainland LLC for RERA) from platform IP and investor upside (ADGM for English common law and institutional investor comfort).

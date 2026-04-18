@@ -78,7 +78,7 @@ Zhan and Dymo: **2 years reverse vesting, 6-month cliff** on all equity in both 
 - **Upon entity completion** — Post-Money SAFE executed; AED 1 M wired
 - **June – July 2026** — First agency deal target; ADGM HoldCo (Platform) incorporated upon first closed deal
 - **July – August 2026** — First agency profit distribution
-- **Ongoing** — Quarterly distributions; platform development funded from 70 % share; Sunset triggers when Rudi's cumulative distributions reach AED 3 M
+- **Ongoing** — Quarterly distributions; platform development funded from 70 % share; Sunset triggers on earlier of AED 2 M cumulative distributions to Rudi OR 5 years since SAFE execution
 
 ---
 

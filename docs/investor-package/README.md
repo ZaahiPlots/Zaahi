@@ -166,7 +166,7 @@ A: Approximately 6–8 % by section count, higher by user-visible functionality 
 ### On the investment
 
 **Q: Why AED 10 M valuation?**
-A: The post-money SAFE valuation is structured such that Rudi's AED 1 M yields **80 % of the Agency** (Agency post-money implied AED 1.25 M) plus **10 % of the Platform** granted at Platform formation. This is not a conventional 10 % stake / AED 10 M valuation — the deal is majority-investor into Agency plus a 10 % Platform sweetener. The language is in `TERM_SHEET.md` §6.
+A: The post-money SAFE valuation is structured such that Rudi's AED 1 M yields **80 % of the Agency** (Agency post-money implied AED 1.25 M) plus **10 % of the Platform** granted at Platform formation. This is not a conventional 10 % stake / AED 10 M valuation — the deal is majority-investor into Agency plus a 10 % Platform sweetener. The language is in `TERM_SHEET.md` §3.
 
 **Q: What is the Sunset Clause?**
 A: Rudi's 80 % Agency holding automatically converts to 10 % on the earlier of **(a)** cumulative cash distributions paid to Rudi totalling AED 2,000,000, or **(b)** 5 years since SAFE execution. Post-sunset: Dymo and Zhan hold 45 % each of Agency. Platform cap table and profit split are unchanged. Details in `MOU_RUDI.md` §4.
