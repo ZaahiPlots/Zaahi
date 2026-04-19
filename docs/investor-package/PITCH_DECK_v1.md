@@ -281,19 +281,25 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 | Category | AED | % | Notes |
 |---|---|---|---|
-| Legal & entity formation | 180,000 | 18 % | Dubai Mainland LLC + ADGM HoldCo + SHA + SAFE + IP assignment; top-tier counsel engagement |
-| RERA company broker licence + Broker Cards | 20,000 | 2 % | RERA AED 12,900 + two Broker Cards; annual renewals thereafter |
-| Office lease + fit-out | 120,000 | 12 % | 12 months lease deposit + fit-out + furniture + signage |
-| First agent hire (3-month onboarding) | 90,000 | 9 % | AED 30 k/mo × 3 months including Emirates ID and insurance |
-| Dymo and Zhan operating salaries (first 6 months) | 260,000 | 26 % | Founder salary floor per the Zhan Protections §1 and Dymo Protections §1; covered from Rudi's tranche until agency revenue breaks even |
-| Marketing launch | 100,000 | 10 % | LinkedIn, Google Ads, Property Finder listings, Trakheesi permits, developer outreach |
-| Tech infrastructure (Year 1) | 60,000 | 6 % | Vercel / Supabase / Anthropic retention; domain / SSL / monitoring |
-| Professional indemnity + D&O + key-person insurance | 70,000 | 7 % | Mandatory for RE brokers + recommended corporate policies |
-| Accounting + compliance + audit | 60,000 | 6 % | Xero / Zoho subscription; monthly bookkeeping; annual ADGM audit; VAT / ESR / UBO filings |
-| Working capital reserve | 40,000 | 4 % | Cashflow contingency |
+| Legal & entity formation | 180,000 | 18 % | Dubai Mainland LLC + ADGM HoldCo + Abu Dhabi branch + SAFE + SHA + IP assignment; top-tier counsel engagement |
+| RERA company broker licence + Cards | 20,000 | 2 % | RERA AED 12,900 + two Broker Cards; annual renewals thereafter |
+| Home + office lease Al Jurf (3-month advance of AED 250 k/year) | 62,500 | 6.25 % | Live-work operational hub; office on 1st floor; strategic Dubai – Abu Dhabi corridor |
+| Virtual office Dubai address (RERA Mainland compliance) | 15,000 | 1.5 % | LLC registered Dubai address; physical operations from Al Jurf |
+| Office fit-out (1st floor only) | 30,000 | 3 % | Desks, chairs, meeting table, AV setup, WiFi, printer |
+| Vehicle (operations + client meetings) | 80,000 | 8 % | Pre-owned or lease down-payment; registered in company name |
+| Camera + video production equipment | 40,000 | 4 % | Sony A7IV-class + lenses + lighting + drone + editing workstation — enables in-house content strategy (competitive moat) |
+| Laptops + computers | 25,000 | 2.5 % | Founders + videographer business laptops |
+| Videographer salary (6 months) | 60,000 | 6 % | AED 10 k/month; first employee; enables in-house production |
+| Founders salaries (Dymo + Zhan, 6 months) | 180,000 | 18 % | Salary Floor per the Zhan Protections and Dymo Protections addenda |
+| Employee registration (visa + Emirates ID + medical + labor card — videographer) | 30,000 | 3 % | Mandatory onboarding package |
+| Marketing launch | 80,000 | 8 % | LinkedIn sponsored, Google Ads, Property Finder / Bayut placement, Trakheesi permits |
+| Tech infrastructure (Year 1) | 50,000 | 5 % | Vercel / Supabase / Anthropic retention; domains / SSL / monitoring |
+| Insurance (PI + D&O + Key-person) | 50,000 | 5 % | Mandatory for RE brokers + recommended corporate policies |
+| Accounting + compliance + audit | 40,000 | 4 % | Xero / Zoho subscription; monthly bookkeeping; annual audit; VAT / ESR / UBO filings |
+| Working capital reserve | 57,500 | 5.75 % | Cashflow contingency |
 | **Total** | **1,000,000** | **100 %** | |
 
-*Visual note: a donut chart. Slices in graduated gold, labelled with percentages. Legend to the right with exact AED figures. Small note: "70 % of future agency profit returns to platform development — this is a launch allocation, not a steady-state budget."*
+*Visual note: a donut chart. Slices in graduated gold, labelled with percentages. Legend to the right with exact AED figures. Small note: "70 % of future agency profit returns to Platform Development Fund per SHA Dividend Policy — this is a launch allocation, not a steady-state budget. From Year 2, Platform is funded entirely from Agency operations."*
 
 *Presenter notes: Rudi will scrutinise this slide. Walk through it line by line. Every number has a source in the financial model. Do not apologise for any line item; each one is non-negotiable for a legally compliant, investor-grade operation.*
 

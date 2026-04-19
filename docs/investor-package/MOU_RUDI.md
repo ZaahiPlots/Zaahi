@@ -7,9 +7,11 @@
 **Document:** Memorandum of Understanding
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** Sunday, 19 April 2026
+**Date:** 2026-04-19
+**Meeting:** Sunday 2026-04-19, Al Jurf
 **Location:** Al Jurf, UAE
 **Status:** Non-binding memorandum except Clauses 9 (Exclusivity) and 10 (Confidentiality) — subject to UAE counsel review
+**Classification:** CONFIDENTIAL
 
 ---
 
