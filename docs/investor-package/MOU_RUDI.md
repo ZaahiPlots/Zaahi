@@ -35,7 +35,7 @@ ZAAHI is an operating technology company with a live platform at `zaahi.io`. The
 
 Rudi intends to invest AED 1,000,000 (one million United Arab Emirates dirhams) (the "**Investment**"), to be paid in a single tranche after entity formation. The Investment shall be allocated 100 % to agency launch: entity formation and licensing, RERA company broker licence and Broker Cards, office and working capital, first agent hire, and marketing launch. Platform-company operations will be funded from agency net profits thereafter (see §3).
 
-Agency implied post-money valuation: **AED 1,250,000** (AED 1 M for 80 %). *Note: this valuation reflects pre-operational status of Agency (entity formation + RERA licensing phase). Post-revenue valuation expected AED 25–40 M in Year 2 at a 3–5× revenue multiple on projected Y1 realised revenue of AED 8.3 M (per v5 base case in `P_AND_L_STATEMENT.md` and `FINANCIAL_MODEL_V1.md`).* Platform 10 % grant to Rudi at Platform formation as part of the overall deal structure.
+Agency implied post-money valuation: **AED 1,250,000** (AED 1 M for 80 %). *Note: this valuation reflects pre-operational status of Agency (entity formation + RERA licensing phase). Post-revenue valuation expected AED 25–40 M in Year 2 at a 3–5× revenue multiple on projected Y1 realised revenue of AED 8.3 M (per base case in the Profit & Loss Statement and Financial Model).* Platform 10 % grant to Rudi at Platform formation as part of the overall deal structure.
 
 ---
 
@@ -90,7 +90,7 @@ For each agency deal closed and after deduction of direct costs, operating expen
 | **Zhan** | 10 % |
 | **Total** | 100 % |
 
-This ratio is fixed in the Shareholders Agreement Dividend Policy for the lifetime of the Agency and does not change at Sunset. The 70 % inter-company Service Fee payment to the Platform is the platform-financing mechanism and is deductible for UAE Corporate Tax purposes (see `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8 for the tax-efficient structure). Distribution is quarterly. The first distribution follows the first closed deal.
+This ratio is fixed in the Shareholders Agreement Dividend Policy for the lifetime of the Agency and does not change at Sunset. The 70 % inter-company Service Fee payment to the Platform is the platform-financing mechanism and is deductible for UAE Corporate Tax purposes (see the Dividend Policy §3 and §8 for the tax-efficient structure). Distribution is quarterly. The first distribution follows the first closed deal.
 
 ---
 
@@ -106,7 +106,7 @@ Upon the Sunset event:
 - **Agency cap table** automatically rebalances from 80 / 10 / 10 to **33.34 / 33.33 / 33.33**. Rudi's 80 % → 33.34 %; Dymo's 10 % → 33.33 % (+23.33 pp); Zhan's 10 % → 33.33 % (+23.33 pp). The rebalance establishes a three-way equal partnership.
 - **Platform cap table** — **unchanged**. Zhan 80 % / Dymo 10 % / Rudi 10 % continues.
 - **Profit distribution mechanics** — **unchanged**. The 70 / 10 / 10 / 10 split continues for the lifetime of the Agency. Rudi retains his 10 % profit share.
-- **Governance post-Sunset** — Agency Reserved Matters require approval of at least 2 of 3 Shareholders (per §5 and `TERM_SHEET.md` §10). Rudi retains his one board seat.
+- **Governance post-Sunset** — Agency Reserved Matters require approval of at least 2 of 3 Shareholders (per §5 and the Term Sheet §10). Rudi retains his one board seat.
 
 **Definition of "cumulative distributions" (for trigger (a)):** the sum of all actual cash payments made to Rudi by both entities since SAFE execution, including agency profit distributions (Rudi's 10 % share), platform dividends (if declared), and any buyback or redemption payments. Does NOT include paper valuation of Rudi's shares or unrealised gains. Confirmed by the annual audit.
 

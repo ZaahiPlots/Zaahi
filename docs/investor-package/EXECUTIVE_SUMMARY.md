@@ -4,12 +4,13 @@
 
 ---
 
-**Document:** Executive Summary (v5 realistic)
+**Document:** Executive Summary
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Status:** DRAFT — legal documents subject to UAE counsel review
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -26,6 +27,8 @@ UAE real estate — AED 682.6 billion in 2025, on pace to exceed AED 1 trillion 
 ## The Platform
 
 ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 functional blocks. In production today: **114 verified parcels** loaded, **556 000 plots** mapped across Dubai, Abu Dhabi, and Oman via PMTiles, 3D ZAAHI Signature visualisation, the Archibald AI assistant, a RERA-compliant single-tier referral program, and Phase 1 dashboards for Owners, Buyers, and Brokers. Approximately **6–8 % of the Master Tree is live** today; the remaining 92 % is sequenced across a multi-year roadmap, funded from agency cash flow.
+
+**Full-lifecycle architecture.** Platform architecture covers the full real estate lifecycle — land plots, off-plan development, ready property (residential + commercial), rental segments (long-term + short-term + co-living + holiday homes), hospitality, mixed-use, warehouse / industrial, and B2B2G partnerships with banks, developers, luxury brands, cities, and governments. Base case revenue focuses on premium plots + off-plan floors + tier-based subscriptions + transactional Service Fee + data licensing; full-lifecycle expansion is the 10-year upside. Unlike competitors focused on single segments (Bayut listings / Huspy mortgages / PRYPCO tokenisation), ZAAHI architects all real estate segments plus B2B2G partnerships into one Master Tree. See the Profit & Loss Statement §6 for 45 documented revenue streams — 15 in base case + 30 expansion opportunities.
 
 ## The Team
 
@@ -63,7 +66,7 @@ Triggers on the **earlier** of:
 
 Upon trigger: Agency rebalances 80/10/10 → 33.34/33.33/33.33. **Platform cap table unchanged. Profit split unchanged.**
 
-**Base-case Financial Trigger timing: mid-Year 3** (cumulative Rudi distributions reach AED 2 M ~month 6 of Y3 on the v5 revenue trajectory). Time Trigger is a backstop.
+**Base-case Financial Trigger timing: mid-Year 3** (cumulative Rudi distributions reach AED 2 M ~month 6 of Y3 on the base-case revenue trajectory). Time Trigger is a backstop.
 
 ### Profit distribution (Agency, per quarter — fixed for lifetime, pre- and post-Sunset)
 
@@ -92,7 +95,7 @@ The 70 % flow is a tax-deductible inter-company Service Fee that funds platform 
 
 ---
 
-## Financial Snapshot (v5 Base Case)
+## Financial Snapshot (Base Case)
 
 | Metric (AED, consolidated) | Year 1 | Year 5 |
 |---|---:|---:|
@@ -107,18 +110,18 @@ The 70 % flow is a tax-deductible inter-company Service Fee that funds platform 
 
 **10-year Rudi total return (Base):** AED 437 M on AED 1 M Investment (**437× MOIC**, ~80 % IRR), composed of ~AED 115 M Agency + Platform cash distributions and ~AED 322 M Platform IPO proceeds (Rudi 5.8 % post-dilution stake on AED 5.6 B IPO valuation).
 
-Agency Y1 is 12 premium land plot deals (AED 450 k avg commission) + 2 off-plan floor-level sales (AED 1.2 M avg commission). Platform Y1 is 40 subscribers across five tiers (Developer AED 50 k/yr · Broker AED 20 k/yr · Architect AED 10 k/yr · Investor/Buyer AED 5 k/yr · Land Owner AED 3 k/yr) plus 2 % ZAAHI Service Fee on platform-routed deals. See `P_AND_L_STATEMENT.md` (v5) for full 16-section professional P&L with scenario analysis.
+Agency Y1 is 12 premium land plot deals (AED 450 k avg commission) + 2 off-plan floor-level sales (AED 1.2 M avg commission). Platform Y1 is 40 subscribers across five tiers (Developer AED 50 k/yr · Broker AED 20 k/yr · Architect AED 10 k/yr · Investor/Buyer AED 5 k/yr · Land Owner AED 3 k/yr) plus 2 % ZAAHI Service Fee on platform-routed deals. See the Profit & Loss Statement for full 16-section professional P&L with scenario analysis.
 
 ---
 
-## Tax efficiency (three-layer design, v5)
+## Tax efficiency (three-layer design)
 
 - **Agency** (Dubai Mainland LLC): 9 % UAE Corporate Tax above AED 375,000 taxable income. **SBR not applicable Y1** — Agency revenue AED 7.8 M exceeds AED 3 M SBR threshold. 70 % inter-company Service Fee is a deductible expense, reducing effective Agency CT rate to ~2 % of gross Agency profit.
 - **Platform** (ADGM HoldCo): Qualifying Free Zone Person status targets 0 % on qualifying income.
 - **Shareholders**: UAE has no personal income tax and no dividend withholding.
 - **Transfer Pricing**: local file required from Year 1 (related-party transactions exceed AED 3.75 M threshold).
 
-Target combined effective tax burden: **~2–4 %** across the structure. Full detail in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8 Tax Efficiency Design and in `P_AND_L_STATEMENT.md` §12.
+Target combined effective tax burden: **~2–4 %** across the structure. Full detail in the Dividend Policy §3 and §8 Tax Efficiency Design and in the Profit & Loss Statement §12.
 
 ---
 

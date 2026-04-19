@@ -4,11 +4,12 @@
 
 ---
 
-**Document:** Profit Distribution Mechanics — Dividend Policy in SHA (v5 realistic)
+**Document:** Profit Distribution Mechanics — Dividend Policy in SHA
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
+**Classification:** CONFIDENTIAL
 **Parties to the Dividend Policy:** Zharkyn Ryspayev ("Zhan"), Dmytro Tsvyk ("Dymo"), and Rodolphe Belin ("Rudi")
 **Status:** Template structure — exact contractual language subject to counsel review
 **First distribution target:** after the first closed agency deal (expected July – August 2026)
@@ -61,7 +62,7 @@ Where:
 - **Gross Commission Revenue** — all agency commissions invoiced and received (or accrued under the Company's accounting policy) during the quarter.
 - **Direct Costs** — deal-level costs directly attributable to closed transactions: Trakheesi permits, client-entertainment, external DD fees, translation, notary, courier.
 - **Allocated OpEx** — pro-rata share of quarterly operating expenses: founder salaries, agent salaries, office lease, utilities, software subscriptions, accounting, legal retainer, marketing, insurance.
-- **Corporate Tax** — 9 % UAE CT on taxable income above AED 375,000, provisioned quarterly. **Small Business Relief (SBR) not applicable in v5 Year 1** — Agency Y1 revenue AED 7.8 M exceeds the AED 3 M SBR threshold. The 70 % Service Fee to Platform is deductible, reducing effective Agency CT to ~2 % of gross Agency profit.
+- **Corporate Tax** — 9 % UAE CT on taxable income above AED 375,000, provisioned quarterly. **Small Business Relief (SBR) not applicable in Year 1** — Agency Y1 revenue AED 7.8 M exceeds the AED 3 M SBR threshold per Ministerial Decision 73 of 2023. The 70 % Service Fee to Platform is deductible, reducing effective Agency CT to ~2 % of gross Agency profit.
 - **Statutory Reserve** — 10 % of annual net profit to a non-distributable legal reserve until it equals 50 % of issued share capital (per UAE Commercial Companies Law).
 - **Contractual Operating Reserve** — a rolling cash balance of at least 3 months of forecast OpEx. Year 1 target: AED 700,000 minimum (scales with OpEx to ~AED 17 M by Y5).
 
@@ -79,9 +80,9 @@ Once Distributable Net Profit is determined for the quarter, it is split as foll
 
 This split is fixed for the lifetime of the Agency. Rudi receives 10 % of Agency profits in personal cash distributions. The 70 % Platform flow is a tax-deductible Service Fee (see §8).
 
-### 2.3 Worked example — Year 1 full year, AED 7,800,000 Agency gross commission (v5 base case)
+### 2.3 Worked example — Year 1 full year, AED 7,800,000 Agency gross commission (base case)
 
-Full-year walk-through on v5 base-case revenue:
+Full-year walk-through on base-case revenue:
 
 | Recipient | Share | AED |
 |---|---|---|
@@ -93,7 +94,7 @@ Full-year walk-through on v5 base-case revenue:
 
 **Rudi receives AED 407 k in aggregate over Year 1** (paid quarterly from Q2 Y1 onwards). Dymo and Zhan each also receive AED 407 k; AED 2.85 M flows to the Platform Development Fund. Quarterly distributions ramp from ~AED 50 k Q2 to ~AED 200 k Q4 as deal cadence accelerates.
 
-### 2.4 Detailed walkthrough — Full Year 1 Distributable Net Profit build (v5)
+### 2.4 Detailed walkthrough — Full Year 1 Distributable Net Profit build
 
 | Step | AED | Explanation |
 |---|---|---|
@@ -116,7 +117,7 @@ Full-year walk-through on v5 base-case revenue:
 | Zhan (10 %) | 406,800 | |
 | **Total distributed** | **4,068,000** | ✓ |
 
-**Year 1 Rudi total: AED 407 K.** Sunset Financial Trigger (AED 2 M cumulative) crossed mid-Year 3 on the v5 trajectory (Y1 407 k + Y2 810 k + Y3 1,750 k = AED 2,967 k cumulative by end Y3).
+**Year 1 Rudi total: AED 407 K.** Sunset Financial Trigger (AED 2 M cumulative) crossed mid-Year 3 on the base-case trajectory (Y1 407 k + Y2 810 k + Y3 1,750 k = AED 2,967 k cumulative by end Y3).
 
 ---
 
@@ -142,7 +143,7 @@ Agency transfers the 70 % share as a capital contribution or shareholder loan to
 
 ### 3.3 Tax implications (indicative, subject to counsel)
 
-- **Agency (Dubai Mainland LLC):** 9 % CT on taxable income above AED 375,000. **SBR NOT applicable in v5 Y1** (Agency revenue AED 7.8 M > AED 3 M threshold). Service fee to Platform is deductible, reducing effective Agency CT rate to ~2 % of gross Agency profit.
+- **Agency (Dubai Mainland LLC):** 9 % CT on taxable income above AED 375,000. **SBR not applicable Y1** (Agency revenue AED 7.8 M > AED 3 M threshold). Service fee to Platform is deductible, reducing effective Agency CT rate to ~2 % of gross Agency profit.
 - **Platform (ADGM HoldCo):** If Qualifying Free Zone Person (QFZP), qualifying income at 0 %; Mainland-sourced income generally taxed at 9 % above AED 375,000.
 - **VAT** — Inter-company services between related UAE entities are generally 5 % (standard rate); zero-rating possible if criteria met.
 - **Transfer Pricing:** local file required from Year 1 — related-party transactions (70 % Service Fee ≈ AED 5.46 M Y1) exceed the AED 3.75 M threshold.
@@ -188,7 +189,7 @@ The Board meets at least once per quarter, within 45 days of quarter end, with t
 
 - Quorum: 2 of 3 directors (Zhan, Dymo, Rudi).
 - Voting: simple majority at board level.
-- Reserved matters (sale, dissolution, SHA amendment) follow the phase-dependent rules in `TERM_SHEET.md` §10: pre-Sunset Agency — Rudi's 80 % shareholder vote controls; post-Sunset Agency — at least 2 of 3 Shareholders must agree; Platform (perpetual) — Zhan's 80 % controls.
+- Reserved matters (sale, dissolution, SHA amendment) follow the phase-dependent rules in the Term Sheet §10: pre-Sunset Agency — Rudi's 80 % shareholder vote controls; post-Sunset Agency — at least 2 of 3 Shareholders must agree; Platform (perpetual) — Zhan's 80 % controls.
 
 ### 5.3 What Rudi sees
 
@@ -235,7 +236,7 @@ If the Board deadlocks (one director absent, 1-1 vote):
 
 ## 8. Sunset mechanics and the Dividend Policy
 
-The Sunset Clause (per `MOU_RUDI.md` §4) is triggered by the **earlier** of:
+The Sunset Clause (per the Memorandum of Understanding §4) is triggered by the **earlier** of:
 
 - **(a)** Cumulative cash distributions to Rudi from both entities reach **AED 2,000,000**; OR
 - **(b)** **5 years** since SAFE execution.
@@ -250,7 +251,7 @@ The Sunset Clause (per `MOU_RUDI.md` §4) is triggered by the **earlier** of:
 
 **What changes in governance at Sunset:** Agency shareholder-vote majority passes from Rudi's 80 % to the requirement that at least 2 of 3 Shareholders agree (voting by number of Shareholders; equal equity makes per-Shareholder and pro-rata voting produce the same result). Rudi retains his one board seat. Platform governance is unchanged (Zhan 80 % controls Platform reserved matters throughout).
 
-**Tracking:** The Company maintains a **rolling Sunset ledger**, updated after each quarterly distribution and confirmed by the annual audit. The ledger is shared with Rudi as part of quarterly management accounts per `TERM_SHEET.md` §12(e), showing:
+**Tracking:** The Company maintains a **rolling Sunset ledger**, updated after each quarterly distribution and confirmed by the annual audit. The ledger is shared with Rudi as part of quarterly management accounts per the Term Sheet §12(e), showing:
 
 - Cumulative distributions paid to Rudi from both entities since Closing, in AED and as a percentage of the AED 2,000,000 Financial Trigger.
 - Months elapsed since SAFE execution, as a counter toward the 60-month Time Trigger.
@@ -260,15 +261,15 @@ When either trigger is met, the Agency cap-table transition executes automatical
 
 ---
 
-## 9. Tax Efficiency Design (three-layer strategy, v5)
+## 9. Tax Efficiency Design (three-layer strategy)
 
-The profit-distribution structure is deliberately engineered to minimise UAE tax burden across three layers — Agency, Platform, and Shareholder. Target combined effective tax rate: **~2–4 %** on Agency gross profit flowing through to Platform + personal distributions (v5 updated from v4's 0–9 % target — v4 assumed Y1 SBR at 0 %; v5 Agency revenue base AED 7.8 M > AED 3 M SBR threshold).
+The profit-distribution structure is deliberately engineered to minimise UAE tax burden across three layers — Agency, Platform, and Shareholder. Target combined effective tax rate: **~2–4 %** on Agency gross profit flowing through to Platform + personal distributions. SBR not applicable in Year 1 because Agency revenue base AED 7.8 M exceeds the AED 3 M SBR threshold.
 
 ### 8.1 Layer 1 — Agency (Dubai Mainland LLC)
 
 - **UAE Corporate Tax:** 9 % on taxable income above AED 375,000 per annum (introduced 2023 under Federal Decree-Law 47/2022).
-- **Small Business Relief (SBR): NOT applicable in v5 Year 1** — Agency Y1 revenue AED 7.8 M exceeds the AED 3,000,000 SBR threshold. (v4 anticipated SBR eligibility at AED 3.01 M; v5 realistic revenue scale removes eligibility.)
-- **70 % Service Fee to Platform:** deductible Agency expense. Every AED 1 paid to Platform as Service Fee reduces Agency taxable income by AED 1, directly shielding that amount from Agency CT. This is the primary tax-efficiency lever in v5.
+- **Small Business Relief (SBR): not applicable Year 1** — Agency Y1 revenue AED 7.8 M exceeds the AED 3,000,000 SBR threshold per Ministerial Decision 73 of 2023.
+- **70 % Service Fee to Platform:** deductible Agency expense. Every AED 1 paid to Platform as Service Fee reduces Agency taxable income by AED 1, directly shielding that amount from Agency CT. This is the primary tax-efficiency lever.
 - **VAT:** 5 % on commercial brokerage services. Pass-through (collected from client, remitted to FTA). Does not reduce distributable profit.
 - **Transfer Pricing local file required from Year 1** — related-party transactions (70 % Service Fee ≈ AED 5.46 M Y1) exceed the AED 3.75 M threshold. Counsel to prepare arm's-length study before first filing.
 - **Net Agency CT burden:** 9 % × retained ~23 % of profit after Service Fee deduction and AED 375 K threshold = **~2.1 % effective Agency CT** on gross Agency profit Y1. Rises to ~3–4 % Y3–Y5.
@@ -286,7 +287,7 @@ The profit-distribution structure is deliberately engineered to minimise UAE tax
 - **UAE withholding tax on dividends:** there is no domestic withholding tax on dividends paid to UAE-resident shareholders.
 - **Cross-border implication:** Rudi's foreign tax residence (France or elsewhere — to be confirmed with Rudi's personal tax advisor) determines any external withholding or foreign tax obligation. UAE has a broad treaty network; specific treatment depends on Rudi's residence country.
 
-### 8.4 Consolidated example — AED 1,000,000 gross Agency profit (v5 Year 1+)
+### 8.4 Consolidated example — AED 1,000,000 gross Agency profit (Year 1+)
 
 Agency subject to standard 9 % CT on retained ~23 % of profit (after Service Fee deduction):
 
@@ -304,13 +305,13 @@ Agency subject to standard 9 % CT on retained ~23 % of profit (after Service Fee
 | Shareholder-level tax (UAE) | 0 | No personal income tax |
 | **Rudi's personal take-home from 100,000 distribution** | **~100,000** | Subject to foreign withholding if applicable |
 
-**Summary:** of every AED 1,000,000 gross Agency profit, approximately **AED 965,000 – 980,000** flows to the Platform + shareholders after UAE-level tax. Effective combined UAE tax burden: **~2–4 %** (v5 realistic).
+**Summary:** of every AED 1,000,000 gross Agency profit, approximately **AED 965,000 – 980,000** flows to the Platform + shareholders after UAE-level tax. Effective combined UAE tax burden: **~2–4 %**.
 
 ### 8.5 Conditions for the ~2–4 % target
 
 The low effective rate depends on two counsel-confirmed determinations:
 
-1. **Platform achieves QFZP status** on the inter-company Service Fee income — requires arm's-length transfer-pricing documentation (required from Year 1 in v5) and compliant business conduct; counsel deliverable at SHA execution.
+1. **Platform achieves QFZP status** on the inter-company Service Fee income — requires arm's-length transfer-pricing documentation (required from Year 1) and compliant business conduct; counsel deliverable at SHA execution.
 2. **Service Fee is recognised as deductible** at Agency level under UAE CT rules for related-party transactions — standard treatment with proper TP documentation.
 
 If either condition fails, the effective rate rises toward the 9 % UAE Corporate Tax rate. Conservative planning scenario: 9 % effective at Agency level only (Service Fee disallowed); combined ~9–12 % worst-case. Base case: ~2–4 %.
@@ -323,11 +324,11 @@ Items to be confirmed at SHA execution:
 
 1. **Exact clause language** — Dividend Policy mechanics; interaction with UAE Commercial Companies Law statutory reserve.
 2. **Service Agreement vs Capital Contribution** — confirmed choice between Options A and B for the 70 % inter-company flow.
-3. **Transfer-pricing documentation** — arm's-length study supporting the 70 %-of-net-profit Service Fee; **required from Year 1 under v5** (related-party transactions exceed AED 3.75 M threshold).
+3. **Transfer-pricing documentation** — arm's-length study supporting the 70 %-of-net-profit Service Fee; **required from Year 1** (related-party transactions exceed AED 3.75 M threshold).
 4. **VAT treatment** — pass-through confirmation at calculation stage; inter-company zero-rating feasibility.
 5. **QFZP status for Platform** — counsel determination on qualifying-income characterisation for tier-based subscriptions (Developer / Broker / Architect / Investor / Owner) and 2 % ZAAHI Service Fee on platform-routed deals.
 6. **Cross-border considerations** — if Rudi is tax-resident outside UAE, any foreign withholding or treaty considerations on dividends.
-7. **Referral program characterisation** — single-tier RERA-compliant commission-based referral program (replacing v4 Silver/Gold/Platinum tiers). Commission payouts treated as non-qualifying Platform expense, deducted at Platform level normally.
+7. **Referral program characterisation** — single-tier RERA-compliant commission-based referral program. Commission payouts treated as non-qualifying Platform expense, deducted at Platform level normally.
 
 ---
 

@@ -7,11 +7,11 @@
 **Document:** Investor Package Index
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Agency formation documents submitted:** Monday 2026-04-21
-**Branch:** `drafts/investor-package-v4-final`
 **Status:** DRAFT — all legal documents subject to UAE counsel review before execution
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -23,7 +23,7 @@ ZAAHI is an operating company with a live production platform at [zaahi.io](http
 
 ### Positioning note
 
-The package reflects a **controlling-investor-to-equal-partnership hybrid** structure. Rudi enters as the controlling Agency investor (80 %) during the payback period; the Agency rebalances to a three-way equal partnership (33.34 % Rudi / 33.33 % Dymo / 33.33 % Zhan) on the earlier of (a) AED 2,000,000 cumulative distributions to Rudi or (b) 5 years since SAFE execution. **Base case: Financial Trigger fires mid-Year 3.** Platform (ADGM HoldCo) is majority-owned by Zhan (80 %) throughout — Platform does not go through Sunset. The Platform is the IPO path (**10-year projected total return: AED 437 M on AED 1 M = 437× MOIC, ~80 % IRR**); the Agency is the operational cash engine targeting AED 7.8 M Year 1 revenue on 12 premium land plot deals + 2 off-plan floors. Every Agency deal routes 70 % of net profit to Platform development via a tax-deductible inter-company Service Fee and 10 % each to Rudi, Dymo, Zhan in personal cash distributions. Tax-efficient by design: target combined effective tax rate **~2–4 %** across Agency, Platform, and shareholder layers (v5 — SBR not applicable Y1).
+The package reflects a **controlling-investor-to-equal-partnership hybrid** structure. Rudi enters as the controlling Agency investor (80 %) during the payback period; the Agency rebalances to a three-way equal partnership (33.34 % Rudi / 33.33 % Dymo / 33.33 % Zhan) on the earlier of (a) AED 2,000,000 cumulative distributions to Rudi or (b) 5 years since SAFE execution. **Base case: Financial Trigger fires mid-Year 3.** Platform (ADGM HoldCo) is majority-owned by Zhan (80 %) throughout — Platform does not go through Sunset. The Platform is the IPO path (**10-year projected total return: AED 437 M on AED 1 M = 437× MOIC, ~80 % IRR**); the Agency is the operational cash engine targeting AED 7.8 M Year 1 revenue on 12 premium land plot deals + 2 off-plan floors. Every Agency deal routes 70 % of net profit to Platform development via a tax-deductible inter-company Service Fee and 10 % each to Rudi, Dymo, Zhan in personal cash distributions. Tax-efficient by design: target combined effective tax rate **~2–4 %** across Agency, Platform, and shareholder layers.
 
 ---
 
@@ -31,18 +31,18 @@ The package reflects a **controlling-investor-to-equal-partnership hybrid** stru
 
 | # | Document | Purpose | Signing Sunday? |
 |---|---|---|---|
-| 1 | `README.md` | This index. Orientation, agenda, Q&A. | — |
-| 2 | `EXECUTIVE_SUMMARY.md` | One-pager. Reads first; shareable with counsel. | No — reference |
-| 3 | `PITCH_DECK_v1.md` | 18-slide narrative (markdown source for Figma render). | No — presentation |
-| 4 | `MOU_RUDI.md` | Non-binding Memorandum of Understanding. Rudi signs Sunday; covers structure, Sunset, vesting, IP transfer. | **Yes — Sunday 19 April** |
-| 5 | `TERM_SHEET.md` | Indicative commercial terms for the Post-Money SAFE. Clause-by-clause legal / plain English / rationale. | No — counsel-reviewed and signed post-MOU |
-| 6 | `FINANCIAL_MODEL_V1.md` | v5 Excel template structure. Revenue (12 plots + 2 floors Y1 → AED 190 M Y5), OpEx, cashflow, 4 Sunset scenarios (Financial Trigger mid-Y3 base), Platform IPO scenarios (AED 5.6 B base IPO), tax efficiency. | No — for discussion & Excel build |
-| 7 | `LAUNCH_PLAN.md` | Operational playbook for the first 12 months (v5 — 12 premium plots + 2 off-plan floors Y1 target, AED 7.8 M Agency revenue). | No — operational reference |
-| 8 | `PROFIT_DISTRIBUTION_MECHANICS.md` | How the 70 / 10 / 10 / 10 split works; Sunset mechanics; three-layer tax efficiency design. | No — informs SHA drafting |
-| 9 | `ZHAN_PROTECTIONS.md` | Founder protection addendum — Zhan (Salary Floor + Tag-Along / ROFR). | No — informs SHA drafting |
-| 10 | `DYMO_PROTECTIONS.md` | Co-founder protection addendum — Dymo (symmetric to Zhan, Agency-anchored). | No — informs SHA drafting |
-| 11 | `Q_AND_A_PREP.md` | Anticipated Rudi questions with direct answers. | No — internal prep |
-| 12 | `P_AND_L_STATEMENT.md` | Professional P&L statement v5 realistic — Series-A-due-diligence-grade. Year 1 target **AED 8.3 M revenue** and Year 5 target **AED 190 M revenue**. Includes tier-based subscription model (Developer / Broker / Architect / Investor / Owner), single-tier RERA-compliant referral program, scenario analysis, sensitivity analysis, 21-stream revenue detail, Rule of 40 benchmarking, Platform IPO exit scenarios (**437× 10-year Rudi return base case**), and comparable-company analysis against 17 public + private PropTech benchmarks. Supported by `research/P_AND_L_RESEARCH.md`. | No — financial reference |
+| 1 | Investor Package Index | This orientation, agenda, and Q&A summary. | — |
+| 2 | Executive Summary | One-pager. Reads first; shareable with counsel. | No — reference |
+| 3 | Pitch Deck | 18-slide narrative (markdown source for Figma render). | No — presentation |
+| 4 | Memorandum of Understanding | Non-binding MOU. Rudi signs Sunday; covers structure, Sunset, vesting, IP transfer. | **Yes — Sunday 19 April** |
+| 5 | Term Sheet | Indicative commercial terms for the Post-Money SAFE. Clause-by-clause legal / plain English / rationale. | No — counsel-reviewed and signed post-MOU |
+| 6 | Financial Model | Excel template structure. Revenue (12 plots + 2 floors Y1 → AED 190 M Y5), OpEx, cashflow, 4 Sunset scenarios (Financial Trigger mid-Y3 base), Platform IPO scenarios (AED 5.6 B base IPO), tax efficiency. | No — for discussion & Excel build |
+| 7 | Launch Plan | Operational playbook for the first 12 months (12 premium plots + 2 off-plan floors Y1 target, AED 7.8 M Agency revenue). | No — operational reference |
+| 8 | Profit Distribution Mechanics | How the 70 / 10 / 10 / 10 split works; Sunset mechanics; three-layer tax efficiency design. | No — informs SHA drafting |
+| 9 | Zhan Protections | Founder protection addendum — Zhan (Salary Floor + Tag-Along / ROFR). | No — informs SHA drafting |
+| 10 | Dymo Protections | Co-founder protection addendum — Dymo (symmetric to Zhan, Agency-anchored). | No — informs SHA drafting |
+| 11 | Q&A Preparation | Anticipated Rudi questions with direct answers. | No — internal prep |
+| 12 | Profit & Loss Statement | Professional P&L — Series-A-due-diligence-grade. Year 1 target **AED 8.3 M revenue** and Year 5 target **AED 190 M revenue**. Includes tier-based subscription model (Developer / Broker / Architect / Investor / Owner), single-tier RERA-compliant referral program, scenario analysis, sensitivity analysis, 45-stream revenue architecture (15 base case + 30 expansion opportunities), Rule of 40 benchmarking, Platform IPO exit scenarios (**437× 10-year Rudi return base case**), and comparable-company analysis against 17 public + private PropTech benchmarks. | No — financial reference |
 
 ---
 
@@ -50,17 +50,17 @@ The package reflects a **controlling-investor-to-equal-partnership hybrid** stru
 
 Allow ~120 minutes for full package review.
 
-1. **EXECUTIVE_SUMMARY.md** (5 min)
-2. **PITCH_DECK_v1.md** (15 min)
-3. **MOU_RUDI.md** (5 min) — the document Rudi signs Sunday
-4. **TERM_SHEET.md** (20 min)
-5. **FINANCIAL_MODEL_V1.md** (10 min)
-6. **P_AND_L_STATEMENT.md** (25 min) — detailed financial projections with benchmarks
-7. **PROFIT_DISTRIBUTION_MECHANICS.md** (10 min) — Sunset mechanics + Tax Efficiency
-8. **ZHAN_PROTECTIONS.md** (5 min)
-9. **DYMO_PROTECTIONS.md** (5 min)
-10. **LAUNCH_PLAN.md** (10 min)
-11. **Q_AND_A_PREP.md** (5 min)
+1. **Executive Summary** (5 min)
+2. **Pitch Deck** (15 min)
+3. **Memorandum of Understanding** (5 min) — the document Rudi signs Sunday
+4. **Term Sheet** (20 min)
+5. **Financial Model** (10 min)
+6. **Profit & Loss Statement** (25 min) — detailed financial projections with benchmarks
+7. **Profit Distribution Mechanics** (10 min) — Sunset mechanics + Tax Efficiency
+8. **Zhan Protections** (5 min)
+9. **Dymo Protections** (5 min)
+10. **Launch Plan** (10 min)
+11. **Q&A Preparation** (5 min)
 
 ---
 
@@ -76,7 +76,7 @@ Venue: Al Jurf, UAE. Approximate duration: 2 hours.
 | Master Tree v3 visual — 10-year roadmap | Zhan | Rudi sees what the AED 1 M unlocks beyond Year 1 |
 | Term Sheet clause-by-clause review | Dymo leads | Each clause confirmed by Rudi or flagged for counsel |
 | Financial model + Sunset + Platform IPO scenarios | Zhan leads | Year 1–5 trajectory, 4 Sunset scenarios, IPO exit paths agreed |
-| Tax efficiency (three-layer design) | Zhan + Dymo | Rudi understands 0–9 % effective rate path |
+| Tax efficiency (three-layer design) | Zhan + Dymo | Rudi understands ~2–4 % effective rate path |
 | Q&A | All three | No unanswered question goes home |
 | **MOU signature** | All three | MOU signed; counsel engagement confirmed |
 
@@ -115,18 +115,18 @@ Sunset trigger (earlier of):
 
 A printed and bound physical package in the following order:
 
-1. This **README.md** — orientation and agenda.
-2. **EXECUTIVE_SUMMARY.md** — one-pager.
-3. **PITCH_DECK_v1.md** — 18 slides printed one-per-page on A4 landscape (or PDF on tablet).
-4. **MOU_RUDI.md** — to be signed (three signature blocks + optional witness).
-5. **TERM_SHEET.md** — for clause-by-clause review.
-6. **FINANCIAL_MODEL_V1.md** — specification (with Excel / Google Sheets file URL on the cover page).
-7. **P_AND_L_STATEMENT.md** — professional P&L with scenario / sensitivity analysis and PropTech comparable benchmarks.
-8. **LAUNCH_PLAN.md** — operational 12-month roadmap.
-9. **PROFIT_DISTRIBUTION_MECHANICS.md** — dividend mechanics + Sunset mechanics + tax design.
-10. **ZHAN_PROTECTIONS.md** — Zhan's protection addendum.
-11. **DYMO_PROTECTIONS.md** — Dymo's protection addendum.
-12. **Q_AND_A_PREP.md** — anticipated questions, answered.
+1. This **Investor Package Index** — orientation and agenda.
+2. **Executive Summary** — one-pager.
+3. **Pitch Deck** — 18 slides printed one-per-page on A4 landscape (or PDF on tablet).
+4. **Memorandum of Understanding** — to be signed (three signature blocks + optional witness).
+5. **Term Sheet** — for clause-by-clause review.
+6. **Financial Model** — specification (with Excel / Google Sheets file URL on the cover page).
+7. **Profit & Loss Statement** — professional P&L with scenario / sensitivity analysis and PropTech comparable benchmarks.
+8. **Launch Plan** — operational 12-month roadmap.
+9. **Profit Distribution Mechanics** — dividend mechanics + Sunset mechanics + tax design.
+10. **Zhan Protections** — Zhan's protection addendum.
+11. **Dymo Protections** — Dymo's protection addendum.
+12. **Q&A Preparation** — anticipated questions, answered.
 
 Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · Sunday 2026-04-19 · Al Jurf" in subtle gold footer.
 
@@ -155,7 +155,7 @@ Exact firm selection is Zhan + Dymo's call based on initial consultation.
 
 ## Q&A preparation — likely Rudi questions
 
-Full list with detailed answers in `Q_AND_A_PREP.md`. Abridged here:
+Full list with detailed answers in the Q&A Preparation document. Abridged here:
 
 ### On ZAAHI product
 
@@ -187,12 +187,12 @@ A: Agency — no anti-dilution (Agency does not raise Series rounds; its only ca
 ### On exit
 
 **Q: What's the exit path?**
-A: **Platform IPO Years 5–10.** Agency is an operational brokerage (not publicly traded); potential strategic acquisition possible in Years 3–5. Platform raises Series A / B / C and targets IPO. Rudi's 10 % Platform (weighted-avg protected through Series A, pro-rata after) participates in IPO outcome. Dual upside: quarterly Agency distributions + Platform IPO proceeds.
+A: **Platform IPO Years 5–10.** Agency is an operational brokerage (not publicly traded); potential strategic acquisition possible in Years 3–5. Platform raises Series A / B / C and targets IPO at projected AED 4.8–7.2 B valuation (8–9× revenue multiple on Y10 projected Platform revenue of AED 800 M). Rudi's 10 % Platform (weighted-avg protected through Series A, pro-rata after) participates in IPO outcome. Dual upside: quarterly Agency distributions + Platform IPO proceeds. 10-year projected total return Base: AED 437 M on AED 1 M Investment (437× MOIC).
 
 ### On tax
 
 **Q: How much of my profit share reaches me after tax?**
-A: UAE has no personal income tax. Three-layer design (v5): Agency 9 % CT (SBR not applicable at Y1 revenue AED 7.8 M > AED 3 M threshold) with 70 % Service Fee deduction reducing effective rate to ~2 %; Platform QFZP 0 % on qualifying income; shareholder 0 % UAE. Target combined **~2–4 %** effective rate. Of every AED 1 M gross Agency profit, ~AED 965 K–980 K flows to Platform + shareholders after UAE tax.
+A: UAE has no personal income tax. Three-layer design: Agency 9 % CT (SBR not applicable at Y1 revenue AED 7.8 M > AED 3 M threshold per Ministerial Decision 73 of 2023) with 70 % Service Fee deduction reducing effective rate to ~2 %; Platform QFZP 0 % on qualifying income per Ministerial Decision 229 of 2025; shareholder 0 % UAE. Target combined **~2–4 %** effective rate. Of every AED 1 M gross Agency profit, ~AED 965 K–980 K flows to Platform + shareholders after UAE tax.
 
 ---
 
@@ -233,14 +233,4 @@ These inform every document in this package.
 
 ---
 
-## Index of referenced documents
-
-- `docs/architecture/MASTER_TREE_final.md` — 85-section canonical architecture.
-- `docs/architecture/research/ZAAHI_CURRENT_STATE_VS_MASTER_TREE.md` — gap analysis.
-- `docs/architecture/research/INVESTOR_PACKAGE_RESEARCH.md` — prior research.
-- `docs/architecture/research/BLOCKCHAIN_DEEP_DIVE.md` — blockchain strategy.
-- `CLAUDE.md` — production architecture, UI style guide.
-
----
-
-*End of README. Open the next document: `EXECUTIVE_SUMMARY.md`.*
+*End of Investor Package Index.*

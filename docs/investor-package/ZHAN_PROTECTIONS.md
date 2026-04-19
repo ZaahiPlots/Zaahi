@@ -7,10 +7,11 @@
 **Document:** Founder Protection Addendum — Zharkyn Ryspayev ("Zhan")
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor; the Shareholders Agreement schedule
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Subject:** **Zharkyn Ryspayev** (hereinafter "Zhan"), Founder, CEO/CTO
 **Status:** Template structure — exact contractual language subject to counsel review at formal SHA execution
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -23,11 +24,11 @@ This document specifies two founder-specific protections for Zharkyn Ryspayev as
 
 These protections are independent of and additional to:
 
-- Zhan's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 80 % of Platform perpetual) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
-- Zhan's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per `MOU_RUDI.md` §4).
+- Zhan's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 80 % of Platform perpetual) as set out in the Memorandum of Understanding §2 and the Term Sheet §3.
+- Zhan's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per the Memorandum of Understanding §4).
 - Zhan's majority control of the Platform (80 % makes Platform shareholder decisions Zhan's call throughout).
-- Zhan's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §6).
-- Zhan's non-compete and non-solicit commitments (per `TERM_SHEET.md`).
+- Zhan's 2-year reverse vesting with 6-month cliff (per the Memorandum of Understanding §6).
+- Zhan's non-compete and non-solicit commitments (per the Term Sheet).
 
 These protections are codified in a dedicated schedule to the Shareholders Agreement, approved by all three Shareholders. They do not reduce Rudi's economic entitlements or governance rights.
 
@@ -53,7 +54,7 @@ The specific Founder Salary figure within the AED 30,000–50,000 range is calib
 ### 1.3 Payable source
 
 - Salary is paid **monthly from the Platform (ADGM HoldCo) operating account; pro-rated for partial months**.
-- Funded from the 70 % Platform Development Fund allocation of agency net profits (per `PROFIT_DISTRIBUTION_MECHANICS.md`).
+- Funded from the 70 % Platform Development Fund allocation of agency net profits (per the Profit Distribution Mechanics addendum).
 - Tax and social security: treated as employment income under UAE Federal Decree-Law 33/2021; end-of-service gratuity accrued per UAE Labour Law.
 
 ### 1.4 Conditions
@@ -96,16 +97,16 @@ Detailed exercise language is deferred to SHA drafting by UAE counsel.
 
 | Protection | Value | Section |
 |---|---|---|
-| Equity — Agency (pre-Sunset) | 10.0 % | `MOU_RUDI.md` §2 |
-| Equity — Agency (post-Sunset) | 33.33 % | `MOU_RUDI.md` §4 |
-| Equity — Platform | 80.0 % (controlling, perpetual) | `MOU_RUDI.md` §2 |
+| Equity — Agency (pre-Sunset) | 10.0 % | the Memorandum of Understanding §2 |
+| Equity — Agency (post-Sunset) | 33.33 % | the Memorandum of Understanding §4 |
+| Equity — Platform | 80.0 % (controlling, perpetual) | the Memorandum of Understanding §2 |
 | Founder Salary Floor | AED 30,000 – 50,000 / month from Platform | This Addendum §1 |
 | Severance without Cause | 6 months (lump sum or continuation) | This Addendum §1.4 |
 | Tag-Along on Rudi transfers | Proportional participation | This Addendum §2 |
 | ROFR on Rudi transfers | 30-day option to match | This Addendum §2 |
-| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §6 |
-| Non-compete | 12-month post-departure | `TERM_SHEET.md` §17 |
-| IP ownership | Assigned to Platform at nil consideration | `MOU_RUDI.md` §7 |
+| Founder vesting | 2 years / 6-month cliff | the Memorandum of Understanding §6 |
+| Non-compete | 12-month post-departure | the Term Sheet §17 |
+| IP ownership | Assigned to Platform at nil consideration | the Memorandum of Understanding §7 |
 
 ---
 

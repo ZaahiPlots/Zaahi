@@ -4,19 +4,19 @@
 
 ---
 
-**Document:** Financial Model V1 (v5 realistic) — Excel / Google Sheets Template Structure
+**Document:** Financial Model — Excel / Google Sheets Template Structure
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
-**Version:** v5 realistic — recalibrated to founder-confirmed deal pipeline (12 premium land plots + 2 off-plan floors Year 1)
 **Form:** Markdown specification of tab structure, formulas, and assumptions — to be rendered into Excel / Google Sheets before the Sunday meeting (or Week 1 post-MOU)
 **Audience:** Rudi; UAE legal and tax counsel; future Series A investors
 **Status:** Template structure — assumptions calibrated by Zhan + Dymo; all computed outputs are formula-driven (no hardcoded result cells)
+**Classification:** CONFIDENTIAL
 
 ---
 
-## All projections are v5 BASE CASE. Conservative (−50 %) and Aggressive (+50 %+) scenarios in Tab 6.
+## All projections are BASE CASE. Conservative (−50 %) and Aggressive (+50 %+) scenarios in Tab 6.
 
 The model is built so that every output cell references the Assumptions tab. The scenario toggle in Tab 6 selects Conservative (−50 %), Base, or Aggressive (+50 %+) without rewriting formulas. The Distribution Waterfall in Tab 5 models four Sunset scenarios (Fast Y2, Base mid-Y3, Slow Y4, Time-cap Y5) plus Platform IPO exit scenarios. Tab 8 models the three-layer tax efficiency (Agency 9% CT post-SBR + QFZP Platform + 0 % personal).
 
@@ -40,7 +40,7 @@ The workbook consists of 9 tabs, structured so that changing any input in Tab 1 
 
 ---
 
-## Tab 1 — Assumptions (v5)
+## Tab 1 — Assumptions
 
 ### 1.1 Deal economics (Agency)
 
@@ -107,7 +107,7 @@ See Tab 3 for breakdown.
 
 ## Tab 2 — Revenue Projections
 
-### Year 1 monthly schedule (v5 base case)
+### Year 1 monthly schedule (base case)
 
 | Month | Plot deals | Floor deals | Agency commission | Platform rev | Total revenue |
 |---|---|---|---|---|---|
@@ -176,7 +176,7 @@ Operating breakeven: **Month 2** (first deal closes Month 3, cash-positive from 
 
 ---
 
-## Tab 5 — Distribution Waterfall (4 Sunset Scenarios + Platform IPO) — v5
+## Tab 5 — Distribution Waterfall (4 Sunset Scenarios + Platform IPO)
 
 This is the **key tab for Rudi**. Each scenario tracks Rudi's cumulative cash distributions across both entities and the Sunset trigger timing. Then Platform IPO exit scenarios are modelled separately.
 
@@ -241,7 +241,7 @@ Hypothetical extreme Conservative: deal volume compresses further.
 
 **Outcome:** Without the Time Trigger, Rudi stays 80 % Agency owner past Y5. The 5-year Time Trigger (in the actual deal) prevents this — conversion guaranteed at Y5 regardless of velocity.
 
-### Waterfall summary (v5)
+### Waterfall summary
 
 | Scenario | Trigger fires | Time | Rudi cumulative at Sunset | 10-year total return |
 |---|---|---|---|---|
@@ -250,7 +250,7 @@ Hypothetical extreme Conservative: deal volume compresses further.
 | 3 — Conservative | Financial | Mid-Y4 | AED 3.65 M | AED 220 M |
 | 4 — Time-cap extreme | Time | Y5 | AED 1.9 M | Stress-floor ~AED 80 M |
 
-### Platform IPO exit scenarios (v5)
+### Platform IPO exit scenarios
 
 **Platform IPO is the primary exit path.** Platform Y5 revenue AED 60 M; Y10 target AED 800 M. At Y10 IPO with typical PropTech 6–9× revenue multiple → AED 4.8–7.2 B valuation.
 
@@ -314,7 +314,7 @@ Conservative / Base / Aggressive side-by-side:
 
 ---
 
-## Tab 7 — Breakeven Analysis (v5)
+## Tab 7 — Breakeven Analysis
 
 | Metric | Conservative | Base | Aggressive |
 |---|---|---|---|
@@ -335,18 +335,18 @@ Conservative / Base / Aggressive side-by-side:
 - Gross margin per deal: 78 % (Y1 base).
 - Cost per acquired deal: target < AED 20,000 by Y2 (Y1 founder-led zero-CAC).
 
-### Sunset Ledger (tracked monthly, shared with Rudi per `TERM_SHEET.md` §12(e))
+### Sunset Ledger (tracked monthly, shared with Rudi per the Term Sheet §12(e))
 
 - **Cumulative cash distributions to Rudi (across both entities)** — running total toward the AED 2,000,000 Financial Trigger.
 - **Months elapsed since SAFE execution** — running counter toward the 60-month (5-year) Time Trigger.
 - **Projected trigger date** — extrapolated from current distribution velocity; which trigger will fire first (financial or time).
 - **Current scenario mapping** — current trajectory mapped to Scenario 1 (Aggressive) / 2 (Base) / 3 (Conservative) / 4 (Time-cap).
 
-### Tax Efficiency Analysis (three-layer, v5)
+### Tax Efficiency Analysis (three-layer)
 
-Tracks the effective tax burden under the three-layer design (see `PROFIT_DISTRIBUTION_MECHANICS.md` §8).
+Tracks the effective tax burden under the three-layer design (see the Dividend Policy §8).
 
-| Layer | Year 1 (v5 — SBR not applicable) | Year 2+ |
+| Layer | Year 1 (SBR not applicable) | Year 2+ |
 |---|---|---|
 | **Agency CT** — 9 % above AED 375 K. SBR NOT available (Y1 Agency revenue AED 7.8 M > AED 3 M threshold) | ~2.1 % effective on gross Agency profit (9 % × retained 23 % after Service Fee deduction) | ~2.5–4 % effective |
 | **Platform CT** — if QFZP qualifying | **0 %** on Service Fee income | **0 %** on qualifying income; 9 % on non-qualifying |
@@ -385,8 +385,8 @@ Dashboard row: "Year [N] effective tax burden on Rudi distribution: X %. Platfor
 4. **Sunset tracker:** dedicated row on Dashboard showing "AED X of AED 2,000,000 toward Financial Trigger · Y months of 60 months toward Time Trigger · projected Sunset: [date]."
 5. **Tax tracker:** dedicated row on Dashboard showing "Year [N] effective tax burden on Rudi distribution: X %. Platform QFZP status: [confirmed / pending]. TP Local File status: [current / pending]."
 6. **Output sheet (Dashboard):** headline metrics only (Y1 revenue 8,310 k, Y1 net profit 4,068 k, breakeven month 2, cash end Y1 AED 5,700 k, Rudi cumulative distribution, projected Sunset trigger mid-Y3, effective tax burden ~2 %).
-7. **Version control:** each iteration saved with date suffix. This is v5 realistic, dated 2026-04-18.
+7. **Version control:** each iteration saved with date suffix.
 
 ---
 
-*End of v5 Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo before the Sunday 2026-04-19 Al Jurf meeting (or Week 1 post-MOU).*
+*End of Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo before the Sunday 2026-04-19 Al Jurf meeting (or Week 1 post-MOU).*

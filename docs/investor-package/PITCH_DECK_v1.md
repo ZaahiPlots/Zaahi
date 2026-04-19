@@ -4,12 +4,13 @@
 
 ---
 
-**Document:** Pitch Deck v1 (markdown source, 18 slides)
-**Prepared for:** Rudi (Principal Investor)
-**Prepared by:** Zhan Ryspayev (Founder, CEO/CTO) · Dymo Tsvyk (Co-founder, Operations Principal)
-**Date:** 2026-04-18
+**Document:** Pitch Deck (markdown source, 18 slides)
+**Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
+**Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Status:** Source for Figma / Keynote rendering before Sunday meeting
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -118,7 +119,8 @@
 Key points:
 - **Additive architecture** — every section is independently shippable; no monolithic rewrites; no "big bang" releases.
 - **Plugin per country** — new jurisdiction (Saudi, Ukraine, Albania, future) = one plugin configuration; core is untouched.
-- **Canonical source of truth** — the Master Tree document (`docs/architecture/MASTER_TREE_final.md`) is the reference for every architectural decision in the company.
+- **Canonical source of truth** — the Master Tree architecture document is the reference for every architectural decision in the company.
+- **Full real estate lifecycle coverage** — the Master Tree architects the complete lifecycle: land acquisition → development → sale → rental → resale → tokenisation. Across asset classes (land, off-plan, ready residential, ready commercial, mixed-use, hospitality, warehouse/industrial) and rental segments (long-term, short-term / holiday homes, co-living, co-working, rent-to-own). Plus B2B2G partnerships with banks, developers, luxury brands, cities, and governments. No competitor has drafted this scope.
 - **Currently live: ~6–8 % by section count, higher by user-visible weight.** Gap analysis available as appendix.
 
 *Presenter notes: This is the "why we are building a decade-long asset" slide. The audacity of the scope is the investment thesis. Say: "What you saw at demo was Block A Assets and part of Block B Participants. There are ten more blocks behind it. Each one is a product. Each one, over ten years, is a category."*
@@ -172,6 +174,7 @@ Key points:
 - **Year 2 pipeline:** Archibald AI premium access + API usage · data licensing to institutional investors · government document facilitation.
 - **Year 3–5 pipeline:** remainder of the 21 streams — fractional ownership, auction fees, robotics contracts, satellite data, country-data licences, NFT/tokenised marketplace (VARA-dependent).
 - **Year 5 Platform target:** AED 60 M revenue; 500 active subscribers.
+- **Full-lifecycle coverage:** Platform monetization spans land + off-plan + ready property (residential + commercial) + residential/commercial leasing + short-term rentals + partnerships with banks, developers, luxury brands, cities, and governments. Base case focuses on Agency + platform subscriptions; additional segments (15 base case + 30 expansion opportunities = 45 total documented streams) activate as Platform scales.
 - **Platform entity** opens with the first agency deal closure (June – July 2026 target).
 
 *Visual note: cap-table pie chart (Zhan 80 % gold dominant, Dymo + Rudi 10 % each slivers). Fan of 21 revenue-stream cards: top two in solid gold (live), next three half-gold (Year 1), next three outlined (Year 2), remaining thirteen ghost (Year 3–5).*
@@ -205,6 +208,7 @@ Key points:
 3. **Self-sovereignty positioning differentiates from US-based platforms that cannot operate long-term in UAE under data residency.** ZAAHI's migration path from rented cloud to own data centres (Q3 2026 Equinix Dubai → Phase 2–5) is architected from day one. A Propy or Opendoor expanding here cannot plausibly replicate this.
 4. **Founder domain depth.** 17 years real estate (Zhan) + 18 years global operations (Dymo) + both RERA-licensed + full-stack engineering capability in one CEO/CTO. This combination is uniquely rare in the UAE proptech landscape.
 5. **Tier-based subscription + commission referral economics in production.** Role-specific subscriptions (Developer 50 k · Broker 20 k · Architect 10 k · Investor 5 k · Owner 3 k per year) capture high-intent participants across the full real-estate value chain. Single-tier RERA-compliant referral program adds commission-based viral growth. Revenue-aligned growth without paid-CAC-heavy marketing.
+6. **Full-lifecycle platform coverage.** Unlike competitors focused on single segments (Bayut listings / Huspy mortgages / PRYPCO tokenisation), ZAAHI architects all real estate segments (land, off-plan, ready residential/commercial, mixed-use, hospitality, rental long-term/short-term, co-living, warehouse/industrial) plus B2B2G partnerships (banks, developers, luxury brands, cities, governments) into one Master Tree. No competitor has drafted this scope.
 
 *Visual note: a shield icon with five engraved lines, each one a moat element. Subtle gold filigree. Around the shield: silhouetted logos of competitors (Bayut, Property Finder, Huspy, PRYPCO, Propy) greyed out.*
 
@@ -236,7 +240,7 @@ Key points:
 
 - **Rudi — Principal Investor, Board Member.** Partner at Equilibrium Advisory Group. 80 % Agency (controlling during payback) → 33.34 % Agency (equal partner post-Sunset); 10 % Platform for life; one board seat of three. AED 1,000,000 commitment.
 
-Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, perpetual — Zhan built the platform). Both founders have symmetric salary-and-transfer protection packages (Salary Floor paid from the entity they lead; Tag-Along + ROFR on Rudi share transfers). See `ZHAN_PROTECTIONS.md` and `DYMO_PROTECTIONS.md`.
+Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, perpetual — Zhan built the platform). Both founders have symmetric salary-and-transfer protection packages (Salary Floor paid from the entity they lead; Tag-Along + ROFR on Rudi share transfers). See the Zhan Protections and Dymo Protections addenda.
 
 *Visual note: three circles in a triangle. Each labelled with name, title, and one credential bullet. Beneath the triangle: caption "Agency: Rudi controls pre-Sunset → equal post-Sunset · Platform: Zhan 80 % throughout".*
 
@@ -246,7 +250,7 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 ## Slide 15 — Financials
 
-### **v5 realistic Year 1 base case: AED 8.3 M revenue · AED 5 M EBITDA · AED 407 k Year 1 distribution to Rudi · AED 437 M 10-year projected total return (437×).**
+### **Year 1 base case: AED 8.3 M revenue · AED 5 M EBITDA · AED 407 k Year 1 distribution to Rudi · AED 437 M 10-year projected total return (437×).**
 
 | Line (AED '000) | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 |---|---:|---:|---:|---:|---:|
@@ -258,7 +262,7 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 | **Rudi 10 % cash distribution** | **407** | **810** | **1,750** | **3,700** | **7,600** |
 | Rudi cumulative distributions | 407 | 1,217 | 2,967 | 6,667 | 14,267 |
 
-*Assumptions: 12 premium plot deals + 2 off-plan floors Y1. Full 16-section professional P&L with conservative / base / aggressive scenarios and sensitivity analysis in `P_AND_L_STATEMENT.md`; Excel template in `FINANCIAL_MODEL_V1.md`.*
+*Assumptions: 12 premium plot deals + 2 off-plan floors Y1. Full 16-section professional P&L with conservative / base / aggressive scenarios and sensitivity analysis in the Profit & Loss Statement; Excel template in the Financial Model.*
 
 - **Operating breakeven: Month 2** (first deal closes from Dymo's founder-network pipeline).
 - **Sunset Financial Trigger (AED 2 M cumulative to Rudi): mid-Year 3 base case.**
@@ -281,7 +285,7 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 | RERA company broker licence + Broker Cards | 20,000 | 2 % | RERA AED 12,900 + two Broker Cards; annual renewals thereafter |
 | Office lease + fit-out | 120,000 | 12 % | 12 months lease deposit + fit-out + furniture + signage |
 | First agent hire (3-month onboarding) | 90,000 | 9 % | AED 30 k/mo × 3 months including Emirates ID and insurance |
-| Dymo and Zhan operating salaries (first 6 months) | 260,000 | 26 % | Founder salary floor per `ZHAN_PROTECTIONS.md` §1 and `DYMO_PROTECTIONS.md` §1; covered from Rudi's tranche until agency revenue breaks even |
+| Dymo and Zhan operating salaries (first 6 months) | 260,000 | 26 % | Founder salary floor per the Zhan Protections §1 and Dymo Protections §1; covered from Rudi's tranche until agency revenue breaks even |
 | Marketing launch | 100,000 | 10 % | LinkedIn, Google Ads, Property Finder listings, Trakheesi permits, developer outreach |
 | Tech infrastructure (Year 1) | 60,000 | 6 % | Vercel / Supabase / Anthropic retention; domain / SSL / monitoring |
 | Professional indemnity + D&O + key-person insurance | 70,000 | 7 % | Mandatory for RE brokers + recommended corporate policies |
@@ -399,7 +403,7 @@ Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Age
 - **A1** — Full Master Tree diagram (85 sections, 12 blocks).
 - **A2** — Gap analysis summary table (2 full / 19 partial / 16 stubbed / 48 not started).
 - **A3** — Detailed tier-subscription + single-tier referral program mechanics.
-- **A4** — Blockchain strategy (audit-trail only, Option A per `BLOCKCHAIN_DEEP_DIVE.md`).
+- **A4** — Blockchain strategy (audit-trail only, per the Blockchain Strategy document).
 - **A5** — Self-sovereignty migration roadmap (Phase 1–5).
 - **A6** — UAE regulatory map (VARA, ADGM FSRA, DFSA, CBUAE, DLD, RERA, DDA, TAMM, Dubai Pulse).
 - **A7** — Pricing comparison to Huspy, Property Finder, PRYPCO at comparable stages.

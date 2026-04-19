@@ -7,10 +7,11 @@
 **Document:** Term Sheet
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Instrument:** Post-Money SAFE (Y Combinator 2018 standard, adapted to UAE / ADGM law)
 **Status:** DRAFT — subject to UAE legal counsel review
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -28,7 +29,7 @@ This Term Sheet sets out the indicative commercial terms for Rudi's **AED 1,000,
 - **Plain English** — what the clause means in practice.
 - **Rationale** — why the clause is structured this way.
 
-No term is binding until the Post-Money SAFE is executed. The MOU signed Sunday 2026-04-19 (`MOU_RUDI.md`) confirms the Parties' intent to execute the SAFE shortly after entity formation, subject to UAE counsel review.
+No term is binding until the Post-Money SAFE is executed. The Memorandum of Understanding signed Sunday 2026-04-19 confirms the Parties' intent to execute the SAFE shortly after entity formation, subject to UAE counsel review.
 
 ---
 
@@ -106,13 +107,13 @@ This is the core of the deal. Rudi gets controlling Agency during payback (downs
 > - 10 % to Dymo
 > - 10 % to Zhan
 >
-> Distribution is declared quarterly by the Board following the Dividend Policy cadence. Detail is set out in `PROFIT_DISTRIBUTION_MECHANICS.md`.
+> Distribution is declared quarterly by the Board following the Dividend Policy cadence. Detail is set out in the Profit Distribution Mechanics addendum.
 
 **Plain English.**
 After costs, taxes, and reserves, Agency profit is split 70 to Platform, 10 each to Rudi, Dymo, Zhan. Every quarter. This ratio is fixed in the SHA and does not change at Sunset — Platform keeps receiving 70 % forever, and Rudi keeps receiving 10 % of Agency profits forever.
 
 **Rationale.**
-Platform-financing mechanism. The fixed ratio is structural — not discretionary — and does not change on Sunset because the purpose (Platform funding) does not change. The 70 % inter-company flow is structured as a Service Fee (deductible at Agency level) to minimise UAE Corporate Tax burden (see `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8).
+Platform-financing mechanism. The fixed ratio is structural — not discretionary — and does not change on Sunset because the purpose (Platform funding) does not change. The 70 % inter-company flow is structured as a Service Fee (deductible at Agency level) to minimise UAE Corporate Tax burden (see the Profit Distribution Mechanics addendum §3 and §8).
 
 ---
 
@@ -196,7 +197,7 @@ Minimum set of matters where shareholder approval is practically required under 
 ## 11. Dividend Policy (codified in SHA)
 
 **Legal language.**
-> The Company shall adopt and maintain a Dividend Policy as set out in Schedule [X] of the Shareholders Agreement. The Dividend Policy shall provide: (a) quarterly declaration of Distributable Net Profit after corporate tax, operating expenses, a reasonable cash reserve (3 months of OpEx), and mandatory statutory reserves; (b) distribution of Distributable Net Profit in the ratio 70 / 10 / 10 / 10 — 70 % to Platform Development Fund, 10 % each to Rudi, Dymo, Zhan; (c) Board approval of each quarterly declaration; (d) the ratio is fixed for the lifetime of the Agency, pre- and post-Sunset identically. Full mechanics in `PROFIT_DISTRIBUTION_MECHANICS.md`.
+> The Company shall adopt and maintain a Dividend Policy as set out in Schedule [X] of the Shareholders Agreement. The Dividend Policy shall provide: (a) quarterly declaration of Distributable Net Profit after corporate tax, operating expenses, a reasonable cash reserve (3 months of OpEx), and mandatory statutory reserves; (b) distribution of Distributable Net Profit in the ratio 70 / 10 / 10 / 10 — 70 % to Platform Development Fund, 10 % each to Rudi, Dymo, Zhan; (c) Board approval of each quarterly declaration; (d) the ratio is fixed for the lifetime of the Agency, pre- and post-Sunset identically. Full mechanics in the Profit Distribution Mechanics addendum.
 
 **Plain English.**
 Every quarter, after costs and taxes and a 3-month operating-cash buffer, 70 % of net profit goes to the Platform, 10 % each to Rudi, Dymo, Zhan. Fixed for life.
@@ -258,7 +259,7 @@ Balances founder commitment with the Sunset horizon.
 ## 15. Founder Salary and Severance
 
 **Legal language.**
-> The Company shall, in the Shareholders Agreement, codify the founder protection packages for Zhan (per `ZHAN_PROTECTIONS.md`) and Dymo (per `DYMO_PROTECTIONS.md`), each comprising:
+> The Company shall, in the Shareholders Agreement, codify the founder protection packages for Zhan (per the Zhan Protections addendum) and Dymo (per the Dymo Protections addendum), each comprising:
 >
 > (a) a Founder / Co-founder Salary Floor of AED 30,000–50,000 per month, paid monthly from the respective entity's operating account (Zhan from Platform; Dymo from Agency), pro-rated for partial months;
 >
@@ -329,13 +330,13 @@ Enforceable, internationally recognised.
 ## 20. Tax Treatment
 
 **Legal language.**
-> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment, and UAE Transfer Pricing documentation requirements from Year 1 (related-party transactions under the 70 % inter-company Service Fee exceed the AED 3.75 M per-category threshold from Year 1 on the v5 base case). Under v5 realistic projections, Year 1 Agency revenue exceeds the AED 3 M Small Business Relief threshold, so CT 9 % applies from Year 1 with the 70 % Service Fee deduction reducing effective Agency CT to ~2 % of gross Agency profit. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in `PROFIT_DISTRIBUTION_MECHANICS.md` §3 and §8.
+> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment per Ministerial Decision 229 of 2025, and UAE Transfer Pricing documentation requirements from Year 1 (related-party transactions under the 70 % inter-company Service Fee exceed the AED 3.75 M per-category threshold from Year 1 on the base case). Under base-case projections, Year 1 Agency revenue exceeds the AED 3 M Small Business Relief threshold per Ministerial Decision 73 of 2023, so CT 9 % applies from Year 1 with the 70 % Service Fee deduction reducing effective Agency CT to ~2 % of gross Agency profit. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in the Profit Distribution Mechanics addendum §3 and §8.
 
 **Plain English.**
 Tax structuring confirmed by counsel before signing. Year 1 Agency tax treatment: CT 9 % applies (revenue exceeds AED 3 M SBR threshold). Service Fee deduction reduces effective rate to ~2 %. Transfer Pricing local file required from Year 1. Platform QFZP target 0 % on qualifying income. UAE has no personal income tax on shareholder distributions.
 
 **Rationale.**
-Target combined effective tax rate: ~2–4 % across the structure (v5 realistic, updated from v4's 0–9 % target).
+Target combined effective tax rate: ~2–4 % across the structure.
 
 ---
 
@@ -355,7 +356,7 @@ Target combined effective tax rate: ~2–4 % across the structure (v5 realistic,
 - Dubai Mainland LLC (Agency) incorporated and RERA company broker licence application in progress.
 - Corporate bank account opened.
 - Initial counsel-drafted Shareholders Agreement delivered and agreed by all Parties.
-- Applicable Shareholder Agreement schedules populated: founder-protection addenda (`ZHAN_PROTECTIONS.md`, `DYMO_PROTECTIONS.md`); Dividend Policy detailed mechanics; Sunset ledger mechanics.
+- Applicable Shareholder Agreement schedules populated: founder-protection addenda (Zhan Protections, Dymo Protections); Dividend Policy detailed mechanics; Sunset ledger mechanics.
 - UBO filings prepared for submission post-execution.
 
 ---
@@ -380,7 +381,7 @@ Except for the binding Exclusivity and Confidentiality provisions set out in the
 - **Financial Trigger.** AED 2,000,000 cumulative cash distributions to Rudi (per §4).
 - **Time Trigger.** Fifth anniversary of the Closing Date (per §4).
 - **Series A.** A priced equity financing of not less than USD 2,000,000 at the Platform, led by an institutional investor.
-- **Distributable Net Profit.** Agency quarterly net profit after costs, OpEx, tax, statutory reserve, and 3-month operating reserve, per `PROFIT_DISTRIBUTION_MECHANICS.md` §2.1.
+- **Distributable Net Profit.** Agency quarterly net profit after costs, OpEx, tax, statutory reserve, and 3-month operating reserve, per the Profit Distribution Mechanics addendum §2.1.
 - **Liquidity Event.** An IPO, change of control, sale of substantially all assets, or similar transaction.
 - **Dissolution Event.** Voluntary or involuntary winding-up of the Company.
 - **Material Event.** As defined in §12(d).

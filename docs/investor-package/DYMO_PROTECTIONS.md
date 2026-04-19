@@ -7,16 +7,17 @@
 **Document:** Founder Protection Addendum — Dmytro Tsvyk ("Dymo")
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor; the Shareholders Agreement schedule
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Subject:** **Dmytro Tsvyk** (hereinafter "Dymo"), Co-founder, Operations Principal
 **Status:** Template structure — exact contractual language subject to counsel review at formal SHA execution
+**Classification:** CONFIDENTIAL
 
 ---
 
 ## Orientation
 
-This document specifies two founder-specific protections for Dmytro Tsvyk as Co-founder and Operations Principal of ZAAHI. The structure mirrors Zhan's protection package (`ZHAN_PROTECTIONS.md`); both founders receive symmetric, operating-role-linked protections. Zhan's salary is anchored to the Platform (which he leads as CEO/CTO); Dymo's is anchored to the Agency (which he leads as Operations Principal).
+This document specifies two founder-specific protections for Dmytro Tsvyk as Co-founder and Operations Principal of ZAAHI. The structure mirrors Zhan's protection package (the Zhan Protections addendum); both founders receive symmetric, operating-role-linked protections. Zhan's salary is anchored to the Platform (which he leads as CEO/CTO); Dymo's is anchored to the Agency (which he leads as Operations Principal).
 
 The two protections are:
 
@@ -25,10 +26,10 @@ The two protections are:
 
 These protections are independent of and additional to:
 
-- Dymo's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 10 % of Platform perpetual) as set out in `MOU_RUDI.md` §2 and `TERM_SHEET.md` §3.
-- Dymo's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per `MOU_RUDI.md` §4).
-- Dymo's 2-year reverse vesting with 6-month cliff (per `MOU_RUDI.md` §6).
-- Dymo's non-compete and non-solicit commitments (per `TERM_SHEET.md`).
+- Dymo's base equity (10 % of Agency pre-Sunset, 33.33 % post-Sunset; 10 % of Platform perpetual) as set out in the Memorandum of Understanding §2 and the Term Sheet §3.
+- Dymo's upgraded Agency position at Sunset (10 % → 33.33 % automatically at the Sunset event per the Memorandum of Understanding §4).
+- Dymo's 2-year reverse vesting with 6-month cliff (per the Memorandum of Understanding §6).
+- Dymo's non-compete and non-solicit commitments (per the Term Sheet).
 
 These protections are codified in a dedicated schedule to the Shareholders Agreement, approved by all three Shareholders. They do not reduce Rudi's economic entitlements or governance rights.
 
@@ -80,7 +81,7 @@ If Rudi proposes to transfer any of his shares (in either the Agency or the Plat
 - **Tag-Along Right** — sell a proportional amount of his own shares in the same entity on the same terms; and
 - **Right of First Refusal (ROFR)** — match the third-party offer and acquire Rudi's shares instead.
 
-These rights apply in parallel with Zhan's equivalent rights (`ZHAN_PROTECTIONS.md` §2) and any Company-level ROFR.
+These rights apply in parallel with Zhan's equivalent rights (the Zhan Protections addendum §2) and any Company-level ROFR.
 
 ### 2.2 Exercise mechanics
 
@@ -97,21 +98,21 @@ Detailed exercise language is deferred to SHA drafting by UAE counsel.
 
 | Protection | Value | Section |
 |---|---|---|
-| Equity — Agency (pre-Sunset) | 10.0 % | `MOU_RUDI.md` §2 |
-| Equity — Agency (post-Sunset) | 33.33 % | `MOU_RUDI.md` §4 |
-| Equity — Platform | 10.0 % (perpetual) | `MOU_RUDI.md` §2 |
+| Equity — Agency (pre-Sunset) | 10.0 % | the Memorandum of Understanding §2 |
+| Equity — Agency (post-Sunset) | 33.33 % | the Memorandum of Understanding §4 |
+| Equity — Platform | 10.0 % (perpetual) | the Memorandum of Understanding §2 |
 | Co-founder Salary Floor | AED 30,000 – 50,000 / month from Agency | This Addendum §1 |
 | Severance without Cause | 6 months (lump sum or continuation) | This Addendum §1.4 |
 | Tag-Along on Rudi transfers | Proportional participation | This Addendum §2 |
 | ROFR on Rudi transfers | 30-day option to match | This Addendum §2 |
-| Founder vesting | 2 years / 6-month cliff | `MOU_RUDI.md` §6 |
-| Non-compete | 12-month post-departure | `TERM_SHEET.md` §17 |
+| Founder vesting | 2 years / 6-month cliff | the Memorandum of Understanding §6 |
+| Non-compete | 12-month post-departure | the Term Sheet §17 |
 
 ---
 
 ## 4. Symmetry with Zhan's protections
 
-Zhan and Dymo receive structurally identical protection packages, differentiated only by the entity anchor. See `ZHAN_PROTECTIONS.md` §4 for the side-by-side table. Both founders draw salaries from the entity they lead; neither protection displaces the other.
+Zhan and Dymo receive structurally identical protection packages, differentiated only by the entity anchor. See the Zhan Protections addendum §4 for the side-by-side table. Both founders draw salaries from the entity they lead; neither protection displaces the other.
 
 ---
 

@@ -7,9 +7,10 @@
 **Document:** Launch Plan — First 12 Months
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
 **Status:** Operational playbook — each milestone has a responsible party, budget impact, dependencies, and success criterion
+**Classification:** CONFIDENTIAL
 
 ---
 
@@ -35,7 +36,7 @@ Phase goal: **MOU signed; agency formation documents submitted; UAE counsel enga
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
-| MOU signed by all three Parties at Al Jurf | Zhan · Dymo · Rudi | — | Meeting | Three signatures on `MOU_RUDI.md` |
+| MOU signed by all three Parties at Al Jurf | Zhan · Dymo · Rudi | — | Meeting | Three signatures on the Memorandum of Understanding |
 
 ### Day 1 — Monday 2026-04-21
 
@@ -120,7 +121,7 @@ Phase goal: **First agency deal closed; ADGM HoldCo (Platform) incorporation tri
 | **ADGM HoldCo (Platform) incorporation initiated** | Zhan + Legal | 30,000 | First deal closed | ADGM application submitted |
 | ADGM HoldCo incorporation completed | Zhan + Legal | 10,000 (completion) | ADGM processing | HoldCo active |
 | **IP Assignment executed** — all ZAAHI IP transferred from Zhan personally to Platform | Legal + Zhan | 15,000 | HoldCo active | Executed IP assignment deed |
-| **First profit distribution event** — Dividend Policy activated (per `PROFIT_DISTRIBUTION_MECHANICS.md` quarterly cadence) | Board | — | First deal closed; SHA dividend policy | Board resolution; distribution processed on quarterly cadence |
+| **First profit distribution event** — Dividend Policy activated (per the Profit Distribution Mechanics quarterly cadence) | Board | — | First deal closed; SHA dividend policy | Board resolution; distribution processed on quarterly cadence |
 | Marketing: first closed deal case study published (anonymised) | Dymo | 10,000 | First deal closed | Case study live |
 
 **Cumulative spend through end of Phase 4: ~AED 517,000.**
@@ -129,12 +130,12 @@ Phase goal: **First agency deal closed; ADGM HoldCo (Platform) incorporation tri
 
 ## Phase 5 — Scaling (Months 6–12)
 
-Phase goal (v5): **12 premium plot deals + 2 off-plan floors total Year 1 (AED 7.8 M Agency gross revenue); second agent hired from Month 1; Platform tier-subscription enrolment reaches 40 subscribers; Master Tree §02 Residential + §08 Off-Plan deployed; Series A preparation initiated.**
+Phase goal: **12 premium plot deals + 2 off-plan floors total Year 1 (AED 7.8 M Agency gross revenue); second agent hired from Month 1; Platform tier-subscription enrolment reaches 40 subscribers; Master Tree §02 Residential + §08 Off-Plan deployed; Series A preparation initiated.**
 
 | Milestone | Owner | Budget (AED) | Dependencies | Success criterion |
 |---|---|---|---|---|
 | Premium plot deal velocity: 1–2 deals/month sustained | Dymo + Agents | — | Pipeline + marketing | Cumulative Y1: 12 plots + 2 off-plan floors |
-| Agent headcount scales to 2 from Month 1 (per v5 scale) | Dymo | ongoing | Pipeline | 2 agents onboarded Y1 end |
+| Agent headcount scales to 2 from Month 1 | Dymo | ongoing | Pipeline | 2 agents onboarded Y1 end |
 | Tier-based Platform subscriptions (Developer 50k · Broker 20k · Architect 10k · Investor 5k · Owner 3k) | Zhan | 40,000 (dev) | Dev time | 40 subscribers across 5 tiers |
 | Archibald AI premium access launch (Y2) | Zhan | — | Platform AI infra | Prepared for Y2 launch |
 | Single-tier RERA-compliant referral program expanded | Zhan + Legal | 15,000 (dev + compliance review) | Legal sign-off | Active referrer roster |
@@ -146,7 +147,7 @@ Phase goal (v5): **12 premium plot deals + 2 off-plan floors total Year 1 (AED 7
 
 ---
 
-## Year 1 summary — target metrics (v5 base case)
+## Year 1 summary — target metrics (base case)
 
 | Metric | End of Year 1 target |
 |---|---|
@@ -185,13 +186,13 @@ Phase goal (v5): **12 premium plot deals + 2 off-plan floors total Year 1 (AED 7
   **Mitigation:** Pipeline built in Phase 3 with 20+ prospects; founder network activation; competitive pricing; Archibald AI lead qualification.
 
 - **Risk:** Founder burnout during Year 1.
-  **Mitigation:** Salary floors per `ZHAN_PROTECTIONS.md` §1 and `DYMO_PROTECTIONS.md` §1; first agent hire during Phase 2; second agent in Phase 5 if volume justifies.
+  **Mitigation:** Salary floors per the Zhan Protections addendum §1 and Dymo Protections addendum §1; first agent hire during Phase 2; second agent in Phase 5 if volume justifies.
 
 - **Risk:** Platform development starves while agency takes priority.
   **Mitigation:** 70 % of agency net profit flows to Platform Development Fund per SHA Dividend Policy; Zhan retains protected time for platform work; quarterly platform-progress reviews.
 
 - **Risk:** Agency revenue compounds faster or slower than base case.
-  **Mitigation:** v5 Conservative Year 1 (8 plots + 1 floor = AED 5.2 M) is defensible in stress; Aggressive case (20 plots + 5 floors + 1 large plot = AED 22 M) is fully investable without structural change. Distribution ratio and equity cap are fixed regardless of velocity. Sunset Financial Trigger fires between mid-Y2 (Aggressive) and mid-Y4 (Conservative).
+  **Mitigation:** Conservative Year 1 (8 plots + 1 floor = AED 5.2 M) is defensible in stress; Aggressive case (20 plots + 5 floors + 1 large plot = AED 22 M) is fully investable without structural change. Distribution ratio and equity cap are fixed regardless of velocity. Sunset Financial Trigger fires between mid-Y2 (Aggressive) and mid-Y4 (Conservative).
 
 - **Risk:** Large premium plot (AED 500M–2B range) deal closures delayed.
   **Mitigation:** Large plots are modelled in base case from Y3 only — no reliance in Y1–Y2. Earlier closes accelerate Rudi distribution curve; delays do not impact Y1–Y2 trajectory.

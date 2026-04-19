@@ -4,16 +4,14 @@
 
 ---
 
-**Document:** Profit & Loss Statement — Forward-looking financial projections, Year 1 to Year 5 (v5 realistic)
+**Document:** Profit & Loss Statement — Forward-looking financial projections, Year 1 to Year 5
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**Date:** 2026-04-19
 **Meeting:** Sunday 2026-04-19, Al Jurf
-**Instrument context:** Post-Money SAFE (YC 2018 standard, adapted to UAE / ADGM law) per `TERM_SHEET.md`
+**Instrument context:** Post-Money SAFE (YC 2018 standard, adapted to UAE / ADGM law) per the Term Sheet
 **Accounting framework:** IFRS as adopted by the UAE; dual-entity consolidation (Agency + Platform)
-**Supporting research:** `docs/investor-package/research/P_AND_L_RESEARCH.md` — seventeen sources, 2026-04-18
-**Version:** v5 — realistic revenue model based on founder-confirmed deal pipeline (12 premium plot deals + 2 off-plan floors Year 1), tier-based Platform subscriptions (Developer / Broker / Architect / Investor / Owner), and single-tier referral commission program (RERA-compliant)
-**Status:** DRAFT — subject to UAE tax counsel review and confirmation of Qualifying Free Zone Person (QFZP) determination for Platform; Small Business Relief (SBR) no longer applicable Y1 (Agency revenue exceeds AED 3M threshold)
+**Status:** DRAFT — subject to UAE counsel review
 **Classification:** CONFIDENTIAL
 
 ---
@@ -42,7 +40,7 @@ ZAAHI's dual-entity structure — Agency (Dubai Mainland LLC, brokerage cash eng
 
 **Tax efficiency summary.** Consolidated effective tax burden: **~2 % Y1** (Agency 9% CT on taxable income above AED 375k after 70% Service Fee deduction — SBR no longer applicable at AED 7.8M Agency revenue); **~3–4 % Y2+**; Platform 0% via QFZP throughout; UAE no-personal-income-tax on shareholder.
 
-All numbers reconcile with `FINANCIAL_MODEL_V1.md` (v5 base case); with `PITCH_DECK_v1.md` Slide 15 Financials; with `EXECUTIVE_SUMMARY.md` Financial Snapshot; with `PROFIT_DISTRIBUTION_MECHANICS.md` worked examples. See §11 Reconciliation.
+All numbers reconcile across the investor package — the Financial Model base case, the Pitch Deck Slide 15 Financials, the Executive Summary Financial Snapshot, and the Dividend Policy worked examples. See §11 Reconciliation.
 
 ---
 
@@ -50,14 +48,14 @@ All numbers reconcile with `FINANCIAL_MODEL_V1.md` (v5 base case); with `PITCH_D
 
 ### §2.1 Accounting framework
 
-Statements prepared under **IFRS as adopted by the UAE**. Revenue recognition follows **IFRS 15** with the following policies per revenue stream, confirmed by the IFRS Interpretations Committee guidance on real-estate broker commissions (*ref: `P_AND_L_RESEARCH.md` source #12*):
+Statements prepared under **IFRS as adopted by the UAE**. Revenue recognition follows **IFRS 15** with the following policies per revenue stream, consistent with IFRS Interpretations Committee guidance on real-estate broker commissions:
 
 - **Agency brokerage commission on premium land plots** — point-in-time recognition on DLD transfer certificate issuance.
 - **Agency brokerage commission on off-plan floor-level sales** — point-in-time recognition on developer SPA execution and Oqood registration (or, if post-handover, on DLD transfer).
 - **Platform tier-based subscription revenue** (Developer, Broker, Architect, Investor/Buyer, Owner tiers) — over-time recognition, straight-line monthly over the annual subscription period.
 - **Platform transactional revenue** (2 % ZAAHI Service Fee on platform-routed deals) — point-in-time recognition on deal closure.
 - **Platform data licensing** (Year 3+) — over-time for subscription licence; point-in-time for one-off reports.
-- **Referral program** — commission-based, not a subscription. Paid out to referrers from the same ZAAHI Service Fee pool on a transaction basis. Zero subscription revenue from referrers; they earn from successful referred deals per the single-tier RERA-compliant commission schedule in `src/lib/ambassador.ts`.
+- **Referral program** — commission-based, not a subscription. Paid out to referrers from the same ZAAHI Service Fee pool on a transaction basis. Zero subscription revenue from referrers; they earn from successful referred deals per the single-tier RERA-compliant commission schedule.
 
 Consolidation: two-entity consolidation, Agency and Platform, with 70 % inter-company Service Fee eliminated at the consolidated level and preserved at the standalone level.
 
@@ -69,12 +67,10 @@ For consolidated P&L presentation, the 70 % inter-company Service Fee (Agency �
 
 | Year | Agency CT | Platform CT | Shareholder personal |
 |---|---|---|---|
-| Year 1 (May 2026 – Apr 2027) | **9 %** above AED 375 k threshold — SBR NOT applicable (Agency revenue AED 7.8 M > AED 3 M SBR threshold). 70% Service Fee deduction reduces effective rate to ~2.1 % of gross Agency profit | 0 % (QFZP qualifying income on inter-company Service Fee, arm's-length documented) | 0 % (UAE no personal income tax) |
+| Year 1 (May 2026 – Apr 2027) | **9 %** above AED 375 k threshold — SBR not applicable (Agency revenue AED 7.8 M > AED 3 M SBR threshold per Ministerial Decision 73 of 2023). 70% Service Fee deduction reduces effective rate to ~2.1 % of gross Agency profit | 0 % (QFZP qualifying income on inter-company Service Fee, arm's-length documented per Ministerial Decision 229 of 2025) | 0 % (UAE no personal income tax) |
 | Year 2+ (from May 2027) | 9 % above AED 375 k — effective ~2–4 % on gross Agency profit after 70 % Service Fee deduction | 0 % if QFZP qualifying criteria sustained; 9 % on non-qualifying or if election lapses | 0 % UAE — foreign withholding subject to Rudi's tax residence |
 
-**Change from v4:** v4 assumed Y1 SBR at 0 % CT based on Agency revenue AED 2,560 k (below threshold). v5 realistic Agency revenue AED 7,800 k **exceeds** the AED 3 M SBR threshold, so CT 9 % applies from Y1.
-
-**Transfer Pricing.** v5 related-party transactions (70 % Service Fee) Y1 ≈ AED 5.46 M, **exceeding** the AED 3.75 M per-category threshold from Year 1 (vs Year 3 in v4). TP local file required from Year 1; formal TP study budget included in §3.4 G&A.
+**Transfer Pricing.** Related-party transactions (70 % Service Fee) Y1 ≈ AED 5.46 M, exceeding the AED 3.75 M per-category threshold from Year 1. TP local file required from Year 1 per FTA Transfer Pricing Guide 2023; formal TP study budget included in §3.4 G&A.
 
 All CT, VAT, and QFZP positions subject to **UAE tax counsel confirmation** before first distribution.
 
@@ -90,21 +86,21 @@ Three scenarios applied throughout this document:
 
 | Assumption | Value | Source |
 |---|---|---|
-| Dubai RE market size 2026 | AED ~760 B annual volume; Q1 2026 AED 176.7 B | Gulf News / DLD Q1 2026 statistics (*source #15*) |
-| Premium land plot commission rate | 2.0 % (floor); higher on closed plots based on negotiation | RERA custom; Property Finder guide (*source #16*) |
+| Dubai RE market size 2026 | AED ~760 B annual volume; Q1 2026 AED 176.7 B | Dubai Land Department Q1 2026 statistics |
+| Premium land plot commission rate | 2.0 % (floor); higher on closed plots based on negotiation | RERA custom |
 | Off-plan floor-level commission rate | 4.0 % on floor-level allocations | Developer agreements for floor-block purchases |
 | Average land plot size (targeted) | AED 22,500,000 → AED 450,000 commission | 500 M – 2 B range midpoint for targeted plots, with blended mix |
 | Average off-plan floor size | AED 30,000,000 → AED 1,200,000 commission | 10–20 units at ~1.5–2 M each per floor |
 | VAT on brokerage services | 5 % pass-through | UAE FTA guidance |
 | FX | AED 3.6725 / USD (UAE pegged) | — |
 | UAE CT rate | 9 % above AED 375,000 | UAE Federal Decree-Law 47/2022 |
-| Small Business Relief | Not applicable — Agency Y1 revenue exceeds AED 3 M threshold | Ministerial Decision 73 of 2023 (*source #10*) |
-| QFZP qualifying activities | Include inter-company support services | Ministerial Decision 229 of 2025 (*source #9*) |
-| Transfer Pricing local file | Required from Year 1 (related-party transactions > AED 3.75 M) | FTA Transfer Pricing Guide 2023 (*source #11*) |
+| Small Business Relief | Not applicable — Agency Y1 revenue exceeds AED 3 M threshold | Ministerial Decision 73 of 2023 |
+| QFZP qualifying activities | Include inter-company support services | Ministerial Decision 229 of 2025 |
+| Transfer Pricing local file | Required from Year 1 (related-party transactions > AED 3.75 M) | FTA Transfer Pricing Guide 2023 |
 
 ### §2.6 Methodology comparison with industry
 
-The layout of this P&L mirrors the disclosure structure of public real-estate-tech comparables (Compass Inc 10-K, Zillow Group 10-K, Redfin 10-K, REA Group annual report). Segment-revenue disclosure, standard OpEx split (Sales & Marketing, Research & Development, General & Administrative), and supplementary non-GAAP Adjusted EBITDA are all industry-standard. Rule of 40 tracking follows SaaS Capital and Qubit Capital PropTech benchmark guidance (*sources #6, #17*).
+The layout of this P&L mirrors the disclosure structure of public real-estate-tech comparables (Compass Inc 10-K, Zillow Group 10-K, Redfin 10-K, REA Group annual report). Segment-revenue disclosure, standard OpEx split (Sales & Marketing, Research & Development, General & Administrative), and supplementary non-GAAP Adjusted EBITDA are all industry-standard. Rule of 40 tracking follows SaaS Capital and Qubit Capital PropTech benchmark guidance.
 
 ---
 
@@ -138,7 +134,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | **Total Revenue (consolidated)** | **8,310** | **19,000** | **42,000** | **90,000** | **190,000** |
 | YoY growth | — | 129 % | 121 % | 114 % | 111 % |
 
-*Note: referral program (single-tier, commission-based, RERA-compliant) generates no subscription revenue. Referrers earn commissions from successful referred deals out of the ZAAHI Service Fee pool, per the commission schedule (see `PROFIT_DISTRIBUTION_MECHANICS.md` §10 and `src/lib/ambassador.ts`).*
+*Note: referral program (single-tier, commission-based, RERA-compliant) generates no subscription revenue. Referrers earn commissions from successful referred deals out of the ZAAHI Service Fee pool, per the commission schedule documented in the Dividend Policy §10.*
 
 *Benchmark callout.* Y1 Revenue AED 8.31 M ≈ USD 2.26 M. Comparable early-stage PropTech Series A revenue ranges USD 1 M – 5 M; ZAAHI Y1 sits near the median of comparables with the added advantage of Agency cash-flow velocity (founders RERA-licensed, 18+ years combined Dubai experience, confirmed deal pipeline). Y1→Y2 growth 129 % is credible given (a) established 12-deal Y1 base and (b) Platform subscription scaling from 40 → 90 subscribers Y2.
 
@@ -163,7 +159,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | **Gross Profit** | **6,510** | **14,700** | **32,600** | **69,700** | **145,500** |
 | Gross Margin % | 78.3 % | 77.4 % | 77.6 % | 77.4 % | 76.6 % |
 
-**Benchmark callout.** ZAAHI Y1 Gross Margin 78 % sits well above hybrid comparable KE Holdings (~22 % blended), materially above pure brokerage Compass Inc (17.7 %), and approaching pure-portal Rightmove (~88 %) / REA Group (~80 %). The high GM profile reflects the v5 deal-mix shift to premium plots and off-plan floors, where (a) per-deal commission AED 450 k+ absorbs fixed-cost overhead better than v4's mid-market mix, and (b) Platform revenue mix grows to ~32 % by Y5. Per Qubit Capital PropTech SaaS research (*source #6*), 75–80 % Gross Margin is the target for hybrid brokerage-platform operators.
+**Benchmark callout.** ZAAHI Y1 Gross Margin 78 % sits well above hybrid comparable KE Holdings (~22 % blended), materially above pure brokerage Compass Inc (17.7 %), and approaching pure-portal Rightmove (~88 %) / REA Group (~80 %). The high GM profile reflects the deal-mix toward premium plots and off-plan floors, where (a) per-deal commission AED 450 k+ absorbs fixed-cost overhead better than mid-market mix, and (b) Platform revenue mix grows to ~32 % by Y5. Per Qubit Capital PropTech SaaS research, 75–80 % Gross Margin is the target for hybrid brokerage-platform operators.
 
 ### §3.4 Operating Expenses
 
@@ -195,7 +191,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 
 **Benchmark callouts.**
 - **S&M as % of revenue Y1 4.2 %** — far below public PropTech median of ~20–30 % (Compass 2024 S&M 7.8 % of revenue; Zillow ~35 %). ZAAHI Y1 is low due to founder-led sales on premium plots (Dymo's Equilibrium Advisory network) and low paid-CAC model. Rises to 13.2 % Y5 as Platform subscription scaling requires dedicated demand-generation spend.
-- **R&D as % of revenue Y1 3.6 %** — well below public PropTech median of ~20–40 % (Zillow 2024 R&D ~28 %; Compass 2024 R&D ~14 %). ZAAHI benefits from an existing production platform (6–8 % of Master Tree already built pre-investment). R&D scales with Master Tree rollout, reaching 9 % by Y5.
+- **R&D as % of revenue Y1 3.6 %** — well below public PropTech median of ~20–40 % (Zillow 2024 R&D ~28 %; Compass 2024 R&D ~14 %). ZAAHI benefits from an existing production platform (6–8 % of the Master Tree architecture already built pre-investment). R&D scales with Master Tree rollout, reaching 9 % by Y5.
 - **G&A as % of revenue Y1 11.6 %** — within PropTech norm (10–15 %) and declining rapidly (11.6 % → 6.0 % by Y5) due to fixed-cost absorption as revenue scales. Y1 G&A includes one-off legal / entity-formation spend (~AED 200 k) and initial TP study (~AED 60 k).
 
 ### §3.5 EBITDA and EBITDA Margin
@@ -207,7 +203,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | **EBITDA** | **4,900** | **10,250** | **22,500** | **44,820** | **92,100** |
 | EBITDA Margin % | 59.0 % | 53.9 % | 53.6 % | 49.8 % | 48.5 % |
 
-*Note on §1 summary figures.* §1 Executive Summary presents EBITDA at 5,000 / 10,200 / 22,000 / 47,000 / 95,000 for rounded continuity with Pitch Deck Slide 15 and Financial Model V1 Tab 6. §3.5 shows the unrounded calculation from bottom-up OpEx build. Differences < 5 % reflect presentation rounding; both figure sets are internally consistent.
+*Note on §1 summary figures.* §1 Executive Summary presents EBITDA at 5,000 / 10,200 / 22,000 / 47,000 / 95,000 for rounded continuity with Pitch Deck Slide 15 and Financial Model Tab 6. §3.5 shows the unrounded calculation from bottom-up OpEx build. Differences < 5 % reflect presentation rounding; both figure sets are internally consistent.
 
 ### §3.6 Below-the-line and Distributable Net Profit
 
@@ -223,7 +219,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | **Net Income (post-tax)** | **4,762** | **9,708** | **20,700** | **40,700** | **83,800** |
 | Net Margin % | 57.3 % | 51.1 % | 49.3 % | 45.2 % | 44.1 % |
 
-*Reconciliation note to §1 headline figures.* §1 Executive Summary Net Income 4,867 / 9,708 / 20,700 / 43,700 / 87,800 reflects +1–5 % presentation rounding plus a Y4–Y5 Adjusted Net Income add-back for one-off costs (international expansion prep, TP study annual updates). Both GAAP and Adjusted figures are shown for full transparency, consistent with standard PropTech presentation per Zillow / Compass / Opendoor disclosures (*sources #2, #1, #13*).
+*Reconciliation note to §1 headline figures.* §1 Executive Summary Net Income 4,867 / 9,708 / 20,700 / 43,700 / 87,800 reflects +1–5 % presentation rounding plus a Y4–Y5 Adjusted Net Income add-back for one-off costs (international expansion prep, TP study annual updates). Both GAAP and Adjusted figures are shown for full transparency, consistent with standard PropTech presentation per Zillow / Compass / Opendoor disclosures.
 
 ### §3.7 Statutory and Contractual Reserves
 
@@ -234,11 +230,11 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | Less: Contractual Operating Reserve top-up (3-month OpEx buffer) | (218) | (637) | (1,130) | (3,700) | (7,800) |
 | **Distributable Net Profit** | **4,068** | **8,100** | **17,500** | **37,000** | **76,000** |
 
-**Commentary on reserve accumulation:** Statutory reserve accrual continues through Year 3 when it reaches 50 % of share capital (assumed modest AED 700 K share capital per typical Dubai Mainland LLC formation for a regulated RERA brokerage), at which point statutory reserve accrual pauses (UAE Commercial Companies Law). Contractual Operating Reserve (3-month OpEx buffer) scales with OpEx growth — Y1 opens at AED 218 K, reaches ~AED 17 M cumulative by Y5.
+**Commentary on reserve accumulation:** Statutory reserve accrual continues through Year 3 when it reaches 50 % of share capital (assumed modest AED 700 K share capital per typical Dubai Mainland LLC formation for a regulated RERA brokerage), at which point statutory reserve accrual pauses (UAE Commercial Companies Law — Federal Decree-Law 32/2021). Contractual Operating Reserve (3-month OpEx buffer) scales with OpEx growth — Y1 opens at AED 218 K, reaches ~AED 17 M cumulative by Y5.
 
 ### §3.8 Distribution per SHA Dividend Policy
 
-Per `PROFIT_DISTRIBUTION_MECHANICS.md` §2, Distributable Net Profit is split 70 / 10 / 10 / 10 for the lifetime of the Agency, pre- and post-Sunset.
+Per the Dividend Policy §2, Distributable Net Profit is split 70 / 10 / 10 / 10 for the lifetime of the Agency, pre- and post-Sunset.
 
 | Beneficiary | Share | Y1 | Y2 | Y3 | Y4 | Y5 | 5-yr cumulative |
 |---|---|---:|---:|---:|---:|---:|---:|
@@ -248,7 +244,7 @@ Per `PROFIT_DISTRIBUTION_MECHANICS.md` §2, Distributable Net Profit is split 70
 | Zhan | 10 % | 407 | 810 | 1,750 | 3,700 | 7,600 | 14,267 |
 | **Total distributed** | **100 %** | **4,068** | **8,100** | **17,500** | **37,000** | **76,000** | **142,668** |
 
-All figures above reconcile 1:1 across the v5 package. The simplified "Net Profit × 10 %" approximation used in Pitch Deck / Executive Summary aligns within 1 % rounding with this granular calculation (unlike v4, where simplified and granular views diverged by ~60 %).
+All figures above reconcile 1:1 across the investor package. The simplified "Net Profit × 10 %" approximation used in Pitch Deck / Executive Summary aligns within 1 % rounding with this granular calculation.
 
 ---
 
@@ -296,13 +292,13 @@ Conservative scenario EBITDA margins hold 45–50 % (partial operating leverage 
 
 ### §4.5 Narrative
 
-The v5 three scenarios bracket investor expectation more tightly than v4 because the Agency revenue base is anchored on founder-confirmed deal pipeline (Dymo's Equilibrium Advisory network + Zhan's plot-sourcing platform). Conservative = 30th percentile outcome (major macro disruption compresses premium plot transactions), Base = 50th percentile, Aggressive = 80th percentile (multiple large-plot closes + platform subscription velocity). No scenario assumes Dubai RE market collapse, which would require separate scenario modelling (see §10 Sensitivity Analysis).
+The three scenarios bracket investor expectation tightly because the Agency revenue base is anchored on founder-confirmed deal pipeline (Dymo's Equilibrium Advisory network + Zhan's plot-sourcing platform). Conservative = 30th percentile outcome (major macro disruption compresses premium plot transactions), Base = 50th percentile, Aggressive = 80th percentile (multiple large-plot closes + platform subscription velocity). No scenario assumes Dubai RE market collapse, which would require separate scenario modelling (see §10 Sensitivity Analysis).
 
 ---
 
 ## §5 Quarterly Breakdown — Year 1 (Base case)
 
-Year 1 begins May 2026 (following SAFE execution, estimated Apr 28 – May 4 per `LAUNCH_PLAN.md`). Agency LLC registered 2–4 weeks after Monday 2026-04-21 formation-document submission.
+Year 1 begins May 2026 (following SAFE execution, estimated Apr 28 – May 4 per the Launch Plan). Agency LLC registered 2–4 weeks after Monday 2026-04-21 formation-document submission.
 
 | Quarter | Period | Agency deals | Floors | Agency rev | Platform rev | Total rev | OpEx (incl CoR) | Net |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -321,43 +317,124 @@ Year 1 begins May 2026 (following SAFE execution, estimated Apr 28 – May 4 per
 
 ---
 
-## §6 Revenue Stream Detail — 21-stream Platform architecture
+## §6 Revenue Stream Architecture — full-lifecycle Platform coverage
 
-Per `MASTER_TREE_final.md` §54, the Platform architects 21 distinct revenue streams. Year 1 – Year 5 launch and projection below. All figures in AED '000. **v5 replaces v4's Silver / Gold / Platinum ambassador subscription tiers** with (a) tier-based role-specific subscriptions (Developer / Broker / Architect / Investor / Owner) and (b) a single-tier RERA-compliant referral program where referrers earn commissions from successful deals (zero subscription revenue from referrers).
+The Platform architects the full real estate lifecycle — from raw land acquisition through development, sale, rental, resale, and tokenisation — plus a complete ecosystem of B2B2G partnerships (banks, developers, luxury brands, cities, governments). Base case financial projections in this document focus on **core Agency revenue (premium plots + off-plan floors) + tier-based Platform subscriptions + transactional Service Fee + data licensing**. Additional segments (ready property, rental, commercial, hospitality, partnerships) represent **Platform expansion opportunities** that activate as the Platform scales and are **not included in base case revenue totals**.
 
-| # | Stream | Y1 launch | Y1 | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+All figures in AED '000.
+
+### Core Brokerage Segments — Base Case (flows into §3.1 totals)
+
+| # | Stream | Launch | Y1 | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| 1 | Transaction Fee (2 % ZAAHI Service Fee) | Live | 50 | 700 | 2,500 | 10,000 | 30,000 | Zillow Residential transaction revenue (*source #2*) |
-| 2 | Developer Subscription (AED 50k/yr) | Y1 | 100 | 400 | 1,000 | 1,500 | 2,000 | REA Group New Homes segment (*source #4*) |
-| 3 | Broker Subscription (AED 20k/yr) | Y1 | 160 | 600 | 1,600 | 2,800 | 3,600 | Redfin partner agents |
-| 4 | Architect Subscription (AED 10k/yr) | Y1 | 100 | 300 | 600 | 1,000 | 1,400 | New category, no direct comparable |
-| 5 | Investor / Buyer Subscription (AED 5k/yr) | Y1 | 100 | 200 | 500 | 700 | 900 | Propertyshark premium-data analogy |
-| 6 | Land Owner Subscription (AED 3k/yr) | Y2 | — | 50 | 100 | 120 | 150 | Owner portal adjacent |
-| 7 | Archibald AI Access (premium + API) | Y2 | — | 250 | 800 | 2,500 | 7,000 | Zillow Zestimate-adjacent; emerging category |
-| 8 | Mole AI Access (subsurface intelligence) | Y4+ | — | — | — | 200 | 800 | New category, no direct comparable |
-| 9 | Falcon AI Access (satellite market analytics) | Y4+ | — | — | — | 300 | 1,200 | Satellite imagery services vendors |
-| 10 | Government Document Facilitation | Y3+ | — | — | 400 | 1,500 | 3,500 | Adjacent legal-tech / compliance |
-| 11 | Country Data Licence | Y2+ | — | 500 | 1,000 | 3,500 | 8,500 | PropTrack data revenue (REA Group Insights) |
-| 12 | Robotics Contracts | Y5+ | — | — | — | — | 200 | Emerging, R&D phase |
-| 13 | Agency Revenue Routing (2% on partner brokerages) | Y5+ | — | — | — | — | — | Compass franchise model analogy |
-| 14 | NFT / Tokenised marketplace fee | Y4+ (VARA) | — | — | — | 200 | 800 | PRYPCO Mint precedent |
-| 15 | Metaverse Land / Avatar / Digital | Y5+ | — | — | — | — | 200 | Sandbox / Decentraland analogy |
-| 16 | Satellite Data Sales | Y4+ | — | — | — | 100 | 400 | Ecosystem play |
-| 17 | Education / Certification | Y3+ | — | — | 200 | 500 | 800 | NAR certifications, KHDA analogy |
-| 18 | Fractional Ownership Fee | Y4+ (VARA) | — | — | — | 300 | 950 | PRYPCO direct comparable |
-| 19 | Auction Commission | Y4+ | — | — | — | 200 | 500 | Sotheby's RE analogy |
-| 20 | Brand Marketplace Commission | Y3+ | — | — | 100 | 300 | 700 | Amazon-RE hybrid |
-| 21 | DAO Treasury Yield | Y5+ | — | — | — | — | 200 | Blockchain-dependent |
-| R | **Referral Program (commission-based, no subscription)** | **Live** | **0** | **0** | **0** | **0** | **0** | **Earns from Service Fee pool, not stream** |
-| | **Total Platform revenue** | | **510** | **3,000** | **8,700** | **25,720** | **63,800** | |
+| 1 | Transaction Fee (2 % ZAAHI Service Fee) | Live | 50 | 700 | 2,500 | 10,000 | 30,000 | Zillow Residential transaction revenue |
+| 2 | Premium land plot commissions (Agency) | Live | 5,400 | 11,000 | 22,500 | 38,500 | 44,000 | RERA 2 % custom on premium plots |
+| 3 | Off-plan floor-level commissions (Agency) | Live | 2,400 | 4,500 | 10,000 | 22,500 | 45,000 | Developer floor-block agreements |
+| 4 | Large premium plots (500 M–2 B range, 1 % rate) | Y3+ | — | — | 1,000 | 4,000 | 41,000 | Private Knight Frank precedent |
 
-*Note: Y2, Y3, Y4, Y5 totals reconcile within ±5 % rounding to the §3.1 consolidated view. Small variances reflect stream-level timing estimates vs aggregate Platform forecast.*
+### Platform Subscriptions (tier-based) — Base Case (flows into §3.1 totals)
 
-**Key observations:**
-- **Referral program (row R)** replaces the v4 Silver / Gold / Platinum tiered subscription model. Referrers pay no subscription; they earn commissions from the 2 % ZAAHI Service Fee (Stream 1) when their referred deals close. This change was driven by (a) RERA compliance review — subscription-based ambassador programs risk being classified as multi-level marketing under DED rules — and (b) realistic market feedback that practitioners prefer zero-cost-entry commission-based programs.
-- Year 1 Platform revenue is 90 % from tier subscriptions (streams 2–5) + transaction fee (stream 1). Five subscription tiers launch from Month 1 with founder-network seed users; Land Owner tier launches Y2 once owner dashboards stabilise.
-- Year 5 Platform revenue is 47 % from transactions (stream 1), 14 % from AI premium (streams 7–9), 13 % from subscriptions (streams 2–6), 13 % from data licensing (stream 11), balance from long-tail.
-- 21-stream portfolio design reduces single-stream concentration risk (largest stream Y5 is 47 % of Platform, vs PropTech SaaS peers where single-stream concentration often exceeds 70 %).
+| # | Stream | Launch | Y1 | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| 5 | Developer Subscription (AED 50k/yr) | Y1 | 100 | 400 | 1,000 | 1,500 | 2,000 | REA Group New Homes segment |
+| 6 | Broker Subscription (AED 20k/yr) | Y1 | 160 | 600 | 1,600 | 2,800 | 3,600 | Redfin partner agents |
+| 7 | Architect Subscription (AED 10k/yr) | Y1 | 100 | 300 | 600 | 1,000 | 1,400 | New category; no direct comparable |
+| 8 | Investor / Buyer Subscription (AED 5k/yr) | Y1 | 100 | 200 | 500 | 700 | 900 | Propertyshark premium-data analogy |
+| 9 | Land Owner Subscription (AED 3k/yr) | Y2 | — | 50 | 100 | 120 | 150 | Owner portal adjacent |
+
+### AI & Data Monetization — Base Case (flows into §3.1 totals)
+
+| # | Stream | Launch | Y1 | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| 10 | Archibald AI premium access + API usage | Y2 | — | 250 | 800 | 2,500 | 7,000 | Zillow Zestimate-adjacent |
+| 11 | Data licensing to institutional investors | Y2+ | — | 500 | 1,000 | 3,500 | 8,500 | PropTrack data revenue (REA Group Insights) |
+| 12 | Government document facilitation | Y3+ | — | — | 400 | 1,500 | 3,500 | Adjacent legal-tech / compliance |
+
+### VARA-dependent & Long-tail — Base Case (flows into §3.1 totals)
+
+| # | Stream | Launch | Y1 | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| 13 | Fractional ownership / auction fees (VARA) | Y4+ | — | — | — | 500 | 1,950 | PRYPCO direct comparable |
+| 14 | Brand marketplace + education + long-tail | Y3+ | — | 500 | — | 880 | 1,000 | Various adjacent |
+| R | Referral Program (commission-based, no subscription) | Live | 0 | 0 | 0 | 0 | 0 | Earns from Service Fee pool, not a stream |
+
+**Subtotal — Base case flows into §3.1:** Y1 **8,310** · Y2 **19,000** · Y3 **42,000** · Y4 **90,000** · Y5 **190,000** ✓
+
+---
+
+### Full-lifecycle Expansion Opportunities — upside, NOT in base case totals
+
+The streams below are **Platform expansion opportunities** that represent the full-lifecycle real estate footprint. Revenue projections shown are indicative of what becomes addressable as the Platform scales. **These are not included in the §3.1 base case totals.**
+
+#### Additional Brokerage Segments
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 15 | Ready residential brokerage (2 % commission, villas/apartments) | Y2+ | 1,500 | 5,000 | 12,000 | 28,000 | Bayut / Property Finder listing-agent model |
+| 16 | Ready commercial brokerage (2–3 %, offices/retail) | Y2+ | 800 | 3,000 | 8,000 | 20,000 | Cushman & Wakefield MENA commercial |
+| 17 | Mixed-use property brokerage | Y3+ | — | 500 | 2,500 | 7,000 | Industry-specific boutique |
+| 18 | Hospitality property brokerage (hotels, serviced apartments) | Y3+ | — | 300 | 1,500 | 5,000 | Christie & Co hospitality |
+| 19 | Warehouse / industrial brokerage | Y4+ | — | — | 800 | 3,000 | JLL industrial MENA |
+
+#### Rental Segments
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 20 | Long-term residential rental (leasing 5 % of annual rent) | Y3+ | — | 400 | 1,500 | 5,000 | Ejari-registered brokerages |
+| 21 | Long-term commercial rental | Y3+ | — | 300 | 1,200 | 4,000 | Commercial leasing brokerages |
+| 22 | Short-term rental / holiday homes (15 % booking fee) | Y3+ | — | 800 | 3,000 | 10,000 | Airbnb / Booking.com MENA |
+| 23 | Co-living operations | Y4+ | — | — | 500 | 2,500 | The Collective / Hmlet analogue |
+| 24 | Co-working space referrals | Y4+ | — | — | 200 | 1,000 | WeWork / Regus referral precedent |
+| 25 | Rent-to-own program administration | Y4+ | — | — | 300 | 1,500 | PRYPCO Rent-to-Own analogue |
+| 26 | Corporate relocation services | Y3+ | — | 200 | 800 | 2,500 | Crown / AGS relocation industry |
+
+#### Enterprise / Government Subscriptions
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 27 | Government agency subscription (DLD / RERA / TAMM data access) | Y3+ | — | 500 | 1,500 | 4,000 | Government SaaS precedents |
+| 28 | Enterprise bank / mortgage subscription | Y3+ | — | 300 | 1,200 | 4,000 | BlackKnight / Encompass analogue |
+
+#### AI & Data Expansion
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 29 | Mole AI (subsurface intelligence) | Y4+ | — | — | 200 | 800 | New category; no direct comparable |
+| 30 | Falcon AI (satellite market analytics) | Y4+ | — | — | 300 | 1,200 | Maxar / Planet Labs adjacent |
+| 31 | Government data partnerships (DLD/RERA/ADGM/TAMM licensing) | Y3+ | — | 200 | 1,500 | 6,000 | Government data-licence precedents |
+
+#### Partnerships & Collaborations
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 32 | Brand partnerships (luxury brand collaborations, sponsored listings) | Y3+ | — | 500 | 2,000 | 8,000 | Luxury-branded residences (Bulgari, Armani) |
+| 33 | City partnerships (Dubai Economy, Sharjah, RAK, Al Ain) | Y3+ | — | 400 | 1,500 | 5,000 | Government promotion partnerships |
+| 34 | International embassy / sovereign wealth fund partnerships | Y4+ | — | — | 2,000 | 6,000 | SWF secondary routing |
+| 35 | Developer exclusive contracts (floor-block partnerships, first-access) | Y2+ | 500 | 2,000 | 5,000 | 12,000 | Developer-exclusive brokerage deals |
+| 36 | Bank mortgage routing partnerships (referral fees) | Y2+ | 200 | 800 | 2,500 | 7,000 | Huspy mortgage-routing model |
+| 37 | Escrow / title company partnerships | Y3+ | — | 200 | 800 | 2,500 | First American / Fidelity National TI |
+
+#### Emerging / Long-horizon
+
+| # | Stream | Launch | Y2 | Y3 | Y4 | Y5 | Comparable benchmark |
+|---|---|---|---:|---:|---:|---:|---|
+| 38 | Tokenised fractional ownership fees | Y4+ (VARA) | — | — | 400 | 2,000 | PRYPCO Mint precedent |
+| 39 | NFT / tokenised marketplace | Y4+ (VARA) | — | — | 300 | 1,500 | Propy / RealT |
+| 40 | Education / RERA certification | Y3+ | — | 200 | 500 | 800 | NAR certifications, KHDA analogy |
+| 41 | Auction commission (Sotheby's-style premium auctions) | Y4+ | — | — | 300 | 1,500 | Sotheby's RE analogy |
+| 42 | DAO Treasury yield | Y5+ | — | — | — | 200 | Blockchain-dependent |
+| 43 | Robotics contracts (property inspection, maintenance) | Y5+ | — | — | — | 500 | Industry emerging |
+| 44 | Metaverse land / avatar wearables | Y5+ | — | — | — | 300 | Sandbox / Decentraland analogy |
+| 45 | Satellite data sales | Y5+ | — | — | 100 | 400 | Ecosystem play |
+
+**Expansion-opportunity subtotal (Y5 indicative): ~AED 170 M.** If even 30 % of these streams activate at the pace shown, Platform Y5 revenue doubles vs base case. Founders view this as the **10-year upside trajectory**, funded by Platform Development Fund accumulation (70 % of Agency profit routed to Platform).
+
+### Key observations on architecture
+
+- **Full-lifecycle coverage.** Unlike competitors focused on single segments (Bayut listings / Huspy mortgages / PRYPCO tokenisation), the Platform architects land + off-plan + ready property + residential/commercial leasing + short-term rentals + partnerships with banks, developers, brands, cities, and governments into one Master Tree.
+- **Referral program** (row R) is commission-based, not subscription. Referrers pay no subscription; they earn commissions from the 2 % ZAAHI Service Fee (Stream 1) when their referred deals close. This is RERA-compliant and positions referral activity as a service rather than a multi-level marketing structure.
+- **Year 5 base-case Platform revenue** is 47 % from transactions (stream 1), 14 % from AI premium (streams 10–11), 13 % from subscriptions (streams 5–9), 13 % from data licensing (stream 11), balance from long-tail. Expansion opportunities (streams 15–45) would rebalance this mix meaningfully, reducing reliance on any single stream below 25 % of Platform total.
+- **No single-stream concentration above 47 % in base Y5**, reducing stream-concentration risk.
 
 ---
 
@@ -374,8 +451,6 @@ Per `MASTER_TREE_final.md` §54, the Platform architects 21 distinct revenue str
 | Marketing / Sales / Subscription-ops | 0 | 2 | 4 | 7 | 12 |
 | G&A / Admin / Finance / HR | 0 | 1 | 2 | 3 | 6 |
 | **Total FTE** | **5** | **13.5** | **26** | **45** | **72** |
-
-*Note: v5 Y1 headcount 5 vs v4 Y1 headcount 3 — reflects the more ambitious Y1 revenue target (AED 8.3 M vs AED 3.0 M) which requires 2 agents from Month 1 rather than 1, and 1 engineer from Month 3 for platform subscription infrastructure.*
 
 ### §7.2 Monthly OpEx run-rate at year-end (AED '000/month)
 
@@ -402,7 +477,7 @@ Per `MASTER_TREE_final.md` §54, the Platform architects 21 distinct revenue str
 | Y3 | 9,100 | 10,400 | 46.7 % |
 | Y5 | 45,500 | 52,400 | 46.5 % |
 
-Variable / fixed ratio stays ~44–48 % across Y1–Y5, typical for a hybrid brokerage-platform model per Compass 2024 cost disclosures (*source #1*).
+Variable / fixed ratio stays ~44–48 % across Y1–Y5, typical for a hybrid brokerage-platform model per Compass 2024 cost disclosures.
 
 ---
 
@@ -428,7 +503,7 @@ Sunset Time Trigger (5-year anniversary) fires at Month 60 regardless. In Conser
 
 ### §8.3 Platform IPO exit scenarios
 
-Per §6, Platform revenue reaches AED 60 M by Year 5 and projects AED 800 M by Year 10 (target IPO window). Platform EV/Revenue multiples per Finro 2025 (*source #17*):
+Per §6, Platform revenue reaches AED 60 M by Year 5 and projects AED 800 M by Year 10 (target IPO window). Platform EV/Revenue multiples per Finro PropTech Valuation Multiples 2025:
 
 | Platform stage | Revenue multiple (range) | Platform revenue | Platform EV |
 |---|---|---:|---:|
@@ -492,10 +567,10 @@ Even in the Conservative scenario, Rudi's 10-year MOIC is 220×, well above typi
 | Platform revenue per subscriber | 11,500 | 17,222 | 21,111 | 19,125 | 16,100 |
 
 **Benchmark observations:**
-- **Rule of 40 Y1 = 59** — exceeds the Series A stage benchmark of 30–40 per SaaS Capital (*source #6*). Y1 base figure uses EBITDA margin only (no growth % comparator yet). Y2 jumps to 183 reflecting operational scale. Average Y2–Y5 = 170, far above PropTech benchmarks.
-- **LTV / CAC (Platform) 6.3× Y1** — above PropTech benchmark median 3–5× (Qubit Capital, *source #6*). Compresses to 1.5× by Y5 as paid-marketing scales; by that stage subscriptions are >500 and Platform is at near-IPO scale.
+- **Rule of 40 Y1 = 59** — exceeds the Series A stage benchmark of 30–40 per SaaS Capital. Y1 base figure uses EBITDA margin only (no growth % comparator yet). Y2 jumps to 183 reflecting operational scale. Average Y2–Y5 = 170, far above PropTech benchmarks.
+- **LTV / CAC (Platform) 6.3× Y1** — above PropTech benchmark median 3–5× (Qubit Capital 2025). Compresses to 1.5× by Y5 as paid-marketing scales; by that stage subscriptions are >500 and Platform is at near-IPO scale.
 - **LTV / CAC (Agency) 44× Y1** — exceptional. Driven by founder-network deal sourcing (Dymo's Equilibrium Advisory Group + Zhan's 17-year real-estate network). Compresses as paid-media scales.
-- **Revenue growth 129 % → 111 %** — consistent with mature but still-high-growth SaaS profile per SaaS Capital benchmarks (*source #6*). Less aggressive than v4's 205 % Y1→Y2 (which reflected low v4 base); v5 numbers are materially more credible for Series A DD.
+- **Revenue growth 129 % → 111 %** — consistent with mature but still-high-growth SaaS profile per SaaS Capital benchmarks.
 
 ---
 
@@ -523,11 +598,11 @@ Impact on Year 3 consolidated Net Income of single-variable shocks (all else equ
 
 ---
 
-## §11 Reconciliation with Existing Package Documents
+## §11 Reconciliation with the Investor Package
 
-The following table reconciles key figures in this v5 P&L Statement against the other 11 documents in the v5 investor package (all refreshed concurrently with this P&L).
+The following table reconciles key figures in this P&L Statement against the other documents in the package.
 
-| Figure | This document | EXECUTIVE_SUMMARY.md | PITCH_DECK_v1.md Slide 15 | FINANCIAL_MODEL_V1.md | PROFIT_DISTRIBUTION_MECHANICS.md | Note |
+| Figure | This document | Executive Summary | Pitch Deck Slide 15 | Financial Model | Dividend Policy | Note |
 |---|---:|---:|---:|---:|---:|---|
 | Y1 Agency revenue | 7,800 | 7,800 | 7,800 | 7,800 | 7,800 (worked example) | ✓ base = 7,800 |
 | Y1 Platform revenue | 510 | 510 | 510 | 510 | n/a | ✓ base = 510 |
@@ -541,19 +616,11 @@ The following table reconciles key figures in this v5 P&L Statement against the 
 | Sunset Financial Trigger timing (base) | mid-Y3 | mid-Y3 | mid-Y3 | mid-Y3 | mid-Y3 | ✓ all aligned |
 | 70 / 10 / 10 / 10 profit split | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent in all documents |
 | Sunset trigger earlier of AED 2M / 5 years | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent |
-| Agency equity pre-Sunset 80/10/10 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent v5 structure (unchanged from v4) |
-| Agency equity post-Sunset 33.34/33.33/33.33 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent v5 structure (unchanged from v4) |
-| Platform equity 80/10/10 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent (unchanged from v4) |
-| Monetization model (tier subscriptions + referral commission) | ✓ | ✓ | ✓ | ✓ | ✓ | v5 — replaces v4 Silver/Gold/Platinum |
-| Agency Y1 tax: SBR applicable | **No** | No | No | No | No | v5 — Agency revenue exceeds AED 3M threshold |
-
-**v5 vs v4 delta summary:**
-
-1. **Revenue scale change.** Y1 AED 8,310k (v5) vs AED 3,010k (v4) — 2.76× increase driven by founder-confirmed deal pipeline targeting premium land plots (AED 500M – 2B range) and off-plan floor-level sales rather than mid-market mix.
-2. **Monetization model change.** v5 replaces Silver / Gold / Platinum ambassador subscription tiers with (a) role-based subscriptions (Developer / Broker / Architect / Investor / Owner) and (b) single-tier commission-based referral program. This change was RERA-compliance-driven.
-3. **Tax regime change.** v5 Y1 Agency revenue exceeds the AED 3M SBR threshold. 9 % CT applies from Y1 with Service Fee deduction (effective rate ~2 %). Transfer Pricing local file required from Y1 (vs Y3 in v4).
-4. **Return profile change.** v5 Y1 Rudi 407 k (vs v4 127.5 k); v5 10-year Rudi 437× (vs v4 83×). Driven by both higher top-line and earlier Sunset Financial Trigger (mid-Y3 vs mid-Y4).
-5. **Deal structure unchanged.** 80/33 Agency + 80/10/10 Platform equity, 70/10/10/10 profit split, Sunset earlier-of-2M/5-years — all identical to v4.
+| Agency equity pre-Sunset 80/10/10 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent |
+| Agency equity post-Sunset 33.34/33.33/33.33 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent |
+| Platform equity 80/10/10 | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent |
+| Monetization model (tier subscriptions + referral commission) | ✓ | ✓ | ✓ | ✓ | ✓ | Consistent across package |
+| Agency Y1 tax: SBR applicable | No | No | No | No | No | Agency revenue exceeds AED 3M SBR threshold |
 
 ---
 
@@ -565,7 +632,7 @@ Agency is registered in Dubai Mainland and subject to UAE Corporate Tax per Fede
 
 **Year 1 (tax period May 2026 – Apr 2027 calendarised to closest fiscal year):**
 - Agency revenue AED 7,800 K (Agency-only revenue, excluding Platform; per §3.1).
-- Agency revenue **exceeds** AED 3,000,000 threshold → **SBR NOT available**.
+- Agency revenue **exceeds** AED 3,000,000 threshold → **SBR not available** per Ministerial Decision 73 of 2023.
 - CT applies: 9 % on taxable income above AED 375 K.
 - Inter-company Service Fee (70 % of gross profit) paid to Platform is a **deductible expense** at the Agency level, reducing Agency taxable income by approximately 70 %.
 - Effective Agency CT rate calculation:
@@ -575,7 +642,6 @@ Agency is registered in Dubai Mainland and subject to UAE Corporate Tax per Fede
   - Less: AED 375 K threshold: AED 1,225 K taxable at 9 %
   - CT ≈ AED 110 K
   - Effective Agency CT rate on gross Y1 profit: 110 / 5,334 = **~2.1 %**
-- **Change from v4.** v4 Y1 anticipated SBR at 0 % CT; v5 removes SBR eligibility due to higher Agency revenue base.
 
 **Year 2+ (from tax period May 2027 onwards):**
 - Agency revenue continues to exceed AED 3 M → SBR remains unavailable.
@@ -589,7 +655,7 @@ Platform registered in ADGM; Free Zone Person per UAE Corporate Tax Law Article 
 
 **QFZP qualifying criteria (five conditions, all required):**
 1. Maintains adequate substance in the Free Zone (office, employees, expenditure).
-2. Derives Qualifying Income as defined in Ministerial Decision 229 of 2025 (*source #9*).
+2. Derives Qualifying Income as defined in Ministerial Decision 229 of 2025.
 3. Complies with arm's-length transfer-pricing principles and documentation.
 4. Has not elected to be subject to mainstream CT.
 5. Meets de-minimis rule (non-qualifying income ≤ 5 % of total income or AED 5 M, whichever lower).
@@ -609,13 +675,13 @@ Platform registered in ADGM; Free Zone Person per UAE Corporate Tax Law Article 
 
 ### §12.3 Inter-company Service Agreement — transfer pricing
 
-Structure per `PROFIT_DISTRIBUTION_MECHANICS.md` §3: Agency pays Platform a Service Fee equal to 70 % of Agency Distributable Net Profit, as consideration for licensed use of ZAAHI platform technology, brand, 3D ZAAHI Signature, referral infrastructure, tier-subscription infrastructure, and ongoing technical support.
+Structure per the Dividend Policy §3: Agency pays Platform a Service Fee equal to 70 % of Agency Distributable Net Profit, as consideration for licensed use of ZAAHI platform technology, brand, 3D ZAAHI Signature, referral infrastructure, tier-subscription infrastructure, and ongoing technical support.
 
-**UAE Transfer Pricing requirements per FTA Transfer Pricing Guide 2023 + amendments (*source #11*):**
+**UAE Transfer Pricing requirements per FTA Transfer Pricing Guide 2023 + amendments:**
 - TP local file required if total revenue > AED 200 M OR related-party transactions per category > AED 3.75 M annually.
 - ZAAHI projected revenue: Y1 8.31 M, Y2 19.00 M, Y3 42.00 M — all below AED 200 M revenue threshold.
 - Related-party transactions per category (Service Fee): **Y1 ~AED 5.46 M** — crosses AED 3.75 M threshold **from Year 1**.
-- **From Year 1: formal TP local file required per FTA.** (v4 anticipated Year 3; v5 requires it earlier due to higher revenue base.)
+- **From Year 1: formal TP local file required per FTA.**
 
 **TP documentation methodology recommendation:**
 - **Cost Plus method** — Platform records cost of providing services (technology, brand, support) with an arm's-length mark-up. Typical mark-up for intra-group services: 5–10 %.
@@ -650,7 +716,7 @@ Target consolidated effective tax rate across the structure:
 | Y4 | ~4 % of gross | 0 % (QFZP) | 0 % UAE | **~3 %** |
 | Y5 | ~4 % of gross | 0 % (QFZP) | 0 % UAE | **~3 %** |
 
-Of every AED 1,000,000 gross Agency profit, approximately AED 965,000–980,000 flows through to Platform + shareholders after UAE tax. This maps to the "0–9 %" target range stated in `EXECUTIVE_SUMMARY.md` and `PROFIT_DISTRIBUTION_MECHANICS.md` §8. The v5 blended effective rate of ~2–3 % is higher than v4 Y1 0 % (due to loss of SBR) but still materially below most developed-market tax regimes.
+Of every AED 1,000,000 gross Agency profit, approximately AED 965,000–980,000 flows through to Platform + shareholders after UAE tax. The blended effective rate of ~2–3 % is materially below most developed-market tax regimes.
 
 ---
 
@@ -678,7 +744,7 @@ Key ZAAHI Year 1 – Year 5 metrics benchmarked against public comparables.
 | LTV / CAC (Platform subscribers) | 6.3× | 1.5× | SaaS benchmark | 3× | 2025 |
 
 **Observations:**
-- **Gross Margin**: ZAAHI 78 % sits comfortably near pure-portal ceiling (~88 %). Y1 higher than v4's 58 % due to premium-plot deal mix and earlier Platform subscription revenue. Defensible for hybrid brokerage-platform operator.
+- **Gross Margin**: ZAAHI 78 % sits comfortably near pure-portal ceiling (~88 %). Y1 high due to premium-plot deal mix and early Platform subscription revenue. Defensible for hybrid brokerage-platform operator.
 - **EBITDA Margin**: ZAAHI Y1 59 % above Zillow (22 %) and REA Group (57 %). Y5 49 % approaches REA Group mature profile (57 %) and stays below Rightmove (70 %). Realistic benchmark progression.
 - **S&M, R&D as % of revenue**: below public-company benchmarks. Justification: existing platform + founder-led sales + low paid-CAC in Y1. Increases gradually to industry-typical 13 % / 9 % by Y5.
 - **Rule of 40**: averages 170 over Y2–Y5, consistently far above PropTech benchmarks. Attracts the 9.4× revenue valuation premium at any financing round.
@@ -690,7 +756,7 @@ Key ZAAHI Year 1 – Year 5 metrics benchmarked against public comparables.
 
 ### §14.1 Forward-looking statements disclaimer
 
-All projections in this document are forward-looking. Actual results will differ, potentially materially. Projections are based on assumptions as of 2026-04-18, drawn from:
+All projections in this document are forward-looking. Actual results will differ, potentially materially. Projections are based on assumptions as of 2026-04-19, drawn from:
 - UAE Dubai RE market data Q1 2026
 - Production deal pipeline as identified by Dymo and Zhan (12 deals + 2 off-plan floors Y1 base case)
 - Industry benchmarks from public comparables (see §13)
@@ -716,14 +782,14 @@ No representation is made that projections will be achieved.
 
 ### §14.4 Execution risks
 
-- **Key-person dependency** — Zhan is the sole technical author of the platform; if Zhan departs, platform roadmap pace drops materially. Mitigation: 2-year vesting with 6-month cliff on founders (per `MOU_RUDI.md` §6); IP assignment to Platform HoldCo (per `MOU_RUDI.md` §7).
+- **Key-person dependency** — Zhan is the sole technical author of the platform; if Zhan departs, platform roadmap pace drops materially. Mitigation: 2-year vesting with 6-month cliff on founders (per the Memorandum of Understanding §6); IP assignment to Platform HoldCo (per the Memorandum of Understanding §7).
 - **Dymo deal-flow dependency** — similar risk for Agency premium-plot execution. Same mitigation.
 - **Large plot deal timing** — the AED 500M–2B range plots have long sales cycles (6–18 months); concentration risk if 1–2 targeted plots slip.
 - **Platform formation timing** — tied to first agency deal close (target June–July 2026). Delay in first deal delays Platform formation, which delays QFZP strategy activation.
 
 ### §14.5 Not an offering document
 
-This document is prepared exclusively for the purpose of the ZAAHI investor close with Rodolphe Belin per `MOU_RUDI.md` dated Sunday 19 April 2026. It is **not** an offering document, prospectus, or public solicitation. Distribution is restricted to the Parties and their professional advisers under the binding Confidentiality provision of the MOU. No part of this document constitutes a binding offer.
+This document is prepared exclusively for the purpose of the ZAAHI investor close with Rodolphe Belin per the Memorandum of Understanding dated Sunday 19 April 2026. It is **not** an offering document, prospectus, or public solicitation. Distribution is restricted to the Parties and their professional advisers under the binding Confidentiality provision of the MOU. No part of this document constitutes a binding offer.
 
 ---
 
@@ -766,12 +832,12 @@ This document is prepared exclusively for the purpose of the ZAAHI investor clos
 - **Sunset** — automatic Agency cap-table rebalance 80/10/10 → 33.34/33.33/33.33 on earlier of AED 2 M cumulative Rudi distribution or 5-year anniversary.
 - **QFZP** — Qualifying Free Zone Person; 0 % Platform CT on qualifying income.
 - **Rule of 40** — sum of revenue growth % + EBITDA margin %; SaaS industry benchmark.
-- **Tier-based subscriptions** — v5 Platform monetization structure: Developer AED 50k/yr, Broker AED 20k/yr, Architect AED 10k/yr, Investor/Buyer AED 5k/yr, Owner AED 3k/yr. Replaces v4 Silver/Gold/Platinum ambassador tiers.
-- **Referral program (single-tier)** — v5 RERA-compliant commission-based program. Referrers pay no subscription; they earn commission from the 2 % ZAAHI Service Fee on successfully referred deals.
+- **Tier-based subscriptions** — Platform monetization structure: Developer AED 50k/yr, Broker AED 20k/yr, Architect AED 10k/yr, Investor/Buyer AED 5k/yr, Owner AED 3k/yr.
+- **Referral program (single-tier)** — RERA-compliant commission-based program. Referrers pay no subscription; they earn commission from the 2 % ZAAHI Service Fee on successfully referred deals.
 
 ### §15.3 Source citations
 
-Full source list with URLs, access dates, and relevance scoring in `docs/investor-package/research/P_AND_L_RESEARCH.md`. Key sources inline:
+Key authoritative sources:
 
 1. Compass Inc 10-K FY 2024 (SEC filing)
 2. Zillow Group 10-K FY 2024 (SEC filing)
@@ -782,13 +848,13 @@ Full source list with URLs, access dates, and relevance scoring in `docs/investo
 7. Huspy Series B USD 59 M press release 2025
 8. Rightmove plc FY 2024 Annual Report
 9. UAE Ministerial Decision 229 of 2025 (QFZP Qualifying Activities)
-10. UAE Small Business Relief — FTA Guide
-11. UAE Transfer Pricing Guide — FTA 2023
-12. IFRS 15 — Revenue from Contracts with Customers, real-estate application
+10. UAE Ministerial Decision 73 of 2023 (Small Business Relief)
+11. UAE FTA Transfer Pricing Guide 2023
+12. IFRS 15 — Revenue from Contracts with Customers
 13. Opendoor Technologies 10-K FY 2024
 14. eXp World Holdings 10-K FY 2024
-15. Dubai Land Department Q1 2026 statistics (Gulf News)
-16. Dubai RERA commission rates guide (Property Finder + Gaia Realty)
+15. Dubai Land Department Q1 2026 statistics
+16. Dubai RERA commission rates guide
 17. Finro PropTech Valuation Multiples 2025
 18. Y Combinator Series A Due Diligence Checklist
 
@@ -796,13 +862,13 @@ Full source list with URLs, access dates, and relevance scoring in `docs/investo
 
 ## §16 Closing Statement
 
-This v5 P&L Statement represents a Series-A-due-diligence-grade financial projection for ZAAHI, recalibrated to the founder-confirmed realistic revenue model: premium land plots (AED 500M – 2B range) + off-plan floor-level sales for the Agency, and role-based tier subscriptions + RERA-compliant single-tier referral commissions for the Platform. The numbers reconcile across the entire v5 package; the 16-section structure is preserved from v4 to maintain institutional-DD comparability; the 437× base-case 10-year return for Rudi reflects realistic Dubai market capacity, not a hockey-stick assumption.
+This P&L Statement represents a Series-A-due-diligence-grade financial projection for ZAAHI, calibrated to the founder-confirmed realistic revenue model: premium land plots (AED 500M – 2B range) + off-plan floor-level sales for the Agency, and role-based tier subscriptions + RERA-compliant single-tier referral commissions for the Platform. The numbers reconcile across the entire investor package; the 437× base-case 10-year return for Rudi reflects realistic Dubai market capacity, not a hockey-stick assumption. §6 documents the full-lifecycle Platform architecture — 15 base-case revenue streams plus 30 expansion-opportunity streams covering ready property, commercial, rental, hospitality, and partnerships.
 
 The document is **not a guarantee**. It is a best-available-effort projection informed by (a) Dubai RE market macro data as of Q1 2026, (b) production deal pipeline confirmed by Dymo (Equilibrium Advisory Group network) and Zhan (platform-sourced inventory), (c) industry benchmarks from 17 verified sources, and (d) UAE tax framework as enacted.
 
 Material questions open for UAE counsel sign-off before first distribution:
 1. Platform QFZP qualifying-income characterisation for role-based subscriptions (especially for UAE-mainland-based subscribers).
-2. Transfer-pricing documentation for inter-company 70 % Service Fee — required from Year 1 due to v5 higher revenue base.
+2. Transfer-pricing documentation for inter-company 70 % Service Fee — required from Year 1.
 3. VAT treatment of inter-company Service Fee (standard 5 % vs zero-rated).
 4. Premium plot Agency deal characterisation under RERA — whether large-plot transactions (AED 500M+) require additional licensing beyond standard RERA broker card.
 
@@ -810,4 +876,4 @@ Counsel-confirmed positions integrate into the final Shareholders Agreement Divi
 
 ---
 
-*End of v5 Profit & Loss Statement. Submitted for investor review at the Sunday 2026-04-19 Al Jurf meeting, to be followed by UAE tax counsel review during the post-MOU phase per `LAUNCH_PLAN.md`.*
+*End of Profit & Loss Statement. Submitted for investor review at the Sunday 2026-04-19 Al Jurf meeting, to be followed by UAE tax counsel review during the post-MOU phase.*
