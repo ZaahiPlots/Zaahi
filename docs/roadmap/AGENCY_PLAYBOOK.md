@@ -34,10 +34,15 @@ Five sourcing channels, ranked by expected Y1 contribution:
 
 **Thesis:** Dymo has 7+ years in Dubai real estate and co-runs Equilibrium Advisory Group. His direct network and warm-intro network is the Agency's primary lead flow for Year 1.
 
+**Monday Week 1 target:** **5 warm-network reach-outs. Do not wait for legal finalisation — deals do not wait.** Dubai HNWI deal cycle is 60–90 days from first contact to DLD submission; every day of outreach delay shifts first-deal close by one day. Zhan files DED; Dymo calls clients. Tracks run in parallel from Day 1.
+
+**Non-compete scope:** Equilibrium Advisory Group partnership terms verified before cold-soliciting any prior client. BSA Ahmad Bin Hezeem & Associates (hereafter BSA) reviews non-compete scope Week 1 and delivers a solicitable-vs-channel-through memo by end of Week 2. Direct Equilibrium-network references are always routed through the memo's scope boundary — no prior-client cold outreach before scope confirmed.
+
 **Activation:**
-- Week 1 — reactivate 30+ warmest relationships via WhatsApp / LinkedIn.
-- Messaging tone: warm, personal, not salesy. Example: "Happy to share that I've co-founded ZAAHI Real Estate — building something different for premium Dubai. If you or anyone in your network is evaluating a plot between AED 15–100 M, I'd love to run a 3D walk-through. zaahi.io."
+- Week 1 Day 1 (Monday) — **5 reach-outs Day 1** (parallel with Zhan's DED filing); reactivate 30+ warmest relationships via WhatsApp / LinkedIn across Week 1.
+- Messaging tone: warm, personal, not salesy. Example: "Happy to share that I've co-founded ZAAHI Real Estate — building something different for premium Dubai. If you or anyone in your network is evaluating a plot between AED 15 M – AED 100 M, I'd love to run a 3D walk-through. zaahi.io."
 - Cadence: 10 reach-outs / week. Expected response rate 30 % → 3 live conversations / week.
+- End of Week 2 target: 5–7 live conversations including 2–3 direct Equilibrium-network references *outside non-compete scope*.
 - Conversion path: warm conversation → qualification (budget / timeline / language) → 3D platform demo → viewing → offer.
 
 **Template:** see WEEKLY_CADENCE.md Appendix A.
@@ -352,7 +357,7 @@ Phase 1: Dymo manually routes within 30 days of close.
 
 ### 4.4 Tax handling
 
-- **Corporate Tax (Federal Decree-Law 47/2022):** 9 % on Agency profit above AED 375 k / year. No SBR relief applicable Y1 (revenue > AED 3 M SBR threshold).
+- **Corporate Tax registration (Federal Decree-Law 47/2022):** CT registration is mandatory for every mainland LLC regardless of AED 375 k profit threshold. EmaraTax portal. TRN obtained. 9 % tax applies above AED 375 k profit; registration is separate from liability. Skipping registration triggers AED 10 k administrative penalty per Cabinet Decision 75/2023. No SBR relief applicable Y1 (revenue > AED 3 M SBR threshold).
 - **VAT (Federal Decree-Law 8/2017):** 5 % on commissions. Agency registers for VAT once turnover crosses AED 375 k threshold (likely early Month 2).
 - **Transfer Pricing:** 70 % Service Fee Agency → Platform requires arm's-length documentation (TP study, AED 120 k, Q3 2026). See MASTER_TREE_SAFETY_PROPOSALS §5.4.
 
@@ -365,6 +370,20 @@ Phase 1: Dymo manually routes within 30 days of close.
 ---
 
 ## §5 COMPLIANCE
+
+### 5.0 UBO register + ownership-change notification
+
+**UBO register at DED.** Per Cabinet Decisions 58/2020 + 109/2023 (as amended by Federal Decree-Law 10/2025 on AML), every UAE mainland LLC must register its Ultimate Beneficial Owner with the licensing authority (DED for mainland) and maintain three internal registers: UBO, shareholders/partners, and nominee directors (if applicable). ZAAHI Agency registers Natural persons owning ≥ 25 % or with voting / appointment control:
+- **Rudi 80 %** (pre-Sunset beneficial ownership)
+- **Dymo 10 %**
+- **Zhan 10 %**
+
+**Change notification — 15-day window.** Any ownership change (e.g., Sunset auto-rebalance from 80/10/10 to 33.34/33.33/33.33, new shareholder admitted, Rudi-counsel-held share transferred) triggers a 15-day re-filing obligation with DED. BSA Ahmad Bin Hezeem & Associates maintains the internal UBO ledger and files changes within the window.
+
+**Filing cadence:**
+- First filing: within 60 days of incorporation (Week 3, per IMPLEMENTATION_CHECKLIST Phase 1 Week 3).
+- Ongoing: within 15 days of any change in beneficial ownership or control.
+- Annual: refresh + attestation (no standalone annual filing required, but register must remain current).
 
 ### 5.1 RERA requirements per transaction
 
@@ -412,6 +431,7 @@ Per Federal Law 10/2025 (AML):
 - All financial: Agency accounting system (Xero / QuickBooks / Zoho Books).
 - All compliance: dedicated `compliance/` folder in OneDrive with quarterly snapshots.
 - Retention: 7 years for financial, 5 years for transactional, per UAE CT + AML rules.
+- **Economic Substance Regulations (ESR) discontinued.** ESR obligations no longer apply for financial years ending after 31 Dec 2022 (Ministry of Finance announcement, Cabinet Decision 98/2024). No ESR filings required for ZAAHI. FTA retains 6-year audit window for prior periods (irrelevant for ZAAHI Y1, since ZAAHI Agency incorporates FY 2026).
 
 ---
 

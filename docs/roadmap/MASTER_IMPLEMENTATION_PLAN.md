@@ -70,11 +70,13 @@ Items 1–4 must ship in 4 weeks. Items 5–8 depend on 1–4 and run across mon
 
 The north star of Phase 1 is the **first closed commission.** Everything that does not move a deal toward close is deprioritised. The playbook is conventional Dubai brokerage — register entity, get licences, open bank account, land first client — executed faster than convention because the platform at `zaahi.io` is already live and the team has Rudi's demo-committed capital waiting for entity completion.
 
-### 2.1 Week 1 — April 21–27, 2026
+### 2.1 Week 1 — April 20 – 26, 2026
 
-**Theme:** Legal foundation. Two parallel tracks — corporate formation (Zhan + counsel) and relationship outreach (Dymo). No software work this week; everything is administrative.
+**Theme:** Legal foundation + **immediate Dymo outreach**. Three parallel tracks from Day 1 — corporate formation (Zhan + counsel), relationship outreach (Dymo), content activation (videographer). No software work this week; everything is administrative, relational, or content-generating.
 
-#### Day 1 — Monday April 21
+**Calendar note:** Current date Monday 2026-04-20 (one day after Al Jurf MOU Sunday 2026-04-19). April 21, 2026 is a Tuesday per Gregorian calendar — investor package v7 label "Monday April 21" is a calendar inconsistency flagged in `docs/audit/INVESTOR_PACKAGE_ISSUES.md` for v7.1 refresh. Research / roadmap documents use corrected dates (Day 1 = Monday Apr 20).
+
+#### Day 1 — Monday April 20
 
 **DED Agency formation submission.**
 - Responsible: Zhan (Founder/CEO/CTO) with UAE corporate formation agent.
@@ -90,9 +92,15 @@ The north star of Phase 1 is the **first closed commission.** Everything that do
 - Expected timeline: initial approval 3 working days; full trade licence issuance 2–3 weeks from today assuming no requisites. Fast-track via formation agent (e.g., Shuraa, Creation Business Consultants, VirtueZone) can compress to 7–10 working days for AED 5–8 k additional fee.
 - Parallel work Day 1: Zhan registers UAE Pass as founder (required for all subsequent gov portals).
 
-**Videographer retainer activated.** Per LAUNCH_PLAN, Dymo's videographer is the first operational hire at AED 10 k / month. Activate the retainer this week — first deliverables due Week 2.
+**Dymo — immediate outreach activation (PARALLEL to Zhan's DED filing).** Dubai HNWI deal cycle is 60–90 days; first-deal target June 20 (Week 9). Every day Dymo delays outreach is a day of close-date slip. Monday targets:
+- 5 warm-network reach-outs via WhatsApp / LinkedIn (tone per `AGENCY_PLAYBOOK.md` §1.1).
+- 2 of those 5 intended to produce a scheduled call within 7 days.
+- Pipeline spreadsheet (`agency-pipeline.xlsx`, OneDrive) created end-of-day with 5 initial records.
+- BSA engagement letter Week 1 includes Equilibrium non-compete scope review so Dymo knows which prior clients are directly solicitable (constraint acknowledged; not a blocker for most of the network).
 
-#### Day 2 — Tuesday April 22
+**Videographer retainer activated.** Per LAUNCH_PLAN, Dymo's videographer is the first operational hire at AED 10 k / month. Activate the retainer Monday — first deliverables due Week 2.
+
+#### Day 2 — Tuesday April 21
 
 **UAE legal counsel engagement.**
 - Responsible: Zhan + Dymo jointly (two calls, same day).
@@ -111,41 +119,41 @@ The north star of Phase 1 is the **first closed commission.** Everything that do
 - Email Anthropic enterprise sales (`enterprise-sales@anthropic.com`) requesting zero-retention Data Processing Addendum. Expected turnaround: 3–7 business days. Once signed, update API config to emit zero-retention header on all Archibald prompts. This closes the #1 P0 sovereignty item flagged in MASTER_TREE_SOVEREIGNTY_PROPOSALS §2.1.
 - Verify Supabase region is `eu-central-1` Frankfurt (per `CLAUDE.md`); confirm backup retention at highest tier available (daily, 30 days). This is interim; sovereignty plan moves to UAE colocation Phase 2 in Q4 2026.
 
-#### Day 3 — Wednesday April 23
+#### Day 3 — Wednesday April 22
 
 **Legal engagement letter returned signed. BSA starts MoA + SAFE drafting.**
 - Responsible: BSA lawyer (primary), Zhan reviews drafts nightly.
 - BSA drafts turnaround: MoA ready for review Day 5 (Friday); SAFE ready Day 7–10. Parallel: shareholders' agreement with Sunset mechanic (80/10/10 → 33.34/33.33/33.33 auto-rebalance on earlier of AED 2 M cumulative Rudi distributions or 5 years).
 
-**Dymo activates first three client conversations.**
-- Targets:
+**Dymo — Day-3 priority conversations accelerate (continues from Day 1 outreach).**
+- First platform-demo calls scheduled from Monday reach-outs.
+- Target warm lead profiles:
     1. Jumeirah Bay Island HNWI (Russian-speaking, known to Dymo's Equilibrium network) — AED 45 M plot interest.
     2. Al Barari HNWI family office — AED 28 M plot, family considering fractional.
     3. Developer partnership — mid-tier Dubai developer exploring off-plan floor-level sale via Agency.
 - Dymo's tool today is WhatsApp + the live `zaahi.io` demo. CRM integration comes in Phase 2.
-- Each conversation produces a next-action date logged in a simple shared spreadsheet (`agency-pipeline.xlsx`, OneDrive) — the CRM-before-CRM.
+- Each conversation produces a next-action date logged in `agency-pipeline.xlsx`.
 
-#### Day 4 — Thursday April 24
+#### Day 4 — Thursday April 23
 
 **Trademark filing starts.**
 - Responsible: Zhan + IP counsel (either BSA IP team or a specialist such as Rouse / AJA / Dennemeyer).
 - Filings:
-    1. UAE Ministry of Economy — "ZAAHI" and "Zaahi" in Class 9 (software / SaaS), Class 36 (real estate, insurance, financial), Class 41 (education), Class 42 (technology services / SaaS hosting). Estimated fees AED 60–120 k across all classes including counsel.
-    2. WIPO Madrid Protocol extension from UAE base — adds US, UK, EU, KSA, India at one submission. AED 40–80 k.
+    1. UAE Ministry of Economy — "ZAAHI" and "Zaahi" in Class 9 (software / SaaS), Class 36 (real estate, insurance, financial), Class 41 (education), Class 42 (technology services / SaaS hosting). Estimated fees AED 80–100 k across all 4 classes including counsel (actual quotes to be obtained from 3 IP firms — Rouse, AJA, Dennemeyer — Week 1 Day 4 for final budget).
+    2. WIPO Madrid Protocol extension from UAE base — adds US, UK, EU, KSA, India at one submission. AED 50–60 k.
 - Timeline: UAE MoE 2–4 month examination; WIPO 12–18 months for full coverage. Priority date establishes from filing day, so every day of delay is a day of competitor priority risk.
 - This addresses P0 Sovereignty §7.1 (trademark registration).
 
-**Corporate bank account prep (parallel).**
+**Corporate bank account prep (parallel — digital-first + tier-1 parallel).**
 - Responsible: Zhan + formation agent.
-- Four banks receive account-opening intake forms simultaneously (standard UAE practice — 2–3 approve, 1–2 decline for obscure AML reasons):
-    1. **Emirates NBD** (ENBD) — preferred; strongest Commercial Real Estate team; Dymo has prior relationship.
-    2. **ADCB** — strong alternative; good for Abu Dhabi exposure.
-    3. **FAB** — largest balance sheet; potentially strongest for Agency escrow at scale.
-    4. **Mashreq Bank** — excellent fintech-friendly interface; useful for Platform entity later.
-- Submission requires: Dubai Mainland LLC trade licence (not yet issued — can submit conditional application), MoA draft, passports + Emirates IDs, shareholder KYC, business plan summary, 12-month cash flow projection (derivable from P_AND_L_STATEMENT.md base case).
-- Expected timeline: 4–8 weeks from full submission (bank KYC is slow in UAE; 2024–2025 cycle lengthened further due to AML Federal Law No. 10/2025 compliance overhead).
+- **Two tracks:**
+    - **Digital-first (for earliest active account):** Wio Business and Mashreq NeoBiz. 2026 benchmark: **5–10 business days** to activation for well-prepared DED mainland LLCs. Target: one digital account active by end of Week 3 to receive Rudi's AED 1 M wire.
+    - **Tier-1 parallel (for long-term primary):** ENBD, ADCB, FAB. 2026 benchmark: **4–8 weeks** from complete submission (bank KYC slow in UAE; AML Federal Law 10/2025 compliance overhead).
+- All 5 bank submissions Day 4: ENBD (preferred long-term, Dymo relationship), ADCB (Abu Dhabi strength), FAB (escrow scale), Mashreq NeoBiz (digital interim), Wio (digital alternative).
+- Submission requires: Dubai Mainland LLC trade licence (not yet issued — can submit conditional application), MoA draft, passports + Emirates IDs, shareholder KYC, business plan summary, 12-month cash flow projection (derivable from `docs/investor-package/P_AND_L_STATEMENT.md` base case).
+- Sources: [Dubai business bank account opening 2026 benchmarks — Stratedge](https://stratedge.ae/business-bank-account-opening-dubai/) · [Corporate bank account Dubai 2026 — EMIFAST](https://emifast.com/corporate-bank-account-dubai/).
 
-#### Day 5 — Friday April 25
+#### Day 5 — Friday April 24
 
 **MoA draft review + correction cycle with BSA.**
 - Zhan reviews with Rudi by email (Rudi in Al Jurf, reachable by phone).
@@ -162,7 +170,7 @@ The north star of Phase 1 is the **first closed commission.** Everything that do
 - Responsible: Dymo.
 - One-pager tracking: prospect name, plot of interest, budget, language, status, next action, date. Shared OneDrive. Serves as the Agency's operational source of truth until a proper CRM is live in Phase 2.
 
-#### Day 6 — Saturday April 26
+#### Day 6 — Saturday April 25
 
 **LinkedIn activation for both founders.**
 - Zhan: profile refresh emphasising Founder/CEO/CTO of ZAAHI, 17 years real estate + full-stack engineering. Post #1 — short announce of the Al Jurf MOU (no financial detail; relationship-level recognition of Rudi).
@@ -176,21 +184,21 @@ The north star of Phase 1 is the **first closed commission.** Everything that do
 - Month 4–6: developer pitch videos, feasibility-calculator explainers.
 - Month 7–12: closed-deal case studies + ambassador stories + quarterly market reports.
 
-#### Day 7 — Sunday April 27
+#### Day 7 — Sunday April 26
 
 **Rest + strategic review.**
 - Zhan + Dymo + Rudi dinner in Al Jurf (informal). Purpose: confirm alignment on Week 2 priorities, surface any surprises, reset emotional state before the execution-heavy weeks ahead.
 - Deliverable: 3 top priorities for Week 2 written on paper over dinner. File in `docs/decisions/`.
 
-### 2.2 Week 2 — April 28 – May 4, 2026
+### 2.2 Week 2 — April 27 – May 3, 2026
 
 **Theme:** Regulatory approvals + banking + brand.
 
-#### Monday April 28
+#### Monday April 27
 - **DED initial approval certificate expected** (3 working days after Day 1 submission). On receipt, RERA broker licence application starts via Trakheesi portal.
 - **RERA broker licence application for Dymo** (Dymo holds RERA credentials from his Equilibrium career; validate current status; apply for Dubai Mainland LLC BRN allocation).
 
-#### Tuesday–Wednesday April 29–30
+#### Tuesday–Wednesday April 28–29
 - **Bank account applications submitted** (ENBD + ADCB + FAB + Mashreq, four in parallel). Formation agent sends conditional applications; full submission upon trade licence.
 - **Office virtual address Dubai** — Dubai Mainland LLCs require a physical registered address with Ejari-registered tenancy. Options:
     1. **IFZA or DMCC registered office package** — ~AED 6–10 k / yr, satisfies Ejari.
@@ -198,35 +206,37 @@ The north star of Phase 1 is the **first closed commission.** Everything that do
     3. **Business Centre in Business Bay / DIFC-adjacent** — AED 25–50 k / yr; premium address; signals seriousness.
 - **Recommendation** from LAUNCH_PLAN: Al Jurf home-office AED 250 k / yr — but this is for operations, not for the registered DED address. Use a virtual office package AED 6–10 k / yr for DED registration; operational HQ remains Al Jurf.
 
-#### Thursday–Friday May 1–2
-- **SAFE negotiation final review.** BSA SAFE draft returned. Rudi's counsel reviews. Turnaround goal: Signature by Friday May 2.
+#### Thursday–Friday April 30 – May 1
+- **SAFE negotiation final review.** BSA SAFE draft returned. Rudi's counsel reviews. Turnaround goal: Signature by Week 3.
 - **Trade licence issuance** (expected per DED 2-3 week timeline — may arrive this week or early Week 3).
 
-#### Weekend May 3–4
+#### Weekend May 2–3
 - **Website brand polish on zaahi.io** — no new features, only brand hygiene: updated "About" page, updated Founder profiles, legal / privacy / terms pages referencing the new Dubai Mainland LLC entity name (once trade licence issued). Zhan: 4-6 hours of Saturday work.
 
-### 2.3 Week 3 — May 5–11, 2026
+### 2.3 Week 3 — May 4 – 10, 2026
 
-**Theme:** SAFE execution + first bank account + brand launch (soft).
+**Theme:** SAFE execution + first bank account + brand launch (soft) + **CT + UBO filings**.
 
-#### Monday May 5
+#### Monday May 4
 - **SAFE executed.** Rudi signs; founders counter-sign. Rudi wires AED 1 M to the escrow account (placeholder — Rudi's UAE legal counsel trust account until the corporate bank account is live).
-- **Trade licence issued** (if not earlier). BSA confirms. Now unlocks: formal bank account opening, RERA broker card issuance, Ejari registration, VAT registration (threshold check: above AED 375 k annual turnover, CT applies — on track Y1).
+- **Trade licence issued** (if not earlier). BSA confirms. Now unlocks: formal bank account opening, RERA broker card issuance, Ejari registration, VAT registration (AED 375 k turnover threshold), **Corporate Tax registration** (see below), **UBO register filing** (see below).
 
-#### Tuesday–Thursday May 6–8
-- **First bank account active** — most likely ENBD based on prior Dymo relationship. AED 1 M from Rudi's escrow transfers to Agency corporate account. Operational runway begins.
+#### Tuesday–Thursday May 5–7
+- **First bank account active** — digital-first Wio Business or Mashreq NeoBiz (5–10 business days from submission). AED 1 M from Rudi's escrow transfers to Agency digital corporate account. Operational runway begins. Tier-1 ENBD / ADCB / FAB activations Week 6–10.
 - **RERA broker card for Dymo** — Dymo's BRN linked to the new Dubai Mainland LLC. Issued via Trakheesi. AED 520 card fee. Now Dymo can legally facilitate property transactions as an agent of the new LLC.
-- **Trakheesi permit rulebook internalised** — every future ZAAHI listing must carry a Trakheesi permit number. Auto-Trakheesi integration is planned for Phase 2 autonomy (see MASTER_TREE_AUTONOMY_PROPOSALS §3.2); in Phase 1 it's manual via Trakheesi portal.
+- **Corporate Tax registration via EmaraTax portal — MANDATORY.** Federal Decree-Law 47/2022 requires every mainland LLC to register for CT regardless of profit. Penalty **AED 10 000** if skipped per Cabinet Decision 75/2023. TRN issued. 9 % liability applies only above AED 375 k profit — but registration is mandatory even at zero profit.
+- **UBO register filed with DED.** Cabinet Decision 58/2020 + Cabinet Decision 109/2023 require ZAAHI to register Ultimate Beneficial Owners (Rudi 80 %, Dymo 10 %, Zhan 10 %) with DED, maintain internal registers (UBO + shareholders + nominee directors), and notify changes within 15 days. Filing deadline: 60 days from incorporation.
+- **Trakheesi permit rulebook internalised** — every future ZAAHI listing must carry a Trakheesi permit number. Auto-Trakheesi integration is planned for Phase 2 autonomy (see `MASTER_TREE_AUTONOMY_PROPOSALS.md` §3.2); Phase 1 manual via Trakheesi portal.
 
-#### Friday May 9
+#### Friday May 8
 - **First Agency prospecting week — close of week checkpoint.**
-    - Dymo target: 5 live conversations, 2 scheduled viewings in next 7 days.
-    - Reality check: if <3 live conversations at end of Week 3, escalate — is the post-MOU narrative landing? If not, reconvene Zhan + Dymo + Rudi to refine pitch.
+    - Dymo target: 7–10 live conversations (cumulative from Day 1 outreach), 2 scheduled viewings in next 7 days.
+    - Reality check: if <5 live conversations at end of Week 3, escalate — is the post-MOU narrative landing? If not, reconvene Zhan + Dymo + Rudi to refine pitch.
 
-#### Weekend May 10–11
+#### Weekend May 9–10
 - **ZAAHI soft-launch moment.** Zhan + Dymo post synchronised LinkedIn updates: "ZAAHI Real Estate LLC is now live. Premium Dubai plots, 3D-first. 114 verified parcels at zaahi.io. Let's talk." Dymo in English + Russian + Ukrainian. Zhan in English. First small public signal — not a full launch (that comes at Platform GA, Month 12+).
 
-### 2.4 Week 4 — May 12–18, 2026
+### 2.4 Week 4 — May 11 – 17, 2026
 
 **Theme:** Pipeline acceleration + formal SAFE execution confirmation + first scheduled viewings.
 
@@ -251,25 +261,32 @@ End of Week 4 scorecard:
 
 If 2 or more flags are Red, Week 4 triggers a founder-Board review. Rudi is informed within 48 hours.
 
-### 2.5 Month 2 — May 19 – June 15, 2026
+### 2.5 Month 2 — May 18 – June 14, 2026
 
-**Theme:** Deal execution discipline. Pipeline deepens. Videographer ships content. Platform build quiet (no shipping; Zhan's bandwidth reserved for deal support).
+**Theme:** Deal execution discipline. Pipeline deepens. **Eid al-Adha (Wed May 27 – Fri May 29) creates a 6-day national break Tue May 26 – Sun May 31.** Platform build quiet (no shipping; Zhan's bandwidth reserved for deal support).
 
-#### Week 5 — May 19–25
-- **HNWI viewing Week 1** — Jumeirah Bay Island plot. Videographer captures 60-second drone + 3D cut.
-- **Second viewing scheduled** — Al Barari plot.
+#### Week 5 — May 18–24
+- **HNWI viewing Week 1** — Jumeirah Bay Island plot (Mon–Tue or Thu–Fri; avoid Fri afternoon). Videographer captures 60-second drone + 3D cut.
+- **Second viewing scheduled** — Al Barari plot (target Thu May 21 or Mon–Tue May 25–26 BEFORE Eid).
+- **Developer partnership first meeting** — pulled forward from original Week 6 to Wed May 20 or Thu May 21 BEFORE Eid break. Mid-tier developer (not DAMAC/Emaar tier — too big) exploring off-plan floor-level sale. Commission potential AED 800 k – 1.5 M on a AED 20–40 M floor deal. Feasibility Calculator v1 used in the meeting.
 - **Ambassador first sign-up target** — first Gold-tier Ambassador (AED 5 k USDT) from Dymo's network warms up this week.
 
-#### Week 6 — May 26 – June 1
-- **Second HNWI viewing.** Offer structuring begins on the first plot — AED 45 M client signals interest around AED 40 M range.
-- **Developer partnership first meeting.** Mid-tier developer (not DAMAC/Emaar tier — too big) exploring off-plan floor-level sale. Commission potential AED 800 k – 1.5 M on a AED 20–40 M floor deal. Feasibility Calculator v1 used in the meeting.
+#### Week 6 — May 25 – 31 (EID AL-ADHA WEEK)
+- **Government + bank offices closed Wed May 27 – Fri May 29** (Eid al-Adha 2026, expected per Islamic calendar + moon sighting). Combined with weekend = 6-day national break May 26 – 31.
+- **Re-themed:** internal review week + content sprint + founder time off. No external deal meetings scheduled. No DED / RERA / DLD / bank activity.
+- **Videographer content sprint** — production day for next 4 weeks of content queued.
+- **Zhan Platform planning** — Phase 2 engineering sprint plan drafted (P0 items prioritisation for Months 4–6 sprint per §3.1).
+- **Dymo light touchpoints** — Eid greetings to full warm network (30+ contacts), set up Week 7 follow-ups.
+- Reference: [UAE 2026 public holidays — Time Out Dubai](https://www.timeoutdubai.com/news/uae-public-holidays-2026-official-dates).
 
-#### Week 7 — June 2–8
+#### Week 7 — June 1–7
+- **Deal execution resumes full-tempo after Eid.**
+- **Second HNWI viewing** — rescheduled Al Barari if not completed pre-Eid. Offer structuring begins on the first plot — AED 45 M client signals interest around AED 40 M range.
 - **First offer submitted** on Plot 1 (Jumeirah Bay). Form F (MOU) drafted by Archibald, reviewed by BSA, sent. Seller counter-offers.
 - **Second Ambassador sign-up.** Silver-tier (AED 1 k) from a Dymo referral.
 
-#### Week 8 — June 9–15
-- **Negotiation cycle on Plot 1** — expected close in late June per LAUNCH_PLAN. Buyer deposits AED 400 k into escrow (agency account or Form F escrow depending on structure).
+#### Week 8 — June 8–14
+- **Negotiation cycle on Plot 1** — expected close late June per LAUNCH_PLAN. Buyer deposits AED 400 k into escrow (agency account or Form F escrow depending on structure).
 - **First weekly investor update to Rudi** — format locked (see §9 below): P&L snapshot, pipeline, risks, next 7 days. Rudi gets this every Sunday evening from now on.
 
 End of Month 2 scorecard:
@@ -280,33 +297,34 @@ End of Month 2 scorecard:
 - Ambassador sign-ups: 2–4 paid tiers active.
 - Cash position: AED ~850 k remaining (after Month 1 legal/formation ~AED 60 k + Month 2 ops ~AED 40 k + videographer AED 20 k + office / misc AED 30 k). Runway: 6+ months at current burn even before first commission.
 
-### 2.6 Month 3 — June 16 – July 15, 2026
+### 2.6 Month 3 — June 15 – July 12, 2026
 
 **Theme:** First close. Platform entity triggered. Content scales.
 
-#### Week 9 — June 16–22
+#### Week 9 — June 15–21
+- **Monday June 15 is UAE public holiday (Islamic New Year 2026, observed).** DLD submission earliest Tuesday June 16. Adjust DLD appointment booking accordingly.
 - **Plot 1 negotiation closes at AED 39.5 M** (base case from VISION_CLARITY §3.1). Commission AED 790 k at 2 %.
 - **Form F signed, deposit confirmed, NOC process starts.** Per Deal Engine §31: Initiated → Deposit Pending → Deposit Received → Agreement Signed → Documents Collection → Gov Verification → NOC Pending → Transfer Fee Payment → DLD Submission → Completed.
 - **Second deal negotiation intensifies** on Plot 2 (Al Barari, ~AED 28 M, AED 560 k commission at 2 %).
 
-#### Week 10 — June 23–29
+#### Week 10 — June 22–28
 - **NOC received on Plot 1** (typical 3–7 days from DLD). Transfer fee preparation — 4 % of AED 39.5 M = AED 1.58 M, paid by buyer at DLD submission.
 - **Off-plan floor deal moves into negotiation** with mid-tier developer. Target close: Month 4–5.
 
-#### Week 11 — June 30 – July 6
+#### Week 11 — June 29 – July 5
 - **DLD submission Plot 1.** Transfer fee wired. DLD issues title deed transfer. Agency receives commission AED 790 k net of any split with buyer's broker (if buyer had own broker; Dymo's deal was direct so full 2 % lands). Assume AED 790 k gross.
-- **Platform entity formation triggered per MOU** — "ADGM HoldCo (Platform) incorporated upon first closed deal." BSA initiates ADGM Registration Authority (RA) filing in parallel.
+- **Platform entity formation triggered per MOU** — "ADGM HoldCo (Platform) incorporated upon first closed deal." BSA initiates ADGM Registration Authority (RA) filing in parallel. ADGM timeline: 2–6 weeks (typical 3–4 weeks with complete documentation). Bank account opening at ADGM tier-1 banks adds 4–8 weeks; digital banks 1–2 weeks.
 
-#### Week 12 — July 7–13
+#### Week 12 — July 6–12
 - **First commission hits Agency bank account.** AED 790 k.
-- **First 70 % Platform Service Fee invoiced** — AED 790 k × 70 % = AED 553 k routed to ADGM HoldCo treasury once incorporated (delayed 3–6 weeks per ADGM incorporation timeline).
+- **First 70 % Platform Service Fee invoiced** — AED 790 k × 70 % = AED 553 k routed to ADGM HoldCo treasury once incorporated (delayed 2–6 weeks per ADGM incorporation timeline).
 - **First quarterly distribution to shareholders per MOU:**
     - Total distributable Agency Q1 profit (after CT reserve): estimate AED 500 k of the AED 790 k (conservative).
     - Rudi 10 % = AED 50 k, Dymo 10 % = AED 50 k, Zhan 10 % = AED 50 k.
     - Platform Dev Fund 70 % = AED 350 k — seed capital for Platform build starting Month 4.
     - **But MOU notes "Base-case Financial Trigger timing: mid-Year 3."** So these distributions are tiny relative to Sunset trigger (AED 2 M cumulative to Rudi). On track.
 
-#### Week 13 — July 14–15 (overlap into Month 4)
+#### Week 13 — July 13–15 (overlap into Month 4)
 - **Plot 2 closes** (Al Barari AED 28 M, commission AED 560 k at 2 %).
 - **Month 3 cumulative Agency revenue:** ~AED 1.35 M.
 - **ADGM HoldCo incorporation in progress** — expect completion Week 16 (Month 4).
@@ -331,31 +349,53 @@ End of Phase 1 scorecard (Month 3):
 
 Phase 2 purpose: use the Agency's emerging cash flow to fund Platform build and ship the P0 items that make ZAAHI credible to the counterparties (banks, governments, sovereign investors) Phase 3 will depend on. Agency continues to close deals — 2–3 more in Phase 2 per LAUNCH_PLAN base case.
 
-### 3.1 Month 4 — July 16 – August 15, 2026
+### 3.1 Months 4 – 6 — July 16 – October 15, 2026
 
-**Platform entity incorporation + P0 safety + sovereignty sprint.**
+**Platform entity incorporation + P0 safety + sovereignty sprint, spread across 12 calendar weeks.**
 
-Shipping milestones (aligned with previous research docs):
+**Capacity note.** Phase 2 Months 4–6 has ~20 engineer-weeks of P0 work and only Zhan as engineer. At 100 % shipping capacity (no deal-support diversions), Zhan delivers ~4 engineer-weeks per calendar month → 12 engineer-weeks in 12 calendar weeks. With 30 % deal-support reserve (as-needed), output is ~8–9 engineer-weeks per quarter — meaning P0 cannot compress into Month 4 alone as originally planned. Work is distributed across Months 4 / 5 / 6 below to reflect realistic capacity. August 24, 2026 is UAE public holiday (Prophet's Birthday, Mon); planning absorbs.
 
-| Item | Source doc | Effort | Owner |
+#### Month 4 — July 16 – August 15, 2026 (kickoff sprint)
+
+| Item | Source | Effort | Owner |
 |---|---|---|---|
-| ADGM HoldCo incorporation complete | MOU | 4–6 weeks | BSA + Zhan |
-| ADGM Services Fee Agreement executed (Agency → Platform 70 %) | Investor package | Week 16 | BSA |
-| Anthropic zero-retention DPA implementation verified in production | Sovereignty §2.1 | 4 hours | Zhan |
+| ADGM HoldCo incorporation complete (entity) | MOU | 2–4 weeks | BSA + Zhan |
+| ADGM Services Fee Agreement executed | Investor package | Aug | BSA |
+| Anthropic zero-retention DPA verified in production | Sovereignty §2.1 | 4 hours | Zhan |
 | UAE Pass integration Phase 1 (OIDC + signup tab) | Sovereignty §4.1, Safety §2.1 | 4 eng-weeks | Zhan |
-| Passkeys / WebAuthn | Sovereignty §4.3, Safety §2.1 | 3 eng-weeks | Zhan |
+| Gitea UAE mirror (GitHub → UAE backup) | Sovereignty §6.1 | 1 eng-week | Zhan |
+| Dependabot + pnpm audit in CI | Safety §3.4 | 2 eng-days | Zhan |
+| Zod validation sweep (API routes) | Safety §2.4 | 2 eng-weeks | Zhan |
+| DPO engagement (external retainer — AED 10 k / mo) | Safety §1.6, §5.1 | Founder time | Dymo |
+| Trademark UAE MoE exam monitoring | Sovereignty §7.1 | — | Counsel |
+
+~5 engineer-weeks; realistic within 4 calendar weeks.
+
+#### Month 5 — August 16 – September 15, 2026
+
+| Item | Source | Effort | Owner |
+|---|---|---|---|
 | Audit log table + `logAudit()` helper + admin view | Safety §3.1 | 2 eng-weeks | Zhan |
 | Incident response runbook + status page | Safety §4.3, §4.4 | 1 eng-week | Zhan |
 | Security headers + HSTS + CSP report-only | Safety §1.2, §1.3 | 1 eng-week | Zhan |
-| PDPL Privacy Centre (right to deletion / access / portability) | Safety §1.6 | 4–6 eng-weeks | Zhan |
-| DPO engagement (external retainer) | Safety §1.6, §5.1 | Founder time | Dymo |
-| Gitea UAE mirror | Sovereignty §6.1 | 1 eng-week | Zhan |
-| Dependabot + pnpm audit in CI | Safety §3.4 | 2 eng-days | Zhan |
-| Rate limiting per route per tier | Safety §2.3 | 1 eng-week | Zhan |
-| Zod validation sweep | Safety §2.4 | 2 eng-weeks | Zhan |
-| Trademark applications in examination (not shipped, monitoring) | Sovereignty §7.1 | — | Counsel |
+| PDPL Privacy Centre (right to deletion / access / portability) Phase 1 | Safety §1.6 | 3 eng-weeks | Zhan |
 
-Total engineering effort Month 4: ~20 engineer-weeks compressed into 4 calendar weeks via weekend work and parallel tracks. Zhan maintains ~30 % bandwidth on deal support (as-needed), ~70 % on shipping.
+~5 engineer-weeks; realistic within 4 calendar weeks.
+
+#### Month 6 — September 16 – October 15, 2026
+
+| Item | Source | Effort | Owner |
+|---|---|---|---|
+| Passkeys / WebAuthn | Sovereignty §4.3, Safety §2.1 | 3 eng-weeks | Zhan |
+| Rate limiting per route per tier (Upstash Redis) | Safety §2.3 | 1 eng-week | Zhan |
+| CSP enforce (after 2-week report-only window) | Safety §1.3 | 1 eng-week | Zhan |
+| Column encryption for sensitive PII fields | Safety §1.1 | 2 eng-weeks | Zhan |
+| PDPL Privacy Centre Phase 2 (consent mgmt, processing register) | Safety §1.6 | 1 eng-week | Zhan |
+| **Multisig Ambassador treasury migration** (Gnosis Safe 2-of-3) | Sovereignty §3.3 Phase 3 | 3 eng-weeks | Zhan |
+
+~11 engineer-weeks → 4 calendar weeks at 100 % utilisation; trim Column encryption into Month 7 if deal-support demands. Multisig moved earlier (from Month 8 per H-7) so Ambassador treasury is hardware-wallet-protected before it crosses AED 500 k watermark.
+
+Total Month 4–6 engineering: ~20 engineer-weeks across 12 calendar weeks = ~80 % sustained shipping utilisation with 20 % deal-support reserve. This is realistic for a single-engineer team.
 
 ### 3.2 Months 5–6 — August 16 – October 15, 2026
 
@@ -475,16 +515,18 @@ End of Month 24 scorecard:
 
 | # | Item | Blocks | Blocked by | Earliest start | Latest finish |
 |:-:|---|---|---|:-:|:-:|
-| 1 | DED Mainland LLC formation submission | 2, 3, 5, 6, 7 | — | Apr 21 | Apr 21 (Day 1) |
-| 2 | DED initial approval | 3 | 1 | Apr 24 | Apr 28 |
-| 3 | Trade licence issued | 4, 5, 6 | 2 | May 5 | May 12 |
-| 4 | MoA + SAFE executed | 5 | 3 + BSA drafting | May 5 | May 8 |
-| 5 | Rudi AED 1 M wired | 6 | 4 | May 8 | May 12 |
-| 6 | Corporate bank account (ENBD) | 7, 12 | 3, 5 | May 8 | Jun 12 |
-| 7 | RERA broker card for Dymo | 8 | 3 | May 5 | May 22 |
-| 8 | First viewing + offer | 9 | 7 | May 18 | Jun 15 |
-| 9 | First deal closed | 10, 11 | 8 + seller + NOC | Jun 20 | Jul 15 |
-| 10 | ADGM HoldCo incorporation | 11, 12, 16 | 9 (MOU condition) | Jul 8 | Aug 20 |
+| 1 | DED Mainland LLC formation submission | 2, 3, 5, 6, 7 | — | Apr 20 | Apr 20 (Day 1) |
+| 2 | DED initial approval | 3 | 1 | Apr 23 | Apr 27 |
+| 3 | Trade licence issued | 4, 5, 6 | 2 | May 4 | May 11 |
+| 4 | MoA + SAFE executed | 5 | 3 + BSA drafting | May 4 | May 7 |
+| 5 | Rudi AED 1 M wired | 6 | 4 | May 7 | May 11 |
+| 6 | Digital bank account (Wio / Mashreq Neo) | 7, 12 | 3, 5 | May 7 | May 18 |
+| 6b | Tier-1 corporate bank account (ENBD) | 12 primary | 3, 5 | May 7 | Jun 11 |
+| 7 | RERA broker card for Dymo | 8 | 3 | May 4 | May 21 |
+| 7b | UBO register + CT registration EmaraTax | — | 3 | May 4 | May 18 |
+| 8 | First viewing + offer | 9 | Day 1 Dymo outreach; 7 | May 18 | Jun 14 |
+| 9 | First deal closed | 10, 11 | 8 + seller + NOC | Jun 19 | Jul 14 |
+| 10 | ADGM HoldCo incorporation | 11, 12, 16 | 9 (MOU condition) | Jul 7 | Aug 19 |
 | 11 | Services Fee Agreement | 12 | 10 | Aug 5 | Aug 20 |
 | 12 | First 70 % Service Fee transfer | 13 | 11 | Aug 20 | Aug 31 |
 | 13 | Platform build capital available | 14, 15 | 12 | Aug 31 | Sep 15 |
@@ -557,7 +599,7 @@ Hire when a specific trigger fires — not before:
 | Role | Trigger | Month (expected) | Budget |
 |---|---|:-:|---|
 | Videographer | Day 1 | Month 1 (now) | AED 120 k / yr |
-| Chief of Staff / Head of Product | 2nd agency deal closed + Platform bandwidth request from Rudi | Month 6–8 | AED 240–360 k / yr |
+| Chief of Staff / Head of Product | 2nd agency deal closed + Platform bandwidth request from Rudi | Month 6–8 | AED 360–540 k / yr (Dubai market rate for senior ops lead) |
 | 2nd engineer | Platform Dev Fund ≥ AED 1 M AND Zhan at 80 % capacity | Month 8–10 | AED 300–480 k / yr |
 | 3rd agent (Dubai) | Agency pipeline > 10 active, Dymo at 90 % capacity | Month 6–9 | AED 180 k base + commission split |
 | DPO (external retainer) | Platform user base crosses 1 000 | Month 4 | AED 120 k / yr |

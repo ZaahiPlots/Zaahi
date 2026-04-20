@@ -30,19 +30,19 @@ The hard critical path. If any node here slips 2 weeks, every downstream node sl
 
 ```mermaid
 flowchart TD
-    A["Apr 21<br/>DED Mainland LLC<br/>application submitted"]:::critical
-    A --> B["Apr 24<br/>DED initial approval"]
-    B --> C["May 5<br/>Trade licence issued"]
-    C --> D["May 5<br/>MoA + SAFE<br/>executed"]
-    C --> E["May 8<br/>RERA broker card<br/>for Dymo"]
-    C --> F["May 8<br/>Ejari virtual office<br/>registered"]
-    D --> G["May 8<br/>Rudi AED 1 M wired"]
-    E --> H["Jun 20<br/>First deal Form F<br/>+ DLD submission"]
+    A["Apr 20<br/>DED Mainland LLC<br/>application submitted"]:::critical
+    A --> B["Apr 23<br/>DED initial approval"]
+    B --> C["May 4<br/>Trade licence issued"]
+    C --> D["May 4<br/>MoA + SAFE<br/>executed"]
+    C --> E["May 7<br/>RERA broker card<br/>for Dymo"]
+    C --> F["May 7<br/>Ejari virtual office<br/>registered"]
+    D --> G["May 7<br/>Rudi AED 1 M wired"]
+    E --> H["Jun 16<br/>First deal Form F<br/>+ DLD submission<br/>(Mon Jun 15 Islamic NY)"]
     F --> H
     G --> H
-    H --> I["Jun 20<br/>First commission<br/>AED 790 k received"]:::critical
-    I --> J["Jul 8<br/>ADGM HoldCo<br/>incorporation triggered"]:::critical
-    J --> K["Aug 15<br/>ADGM HoldCo<br/>incorporated"]
+    H --> I["Jun 19<br/>First commission<br/>AED 790 k received"]:::critical
+    I --> J["Jul 7<br/>ADGM HoldCo<br/>incorporation triggered"]:::critical
+    J --> K["Aug 14<br/>ADGM HoldCo<br/>incorporated<br/>(2–6 wk; typical 3–4)"]
     K --> L["Aug 20<br/>Services Fee<br/>Agreement executed"]
     L --> M["Aug 31<br/>First 70% fee<br/>transferred to Platform"]
     M --> N["Sep 15<br/>Platform Dev Fund<br/>active — build begins"]:::critical
@@ -50,7 +50,7 @@ flowchart TD
     O --> P["Mar 2027<br/>DLD sandbox<br/>tokenisation pilot"]
     K --> Q["Dec 2026<br/>Transfer pricing<br/>study delivered"]
 
-    A -.->|"also Apr 24"| T["Trademark filed<br/>UAE + WIPO"]
+    A -.->|"also Apr 23"| T["Trademark filed<br/>UAE + WIPO"]
     T --> U["Q4 2026+<br/>IP registration<br/>complete"]
 
     classDef critical fill:#C8A96E,stroke:#1A1A2E,stroke-width:2px,color:#1A1A2E
@@ -60,7 +60,7 @@ flowchart TD
 
 The shortest end-to-end chain is:
 
-**DED submission (Apr 21) → trade licence (May 5) → RERA card (May 8) → first deal closes (Jun 20) → first commission (Jun 20) → ADGM triggered (Jul 8) → ADGM incorporated (Aug 15) → Services Fee executed (Aug 20) → Platform Dev Fund active (Sep 15).**
+**DED submission (Apr 20) → trade licence (May 4) → RERA card (May 7) → first deal closes (Jun 16–19) → first commission (Jun 19) → ADGM triggered (Jul 7) → ADGM incorporated (Aug 14) → Services Fee executed (Aug 19) → Platform Dev Fund active (Sep 14).**
 
 That's **~22 weeks from Day 1 to Platform build funded.** Any single node delayed by 2 weeks pushes the whole chain 2 weeks. Three nodes delayed = 6-week push into Phase 2 start.
 
@@ -161,11 +161,11 @@ How relationship unlocks cascade — from Rudi's capital to each major partnersh
 
 ```mermaid
 flowchart LR
-    A["Rudi AED 1 M capital<br/>+ Board seat<br/>May 5"] --> B["Dubai Mainland LLC<br/>operational<br/>May 12"]
-    B --> C["RERA broker card<br/>May 8"]
-    C --> D["Bank account<br/>ENBD active<br/>May 12"]
-    D --> E["First deal<br/>closes<br/>Jun 20"]
-    E --> F["ADGM HoldCo<br/>incorporated<br/>Aug 15"]
+    A["Rudi AED 1 M capital<br/>+ Board seat<br/>May 4"] --> B["Dubai Mainland LLC<br/>operational<br/>May 11"]
+    B --> C["RERA broker card<br/>May 7"]
+    C --> D["First bank account<br/>(Wio / Mashreq Neo digital;<br/>ENBD tier-1 4–8 weeks)<br/>May 11"]
+    D --> E["First deal<br/>closes<br/>Jun 19"]
+    E --> F["ADGM HoldCo<br/>incorporated<br/>Aug 14<br/>(2–6 weeks; typical 3–4)"]
     F --> G["Platform credibility<br/>(ADGM entity signals<br/>institutional seriousness)"]
 
     G --> H["ENBD CRE<br/>introduction<br/>Aug-Sep"]
@@ -224,10 +224,10 @@ From capital in to IPO out — the full cash conversion graph. Scaled to fit.
 
 ```mermaid
 flowchart TD
-    A["Rudi AED 1 M SAFE<br/>May 5"] --> B["Operational runway<br/>12–18 months<br/>at AED 45–100 k burn"]
+    A["Rudi AED 1 M SAFE<br/>May 4"] --> B["Operational runway<br/>12–18 months<br/>at AED 45–100 k burn"]
     B --> C["Dymo network<br/>activation<br/>Apr–May"]
     C --> D["Agency pipeline<br/>5–10 active deals<br/>May–Jul"]
-    D --> E["First deal closes<br/>AED 790 k commission<br/>Jun 20"]
+    D --> E["First deal closes<br/>AED 790 k commission<br/>Jun 19"]
     E --> F["Monthly Agency revenue<br/>trajectory AED 500 k–1.5 M<br/>Month 3+"]
 
     F --> G["Agency retained 30%<br/>AED 150–450 k / month"]
@@ -243,7 +243,7 @@ flowchart TD
     H --> O["Platform Y2 feature<br/>ships: ENBD widget,<br/>tokenisation, after-sale"]:::platform
     
     L --> O
-    M --> P["Platform Y2 revenue<br/>AED 2–4 M / yr"]:::platform
+    M --> P["Platform Y2 revenue<br/>AED 5 M / yr<br/>(base case; P&L Statement §6)"]:::platform
     N --> P
     O --> P
 
@@ -277,15 +277,15 @@ The full picture on one diagram. Simplified to top-20 nodes.
 ```mermaid
 flowchart TD
     START["Apr 19<br/>Al Jurf MOU"]:::moment
-    START --> DED["Apr 21<br/>DED application"]:::legal
-    START --> VID["Apr 21<br/>Videographer retainer"]:::brand
-    START --> ANT["Apr 22<br/>Anthropic zero-retention"]:::sov
+    START --> DED["Apr 20<br/>DED application"]:::legal
+    START --> VID["Apr 20<br/>Videographer retainer"]:::brand
+    START --> ANT["Apr 21<br/>Anthropic zero-retention<br/>(Day 2 Tue)"]:::sov
     
-    DED --> LIC["May 5<br/>Trade licence"]:::legal
-    LIC --> SAFE["May 5<br/>SAFE + MoA executed"]:::legal
-    SAFE --> WIRE["May 8<br/>AED 1 M wired"]:::legal
-    LIC --> RERA["May 8<br/>RERA broker card"]:::legal
-    LIC --> BANK["May 12<br/>ENBD account"]:::legal
+    DED --> LIC["May 4<br/>Trade licence"]:::legal
+    LIC --> SAFE["May 4<br/>SAFE + MoA executed"]:::legal
+    SAFE --> WIRE["May 7<br/>AED 1 M wired"]:::legal
+    LIC --> RERA["May 7<br/>RERA broker card"]:::legal
+    LIC --> BANK["May 11<br/>First bank account<br/>(digital-first)"]:::legal
     
     WIRE --> PIPE["May–Jun<br/>Pipeline activated"]:::biz
     RERA --> PIPE
@@ -293,8 +293,8 @@ flowchart TD
     VID --> CONTENT["Weekly<br/>Content machine"]:::brand
     CONTENT --> PIPE
     
-    PIPE --> DEAL1["Jun 20<br/>First deal closed<br/>AED 790 k"]:::moment
-    DEAL1 --> ADGM["Aug 15<br/>ADGM HoldCo<br/>incorporated"]:::legal
+    PIPE --> DEAL1["Jun 19<br/>First deal closed<br/>AED 790 k"]:::moment
+    DEAL1 --> ADGM["Aug 14<br/>ADGM HoldCo<br/>incorporated"]:::legal
     ADGM --> PDFUND["Sep 2026<br/>Platform Dev Fund<br/>active"]:::moment
     
     PDFUND --> P0["Sep–Oct 2026<br/>P0 Safety + Sovereignty<br/>UAE Pass + MFA + PDPL"]:::tech

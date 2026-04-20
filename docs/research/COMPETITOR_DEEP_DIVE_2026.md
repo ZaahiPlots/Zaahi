@@ -14,7 +14,7 @@
 1. **ZAAHI is not competing with any single player head-on.** Bayut / Property Finder dominate *listings* (our §01 / §02). Huspy dominates *mortgage* (our §22, not yet live). PRYPCO / Propy dominate *tokenisation* (our §35, not yet live). DAMAC / Emaar dominate *development* (our §19, tier-subscribed). Better Homes / Allsopp / E&V dominate *secondary brokerage* (our Agency). Each is a Block of the Master Tree — ZAAHI is the OS across all Blocks.
 2. **No competitor has architected a plot-centric graph.** All listings platforms index buildings / units. All tokenisation platforms index buildings. No one indexes **plots** as first-class entities with DDA affection plans, building limits, and 3D massing. This is the ZAAHI-only moat today.
 3. **Three competitors worth watching as potential partners, not rivals:** Huspy (mortgage, embed their widget), PRYPCO (tokenisation, channel our plots through their VARA sandbox), Engel & Völkers (luxury brokerage, co-list premium plots with Dymo's network).
-4. **Most alarming gap** — Huspy processes 25–30 % of all UAE mortgages and has $100 M raised. If Huspy adds a listings portal + 3D, they catch up on our listing moat in 18 months. We need Huspy as a *partner*, not a competitor.
+4. **Most alarming gap** — Huspy disclosed $270 M in home financing processed with a reported 25–30 % UAE mortgage share *as of 2024 Series B press* (2026 share not yet publicly refreshed); has $100 M+ raised. If Huspy adds a listings portal + 3D, they catch up on our listing moat in 18 months. We need Huspy as a *partner*, not a competitor. See §3 for full framing.
 5. **The category isn't a zero-sum fight.** Dubai Q1 2026 transaction volume was AED 252 B (+31 % YoY). Every platform is growing. The question is which ones build infrastructure deep enough to survive the 2028–2030 correction and compound afterward.
 
 ---
@@ -99,7 +99,11 @@ UAE primary, MENA expansion (Qatar, Bahrain, Saudi, Egypt), Turkey.
 **Mortgage-first super-app for real estate in MENA.** Consumer-facing mortgage pre-approval, agent-facing mortgage origination platform, acquired mortgage brokerages (Just Mortgages UK, Finance Lab UAE). Now positioning as "real estate super-app" — expanding beyond mortgage into listings + transactions.
 
 ### Pricing / Revenue model
-Commission on each mortgage closed (revenue share with bank partner). SaaS for agent platform. Claims to process **25–30 % of all UAE residential mortgages** — the largest mortgage platform in the country by volume. $270 M home-financing volume disclosed.
+Commission on each mortgage closed (revenue share with bank partner). SaaS for agent platform.
+
+**Huspy disclosed $270 M in home financing processed (as of 2024 press). Market share claim of 25–30 % dates from 2024 communications; 2026 share may differ.¹ ZAAHI's competitive response remains: partner (Risk 1 mitigation) rather than displace.**
+
+¹ Figures as of Huspy's 2024 Series B press; 2026 market share not yet publicly updated.
 
 ### Funding stage
 **$59 M Series B (July 2025)** led by Balderton Capital and Peak XV (ex-Sequoia India). Total funding now **>$100 M** across Series A ($37 M, 2022) + Series B. Also backed by Abu Dhabi-based 4DX Ventures, Class 5 Global, BECO Capital, Fintech Collective.

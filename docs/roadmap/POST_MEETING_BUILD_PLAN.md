@@ -61,6 +61,10 @@ Ranked by **marginal AED per deal × probability of closing a Dymo pipeline deal
 - Finance cost + timeline sensitivity toggles.
 - Scenario save + share (so client can replay the meeting).
 
+**Feasibility Calc v2 inputs:** plot area · GFA ratio · setbacks (from affection plan) · floor count · saleable ratio · build cost / sqft · sell price / sqft · finance cost · timeline (months).
+
+**Feasibility Calc v2 outputs:** total cost · total revenue · gross margin · IRR · break-even floor count · ±20 % sensitivity band · PDF download.
+
 **Technical complexity.** 🟡 Medium.
 - Pure computation, no external API.
 - UI is the work (glassmorphism, sliders, IRR chart).

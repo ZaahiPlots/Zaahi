@@ -18,38 +18,41 @@ Check items off during execution. Review weekly with the stand-up team. Any unch
 
 ---
 
-## PHASE 1 — AGENCY FOUNDATION (Month 1–3, Apr 21 – Jul 15 2026)
+## PHASE 1 — AGENCY FOUNDATION (Month 1–3, Apr 20 – Jul 14 2026)
 
-### Week 1 (Apr 21–27)
+**Phase 1 note — ESR:** ESR filings not required (regime discontinued post-FY2022).
+
+### Week 1 (Apr 20–26)
 
 Corporate formation:
 - [ ] (Z) Register UAE Pass personal account Day 1
-- [ ] (Z+B) Submit DED Mainland LLC application Apr 21
+- [ ] (Z+B) Submit DED Mainland LLC application Apr 20
 - [ ] (Z) Reserve trade name (3 options) — AED 620
 - [ ] (Z) Initial approval submission — AED 235
 - [ ] (Z) Business activity selection: 681020 / 681010 / 681030
 - [ ] (Z) Upload shareholders' KYC docs to DED portal
 - [ ] (Z) DED reference number obtained
-- [ ] (Z+D) Engagement calls with 3 legal candidates (Al Tamimi, BSA, DLA Piper) Apr 22
-- [ ] (Z+D) Engagement letter signed with chosen counsel (recommended BSA) Apr 22
-- [ ] (Z) Brief BSA on MoA + SAFE + shareholders' agreement (Sunset mechanic) Apr 23
-- [ ] (B) BSA delivers MoA + SA + SAFE drafts Apr 25
-- [ ] (Z+D+R) MoA v1 review + sign-off Apr 25
+- [ ] (Z+D) Engagement calls with 3 legal candidates (Al Tamimi, BSA, DLA Piper) Apr 21
+- [ ] (Z+D) Engagement letter signed with chosen counsel (recommended BSA) Apr 21
+- [ ] (Z) Brief BSA on MoA + SAFE + shareholders' agreement (Sunset mechanic) Apr 22
+- [ ] (B) BSA delivers MoA + SA + SAFE drafts Apr 24
+- [ ] (Z+D+R) MoA v1 review + sign-off Apr 24
 - [ ] (Z) UAE Pass confirmed enrolled for Dymo
 - [ ] (Z) Trademark filings: UAE MoE Class 9, 36, 41, 42 — AED 60–120 k
 - [ ] (Z) WIPO Madrid Protocol extension prepared
-- [ ] (Z) Conditional bank account applications to ENBD, ADCB, FAB, Mashreq Apr 24
+- [ ] (Z) Conditional bank account applications to ENBD, ADCB, FAB, Mashreq Apr 23
 
 Anthropic / sovereignty:
-- [ ] (Z) Email Anthropic enterprise requesting zero-retention DPA Apr 22
+- [ ] (Z) Email Anthropic enterprise requesting zero-retention DPA Apr 21
 - [ ] (Z) Anthropic zero-retention DPA signed + verified in production
 - [ ] (Z) Gitea UAE VM provisioned (sovereignty P1) — AED 100/mo
 - [ ] (Z) Initial Gitea mirror of `ZaahiPlots/Zaahi` configured
 
 Client outreach:
-- [ ] (D) 3 active client conversations initiated Apr 23
+- [ ] (D) **5 warm-network reach-outs from Day 1 (Monday Apr 20)** — parallel with Zhan's DED filing; outreach runs in parallel with legal, not sequential
+- [ ] (D) 3 active client conversations initiated Apr 22 (Day 3 deepens Day 1 intros)
 - [ ] (D) `agency-pipeline.xlsx` created + locked
-- [ ] (D) 10+ warm-network reach-outs this week
+- [ ] (D) 10+ warm-network reach-outs cumulative this week
 - [ ] (D) 5+ live conversations by end of week
 
 Content / brand:
@@ -62,23 +65,24 @@ Content / brand:
 - [ ] (Z) Website brand hygiene pass (About + Founders + legal pages)
 
 Governance:
-- [ ] (R) Rudi weekly update email sent Sun Apr 27 20:00
-- [ ] (Z+D+R) Al Jurf dinner Sun Apr 27 — 3 top priorities for Week 2 logged
-- [ ] (Z) `docs/decisions/2026-04-27.md` created with Week 1 decisions
+- [ ] (R) Rudi weekly update email sent Sun Apr 26 20:00
+- [ ] (Z+D+R) Al Jurf dinner Sun Apr 26 — 3 top priorities for Week 2 logged
+- [ ] (Z) `docs/decisions/2026-04-26.md` created with Week 1 decisions
 
-### Week 2 (Apr 28 – May 4)
+### Week 2 (Apr 27 – May 3)
 
 Regulatory:
-- [ ] (Z+B) DED initial approval certificate received (expected by Apr 28)
-- [ ] (D) RERA broker licence application via Trakheesi Apr 28 — AED 520 + AED 5 020 = AED 5 540
+- [ ] (Z+B) DED initial approval certificate received (expected by Apr 27)
+- [ ] (D) RERA broker licence application via Trakheesi Apr 27 — AED 520 + AED 5 020 = AED 5 540
 - [ ] (D) Dymo's prior RERA BRN transferred to new LLC
 - [ ] (Z) Office virtual address — DMCC or IFZA package — Ejari certificate obtained
 
 Banking:
-- [ ] (Z) ENBD KYC interview scheduled
-- [ ] (Z) ADCB KYC interview scheduled
-- [ ] (Z) FAB KYC interview scheduled
+- [ ] (Z) ENBD KYC interview scheduled (tier-1; realistic activation 4–8 weeks)
+- [ ] (Z) ADCB KYC interview scheduled (tier-1; realistic activation 4–8 weeks)
+- [ ] (Z) FAB KYC interview scheduled (tier-1; realistic activation 4–8 weeks)
 - [ ] (Z) Mashreq KYC interview scheduled
+- [ ] (Z) **Wio / Mashreq Neo digital-bank applications filed in parallel — 5–10 business-day activation window**
 - [ ] (Z) ENBD / ADCB account pre-approval received
 
 Legal:
@@ -88,32 +92,35 @@ Legal:
 - [ ] (R+Counsel) Rudi counsel review of SAFE complete
 
 Client / content:
-- [ ] (D) 5+ active client conversations (cumulative)
+- [ ] (B) BSA non-compete memo on Dymo's Equilibrium Advisory Group scope delivered — identifies solicitable vs. channel-through relationships
+- [ ] (D) 5–7 live conversations by end of week including 2–3 direct Equilibrium-network references *outside non-compete scope*
 - [ ] (V) First videographer deliverable reviewed + signed off
-- [ ] (Z+D) Sunday update Rudi May 4 20:00
+- [ ] (Z+D) Sunday update Rudi May 3 20:00
 
-### Week 3 (May 5–11)
+### Week 3 (May 4–10)
 
 Signings + cash in:
-- [ ] (Z+D+R+B) SAFE executed May 5 at BSA office
+- [ ] (Z+D+R+B) SAFE executed May 4 at BSA office
 - [ ] (Z+D+R+B) MoA + SA executed
 - [ ] (R) AED 1 M wired to escrow
-- [ ] (Z+B) Trade licence issued (expected May 5–12)
-- [ ] (Z) ENBD corporate account active
-- [ ] (Z) AED 1 M transferred from escrow to Agency corporate account
+- [ ] (Z+B) Trade licence issued (expected May 4–11)
+- [ ] (Z) First bank account active — digital-first Wio / Mashreq Neo 5–10 business days; ENBD / ADCB / FAB 4–8 weeks
+- [ ] (Z) AED 1 M transferred from escrow to Agency bank account (digital-first acceptable; tier-1 when live)
 
 Regulatory:
 - [ ] (D) RERA broker card issued (AED 520) — BRN active
 - [ ] (D) First Trakheesi advertising permit test obtained
-- [ ] (Z) VAT registration started (threshold check — AED 375 k / yr)
+- [ ] (Z+B) **UBO register filed with DED · shareholder register maintained · 15-day change-notification workflow established** (Cabinet Decisions 58/2020 + 109/2023; required within 60 days of incorporation, 15-day ongoing change window)
+- [ ] (Z+Book) **Corporate Tax registration via EmaraTax — mandatory, not threshold-gated** (Federal Decree-Law 47/2022; AED 10 k penalty per Cabinet Decision 75/2023 if skipped). TRN issued. 9 % CT liability applies above AED 375 k profit; registration is separate from liability.
+- [ ] (Z) VAT registration started (threshold check — AED 375 k / yr turnover)
 
 Client / content:
 - [ ] (D) First viewing scheduled Week 4–5
 - [ ] (D) 2+ active offer conversations
-- [ ] (Z+D) Soft-launch LinkedIn posts Sat May 10
+- [ ] (Z+D) Soft-launch LinkedIn posts Sat May 9
 - [ ] (V) Second content piece (developer pitch / founder story) delivered
 
-### Week 4 (May 12–18)
+### Week 4 (May 11–17)
 
 Pipeline:
 - [ ] (D) 5+ named pipeline with dated next-actions
@@ -121,20 +128,21 @@ Pipeline:
 - [ ] (Z) Product friction list updated after live demos
 
 Banking:
-- [ ] (Z) 2+ bank accounts active
+- [ ] (Z) 2+ bank accounts active (digital-first Wio / Mashreq Neo expected; tier-1 ENBD / ADCB still in KYC queue — 4–8 week window)
 - [ ] (Z) Rudi runway confirmed AED 1 M + pipeline
 
 Governance:
-- [ ] (Z+D+R) Week 4 scorecard published 🟢/🟡/🔴 Sat May 16
+- [ ] (Z+D+R) Week 4 scorecard published 🟢/🟡/🔴 Sat May 15
 - [ ] (Z+D+R) Emergency review triggered if 2+ Red flags
-- [ ] (Z) First monthly Rudi report (Month 1 summary) — Sun May 18
+- [ ] (Z) First monthly Rudi report (Month 1 summary) — Sun May 17
 
-### Month 2 (May 19 – Jun 15)
+### Month 2 (May 18 – Jun 14)
 
 Deal execution:
 - [ ] (D) Plot 1 negotiation — offer → counter-offer cycles
-- [ ] (D) Plot 2 viewing Week 5
-- [ ] (D) Developer partnership first meeting Week 6
+- [ ] (D) Plot 2 viewing Week 5 (moved earlier from Week 6 to avoid Eid al-Adha Week 6 collision)
+- [ ] (D) Developer partnership first meeting Week 5 (moved earlier from Week 6 — Eid al-Adha)
+- [ ] (D) **Week 6 is Eid al-Adha — no external meetings; internal review + content sprint only**
 - [ ] (D) Plot 1 Form F signed Week 7 (target)
 - [ ] (D) 10 % deposit received into escrow
 - [ ] (D) NOC request filed with DDA Week 7
@@ -150,17 +158,18 @@ Governance:
 - [ ] (Z+D+R) Monthly Rudi call June 1
 - [ ] (V) 3+ content pieces Month 2 cumulative
 
-### Month 3 (Jun 16 – Jul 15)
+### Month 3 (Jun 15 – Jul 14)
 
 Deal execution:
+- [ ] (D+B) **Monday Jun 15 is UAE public holiday (Islamic New Year) — DLD submission earliest Tuesday Jun 16**
 - [ ] (D+B) NOC received on Plot 1 Jun 17–19
-- [ ] (D+B) DLD appointment scheduled Week 9
-- [ ] (D+B) Plot 1 DLD submission + approval Jun 20 (target)
-- [ ] (Z+D) First commission received AED 790 k (target Jun 20)
-- [ ] (D) Public announcement on Plot 1 close Jun 21
-- [ ] (B) ADGM HoldCo incorporation filing initiated Jun 16
+- [ ] (D+B) DLD appointment scheduled Week 9 (Tue Jun 16 or later — not Mon Jun 15)
+- [ ] (D+B) Plot 1 DLD submission + approval Jun 16–19 (target)
+- [ ] (Z+D) First commission received AED 790 k (target Jun 19)
+- [ ] (D) Public announcement on Plot 1 close Jun 20
+- [ ] (B) ADGM HoldCo incorporation filing initiated Jun 16 (2–6 weeks; typical 3–4 weeks with complete documentation)
 - [ ] (Z+B) Service Fee Agreement template finalised Week 10–11
-- [ ] (D) Plot 2 negotiation intensifies — target close Jul 8–15
+- [ ] (D) Plot 2 negotiation intensifies — target close Jul 8–14
 
 Platform entity:
 - [ ] (B) ADGM RA filing submitted
@@ -173,15 +182,15 @@ Financial:
 - [ ] (Z) Ambassador Commission Ledger reconciled (Month 3)
 
 Governance:
-- [ ] (Z+D+R) Phase 1 closeout review July 11
+- [ ] (Z+D+R) Phase 1 closeout review July 10
 - [ ] (V) Phase 1 retrospective video Month 3
 - [ ] (Z) `docs/reports/2026-07.md` published
 
 ---
 
-## PHASE 2 — PLATFORM MVP (Month 4–9, Jul 16 2026 – Jan 15 2027)
+## PHASE 2 — PLATFORM MVP (Month 4–9, Jul 15 2026 – Jan 14 2027)
 
-### Month 4 (Jul 16 – Aug 15)
+### Month 4 (Jul 15 – Aug 14)
 
 Platform entity:
 - [ ] (B) ADGM HoldCo incorporation complete
@@ -217,6 +226,10 @@ Core Master Tree sections:
 - [ ] (Z) §17 Broker CRM minimum (CRM-before-CRM)
 - [ ] (Z) §18 Tier gating (Gold = affection plans; Platinum = Dymo Calendly)
 - [ ] (Z) A5 Ambassador leaderboard + share-card generator
+
+Payment / treasury — multisig migration (moved from Month 8 to Month 5–6 per sovereignty guardrail, before Ambassador treasury crosses AED 500 k):
+- [ ] (Z) **Multisig treasury migration (2-of-3 Gnosis Safe)** — must complete before Ambassador treasury balance crosses AED 500 k watermark
+- [ ] (Z) 3 signers provisioned (Zhan + Dymo + Rudi / Rudi counsel)
 
 Partnership tracks:
 - [ ] (D+Z) ENBD CRE first meeting
@@ -274,7 +287,7 @@ Autonomy wins (continued):
 
 Payment / treasury:
 - [ ] (Z) Network International N-Genius payment gateway integrated
-- [ ] (Z) Multisig treasury migration (2-of-3 Gnosis Safe)
+- [ ] (Z) Multisig treasury migration (2-of-3 Gnosis Safe) — **already live since Month 5–6 per sovereignty guardrail; verify signer rotation here if any shareholder changes**
 - [ ] (Z) Ambassador payout automation
 
 Banking:
@@ -413,6 +426,9 @@ Product:
 
 ## ONGOING — Every phase
 
+Calendar guardrails (every sprint, every month, every quarter):
+- [ ] **Check UAE public holidays before scheduling deal-critical meetings.** Key 2026 dates to plan around: Eid al-Adha Wed May 27 – Fri May 29 (six-day effective closure incl. pre-day + weekend); Islamic New Year Mon Jun 15; Prophet's Birthday Mon Aug 24; UAE National Day Wed Dec 2 – Thu Dec 3. Source: [timeanddate.com UAE holidays 2026](https://www.timeanddate.com/holidays/united-arab-emirates/2026). Government offices closed, HNWI counterparties travelling, banking / DED / DLD offline during these windows.
+
 Weekly:
 - [ ] (Z+D) Monday 10:00 stand-up (15 min)
 - [ ] (D) Pipeline refresh Monday
@@ -431,6 +447,7 @@ Monthly:
 - [ ] (Z+Book) Monthly CT + VAT check
 - [ ] (D) Commission tracker reconciliation
 - [ ] (Z) Ambassador payout run (if ≥AED 1 k threshold met)
+- [ ] (Z) **Ambassador treasury balance · multisig status checkpoint. If balance > AED 250 k AND multisig not live → escalate to Rudi within 48 h**
 
 Quarterly:
 - [ ] (Z+D+R) Quarterly deep-dive (2 hr)
