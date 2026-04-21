@@ -1,16 +1,22 @@
 # SPEC 04 — Feasibility Calculator v2 (Phase 1 Priority 4)
 
-**Status:** DRAFT v1.0 · 2026-04-21
+**Status:** DRAFT v1.1 · 2026-04-22
 **Priority:** **4 of 13** (Q-11 owner-modified ranking)
 **Target ship:** Month 4-5
 **Effort:** 1.5-2 engineer-weeks
 **Depends on:** None (standalone)
 **Blocks:** None
+**Supersedes:** v1.0 (2026-04-21, commit `ec6f65f`)
 **Source commitments:**
 - `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` §1.C AU-2 (ratified)
 - `docs/roadmap/POST_MEETING_BUILD_PLAN.md` §A2 — full inputs/outputs spec
+- `docs/specs/phase-1/FEASIBILITY_STYLE_GUIDE.md` (2026-04-22 · binding visual language + §10.4 jsPDF decision)
 - Master Tree v3 §58 Feasibility Calculator
 **Classification:** CONFIDENTIAL — internal engineering spec
+
+## v1.1 amendment note
+
+v1.0 (2026-04-21) assumed **Puppeteer** server-side PDF generation. Style Guide survey (2026-04-22) confirmed reality: **jsPDF v4.2.1 is already installed** in `package.json` + **already imported** on line 3 of the existing `src/app/parcels/map/FeasibilityCalculator.tsx` (1001 lines · v5.0 production component). v1.1 corrects every PDF-pipeline reference from Puppeteer to jsPDF and adds the instruction to **extend** the existing component rather than introduce a parallel server-side pipeline. See FEASIBILITY_STYLE_GUIDE §10.4 for the full rationale.
 
 ---
 
@@ -40,7 +46,7 @@
 
 1. **IRR computation** — not in v5. New: `computeIRR()` taking cash-flow series by period.
 2. **±20 % sensitivity band** — new: `computeSensitivity()` varies 3 key inputs (build cost / sell price / timeline months) ±20 % and returns output range.
-3. **PDF export** — new: branded client-takeaway PDF render via same Puppeteer pipeline as Spec 02.
+3. **PDF export** — new: branded client-takeaway PDF render via **jsPDF v4.2.1** (already installed + imported in existing `src/app/parcels/map/FeasibilityCalculator.tsx` line 3). Client-side rendering, no Puppeteer required. See FEASIBILITY_STYLE_GUIDE §10.4.
 4. **UI page** — new: `/admin/feasibility` (Dymo's client-meeting tool) + embedded widget on `/parcels/[id]` (one-click from plot detail).
 5. **Scenario save / load** — new: persist named scenarios to Prisma so Dymo replays client meeting.
 6. **Multi-language output** — new: PDF has EN + AR + RU toggles (Dymo's pipeline is multi-lingual).
@@ -230,7 +236,7 @@ export const SaveScenarioSchema = z.object({
 
 - POST `/api/feasibility/compute`: 120 req/min/user (live-edit sliders fire frequently).
 - POST `/api/feasibility/scenarios`: 30 req/min/user.
-- POST `/api/feasibility/scenarios/[id]/pdf`: 20 req/min/user (Puppeteer heavy).
+- POST `/api/feasibility/scenarios/[id]/pdf`: 20 req/min/user (jsPDF client-side render + Supabase upload if shared URL requested).
 
 ---
 
@@ -416,35 +422,64 @@ export function computeSensitivity(inputs: SensitivityInputs): SensitivityOutput
 
 ### 6.3 PDF generation
 
-Reuse Puppeteer pattern from `src/lib/generate-site-plan-pdf.ts` + Spec 02 invoice PDF pipeline.
+**Extend existing jsPDF usage** in `src/app/parcels/map/FeasibilityCalculator.tsx` (line 3 already imports `jsPDF` from the `jspdf` package v4.2.1). **Do NOT introduce Puppeteer** — it would add ~300 MB server dependency + Vercel Edge compatibility concerns for zero functional gain. jsPDF renders client-side, direct-downloads to iPad, and optionally uploads to Supabase for shared-URL scenarios.
+
+Arabic support uses **Amiri** (body) + **Tajawal** (headings) TTFs bundled into jsPDF at render time — see FEASIBILITY_STYLE_GUIDE §9.4.
 
 ```typescript
 // src/lib/feasibility-pdf.ts — NEW
-export async function generateFeasibilityPdf(scenarioId: string, language: "en" | "ar" | "ru"): Promise<string> {
-  const scenario = await prisma.feasibilityScenario.findUniqueOrThrow({
-    where: { id: scenarioId },
-    include: { parcel: true, user: true },
-  });
-  const inputs = scenario.inputs as FeasibilityInputsAll;
-  const outputs = fullCompute(inputs);
-  const sensitivity = computeSensitivity({ base: inputs, buildCostPct: 20, sellPricePct: 20, timelinePct: 20 });
+// Client-side module. Runs in the browser on "Export PDF" button click.
+// Shared upload path: after rendering, optionally POST the blob to
+// /api/feasibility/scenarios/[id]/pdf-upload which stores it in Supabase.
 
-  const html = renderToString(<FeasibilityPdfTemplate
-    scenario={scenario}
-    outputs={outputs}
-    sensitivity={sensitivity}
-    language={language}
-  />);
+import { jsPDF } from "jspdf";
 
-  const pdfBuffer = await puppeteerPdf(html, { format: "A4", landscape: false });
+export async function renderFeasibilityPdf(
+  scenario: FeasibilityScenario,
+  outputs: ReturnType<typeof fullCompute>,
+  sensitivity: ReturnType<typeof computeSensitivity>,
+  language: "en" | "ar" | "ru",
+): Promise<Blob> {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
+  // Arabic font loading (only if language === "ar") — Amiri + Tajawal
+  if (language === "ar") {
+    // Fonts stored in public/fonts/; loaded once and cached
+    await loadFont(doc, "Amiri-Regular", "/fonts/Amiri-Regular.ttf", "normal");
+    await loadFont(doc, "Tajawal-Bold",   "/fonts/Tajawal-Bold.ttf",   "bold");
+    doc.setR2L(true);  // right-to-left body
+  }
+
+  // Page 1: cover — logo + plot summary + hero numbers (Total Investment · Net Profit · ROI · IRR)
+  renderCoverPage(doc, scenario, outputs, language);
+
+  // Page 2: full inputs table + derived values (GFA/BUA/SFA/land/construction/finance)
+  doc.addPage();
+  renderInputsPage(doc, scenario, outputs, language);
+
+  // Page 3: sensitivity analysis + 3-axis bars + base/low/high + verdict + disclaimers
+  doc.addPage();
+  renderSensitivityPage(doc, sensitivity, language);
+
+  return doc.output("blob");
+}
+
+// Upload path (optional, invoked only if user clicked "Get Shareable Link")
+export async function uploadFeasibilityPdf(scenarioId: string, blob: Blob, language: "en"|"ar"|"ru"): Promise<string> {
   const filePath = `feasibility/${scenarioId}-${language}.pdf`;
-  const { data, error } = await supabase.storage.from("zaahi-pdfs").upload(filePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
+  const { error } = await supabase.storage.from("zaahi-pdfs").upload(filePath, blob, { contentType: "application/pdf", upsert: true });
   if (error) throw error;
-  const { data: signed } = await supabase.storage.from("zaahi-pdfs").createSignedUrl(filePath, 60 * 60 * 24 * 7);   // 7 day expiry
+  const { data: signed } = await supabase.storage.from("zaahi-pdfs").createSignedUrl(filePath, 60 * 60 * 24 * 7);  // 7-day expiry
   return signed!.signedUrl;
 }
+
+// Client download path (default) — no server involvement
+// doc.save(`zaahi-feasibility-${scenarioId}-${language}.pdf`);  // triggers browser download
 ```
+
+**Call sites:**
+- Client download button on `/admin/feasibility` → `renderFeasibilityPdf(...)` → `blob` → `saveAs(blob, filename)` (using `file-saver` OR just `doc.save(filename)` which handles it natively).
+- "Get shareable link" button → `renderFeasibilityPdf(...)` → `uploadFeasibilityPdf(...)` → signed URL → clipboard + email template.
 
 PDF template structure (2-3 pages):
 - **Page 1:** Cover · plot summary · parties · ZAAHI Signature 3D render thumbnail (if parcel has one) · big headline numbers (Total Investment · Net Profit · ROI · IRR).
@@ -538,7 +573,7 @@ export async function prefillFromParcel(parcelId: string): Promise<Partial<Feasi
 
 - Compute endpoint response < 100 ms (p95).
 - Sensitivity endpoint < 300 ms (3 full computes).
-- PDF generation < 5 s (Puppeteer + Supabase upload).
+- PDF generation < 2 s (jsPDF client-side render); < 5 s end-to-end if "Get shareable link" requested (adds Supabase upload).
 - Slider-driven live-update debounced 300 ms.
 
 ### 8.2 Security
@@ -581,7 +616,7 @@ export async function prefillFromParcel(parcelId: string): Promise<Partial<Feasi
 | UI — inputs panel | 6-8 | 5 input sub-panels · sliders + number inputs · live update |
 | UI — results panel | 6-8 | Cards + sensitivity chart + verdict badge + iPad landscape layout |
 | UI — scenario CRUD | 3-4 | Save / load / list / delete modals |
-| PDF template | 6-8 | React-based template + Puppeteer pipeline + Supabase upload |
+| PDF template | 6-8 | jsPDF imperative drawing + Amiri/Tajawal Arabic font embedding + optional Supabase upload for shared URL |
 | Parcel prefill + widget | 3-4 | Prefill helper + `/parcels/[id]` CTA card |
 | Multi-language | 3-4 | EN / AR / RU translation + RTL PDF |
 | Tests | 5-7 | Unit + 5 E2E + accessibility |
@@ -637,7 +672,7 @@ Realistic at Phase 1 Zhan allocation (~14 hrs / week eng + deal support): **3-4 
 ### If stuck, check these files first
 
 - `src/lib/feasibility.ts` (500 lines — ALL existing pure formulas). **Do not rewrite.**
-- `src/lib/generate-site-plan-pdf.ts` (existing Puppeteer pattern).
+- `src/app/parcels/map/FeasibilityCalculator.tsx` line 3 (existing `jsPDF` import — **extend this implementation, do not introduce Puppeteer**).
 - `src/app/parcels/[id]/page.tsx` (existing parcel detail — you add CTA card here).
 - `src/lib/translate.ts` (existing i18n pattern for EN/AR/RU).
 - CLAUDE.md UI Style Guide (iPad landscape layout per §5.3).
@@ -647,7 +682,7 @@ Realistic at Phase 1 Zhan allocation (~14 hrs / week eng + deal support): **3-4 
 - **Do NOT** reimplement v5 pure formulas. The 500 lines are tested founder-approved as-is. Wrap, don't replace.
 - **Do NOT** skip IRR NaN handling. Half of construction-heavy scenarios don't have a real IRR; silently showing "NaN" is worse than "n/a."
 - **Do NOT** auto-save on every slider move. 300 ms debounce + explicit Save button. Auto-save floods DB with noise.
-- **Do NOT** run Puppeteer on Vercel Edge — serverless only; `maxDuration: 30` in route config.
+- **Do NOT** introduce Puppeteer. jsPDF v4.2.1 is already installed + already used in the existing FeasibilityCalculator.tsx (line 3). Client-side rendering is the correct path for this spec. Saves ~300 MB server dependency + Vercel Edge compatibility work.
 - **Do NOT** skip AR right-to-left testing. Al Tamimi + GCC clients expect legible Arabic output.
 - **Do NOT** forget the "Run Feasibility" button on `/parcels/[id]` — it's the primary entry point for owner exploration.
 - **Do NOT** store cached outputs as source-of-truth. Re-compute on load; `cachedOutputs` is for list-view display only.
