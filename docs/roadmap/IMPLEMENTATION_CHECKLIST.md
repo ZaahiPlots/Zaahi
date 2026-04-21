@@ -38,7 +38,7 @@ Corporate formation:
 - [ ] (B) BSA delivers MoA + SA + SAFE drafts Apr 24
 - [ ] (Z+D+R) MoA v1 review + sign-off Apr 24
 - [ ] (Z) UAE Pass confirmed enrolled for Dymo
-- [ ] (Z) Trademark filings: UAE MoE Class 9, 36, 41, 42 — AED 60–120 k
+- [ ] (Z) Trademark filings: UAE MoE Class 9, 36, 41, 42 — AED 80 – 100 k (plus WIPO Madrid AED 50 – 60 k filed after UAE acknowledgement; total UAE + WIPO AED 130 – 160 k per mid-tier IP counsel 2026 quotes)
 - [ ] (Z) WIPO Madrid Protocol extension prepared
 - [ ] (Z) Conditional bank account applications to ENBD, ADCB, FAB, Mashreq Apr 23
 
@@ -279,6 +279,8 @@ Agency:
 
 ### Month 8 (Nov 16 – Dec 15)
 
+**Calendar note:** UAE National Day Wed Dec 2 + Thu Dec 3, 2026 — combined with weekend = 4-day national break. No external meetings Dec 2–6. Content opportunity: founder-anniversary posts around Dec 2. Do not schedule bank MOU signings / DLD appointments / partnership kick-offs in that window; move to before Nov 30 or after Dec 7.
+
 Autonomy wins (continued):
 - [ ] (Z) Autonomy §1.6 Property descriptions 6-lang live
 - [ ] (Z) Autonomy §2.3 Auto-detect new developments (satellite + web) live
@@ -316,7 +318,7 @@ Governance:
 
 ---
 
-## PHASE 3 — SCALE (Month 10–24, Jan 16 2027 – Apr 21 2028)
+## PHASE 3 — SCALE (Month 10–24, Jan 16 2027 – Apr 20 2028)
 
 ### Q1 2027 (Jan 16 – Apr 15)
 

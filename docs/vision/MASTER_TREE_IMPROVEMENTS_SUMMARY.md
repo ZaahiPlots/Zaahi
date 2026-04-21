@@ -71,7 +71,7 @@ Sourced from `MASTER_TREE_SOVEREIGNTY_PROPOSALS.md`.
 |:-:|---|:-:|---|---:|---|
 | 1 | **Anthropic zero-retention DPA** (Sovereignty §2.1 + §5.1) | P0 | 4 hours | Free | Blocks PDPL-sensitive Archibald use. Free. Today. |
 | 2 | **UAE Pass integration** (Sovereignty §4.1) | P0 | 4 eng-weeks | AED 5–15 k | Every DLD / RERA / TAMM / ADGM MOU requires it. |
-| 3 | **Trademark registration UAE + WIPO (4 classes + Madrid Protocol)** (Sovereignty §7.1) | P0 | 3 months wall-clock | AED 60–120 k | Every month of delay = squatter risk. |
+| 3 | **Trademark registration UAE + WIPO (4 classes + Madrid Protocol)** (Sovereignty §7.1) | P0 | 3 months wall-clock | AED 130–160 k (UAE 80–100 k + WIPO 50–60 k, mid-tier IP counsel 2026 quotes) | Every month of delay = squatter risk. |
 | 4 | **Gitea UAE mirror of GitHub repo** (Sovereignty §6.1) | P1 | 1 eng-week | AED 3 k + 1 k / yr | Cheapest-per-risk move in entire document. |
 | 5 | **Passkeys / WebAuthn** (Sovereignty §4.3 + Safety §2.1) | P1 | 3 eng-weeks | 0 | NIST AAL2-compliant; table-stakes 2026 security. |
 | 6 | **Mistral fallback AI provider + provider abstraction** (Sovereignty §5.1) | P1 | 2 eng-weeks | AED 40–80 k / yr inference | Single-provider concentration risk gone. |
@@ -132,7 +132,7 @@ Columns show which of the four proposal domains ship each quarter. Squares marke
 | Category | AED | Notes |
 |---|---:|---|
 | Engineering effort (safety + autonomy + sovereignty + missing branches) | Included in headcount | ~150–200 engineer-weeks cumulative (~40–60 % of 3-engineer-team capacity over 24 months) |
-| Trademark UAE + WIPO (sovereignty §7) | 60–120 k | One-time, 4 classes + Madrid Protocol |
+| Trademark UAE + WIPO (sovereignty §7) | 130–160 k | One-time, 4 classes + Madrid Protocol (UAE 80–100 k + WIPO 50–60 k) |
 | Patent PCT filing (sovereignty §7 P3) | 120–200 k | Optional; high-value if Platform Series A closes |
 | Trade-secret policy + NDA framework | 5 k | — |
 | Copyright registration bundle | 3 k | — |

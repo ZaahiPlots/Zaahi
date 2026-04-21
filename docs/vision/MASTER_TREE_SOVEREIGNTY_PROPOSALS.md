@@ -494,7 +494,7 @@ Cost: AED 300–600 per registration, bundle for ~AED 3 k total.
 
 | Phase | Timeline | One-time | OpEx / yr | Effort |
 |---|---|---:|---:|---|
-| 1 — Trademark (UAE + WIPO) | Q2 2026 | AED 60–120 k | AED 10 k renewal cycle | Founder time + counsel |
+| 1 — Trademark (UAE + WIPO) | Q2 2026 | AED 130–160 k (UAE 80–100 k across 4 classes + WIPO Madrid 50–60 k, mid-tier IP counsel 2026 quotes) | AED 10 k renewal cycle | Founder time + counsel |
 | 2 — Defensive publication | Q3 2026 | AED 10 k | AED 0 | 2 eng-weeks |
 | 3 — Patent (1 PCT) | Q4 2026 – Q2 2027 | AED 120–200 k | AED 15 k maintenance | Counsel + founder |
 | 4 — Trade-secret policy + NDA | Q2 2026 | AED 5 k | AED 2 k | 1 founder-week |

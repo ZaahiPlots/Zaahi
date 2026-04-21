@@ -4,7 +4,7 @@
 **Prepared for:** Zhan (Founder/CEO/CTO), Dymo (Co-founder, Ambassador, Ops Principal), Rudi (Principal Investor, Board)
 **Prepared on:** 2026-04-20 (one day after Al Jurf MOU signing)
 **Branch:** `research/vision-and-competitors-2026-04-19`
-**Horizon:** 2026-04-21 → 2028-04-21
+**Horizon:** 2026-04-20 → 2028-04-20 (Day 1 = Mon Apr 20 2026 per corrected calendar; investor-package v7 Apr 21 label flagged in `docs/audit/INVESTOR_PACKAGE_ISSUES.md`)
 **Canonical reference:** `docs/architecture/MASTER_TREE_final.md` (85 sections, 12 blocks) — unchanged
 **Related documents** (all final; this plan consolidates their execution):
 - `docs/vision/ZAAHI_VISION_CLARITY.md`
@@ -53,7 +53,7 @@ Neither engine survives alone: the Agency without the Platform is just another D
 
 Eight items sit on the critical path — if any slips two weeks, the dependent chain slips with it:
 
-1. **DED Mainland LLC formation submission** (Day 1, Mon Apr 21 2026). Gates everything else legal.
+1. **DED Mainland LLC formation submission** (Day 1, Mon Apr 20 2026). Gates everything else legal.
 2. **RERA broker card for Dymo** (Week 2–5). Gates Agency operations.
 3. **ENBD / ADCB corporate account** (Week 2–4). Gates escrow and commission receivables.
 4. **Rudi SAFE execution + AED 1 M wire** (Week 3–4). Gates operational runway.
@@ -66,7 +66,7 @@ Items 1–4 must ship in 4 weeks. Items 5–8 depend on 1–4 and run across mon
 
 ---
 
-## §2 PHASE 1 — AGENCY FOUNDATION (Month 1–3, April 21 – July 15, 2026)
+## §2 PHASE 1 — AGENCY FOUNDATION (Month 1–3, April 20 – July 14, 2026)
 
 The north star of Phase 1 is the **first closed commission.** Everything that does not move a deal toward close is deprioritised. The playbook is conventional Dubai brokerage — register entity, get licences, open bank account, land first client — executed faster than convention because the platform at `zaahi.io` is already live and the team has Rudi's demo-committed capital waiting for entity completion.
 
@@ -406,7 +406,7 @@ Shipping milestones (aligned with `docs/roadmap/POST_MEETING_BUILD_PLAN.md`):
 | Item | Rank in Build Plan | Effort | Revenue unlock |
 |---|:-:|---|---|
 | §31 Deal Engine state machine + DLD-ready Form F generator | A1 | 3–4 eng-weeks | Every deal flows automatically |
-| §58 Feasibility Calculator v2 | A2 | 2–3 eng-weeks | Developer deal AED 1.2 M commission |
+| §58 Feasibility Calculator v2 (inputs: plot area · GFA ratio · setbacks · floor count · saleable ratio · build cost / sqft · sell price / sqft · finance cost · timeline months. Outputs: total cost · total revenue · gross margin · IRR · break-even floor count · ±20 % sensitivity band · PDF export. Full spec: `POST_MEETING_BUILD_PLAN.md` §A2.) | A2 | 2–3 eng-weeks | Developer deal AED 1.2 M commission |
 | A5 Ambassador dashboard polish + leaderboard | A5 | 1 eng-week | Viral loop unlock |
 | §17 / §18 Broker CRM + tier-gated content | B3 | 1 eng-week + content | Subscription moat |
 | §66 Market Intelligence — DLD transaction overlay | A4 + C1 | 2–3 eng-weeks | AED 600 k / yr subscription path |
@@ -435,6 +435,8 @@ End of Month 6 cumulative revenue estimate: **AED 3.0 – 4.0 M** (vs base case 
 
 **Top autonomy wins + local LLM + transfer pricing + deal velocity.**
 
+**Calendar note.** Month 8 contains the UAE National Day 2-day holiday (Wed Dec 2 + Thu Dec 3, 2026). Combined with the weekend (Fri Dec 4 – Sat Dec 5 under the Mon–Fri business week) this is a 4-day break. Content opportunity: founder-anniversary / nation-building posts around Dec 2. Do not schedule DED / DLD / bank / gov-partnership meetings Dec 2 – 6; plan any bank MOU signings before Nov 30 or after Dec 7. Reference: [UAE 2026 public holidays — timeanddate.com](https://www.timeanddate.com/holidays/united-arab-emirates/2026).
+
 Shipping:
 
 | Item | Source | Effort |
@@ -458,7 +460,7 @@ End of Month 9 cumulative Agency revenue estimate: **AED 5.0 – 6.5 M**. ADGM P
 
 ---
 
-## §4 PHASE 3 — SCALE (Month 10–24, January 16 2027 – April 21 2028)
+## §4 PHASE 3 — SCALE (Month 10–24, January 16 2027 – April 20 2028)
 
 Phase 3 purpose: Platform transitions from private beta → public GA. Agency scales team. Geographic expansion begins (Abu Dhabi first). Revenue diversifies across Platform tier subscriptions + ambassador downline + data licensing.
 
@@ -540,7 +542,7 @@ End of Month 24 scorecard:
 
 The visual dependency map is in `docs/roadmap/DEPENDENCIES_MAP.md` (separate deliverable).
 
-Shortest critical path to first bank partnership live on platform: **36 weeks** (Apr 21 → Dec 30, if every dependency ships on schedule). Realistic with 2-week buffer at each node: **44 weeks** (Apr 21 → Feb 26, 2027).
+Shortest critical path to first bank partnership live on platform: **36 weeks** (Apr 20 → Dec 29, if every dependency ships on schedule). Realistic with 2-week buffer at each node: **44 weeks** (Apr 20 → Feb 25, 2027).
 
 ### 5.3 Parallel tracks
 
@@ -613,19 +615,20 @@ Hire when a specific trigger fires — not before:
 | Line | AED / month |
 |---|---:|
 | Videographer | 10 000 |
-| Office (virtual AED 600 + Al Jurf operational) | 3 000 |
+| Virtual office + Ejari (DED-registered address) | 600 |
+| Al Jurf operational HQ (per LAUNCH_PLAN AED 250 k / yr) | 20 833 |
 | Software subscriptions (Vercel, Supabase, Anthropic, Mapbox, misc) | 5 000 |
 | Legal (BSA retainer from Month 2) | 10 000 |
 | Accounting / bookkeeping | 5 000 |
 | Misc (travel, meetings, comms) | 10 000 |
-| **Total Phase 1 burn** | **~AED 43 000** |
+| **Total Phase 1 burn** | **~AED 61 500** |
 
-Rudi AED 1 M runway: ~23 months at Phase 1 burn alone (excluding formation one-time AED 60 k, legal one-time AED 50 k, trademarks AED 100 k).
+Rudi AED 1 M runway: ~16 months at Phase 1 burn alone (AED 1 M / AED 61.5 k ≈ 16.3 months). Excludes formation one-time AED 60 k, legal one-time AED 50 k, trademarks AED 140 k.
 
-**One-time Phase 1 costs (~AED 300 k):**
+**One-time Phase 1 costs (~AED 340 k):**
 - Entity formation + trade licence + RERA + Ejari: ~AED 60 k.
 - Legal (BSA Tier A + B): ~AED 50 k.
-- Trademark UAE + WIPO: ~AED 100 k (Class 9/36/41/42 UAE + Madrid).
+- Trademark UAE + WIPO: ~AED 130 – 160 k (UAE AED 80 – 100 k across Class 9/36/41/42 + WIPO Madrid AED 50 – 60 k — mid-tier IP counsel quotes 2026, see §2.1 Day 4 narrow range).
 - Miscellaneous setup (accounting system, equipment, contingency): ~AED 90 k.
 
 **Expected Month-3 cash position:** AED 1 M – AED 300 k (one-time) – AED 130 k (3 months burn) + AED 790 k (first commission gross) – AED 350 k (70 % Platform fee accrued, not yet cash-out) = **AED 1.0–1.4 M** in Agency, plus ~AED 350 k in Platform Dev Fund accrual.
@@ -820,7 +823,7 @@ One sentence on the week.
 | Bank partnerships | 2 (ENBD + ADCB) | 4 (add Mashreq + FAB) |
 | Ambassador sign-ups (paid tiers) | 80+ | 300+ |
 | Master Tree % LIVE | 25 % | 40 % |
-| Cumulative Rudi distributions | AED 800 k | AED 2.5 M (Sunset fired M20) |
+| Cumulative Rudi distributions | AED 520 k (at AED 10 M revenue × 10 % distributable-profit share) | AED 2.0 M (Sunset Financial Trigger fires Month 22 – 24) |
 | Platform Dev Fund accumulated | AED 7 M | AED 16 M |
 
 Implication: Platform Series A pursued Month 22–24 at AED 500–800 M valuation. Rudi 80 % Agency position converts early; Platform 10 % retained.
@@ -870,23 +873,24 @@ Implication: Sunset Time Trigger (5-year backstop) becomes relevant instead of F
 | Date | Milestone |
 |---|---|
 | Sun 2026-04-19 | MOU signed Al Jurf |
-| Mon 2026-04-21 | DED Mainland LLC formation submitted |
-| Tue 2026-04-22 | BSA legal counsel engaged |
-| Thu 2026-04-24 | Trademark filing begins UAE + WIPO |
-| Mon 2026-05-05 | SAFE expected signed |
-| Mon 2026-05-05 | Trade licence expected issued |
-| Mon 2026-05-12 | ENBD corporate account active |
+| Mon 2026-04-20 | DED Mainland LLC formation submitted (Day 1) |
+| Tue 2026-04-21 | BSA legal counsel engaged (Day 2) |
+| Thu 2026-04-23 | Trademark filing begins UAE + WIPO (Day 4) |
+| Mon 2026-05-04 | SAFE expected signed (Week 3 Monday) |
+| Mon 2026-05-04 | Trade licence expected issued |
+| Thu 2026-05-07 | Digital-first bank account active (Wio / Mashreq Neo) |
 | Fri 2026-05-22 | RERA broker card for Dymo |
+| Mon 2026-06-08 | ENBD tier-1 corporate account realistic activation (4–8 week window) |
 | Mon 2026-06-22 | First deal Form F signed |
 | Wed 2026-07-15 | First commission received |
-| Wed 2026-07-15 | ADGM HoldCo incorporation started |
-| Fri 2026-08-15 | ADGM HoldCo incorporated |
-| Fri 2026-10-15 | P0 safety + sovereignty shipped |
+| Wed 2026-07-15 | ADGM HoldCo incorporation filing started |
+| Fri 2026-08-14 | ADGM HoldCo incorporated (typical 3–4 week window, range 2–6) |
+| Thu 2026-10-15 | P0 safety + sovereignty shipped |
 | Mon 2026-11-30 | ENBD mortgage MOU signed (target) |
-| Sun 2027-01-15 | Phase 2 complete, 3–5 deals closed |
+| Fri 2027-01-15 | Phase 2 complete, 3–5 deals closed |
 | Thu 2027-04-15 | Phase 3 begins, Platform public beta |
-| Thu 2027-10-15 | Platform GA launch |
-| Thu 2028-04-15 | Year 2 end — 15–20 deals cumulative, Abu Dhabi branch, Series A prep |
+| Fri 2027-10-15 | Platform GA launch |
+| Sat 2028-04-15 | Year 2 end — 15–20 deals cumulative, Abu Dhabi branch, Series A prep |
 
 ### Appendix B — Budget summary (Y1)
 
@@ -894,15 +898,16 @@ Implication: Sunset Time Trigger (5-year backstop) becomes relevant instead of F
 |---|---:|
 | Entity formation + trade licence + RERA + Ejari | 60 000 |
 | Legal (BSA Tier A+B one-time + retainer Y1) | 150 000 |
-| Trademark UAE + WIPO + IP counsel | 100 000 |
+| Trademark UAE + WIPO + IP counsel | 140 000 |
 | Videographer (Y1 retainer) | 120 000 |
-| Office + software + comms (Y1) | 180 000 |
+| Al Jurf operational HQ (per LAUNCH_PLAN) | 250 000 |
+| Virtual office + software + comms (Y1) | 70 000 |
 | DPO external retainer (from Month 4) | 100 000 |
 | Pen test + security tooling | 120 000 |
 | Transfer pricing study | 120 000 |
 | Accounting / bookkeeping / CT compliance | 60 000 |
 | Contingency / emergency | 100 000 |
-| **TOTAL Y1 opex** | **~AED 1 110 000** |
+| **TOTAL Y1 opex** | **~AED 1 390 000** |
 
 Against AED 1 M Rudi + AED 7.8 M Agency revenue base case = ample runway. Year 2 opex scales to ~AED 2.5 M (add Chief of Staff + 2nd engineer + DC migration).
 

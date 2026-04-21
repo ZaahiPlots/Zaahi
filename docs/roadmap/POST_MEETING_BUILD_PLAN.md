@@ -4,7 +4,7 @@
 **Prepared for:** Zhan (Founder/CEO/CTO), Dymo (Co-founder), Rudi (Investor, Board)
 **Prepared on:** 2026-04-20
 **Branch:** `research/vision-and-competitors-2026-04-19`
-**Horizon:** 2026-04-21 → 2027-04-21 (first 12 months post-MOU)
+**Horizon:** 2026-04-20 → 2027-04-19 (52 weeks post-MOU; Day 1 = Mon Apr 20 2026 per corrected calendar)
 **Classification:** CONFIDENTIAL
 
 ---
@@ -363,7 +363,7 @@ Quarterly breakdown of what ships when.
 These are the architectural / budget calls Zhan + Dymo need from the Board post-MOU:
 
 1. **Approve C3 Planet Labs satellite contract** (AED 60 k / yr) — Week 6.
-2. **Approve hiring Chief of Staff** (AED 20 k / mo initially) — Week 4.
+2. **Approve hiring Chief of Staff** (AED 30 – 45 k / mo — Dubai market rate for senior ops lead; AED 360 – 540 k / yr) — Week 4. Original AED 20 k figure was below-market and set up bad-hire / fast-attrition risk.
 3. **Approve AED 150 k legal budget** for B4 tokenisation DIFC / ADGM counsel — Week 10.
 4. **Approve Apple Vision Pro procurement** (AED 15 k) for B2 — Week 15.
 5. **Approve LeadingRE annual fee** (USD 5–25 k) for C (international referrals) — Week 20.
@@ -392,7 +392,7 @@ Each of these is worth building eventually; none ships in Y1.
 
 ## Definition of Year-1 success
 
-At Week 52 (2027-04-21), the following must be true:
+At Week 52 (Mon 2027-04-19, exactly 52 weeks after Day 1 Mon 2026-04-20), the following must be true:
 
 - ✅ Agency: **AED 7.8 M+ revenue booked**, 12+ premium plot deals closed, 2+ off-plan floor deals.
 - ✅ Platform: **50+ Gold + 10+ Platinum ambassadors**, AED 400 k+ subscription revenue.
