@@ -1,11 +1,11 @@
 ---
 Document: MASTER TREE ENHANCEMENT PROPOSAL
-Version: v1.0.1 DRAFT
+Version: v1.2 DRAFT
 Status: DRAFT — Awaiting Part III/IV/V review + 3 signatures
 Effective upon: Zhan Ryspayev + Dymo Tsvyk + Rudi Belin signatures
 Binding period: Upon signature through Sunset trigger OR 5 years (whichever earlier)
-Supersedes: v1.0 DRAFT (2026-04-21, commit 9f864da)
-Last updated: 2026-04-21 (math corrections)
+Supersedes: v1.0.1 DRAFT (2026-04-21, commit 7ad1e40) · v1.0 DRAFT (2026-04-21, commit 9f864da)
+Last updated: 2026-04-22 (Super-Admin integration + D-21 Wall added)
 Branch: research/vision-and-competitors-2026-04-19
 Classification: CONFIDENTIAL
 Prepared by: Agent (Claude Opus 4.7, 1M context)
@@ -17,7 +17,9 @@ Prepared for: Zhan Ryspayev (Founder/CEO/CTO) · Dymo Tsvyk (Co-founder/Ops/Amba
 ## Version history
 
 - **v1.0 DRAFT** (2026-04-21, commit `9f864da`): Initial draft post-audit, 34 approved items, 20 deferred, 8 rejected, 22 Part III/IV/V defaults applied, AED 2.6–3.8 M 24-month budget per `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3.
-- **v1.0.1 DRAFT** (2026-04-21, this version): Math corrections per founder review — (1) Y1 Chief of Staff cost (Month 8-12 inclusion) added to §4.3 table; (2) Y1 header + total restated as ranges matching line-item sums; (3) §4.4 Y2 totals restated as ranges reflecting actual midpoint + range line-item arithmetic; (4) §6.4 Phase 1 burn-rate KPI precision (AED 61.5 k base target / ≤ AED 65 k ceiling); (5) downstream cascade across §4.1, §4.5, Appendix E, Appendix I D-34. 24-month budget restated AED 3.1 – 4.5 M, diverging from `IMPROVEMENTS_SUMMARY.md` §6.3 (explicit divergence note in §4.1).
+- **v1.0.1 DRAFT** (2026-04-21, commit `7ad1e40`): Math corrections per founder review — (1) Y1 Chief of Staff cost (Month 8-12 inclusion) added to §4.3 table; (2) Y1 header + total restated as ranges matching line-item sums; (3) §4.4 Y2 totals restated as ranges reflecting actual midpoint + range line-item arithmetic; (4) §6.4 Phase 1 burn-rate KPI precision (AED 61.5 k base target / ≤ AED 65 k ceiling); (5) downstream cascade across §4.1, §4.5, Appendix E, Appendix I D-34. 24-month budget restated AED 3.1 – 4.5 M, diverging from `IMPROVEMENTS_SUMMARY.md` §6.3 (explicit divergence note in §4.1).
+- **v1.1** — skipped per founder directive (version namespace reserved, not issued).
+- **v1.2 DRAFT** (2026-04-22, this version): Super-Admin integration + D-21 Wall added. (1) §1.E E-2 amended with Super-Admin cross-reference to Spec 03 v2 §14. (2) §2 DEFERRED gains D-21 Wall (Community Feed) — Phase 3 deferred, trigger = stable Phase 2 (≥500 external users) AND Community Manager hired AND Archibald AI battle-tested 6+ months; chicken-egg rationale documented. (3) §6.1 Phase 1 milestones gains M2.5 "Super-Admin mode live (Month 4-5)" enabling "каждая встреча = сделка" operational principle before Plot 1 first commission Fri 2026-06-19.
 
 ## PREAMBLE — Recitals
 
@@ -171,8 +173,8 @@ The following Master Tree sections ship as owner-first Phase 1 builds (expanding
 - HOW MUCH: AED 0 marginal (Zhan's existing capacity; no new hires Phase 1 except CoS at Month 8).
 - HOW TO VERIFY: Q-2 D completion test (founder attestation + 13 capability floor).
 
-**E-2 · §75 Admin Panel (pragmatic B).** [RATIFIED — Q-12 B]
-- WHO: Zhan · WHAT: CRUD forms for 5 core entities (User, Parcel, Deal, Ambassador, Commission) + feature-flag toggle UI (Archibald on / off · Ambassador signup open / closed · tier gating on / off) + tier-price editor · WHEN: Month 4 (priority 3 per Q-11) · WHERE: §75 Admin · WHY: self-service moat; no env-var edits for price / toggle changes · HOW: 3-4 engineer-weeks · HOW MUCH: AED 0 · HOW TO VERIFY: Zhan changes Gold tier from AED 5 k → AED 7 k via UI; database reflects change; live signup form shows new price within 30 s.
+**E-2 · §75 Admin Panel (pragmatic B + Super-Admin extension).** [RATIFIED — Q-12 B · AMENDED v1.2 per founder directive 2026-04-22]
+- WHO: Zhan · WHAT: **MVP v1** — CRUD forms for 5 core entities (User, Parcel, Deal, Ambassador, Commission) + feature-flag toggle UI (Archibald on / off · Ambassador signup open / closed · tier gating on / off) + tier-price editor. **v2 SUPER-ADMIN EXTENSION** (added v1.2) — role hierarchy with SUPER_ADMIN tier (Zhan + Dymo only) + role impersonation + state override + bulk operations + direct data interface (SELECT-only SQL) + feature bypass + session intervention + "каждая встреча = сделка" flows. WireGuard VPN gate for /super-admin/** routes. Iron-clad regulatory guardrails (UAE AML Federal Law 10/2025 · PDPL Article 18 · FTA CT backdate boundary). Full spec: `docs/specs/phase-1/03-ADMIN_PANEL_SPEC.md` v2.0 §14. · WHEN: MVP v1 Month 4 · Super-Admin v2 Month 4-5 (BEFORE Plot 1 first commission Fri 2026-06-19) · WHERE: §75 Admin Panel (Master Tree scope extended; no canonical amendment) · WHY: self-service moat + on-spot client-meeting deal closure without system-rule friction · HOW: MVP 3-4 engineer-weeks + Super-Admin 2-2.5 engineer-weeks · HOW MUCH: AED 0 marginal (Zhan's capacity) · HOW TO VERIFY: Zhan changes Gold tier AED 5 k → AED 7 k via UI within 30 s; separately, Dymo closes a test Deal end-to-end via `/super-admin/deals/new` in < 5 minutes with full audit trail.
 
 **E-3 · §17 Broker (owner-side dashboard Phase 1).** [RATIFIED — Q-9 A]
 - Owner-side = Dymo managing his own deals (pipeline, viewings, offers, closings). External broker signup is Phase 2 (§17/§18 combined). Priority 11 per Q-11 ranking — time permits.
@@ -222,6 +224,7 @@ The following Master Tree sections ship as owner-first Phase 1 builds (expanding
 | D-18 | ZAAHI Academy launch (Missing §3) | Phase 3 Q3-Q4 2027 | DREI partnership preliminary + first 30 waitlist | AED 120 k content production | Q3 2027 |
 | D-19 | Secondary / Distressed consolidation (Missing §6) | Phase 3 2028 | Agency Y2 revenue > AED 15 M | Medium editorial + partnership · AED 5–20 M Y5 revenue | 2028 |
 | D-20 | ESG / Sustainability expansion (Missing §2) | Phase 3 2028 | First foreign-capital LP requires ESG mandate | 10 engineer-weeks + data science | 2028 |
+| D-21 | **Wall (Community Feed)** — Reddit-style community feed with Archibald AI auto-reply, moderation, daily digest, weekly aggregated market report; 4 categories (market insights · deal sourcing · Q&A · events); multilingual thread support. Master Tree ref: §74 Community extended + §41 AI System integration. | Phase 3 Month 18+ | **ALL required:** (1) Stable Phase 2 with ≥ 500 external users active · (2) Community Manager hired (Q-30 B default, Month 12+) · (3) Archibald AI battle-tested 6+ months on Phase 1+2 traffic. Rationale: chicken-egg — wall without users = empty room; critical mass required. Alternative if Phase 2 stalls = skip Wall, keep Archibald AI as concierge-only service. | 10-15 engineer-weeks · AED 0 through Month 15; budget review Month 15 | Month 15 milestone review |
 
 ---
 
@@ -373,6 +376,7 @@ Founder equity + vesting per MOU (unchanged):
 | M6 | First commission received (Plot 1) | Fri Jun 19 2026 (Week 9) | Dymo + Zhan | AED 790 k in Agency bank |
 | M7 | Feasibility Calculator v2 live | Month 4-5 | Zhan | Dymo demos on iPad < 2 min |
 | M8 | Admin Panel Pragmatic B live | Month 4 | Zhan | Feature toggle + tier editor |
+| **M8.5** | **Super-Admin mode live** (Spec 03 v2 §14) — enables "каждая встреча = сделка" operational principle | **Month 4-5 (BEFORE Plot 1 first commission Fri 2026-06-19)** | Zhan | **Dymo closes a test Deal end-to-end via `/super-admin/deals/new` in < 5 minutes with full audit trail; WireGuard VPN gate operational; iron-clad regulatory guardrails (AML / PDPL / FTA) tested** |
 | M9 | ADGM HoldCo incorporation filing initiated | Tue Jul 7 2026 | BSA | RA submission acknowledgement |
 | M10 | ADGM HoldCo incorporated | Fri Aug 14 2026 (2–6 wk range) | BSA | RA issuance letter |
 | M11 | Data Processing Register + DPO retained | Month 5-6 | Zhan + DPO | `docs/compliance/data-processing-register.md` committed; DPO contact on `/privacy` |
