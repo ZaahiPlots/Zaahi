@@ -1,16 +1,23 @@
 # SPEC 02 — Invoice + Commission Tracker (Phase 1 Priority 2)
 
-**Status:** DRAFT v1.0 · 2026-04-21
+**Status:** DRAFT v1.1 · 2026-04-22
 **Priority:** **2 of 13** (Q-11 owner-modified ranking) — promoted from Priority 5 because must ship BEFORE first Agency commission Fri 2026-06-19
 **Target ship:** Month 2-3 (end by Thu 2026-06-18 at the latest)
 **Effort:** 2 engineer-weeks realistic (range 1.5–3 eng-weeks)
 **Depends on:** None (new greenfield)
-**Blocks:** Spec 01 Deal Engine (invoice trigger on DEAL_COMPLETED) · Spec 03 Admin Panel (commission payout UI)
+**Blocks:** Spec 01 Deal Engine (invoice trigger on DEAL_COMPLETED) · Spec 03 Admin Panel (commission payout UI + Super-Admin v2 §14.6 manual payment + `pendingTRN` bypass)
+**Supersedes:** v1.0 (2026-04-21, commit `b9c369d`)
 **Source commitments:**
 - `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` §1.C AU-3 (ratified)
 - `docs/audit/OPEN_QUESTIONS_FOR_OWNERS.md` Q-11 priority 2
+- `docs/specs/phase-1/FEASIBILITY_STYLE_GUIDE.md` (2026-04-22 · §9.4 Arabic font embedding + §10.4 jsPDF decision)
+- `docs/specs/phase-1/03-ADMIN_PANEL_SPEC.md` v2.0 §14.6 (Super-Admin manual payment bypass surface)
 - Master Tree v3 §03 Transactions · §18 Ambassador · §32 Escrow · §62 Legal Engine
 **Classification:** CONFIDENTIAL — internal engineering spec
+
+## v1.1 amendment note
+
+v1.0 (2026-04-21) specified **Puppeteer**-driven server-side Tax Invoice PDF generation. Style Guide survey (2026-04-22) confirmed reality: **jsPDF v4.2.1 is already installed** in `package.json` + already used elsewhere in the codebase. v1.1 corrects every PDF-pipeline reference from Puppeteer to jsPDF, aligning with Spec 04 v1.1 and avoiding ~300 MB Puppeteer server dependency. Arabic font embedding (Amiri + Tajawal) reuses the FEASIBILITY_STYLE_GUIDE §9.4 pattern. Additionally, Spec 02 v1.1 adds the `pendingTRN: true` bypass flag to support Spec 03 v2 §14.6 Super-Admin manual-override workflow (allows ISSUED state pre-TRN registration with explicit Super-Admin attestation).
 
 ---
 
@@ -24,7 +31,7 @@
 - Three invoice types: `AGENCY_COMMISSION` · `PLATFORM_SERVICE_FEE` · `AMBASSADOR_PAYOUT`.
 - Sequential invoice numbering (ZAAHI-INV-2026-0001 pattern · resets by year).
 - VAT 5 % line (hardcoded rate constant · ready for rate-change via admin panel when FTA updates).
-- FTA Tax Invoice PDF generator (Puppeteer-driven Next.js route `/api/invoices/[id]/pdf`).
+- FTA Tax Invoice PDF generator via **jsPDF v4.2.1** (already installed in `package.json`); client-side render invoked from admin UI; optional `/api/invoices/[id]/pdf` server endpoint for Supabase-stored shared URLs. Arabic bilingual layout uses Amiri + Tajawal TTFs bundled into jsPDF at render time per FEASIBILITY_STYLE_GUIDE §9.4. **No Puppeteer** — see v1.1 amendment note.
 - Auto-create trigger on `DEAL_COMPLETED` status transition (Agency commission + Platform service fee invoices both fired in the same DB transaction that flips the Deal status).
 - Reversal flow (invoice `status = REVERSED`, credit-note generated) on `DEAL_CANCELLED` or `DISPUTE_INITIATED`.
 - Commission payout admin UI (list · filter by status · mark PAID / REVERSED · record payout method + ref).
@@ -560,7 +567,7 @@ export async function reverseInvoice(invoiceId: string, reason: string, actorId:
 
 1. **AED 0 deal (free listing, friends & family).** Service Fee = 0. Skip Platform invoice (no fee). Create Agency Commission invoice at AED 0 (audit trail retained).
 2. **Dual-side commission.** When Agency represents both seller and buyer (2 % total, split 1 %/1 %), create TWO `AGENCY_COMMISSION` invoices — one to each party at 1 %.
-3. **Pre-TRN first deal (before Week 3 CT registration).** Block with 409: "Agency TRN not yet registered. Cannot issue ISSUED invoice. Update TRN in admin settings first." DRAFT still allowed.
+3. **Pre-TRN first deal (before Week 3 CT registration).** Block with 409: "Agency TRN not yet registered. Cannot issue ISSUED invoice. Update TRN in admin settings first." DRAFT still allowed. **SUPER-ADMIN BYPASS (Spec 03 v2 §14.6):** a SUPER_ADMIN may force an invoice to ISSUED pre-TRN by setting `pendingTRN: true` on the Invoice row + providing a reason ≥ 20 chars. The invoiceNumber is still allocated (keeps sequence gap-free), PDF still generates (with a visible "TRN PENDING — will be appended" banner), and an AuditLog entry is created with tag `SUPER_ADMIN_BYPASS · type=PRE_TRN_ISSUE`. When the real TRN is registered, founder clicks "Update TRN" on the affected invoices to backfill; PDF is regenerated with the TRN stamped in. This supports real-world emergency: client needs invoice on the spot before Week 3 CT registration completes.
 4. **Reversal after partial payment.** PAID → REVERSED allowed. Mirror carries negative amount. Bookkeeper reconciles as adjustment in Xero.
 5. **Timezone edge.** `issueDate` uses UAE time (GST, UTC+4). Server defaults to UTC; explicit `DateTime.toZoned("Asia/Dubai")` in display + PDF render.
 6. **Fiscal-year reset at Dec 31 UAE-midnight.** `nextInvoiceNumber()` uses `new Date().getFullYear()` which is local server year — ensure server TZ is Asia/Dubai OR convert first. **Spec decision: use `Intl.DateTimeFormat` or `date-fns-tz` to extract year in UAE timezone.**
@@ -641,7 +648,7 @@ export const ZAAHI_SERVICE_FEE_RATE = 0.02; // already exists in src/lib/ambassa
 ### 8.1 Performance
 
 - Invoice list page initial render < 1.5 s (p95).
-- PDF generation < 3 s end-to-end (Puppeteer spin-up + render + store).
+- PDF generation < 2 s end-to-end (jsPDF client-side render + Supabase upload when shared URL requested).
 - DB write transaction `onDealCompleted` < 500 ms (already 5 rows written).
 
 ### 8.2 Security (per Enhancement Proposal §1.A)
@@ -687,7 +694,7 @@ export const ZAAHI_SERVICE_FEE_RATE = 0.02; // already exists in src/lib/ambassa
 | DB migration + schema | 3-4 | Prisma model, migration, User additions, test fixtures |
 | Core logic | 6-8 | `nextInvoiceNumber`, `calcVat`, `onDealCompleted`, `reverseInvoice`, constants |
 | API routes (12) | 8-10 | CRUD + issue + pay + reverse + pdf + csv-export + Zod schemas |
-| PDF generator | 6-8 | Puppeteer setup · HTML template · UAE bilingual layout · Supabase storage integration |
+| PDF generator | 6-8 | jsPDF imperative drawing · UAE bilingual layout (EN LTR + AR RTL with Amiri/Tajawal TTFs per FEASIBILITY_STYLE_GUIDE §9.4) · optional Supabase storage upload for shared URLs |
 | Admin UI (invoices) | 10-12 | List + detail + edit + actions pages + Tailwind per Style Guide |
 | Admin UI (commissions payout) | 4-6 | List + detail + mark-paid action · integrates with existing Commission table |
 | Unit + integration tests | 6-8 | Jest / Vitest unit · Playwright E2E 1-4 |
@@ -746,7 +753,7 @@ Realistic: **2 engineer-weeks** at Zhan's Phase 1 15 %-engineering allocation + 
 - `src/lib/ambassador.ts` lines 85-260 (existing `awardCommissions()` — your new code calls it in `onDealCompleted`).
 - `prisma/migrations/` latest (to match style / naming convention).
 - `src/app/api/ambassador/commissions/route.ts` (existing commission listing — your admin UI extends this pattern).
-- `src/lib/generate-site-plan-pdf.ts` (existing Puppeteer-style PDF generator — cribbed pattern for invoice PDFs).
+- `src/app/parcels/map/FeasibilityCalculator.tsx` line 3 (existing `jsPDF` import — reuse the same library + pattern for invoice PDFs). **Do NOT introduce Puppeteer** per v1.1 amendment rationale (avoids ~300 MB server dependency + Vercel Edge compatibility work).
 - CLAUDE.md UI STYLE GUIDE section (§5.3 design conformance is mandatory).
 
 ### Common pitfalls from research
