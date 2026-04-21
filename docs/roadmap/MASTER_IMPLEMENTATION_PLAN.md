@@ -631,9 +631,9 @@ Rudi AED 1 M runway: ~16 months at Phase 1 burn alone (AED 1 M / AED 61.5 k ≈ 
 - Trademark UAE + WIPO: ~AED 130 – 160 k (UAE AED 80 – 100 k across Class 9/36/41/42 + WIPO Madrid AED 50 – 60 k — mid-tier IP counsel quotes 2026, see §2.1 Day 4 narrow range).
 - Miscellaneous setup (accounting system, equipment, contingency): ~AED 90 k.
 
-**Expected Month-3 cash position:** AED 1 M – AED 300 k (one-time) – AED 130 k (3 months burn) + AED 790 k (first commission gross) – AED 350 k (70 % Platform fee accrued, not yet cash-out) = **AED 1.0–1.4 M** in Agency, plus ~AED 350 k in Platform Dev Fund accrual.
+**Expected Month-3 cash position:** AED 1 M – AED 340 k (one-time) – AED 185 k (3 months burn × AED 61.5 k) + AED 790 k (first commission gross) – AED 350 k (70 % Platform fee accrued, not yet cash-out) = **AED 0.9–1.3 M** in Agency, plus ~AED 350 k in Platform Dev Fund accrual.
 
-Phase 2 burn ramps to ~AED 80–100 k / month (Chief of Staff + 2nd engineer starts + higher OpEx). Agency cash flow from deal 3–6 funds it.
+Phase 2 burn ramps to ~AED 115–135 k / month (Phase 1 AED 61.5 k + Chief of Staff AED 30–45 k + 2nd engineer ~AED 25 k + higher OpEx). Agency cash flow from deals 3–6 funds it.
 
 ### 6.4 Time budget guardrail
 
@@ -673,7 +673,7 @@ Phase 2 burn ramps to ~AED 80–100 k / month (Chief of Staff + 2nd engineer sta
 | KPI | Frequency | Target Y1 | Target Y2 |
 |---|:-:|---|---|
 | Revenue by stream | Monthly | Agency 95 %, Platform 5 % | Agency 80 %, Platform 20 % |
-| Burn rate | Monthly | ≤ AED 45 k / mo Phase 1 | ≤ AED 120 k / mo Phase 2 |
+| Burn rate | Monthly | ≤ AED 65 k / mo Phase 1 (incl. Al Jurf AED 20.8 k) | ≤ AED 135 k / mo Phase 2 (incl. Chief of Staff AED 30–45 k) |
 | Cash runway (months) | Monthly | ≥ 12 at any time | ≥ 18 at any time |
 | Team size | Monthly | 3–4 | 8–12 |
 | LinkedIn followers (Zhan + Dymo combined) | Monthly | 5 000+ | 20 000+ |
@@ -907,7 +907,7 @@ Implication: Sunset Time Trigger (5-year backstop) becomes relevant instead of F
 | Transfer pricing study | 120 000 |
 | Accounting / bookkeeping / CT compliance | 60 000 |
 | Contingency / emergency | 100 000 |
-| **TOTAL Y1 opex** | **~AED 1 390 000** |
+| **TOTAL Y1 opex** | **~AED 1 290 000** |
 
 Against AED 1 M Rudi + AED 7.8 M Agency revenue base case = ample runway. Year 2 opex scales to ~AED 2.5 M (add Chief of Staff + 2nd engineer + DC migration).
 

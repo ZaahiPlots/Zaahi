@@ -224,7 +224,7 @@ From capital in to IPO out — the full cash conversion graph. Scaled to fit.
 
 ```mermaid
 flowchart TD
-    A["Rudi AED 1 M SAFE<br/>May 4"] --> B["Operational runway<br/>12–18 months<br/>at AED 45–100 k burn"]
+    A["Rudi AED 1 M SAFE<br/>May 4"] --> B["Operational runway<br/>~16 mo Phase 1<br/>at AED ~62 k burn<br/>(Al Jurf inc.)"]
     B --> C["Dymo network<br/>activation<br/>Apr–May"]
     C --> D["Agency pipeline<br/>5–10 active deals<br/>May–Jul"]
     D --> E["First deal closes<br/>AED 790 k commission<br/>Jun 19"]
