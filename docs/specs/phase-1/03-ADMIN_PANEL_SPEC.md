@@ -1,15 +1,22 @@
 # SPEC 03 — Admin Panel (Phase 1 Priority 3)
 
-**Status:** DRAFT v1.0 · 2026-04-21
+**Status:** DRAFT v2.0 · 2026-04-22
 **Priority:** **3 of 13** (Q-11 owner-modified ranking)
-**Target ship:** Month 4 (MVP v1)
-**Effort:** 1.5-2 engineer-weeks (range 1-2.5)
-**Depends on:** Spec 02 Invoice (commission payout UI surface) · Spec 01 Deal Engine (admin transition detail page)
-**Blocks:** None (but unlocks founder self-service for all downstream)
+**Target ship:** MVP v1 Month 4 · Super-Admin §14 Month 4-5 (before Plot 1 first commission Fri 2026-06-19)
+**Effort:** MVP v1 1.5-2 eng-weeks · Super-Admin extension 2-2.5 eng-weeks — **total 3.5-4.5 eng-weeks**
+**Depends on:** Spec 02 Invoice (commission payout UI surface + bypass path) · Spec 01 Deal Engine (admin transition detail page + force-transition)
+**Blocks:** None (but unlocks founder self-service + "каждая встреча = сделка" operational principle)
 **Source commitments:**
-- `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` §1.E E-2 "Pragmatic B" (ratified via Q-12 B)
+- `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` §1.E E-2 "Pragmatic B" (ratified via Q-12 B) · amended v1.2 with Super-Admin integration
 - Master Tree v3 §75 Admin
+- `docs/specs/phase-1/FEASIBILITY_STYLE_GUIDE.md` (2026-04-22 · binding visual language)
+- Founder directive 2026-04-22: "У нас с Жаном должен быть доступ ко всем функциям чтобы мы могли все вручную заполнить. Каждая встреча с клиентом = закрытая сделка."
 **Classification:** CONFIDENTIAL — internal engineering spec
+
+## Version history
+
+- **v1.0** (2026-04-21, commit `5e49b17`): Base admin panel MVP — CRUD for 5 core entities (User · Parcel · Deal · Ambassador · Commission) + feature flags + tier price editor per Q-12 B Pragmatic approach.
+- **v2.0** (2026-04-22, this version): Super-Admin mode extension §14 added per founder directive. 12 subsections covering role hierarchy, impersonation, state override, bulk operations, direct data interface, feature bypass, session intervention, "meeting closes deal" flows, iron-clad security guardrails (FATF / PDPL / FTA compliant), UI design, testing, version note. Target ship Month 4-5, before Plot 1 first commission, so founders can close on-the-spot deals without system-rule friction.
 
 ---
 
@@ -570,6 +577,399 @@ Realistic at Phase 1 Zhan allocation: **2-3 calendar weeks** (~14 hrs/week eng).
 
 ---
 
-**End of SPEC 03 — Admin Panel.**
+## §14 SUPER-ADMIN MODE (v2 extension, 2026-04-22)
 
-Next in writing sequence: `04-FEASIBILITY_CALC_V2_SPEC.md`. Execution order per Q-11: Spec 02 → Spec 01 → **this spec** → Spec 04.
+**Added per founder directive.** Operational principle: **каждая встреча с клиентом = закрытая сделка**. Super-Admin removes every system-rule friction so founders can close deals in real-time client meetings. High power + iron-clad audit.
+
+### §14.1 Role hierarchy
+
+Four-tier hierarchy replaces the v1 two-tier (ADMIN vs non-admin):
+
+```typescript
+// prisma/schema.prisma — enum migration required
+enum UserRole {
+  USER           // default for signup
+  OWNER          // plot owner (existing)
+  BUYER          // prospect (existing)
+  BROKER         // licensed broker (existing)
+  INVESTOR       // investor tier (existing)
+  DEVELOPER      // developer tier (existing)
+  ARCHITECT      // architect tier (existing)
+  AMBASSADOR     // paid-tier ambassador (existing, added by ambassador plans)
+  ADMIN          // platform admin — Chief of Staff Month 8+, future hires (existing)
+  SUPER_ADMIN    // Zhan + Dymo ONLY (new in v2)
+}
+```
+
+**Migration:** single Prisma migration `<ts>_super_admin_role/migration.sql`:
+
+```sql
+ALTER TYPE "UserRole" ADD VALUE 'SUPER_ADMIN';
+-- Elevation performed via admin dashboard post-migration, NOT in the migration file
+-- (prevents accidental promotion in dev / staging).
+```
+
+**Elevation is out-of-band:** initial 2 SUPER_ADMIN users (Zhan + Dymo) are set via direct DB write by Zhan in a one-shot migration seed, logged explicitly. Subsequent elevations (never expected — founder-only role) would require a **both-founder cosign action**.
+
+**Access pattern:**
+- Any page under `/super-admin/**` requires `User.role === "SUPER_ADMIN"` server-side check.
+- Additional WireGuard-VPN gate enforced at middleware level (see §14.9).
+- Helper `getSuperAdminUserId(req)` in `src/lib/auth.ts` extends `getApprovedUserId` with the role check.
+
+### §14.2 Role impersonation ("View as")
+
+**Purpose:** Zhan / Dymo see the platform exactly as any user sees it — debug UX bugs, reproduce reported issues, demo to a client from the client's own perspective.
+
+**Flow:**
+1. SUPER_ADMIN opens `/super-admin/impersonate`.
+2. Dropdown lists all users (filter by email / role / name).
+3. Click "View as Ivan Petrov (BUYER)" → Session cookie annotated with `impersonationOriginId: <super-admin id>`.
+4. All pages render as the impersonated user would see them.
+5. **Red-bordered banner** fixed at top of every page: `⚠ IMPERSONATING Ivan Petrov · Exit impersonation`.
+6. Every action performed while impersonating writes BOTH impersonated user ID **and** original SUPER_ADMIN ID to audit log.
+
+**Guardrails:**
+- **Cannot impersonate another SUPER_ADMIN.** Prevents Zhan-as-Dymo silent actions — mutual trust preserved.
+- **Cannot impersonate a user with PII-viewing intent without written consent** per PDPL. The spec formally states: *"Impersonation for demo, UX debugging, or troubleshooting reproduction is OK. Impersonation to READ the impersonated user's personal data (deal history, financial records, private messages) requires a written consent record (email or in-app attestation from the user) filed in `docs/compliance/pdpl-consents/`. Without consent, impersonation-for-PII-read is a PDPL Article 18 breach-notification trigger."*
+- **Session expires 60 min from impersonation start** (shorter than the standard 2-hour SUPER_ADMIN re-auth). Forces intentional re-activation.
+- Every impersonation start + every action + impersonation-end writes `AuditLog` entry with event types `IMPERSONATION_START`, `IMPERSONATION_ACTION`, `IMPERSONATION_END`.
+- Cross-notification per §14.9: impersonation > 10 min automatically emails the other founder.
+
+**UI:** Red banner uses `rgba(230, 57, 70, 0.15)` background + `#E63946` 2-px border-bottom (per FEASIBILITY_STYLE_GUIDE palette — RED semantic token).
+
+### §14.3 State override (force any state → any state)
+
+**Purpose:** on-the-spot corrections to deals, parcels, commissions, invoices when reality and system diverge during a client meeting.
+
+**Capabilities:**
+- **Force any `DealStatus` → any `DealStatus`** — extends Spec 01 `ADMIN_FORCE_TRANSITION` to SUPER_ADMIN role. Skip document-upload gates if reason provided.
+- **Force any `ParcelStatus`** change (VERIFIED → PENDING_REVIEW if data discovered wrong post-verify).
+- **Force any `CommissionStatus`** (PENDING ⇄ PAID ⇄ REVERSED) with reason.
+- **Force any `InvoiceStatus`** (DRAFT → ISSUED even if TRN env missing — flag via reason "TRN provided off-system"; PAID ⇄ REVERSED).
+- **Backdate a record's `createdAt` / event timestamp** (see regulatory boundary below).
+
+**Backdate — explicit regulatory boundary:**
+
+> **Backdate is ONLY for correcting late data entry** (e.g., deal was actually signed Mon Jun 22 but entered Tue Jun 23; system timestamp set to Jun 22 + `backdatedAt: true` flag). **Backdating to shift fiscal-year revenue between FTA CT / VAT periods is prohibited.** FTA CT filings reconcile to system dates with `backdatedAt` flag visible; any backdate crossing fiscal-period boundary triggers a mandatory additional review field "I confirm this is a late-entry correction and NOT a fiscal-period shift" that the SUPER_ADMIN must tick + sign off on. Compliance audit will review cross-period backdates quarterly.
+
+**Cannot backdate into the future** (blocked at validation). **Cannot backdate more than 90 days** without a "cross-90-day correction" explicit confirmation.
+
+**Mandatory fields on every state override:**
+- `reason` text ≥ 20 chars (server-validated).
+- `currentFounder` (Zhan or Dymo — from session).
+- `pointerToEvidence` optional (URL, file reference, client email thread).
+
+Every override writes:
+- `DealAuditEvent` (for Deal states) — standard Spec 01 path.
+- `AuditLog` (Enhancement Proposal §1.A S-1) with event type `SUPER_ADMIN_OVERRIDE`, actor, target entity, from-value, to-value, reason, evidence pointer.
+
+### §14.4 Bulk operations
+
+**Purpose:** ingest / modify large datasets fast (price updates from Excel, mass broker invites, batch parcel seed from DLD).
+
+**Capabilities:**
+- **CSV import** for 4 entities: Parcels · Users · Deals · Commissions. Strict column headers required; Zod validation per row; `dry-run` mode previews changes before commit.
+- **Dry-run report** — shows count of "would create" / "would update" / "would fail" + per-row error list. User must click "Apply" after reviewing dry-run.
+- **Batch operations:**
+  - Mass tier change (upgrade 20 Silver ambassadors to Gold).
+  - Mass state transition (move 10 stale Deals to DISPUTE_INITIATED after founder review).
+  - Batch invoice generation (generate 30 Platform Service Fee invoices for end-of-quarter reconciliation).
+  - Mass email via admin UI with template preview (uses existing `src/lib/email.ts` + Resend integration).
+- **Preview every action.** Mass email shows 3 sample-recipient previews before send.
+
+**Guardrails:**
+- CSV import max 10 000 rows per run (prevent accidental DB overload).
+- Dry-run always required for imports > 50 rows.
+- Mass email max 500 recipients per batch + 60 s cooldown between batches (Resend rate-limit compliance).
+- No CSV import for `AmbassadorApplication`, `AuditLog`, `DealAuditEvent` (append-only tables — per CLAUDE.md NEVER-DELETE rule).
+- Every bulk operation writes a single AuditLog entry with `batchSize` + `batchSummary` + dry-run diff preserved.
+
+### §14.5 Direct data interface
+
+**Purpose:** when neither CRUD UI nor CSV import handles an edge case, SUPER_ADMIN can reach deeper — within strict bounds.
+
+**Capabilities:**
+- **Read-only SQL shell** at `/super-admin/sql` — accepts `SELECT` queries only. Server-side regex blocks any non-SELECT keyword (`UPDATE`, `DELETE`, `INSERT`, `DROP`, `ALTER`, `TRUNCATE`, `CREATE`, `GRANT`, `REVOKE`). Query timeout 30 s. Results truncated to 1 000 rows.
+- **Edit any field on any record via form UI** — generic edit form at `/super-admin/edit/<entity>/<id>`; pulls schema from Prisma, renders form for every editable field (excludes `id`, `createdAt`). Exclusions enforced at handler level.
+- **Soft delete** — any record CAN be soft-deleted (marked `deletedAt: <timestamp>` + `deletedBy: <superAdminId>` + `deletedReason: text`) but NOT physically removed from DB (CLAUDE.md NEVER-DELETE rule preserved via soft-delete discipline).
+- **Restore deleted records within 30-day window** via `/super-admin/restore` — shows all soft-deleted rows, click restore.
+
+**Regulatory boundary — SELECT-only SQL + PII:**
+
+> **Every SQL query is logged** with query text, execution time, row count, actor. **Columns flagged PII** (email, phone, emiratesId, passportNumber, iban, pan, trn, per CLAUDE.md PII:HIGH convention) are detected at parse time; if a query reads any PII column, the AuditLog entry is tagged `PII_READ: true` per PDPL Article 30 data-processing-register requirement. Quarterly PDPL review examines all PII_READ=true entries for proportionality — SUPER_ADMIN must be able to justify business need.
+
+**Schema additions:**
+- `User.deletedAt: DateTime?` / `User.deletedBy: String?` / `User.deletedReason: String?`
+- Same 3 nullable columns on: Parcel · Deal · Invoice · Commission · AmbassadorApplication · FeatureFlag · TierConfig (all soft-delete candidates).
+- Exception: `AuditLog`, `DealAuditEvent`, `ReferralClick` — pure append-only ledgers, never soft-deleted.
+
+### §14.6 Feature bypass
+
+**Purpose:** skip normally-enforced gates when on-the-spot client situations demand.
+
+**Capabilities:**
+- **Skip KYC** — approve a user without standard KYC flow (attestation-based).
+- **Manual payment override** — mark Invoice PAID without a linked Commission transaction (e.g., client paid cash at meeting).
+- **Force deal NOC without document** — set `Deal.nocReceived = true` without uploading NOC file; adds flag `pendingDocsNote` so the hole is visible in admin detail.
+- **Tier override** — temporarily grant a user Gold-tier features for a specific deal without full tier subscription (timed grant, expires N days).
+- **Rate-limit bypass** — temporarily disable per-route rate-limits on API calls for a named user (e.g., integration partner doing batch work).
+
+**Regulatory boundary — "Bypass KYC" is NOT a FATF bypass:**
+
+> **"Bypass KYC" means the Founder attests that KYC was performed off-system** (bank wire confirmed identity · physical Emirates ID inspection · video call KYC · paper document filed). The attestation field requires: method (bank / email / paper / video) · date · artefact pointer (email thread reference, bank ref, paper archive location). **Under UAE AML Federal Law 10/2025, the obligation to perform KYC on deals > AED 500 k is absolute** — this capability only shifts the record from system to off-system, it does not waive the legal obligation. Every off-system-KYC attestation is logged to `AuditLog` with tag `KYC_OFF_SYSTEM: true` and reviewed by DPO (from Month 6) during monthly compliance check-in.
+
+**Manual payment override — FTA / VAT implications:**
+
+> Cash payment marked via Super-Admin still triggers VAT reporting and (if applicable) 5 % VAT line on the commission invoice. `paymentMethod: "cash"` + `paymentRef: <founder name + date>` stored. VAT reconciles via FTA quarterly filing regardless.
+
+**Every bypass writes AuditLog entry with tag `SUPER_ADMIN_BYPASS` + bypass-type (KYC / PAYMENT / DOC / TIER / RATELIMIT) + reason ≥ 20 chars.**
+
+### §14.7 Session intervention
+
+**Purpose:** help a live user in-session — during onboarding demo, stuck on a form, or emergency access issue.
+
+**Capabilities:**
+- **Join user session (co-browsing)** — SUPER_ADMIN sees what the user sees in real-time. Requires user-approval dialog on user side UNLESS "emergency override" flag is used by SUPER_ADMIN (audit-heavy path).
+- **Screen share** — SUPER_ADMIN initiates screen share from their session to the user (one-way view, for walking client through steps during demo).
+- **Override security blocks** — e.g., user's geo-IP flagged by rate-limiter, SUPER_ADMIN can unblock for 24 h.
+- **Live system message to user** — push notification through in-app banner (not email / SMS — those are §47 Notification Engine territory).
+
+**Emergency override flag (co-browsing without user consent):**
+
+> Used ONLY for "user is locked out, cannot approve the dialog themselves" scenarios. Triggers **immediate email notification to the OTHER SUPER_ADMIN** ("Zhan just emergency-overrode to access Dymo's session"). Logged with tag `EMERGENCY_OVERRIDE` — monthly report highlights these for Board review. Abuse = amendment procedure §9 Major tier (all 3 + Rudi).
+
+**Technical note:** co-browsing requires WebSocket or SSE infrastructure not yet present. v1 of this capability can be a simpler "take over as impersonated user with user's explicit click-through" fallback.
+
+### §14.8 "Meeting closes deal" — 5 concrete flows
+
+Real scenarios Dymo / Zhan will face Months 4-9. Each flow maps to specific Super-Admin capabilities and produces a closed / advanced deal in < 5 minutes.
+
+#### Flow 1 · Client signs MOU on the spot (2 minutes total)
+
+**Situation:** Dymo + HNWI client at Jumeirah Bay viewing. Client decides to buy Plot 6457940 at AED 39.5 M. Wants MOU signed now.
+
+**Steps:**
+1. Dymo opens `/super-admin/deals/new` on iPad.
+2. Selects Parcel (6457940) from search · auto-populated.
+3. Enters Buyer name / email / phone (quick form, TRN optional now).
+4. Sets `agreedPriceAed = 39_500_000` · `paymentType = CASH`.
+5. Clicks "Generate MOU PDF" — jsPDF renders Form F template in ~1 s (pulls seller name from Parcel.owner, buyer from form).
+6. Client signs digitally via iPad signature capture + emails auto to seller for cosign.
+7. System state: Deal created directly at `AGREEMENT_SIGNED` (bypassing INITIAL + DEAL_INITIATED + DEPOSIT_SUBMITTED) via §14.3 override with reason `"Client signed on-spot; deposit pending collection."`
+8. `Deal.mouSigned = true` flag set.
+9. DealAuditEvent logged: `SUPER_ADMIN_OVERRIDE · from=null to=AGREEMENT_SIGNED · reason`.
+10. Invoice auto-created at `DRAFT` (Spec 02 hook); founder can issue later when commission collected.
+
+**Total time: ~2 minutes.** Alternative (standard flow): 60-90 minutes via client portal signup + email verification + state-machine-step-through.
+
+#### Flow 2 · Different commission split required (90 seconds)
+
+**Situation:** HNWI client insists on 15 % ambassador commission on buyer-side (vs standard 10 % Gold-tier) because ambassador referred a AED 100 M prior deal. One-off accommodation.
+
+**Steps:**
+1. Dymo opens existing Deal at `/super-admin/deals/<id>`.
+2. Clicks "Override commission rates" (Super-Admin-only button).
+3. Sets `l1Pct = 0.15` on the Ambassador commission row about to be created.
+4. Reason: "Client-negotiated premium L1 rate for qualified repeat referrer. Rudi email approval 2026-06-15 in `docs/decisions/2026-06-15.md`."
+5. Clicks "Apply override + log."
+6. AuditLog entry: `SUPER_ADMIN_OVERRIDE · entity=Commission · field=l1Pct · from=0.10 to=0.15 · reason`.
+7. Deal proceeds through standard flow; `awardCommissions()` uses the overridden rate for this specific deal.
+
+**Why this needs Super-Admin:** `Commission.rate` is normally immutable per CLAUDE.md Ambassador Program Rules and defaulted from `TierConfig`. One-off override flagged + logged prevents drift into "everyone gets special rates."
+
+#### Flow 3 · Cash deposit received (60 seconds)
+
+**Situation:** Buyer hands Dymo AED 150 000 cash at meeting as deposit ahead of full wire. Needs to reflect in system immediately so seller sees commitment.
+
+**Steps:**
+1. Dymo opens Deal at `/super-admin/deals/<id>`.
+2. Clicks "Manual payment."
+3. `amountFils = 15_000_000_00` · `type = CASH` · `ref = "2026-06-18 Dymo receipt #01"` · reason: `"Pre-MOU cash deposit received in Jumeirah Bay meeting. Paper receipt filed."`
+4. Deal state advances `INITIAL → DEPOSIT_SUBMITTED` via §14.3 with `setFlags: { depositPaid: true }`.
+5. Invoice auto-generated for AED 150 k at `AGENCY_COMMISSION` subtotal, marked `PAID` at same time.
+6. AuditLog entries: `SUPER_ADMIN_OVERRIDE` (state + flag) + `SUPER_ADMIN_BYPASS · type=PAYMENT · reason`.
+
+**FTA / VAT:** Cash payment flows through normal VAT 5 % line on the invoice. FTA filing sees the cash payment.
+
+#### Flow 4 · Custom letter for client's bank (3 minutes)
+
+**Situation:** Client's Swiss private bank requires a bespoke guarantee-letter format before releasing wire. Standard ZAAHI MOU PDF doesn't include their specific clauses.
+
+**Steps:**
+1. Dymo opens `/super-admin/templates`.
+2. Clicks "New from Template" · picks MOU template as base.
+3. Inline editor (rich text + merge-fields) · adds bank's specific clause paragraph + signature block for both Zhan + Dymo as attestors.
+4. Clicks "Preview with Deal data" · placeholders auto-filled from Deal + Parcel + Parties.
+5. Generates PDF via jsPDF · reviews · "Email to client + CC bank" with template-subject-line.
+6. Saves the one-off template to `/super-admin/templates/custom/<deal-id>` for future similar cases.
+
+**Technical note:** template engine v1 = inline HTML textarea + Handlebars-style merge fields. v2 = Monaco editor + live preview. Keeping v1 minimal for Month 4-5 ship.
+
+#### Flow 5 · Post-meeting data correction (45 seconds)
+
+**Situation:** After viewing, realised Parcel area in DB shows 18 432 sqft but DLD re-issued affection plan showing 18 500 sqft. All future feasibility calcs must use updated number.
+
+**Steps:**
+1. Zhan opens `/super-admin/parcels/<id>/edit`.
+2. Sees all editable fields · updates `area: 18_500`.
+3. Reason: `"DLD affection plan re-issued 2026-06-12; new sqft per Plot Guidelines PDF v3. Old affection-plan row retained per append-only rule."`
+4. Clicks "Save + trigger recompute."
+5. AuditLog entry: `SUPER_ADMIN_OVERRIDE · entity=Parcel · field=area · from=18432 to=18500 · reason`.
+6. Background job: re-run `computeBtS` / `computeBtR` on any active FeasibilityScenarios linked to this parcel; flag scenario owners with in-app notification "Plot area updated; feasibility refreshed."
+
+**Audit trail preserved:** previous `AffectionPlan` row stays (CLAUDE.md append-only rule); Parcel.area change linked via AuditLog.
+
+### §14.9 Security guardrails (iron-clad)
+
+Every Super-Admin action MUST satisfy all of:
+
+#### 14.9.1 Audit log — every action captured
+
+Every SUPER_ADMIN operation writes an `AuditLog` row (Enhancement Proposal §1.A S-1). Fields:
+- `timestamp` (UTC + UAE time shown)
+- `actorId` (SUPER_ADMIN user ID — Zhan or Dymo · never null · never anonymised)
+- `actorImpersonating?` (if acting while impersonating, the impersonated user ID)
+- `actionType` (enum: IMPERSONATE · STATE_OVERRIDE · BACKDATE · BULK_IMPORT · SQL_READ · FIELD_EDIT · SOFT_DELETE · RESTORE · BYPASS_KYC · MANUAL_PAYMENT · FORCE_DOC · TIER_GRANT · RATELIMIT_BYPASS · EMERGENCY_OVERRIDE · SESSION_JOIN · TEMPLATE_CREATE · OTHER)
+- `entityType` + `entityId` (User / Parcel / Deal / Invoice / Commission / FeatureFlag / TierConfig / AmbassadorApplication / ...)
+- `fieldName?` (if field-level edit)
+- `fromValue?` + `toValue?` (old and new values, redacted for PII columns — only hash stored for those)
+- `reason` (text ≥ 20 chars, mandatory for all high-risk actions; optional for SQL_READ)
+- `evidencePointer?` (optional URL / file ref)
+- `piiRead?` (boolean, set if SQL query or field-edit read a PII column)
+- `complianceTags?` (array — `AML_ATTESTATION`, `FISCAL_PERIOD_CROSS`, `PDPL_ARTICLE_18_REVIEW`)
+
+Append-only. Never updated, never deleted. Protected by DB row-level security (non-SUPER_ADMIN cannot read AuditLog).
+
+#### 14.9.2 Cross-notification (Zhan ↔ Dymo)
+
+Any Super-Admin action by Zhan emails Dymo (and vice versa) within 5 minutes:
+- Regular ops: **consolidated daily digest** (8:00 UAE) — reduces noise for normal workflow.
+- High-risk actions (`EMERGENCY_OVERRIDE`, `BACKDATE` crossing fiscal period, `BYPASS_KYC`, `FORCE_DOC` on deal > AED 10 M): **immediate email** to the other founder + entry in "Requires your awareness" section of the digest.
+- Monthly Super-Admin activity report (first Monday of month) summarises every action taken, both founders sign off.
+
+#### 14.9.3 Cannot disable own SUPER_ADMIN
+
+The /super-admin/edit/User/<own-id> form hides the `role` field + server-side handler rejects self-role-change with 400. Prevents accidental lockout. Changing SUPER_ADMIN status requires BOTH founders acting on the target user (mutual cosign model — if Zhan wants to revoke Dymo's SUPER_ADMIN, Zhan proposes + Dymo must confirm from a separate session).
+
+#### 14.9.4 Audit log append-only (Prisma-enforced)
+
+Existing `AuditLog` model (per Enhancement Proposal S-1) lacks explicit append-only enforcement. This spec adds:
+- Prisma guard: no `prisma.auditLog.update` / `prisma.auditLog.delete` allowed in codebase. ESLint rule added (`no-restricted-syntax`).
+- Database trigger (`BEFORE UPDATE OR DELETE ON "AuditLog" RAISE EXCEPTION`) as second defence.
+
+#### 14.9.5 Time-limited sessions
+
+- **Super-Admin mode re-auth every 2 hours.** At the 2-hour mark, any Super-Admin action prompts re-login (Supabase refresh token + fresh password OR fresh UAE Pass — once UAE Pass integrated Month 7-8 per Spec 01 SV-6).
+- **Active session idle timeout = 60 min.** 60 min of no Super-Admin actions → auto-logout from Super-Admin mode (retains regular admin session).
+- **Impersonation sessions cap at 60 min** (§14.2).
+
+#### 14.9.6 WireGuard VPN endpoint allowlist (**replaces raw IP allowlist**)
+
+**WireGuard specs:**
+- Self-hosted WireGuard server on UAE-resident VM (Etisalat or Khazna), ~AED 150 / month hosting.
+- Founders install WireGuard client on laptops + phones (1-time setup ~15 min per device, official WireGuard apps iOS / macOS / Linux all GPL-2 free).
+- Each device issued a unique key-pair (e.g., "zhan-macbook", "zhan-iphone", "dymo-ipad", "dymo-macbook").
+- Middleware checks incoming request's source IP against **the WireGuard tunnel's internal IP range** (e.g., `10.7.0.0/24`) rather than raw public IPs.
+- Access from any coffee shop / airport / hotel works via VPN — no raw-IP allowlist gymnastics.
+- **Device revocable** if stolen: Zhan removes the compromised device's public key from the WireGuard server config, reload; device instantly loses access. No app-level session invalidation needed.
+- **Static config backup in 1Password** (shared Zhan+Dymo vault) for disaster recovery. Founder reinstall takes 5 min.
+
+**Docs for Zhan implementation:**
+- Server: Ubuntu 24.04 LTS · WireGuard `wg-quick` · `AllowedIPs: 10.7.0.0/24` · UDP port 51820 · `PrivateKey` + peer public keys.
+- Client config template in `docs/ops/wireguard-client-template.conf` (private — not committed publicly).
+- `next.config.ts` middleware addition: check `req.headers['x-forwarded-for']` → match `10.7.0.0/24`; else 403 for `/super-admin/**`.
+
+**Why VPN not raw IP:**
+- Raw IP allowlist breaks when founder is on hotel WiFi, café, airport, cellular — WireGuard tunnels from any network.
+- Device-level revocation more secure than IP-level (a compromised laptop is locked out immediately; an IP remains valid for anyone at that location).
+- Cost negligible vs operational-friction reduction.
+
+#### 14.9.7 Regulatory-boundary summary (explicit)
+
+Collected here for audit-review clarity:
+
+| Capability | Regulatory frame | Boundary |
+|---|---|---|
+| Bypass KYC (§14.6) | UAE AML Federal Law 10/2025 · FATF | Off-system attestation · NOT a literal waiver · logged `AML_ATTESTATION` |
+| Backdate (§14.3) | FTA CT Federal Decree-Law 47/2022 · VAT Federal Decree-Law 8/2017 | Late-data-entry correction only · NEVER fiscal-period shift · flagged `FISCAL_PERIOD_CROSS` if risky |
+| SQL read (§14.5) | PDPL Federal Decree-Law 45/2021 Article 30 (data processing register) | SELECT-only · every PII read tagged `piiRead: true` · quarterly DPO review |
+| Impersonation (§14.2) | PDPL Article 18 | Demo / troubleshooting OK · PII-read requires written user consent filed |
+| Manual payment (§14.6) | FTA VAT + CT | VAT still applies · invoice reconciles to FTA quarterly filing |
+| Force doc on Deal (§14.6) | DLD / RERA | Flag `pendingDocsNote` required · deal cannot transition `DEAL_COMPLETED` without real doc (enforced in Spec 01 guard) |
+
+### §14.10 UI design
+
+Per FEASIBILITY_STYLE_GUIDE (2026-04-22) design tokens + red accent for Super-Admin warning overlay.
+
+**Route structure:**
+- `/super-admin` — Super-Admin dashboard (overview of recent actions, quick-links to common flows).
+- `/super-admin/impersonate` — impersonation selector.
+- `/super-admin/deals/<id>` — deal force-override panel.
+- `/super-admin/deals/new` — Flow 1 fast-create form.
+- `/super-admin/parcels/<id>/edit` — direct field edit form.
+- `/super-admin/users/<id>/edit` — user field edit.
+- `/super-admin/sql` — read-only SQL shell.
+- `/super-admin/bulk` — CSV import / batch ops hub.
+- `/super-admin/templates` — document template editor.
+- `/super-admin/restore` — soft-deleted restore list.
+- `/super-admin/audit` — AuditLog browser with filters.
+
+**Visual warnings:**
+- Fixed top banner `⚠ SUPER ADMIN MODE · All actions logged · Exit to normal admin` — RED (`#E63946` 2-px border-bottom) with `rgba(230, 57, 70, 0.12)` background.
+- Impersonation adds a second banner below Super-Admin banner (`IMPERSONATING <name>`) — slightly darker red.
+- Destructive action buttons (soft-delete, state override, bypass KYC) use RED accent on hover + **double-confirm dialog** ("Type REASON to proceed" — any non-empty 20+ char text passes; the typing action is a deliberate-mode gate).
+
+**Form design:**
+- Reuse `<NumberInput>`, `<Row>`, `<ResultRow>`, `<Section>` from `FeasibilityCalculator.tsx` (per FEASIBILITY_STYLE_GUIDE §4.2).
+- Glass card baseline (`var(--glass-bg)` + `var(--glass-blur)`).
+- Gold for normal labels · red for Super-Admin warning · green for success confirmations.
+
+**Mobile / iPad:**
+- Dashboard is primarily iPad-optimised (Dymo's device for on-the-spot actions at meetings).
+- Touch targets min 44 × 44 px (Apple HIG).
+- Flow 1 (fast deal create) fits one iPad portrait screen without scroll.
+
+### §14.11 Testing criteria
+
+#### Unit tests
+
+- Role check: non-SUPER_ADMIN 403 on `/super-admin/**`.
+- Impersonation guard: SUPER_ADMIN cannot impersonate another SUPER_ADMIN (regression).
+- State override: every `DealStatus` → every `DealStatus` is legal path (12 × 12 = 144 transitions verified, only backdate-to-future blocked).
+- Backdate: date > now rejected 400; date > 90 days past requires explicit `crossThreshold: true`.
+- Audit log: every Super-Admin route handler writes AuditLog (snapshot-based assertion).
+- SQL shell: every non-SELECT keyword rejected (UPDATE, DELETE, INSERT, DROP, ALTER, TRUNCATE, CREATE, GRANT, REVOKE, EXEC, CALL).
+- Soft delete: restore within 30 days flips `deletedAt: null`; day 31+ is tombstone-only, restore blocked.
+- Self-role-change: SUPER_ADMIN user cannot PATCH own `role` field; 400 response.
+- IP / VPN check: non-10.7.0.0/24 source returns 403 on `/super-admin/**`.
+
+#### Integration (Playwright)
+
+- **E2E SA-1 — Flow 1 full cycle.** Seed HNWI client + Parcel. SUPER_ADMIN logs in via WireGuard. Opens `/super-admin/deals/new` · fills form · generates PDF · state = AGREEMENT_SIGNED · audit written · invoice DRAFT created.
+- **E2E SA-2 — Emergency override impersonation.** SUPER_ADMIN A triggers emergency override on User X's session · audit written · SUPER_ADMIN B receives email within 60 s.
+- **E2E SA-3 — Backdate boundary.** Backdate deal to 31 days past — requires explicit confirmation; backdate crossing fiscal period (2026-12-30 → 2027-01-03) adds `FISCAL_PERIOD_CROSS` tag + mandatory "not fiscal shift" attestation.
+- **E2E SA-4 — SQL shell PII flag.** `SELECT email, phone FROM "User"` → audit row tagged `piiRead: true`. DPO monthly review surfaces this entry.
+- **E2E SA-5 — Bulk CSV import.** Upload 100-row parcel CSV · dry-run preview · 5 error rows highlighted · apply button creates 95 rows · single AuditLog with `batchSize: 95`.
+
+#### Manual acceptance
+
+- Founder attestation Month 4-5 pre-Plot-1: "I can close a deal on-spot with this Super-Admin in < 5 minutes end-to-end."
+
+### §14.12 Version note · build order
+
+- **Spec 03 v1** (commit `5e49b17`, 2026-04-21): base admin functionality · 5-entity CRUD · feature flags · tier editor.
+- **Spec 03 v2** (this version, 2026-04-22): Super-Admin §14 added per founder directive.
+- **Build order:**
+  - v1 MVP ships first (Month 4, Weeks 8-9) — establishes baseline admin.
+  - v2 Super-Admin layer ships atop (Month 4-5, Weeks 9-10 · 2-2.5 eng-weeks).
+  - v2 MUST ship before Plot 1 first commission Fri 2026-06-19 Week 9 (Dymo needs Flow 3 "cash deposit" capability live for meeting flows).
+- **Cross-spec dependency completeness (v2):**
+  - Spec 01 Deal Engine must support `ADMIN_FORCE_TRANSITION` (already in Spec 01 §3.4).
+  - Spec 02 Invoice must support `DRAFT → ISSUED` bypass with `pendingTRN: true` flag — add to Spec 02 v1.1 cascading edits.
+  - Spec 04 Feasibility unaffected (separate track).
+
+---
+
+**End of SPEC 03 — Admin Panel (v2.0 with Super-Admin extension).**
+
+Next in writing sequence: `04-FEASIBILITY_CALC_V2_SPEC.md`. Execution order per Q-11: Spec 02 → Spec 01 → **this spec** → Spec 04. Within Spec 03 itself: v1 MVP first (Month 4) → v2 Super-Admin layer (Month 4-5, before Plot 1 first commission Fri 2026-06-19).
