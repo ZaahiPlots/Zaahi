@@ -394,4 +394,34 @@ Documents are now suitable for:
 
 ---
 
-**End of AUDIT_FINDINGS.md.** Companion: `INVESTOR_PACKAGE_ISSUES.md`, `CORRECTIONS_SUMMARY.md`, `QUALITY_CHECKLIST.md`.
+## ROUND 2 findings (appended 2026-04-21 after cascade completion)
+
+Scan for new inconsistencies surfaced *by* the Round-1 corrections themselves. Method: compare boundary dates, cascade targets, and cross-doc claims after Phase-A + Phase-B refixes.
+
+### F-29 — Phase boundary off-by-one gap (Jul 14 ↔ Jul 16)
+**Documents affected:** `MASTER_IMPLEMENTATION_PLAN.md` §2 header line 69 (Phase 1 ends Jul 14 post-refix) vs. §3 header line 348 (Phase 2 starts Jul 16). 1-day gap.
+**Severity:** LOW. **Track:** Calendar + Logical.
+**Correction:** Phase 2 start Jul 16 → Jul 15; Month 4 / 5 / 6 sub-headers re-aligned (Aug 15 / Sep 15 / Oct 14 boundaries); Months 7-9 Oct 15 – Jan 14; Phase 3 start Jan 15 2027.
+**Status:** FIXED this round.
+
+### F-30 — Plot 1 commission timing inconsistency across 3 files
+**Documents affected:** `WEEKLY_CADENCE.md` Week 9 Fri Jun 19 (commission received) vs. `MASTER_IMPLEMENTATION_PLAN.md` §2.6 Week 11-12 (DLD submission + commission) vs. Appendix A key-date table (`Wed 2026-07-15 | First commission received`).
+**Severity:** MEDIUM. **Track:** Calendar + Financial.
+**Issue:** Three different first-commission target dates across three documents in the same branch: Jun 19, Jul 6-12 window, Jul 15. Underlying cause: `WEEKLY_CADENCE` implies Form F signed Week 7 (faster deal cycle); `MASTER_IMPL §2.6` implies Form F signed Week 9 (slower). Both models are defensible — WEEKLY_CADENCE is the day-by-day authority, MASTER_IMPL §2.6 is the month-level summary with built-in slack.
+**Correction:** Appendix A updated to `Fri 2026-06-19 | First Agency commission received` with cross-reference to WEEKLY_CADENCE Week 9 (authoritative). MASTER_IMPL §2.6 Week 9-12 narrative left as a more conservative view; distinct from "first commission" (Jun 19) the "first commission hits Agency bank account" in Week 12 reads as post-DLD settlement window at the slower end of the range. Full reconciliation of §2.6 to WEEKLY_CADENCE deferred to Round 3 (would require Week 5-8 rewrite across §2.5 / §2.6).
+**Status:** Appendix A FIXED this round; §2.6 narrative deferred.
+
+### F-31 — Appendix A ADGM incorporation trigger mismatch
+**Documents affected:** `MASTER_IMPLEMENTATION_PLAN.md` Appendix A line 886 (`Wed 2026-07-15 | ADGM HoldCo incorporation started`) vs. DEPENDENCIES_MAP.md critical-path summary line 63 (ADGM triggered Jul 7).
+**Severity:** LOW. **Track:** Calendar.
+**Correction:** Appendix A updated to `Tue 2026-07-07 | ADGM HoldCo incorporation filing initiated (BSA RA submission; ~2–4 week incorporation + 4–8 week bank opening windows)` to match DEPENDENCIES_MAP critical-path + standardised ADGM timeline (H-4).
+**Status:** FIXED this round.
+
+### F-32 — Observations not fixed this round (logged for Round 3)
+- Month boundary convention drift: MASTER_IMPL uses 30-day months (Month 3 Jul 12 end); IMPLEMENTATION_CHECKLIST uses approximate month boundaries (Month 3 Jul 14 end). Both defensible; 1-2 day drift tolerable but worth standardising next audit.
+- §2.6 Week 9-12 Plot 1 deal cycle describes a more conservative path than WEEKLY_CADENCE Week 7-9; full §2.5 / §2.6 rewrite deferred (see F-30).
+- Investor package v7 still carries old calendar (Apr 21 Mon); founder decision pending on v7.1 refresh.
+
+---
+
+**End of AUDIT_FINDINGS.md.** Companion: `INVESTOR_PACKAGE_ISSUES.md`, `VERIFICATION_LOG.md`, `QUALITY_CHECKLIST.md`, `CORRECTIONS_SUMMARY.md`.

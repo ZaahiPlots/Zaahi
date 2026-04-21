@@ -345,17 +345,17 @@ End of Phase 1 scorecard (Month 3):
 
 ---
 
-## §3 PHASE 2 — PLATFORM MVP (Month 4–9, July 16 2026 – January 15 2027)
+## §3 PHASE 2 — PLATFORM MVP (Month 4–9, July 15 2026 – January 14 2027)
 
 Phase 2 purpose: use the Agency's emerging cash flow to fund Platform build and ship the P0 items that make ZAAHI credible to the counterparties (banks, governments, sovereign investors) Phase 3 will depend on. Agency continues to close deals — 2–3 more in Phase 2 per LAUNCH_PLAN base case.
 
-### 3.1 Months 4 – 6 — July 16 – October 15, 2026
+### 3.1 Months 4 – 6 — July 15 – October 14, 2026
 
 **Platform entity incorporation + P0 safety + sovereignty sprint, spread across 12 calendar weeks.**
 
 **Capacity note.** Phase 2 Months 4–6 has ~20 engineer-weeks of P0 work and only Zhan as engineer. At 100 % shipping capacity (no deal-support diversions), Zhan delivers ~4 engineer-weeks per calendar month → 12 engineer-weeks in 12 calendar weeks. With 30 % deal-support reserve (as-needed), output is ~8–9 engineer-weeks per quarter — meaning P0 cannot compress into Month 4 alone as originally planned. Work is distributed across Months 4 / 5 / 6 below to reflect realistic capacity. August 24, 2026 is UAE public holiday (Prophet's Birthday, Mon); planning absorbs.
 
-#### Month 4 — July 16 – August 15, 2026 (kickoff sprint)
+#### Month 4 — July 15 – August 14, 2026 (kickoff sprint)
 
 | Item | Source | Effort | Owner |
 |---|---|---|---|
@@ -371,7 +371,7 @@ Phase 2 purpose: use the Agency's emerging cash flow to fund Platform build and 
 
 ~5 engineer-weeks; realistic within 4 calendar weeks.
 
-#### Month 5 — August 16 – September 15, 2026
+#### Month 5 — August 15 – September 14, 2026
 
 | Item | Source | Effort | Owner |
 |---|---|---|---|
@@ -382,7 +382,7 @@ Phase 2 purpose: use the Agency's emerging cash flow to fund Platform build and 
 
 ~5 engineer-weeks; realistic within 4 calendar weeks.
 
-#### Month 6 — September 16 – October 15, 2026
+#### Month 6 — September 15 – October 14, 2026
 
 | Item | Source | Effort | Owner |
 |---|---|---|---|
@@ -397,7 +397,7 @@ Phase 2 purpose: use the Agency's emerging cash flow to fund Platform build and 
 
 Total Month 4–6 engineering: ~20 engineer-weeks across 12 calendar weeks = ~80 % sustained shipping utilisation with 20 % deal-support reserve. This is realistic for a single-engineer team.
 
-### 3.2 Months 5–6 — August 16 – October 15, 2026
+### 3.2 Months 5–6 — August 15 – October 14, 2026
 
 **Core Master Tree sections live + first bank partnership warming.**
 
@@ -431,7 +431,7 @@ Agency deals Phase 2:
 
 End of Month 6 cumulative revenue estimate: **AED 3.0 – 4.0 M** (vs base case annualised run-rate AED 7.8 M, on-track).
 
-### 3.3 Months 7–9 — October 16, 2026 – January 15, 2027
+### 3.3 Months 7–9 — October 15, 2026 – January 14, 2027
 
 **Top autonomy wins + local LLM + transfer pricing + deal velocity.**
 
@@ -460,7 +460,7 @@ End of Month 9 cumulative Agency revenue estimate: **AED 5.0 – 6.5 M**. ADGM P
 
 ---
 
-## §4 PHASE 3 — SCALE (Month 10–24, January 16 2027 – April 20 2028)
+## §4 PHASE 3 — SCALE (Month 10–24, January 15 2027 – April 20 2028)
 
 Phase 3 purpose: Platform transitions from private beta → public GA. Agency scales team. Geographic expansion begins (Abu Dhabi first). Revenue diversifies across Platform tier subscriptions + ambassador downline + data licensing.
 
@@ -882,8 +882,8 @@ Implication: Sunset Time Trigger (5-year backstop) becomes relevant instead of F
 | Fri 2026-05-22 | RERA broker card for Dymo |
 | Mon 2026-06-08 | ENBD tier-1 corporate account realistic activation (4–8 week window) |
 | Mon 2026-06-22 | First deal Form F signed |
-| Wed 2026-07-15 | First commission received |
-| Wed 2026-07-15 | ADGM HoldCo incorporation filing started |
+| Fri 2026-06-19 | First Agency commission received (AED 790 k, Plot 1; DLD approved Jun 17–18, settlement by Fri Jun 19 per WEEKLY_CADENCE Week 9). |
+| Tue 2026-07-07 | ADGM HoldCo incorporation filing initiated (BSA RA submission; ~2–4 week incorporation + 4–8 week bank opening windows). |
 | Fri 2026-08-14 | ADGM HoldCo incorporated (typical 3–4 week window, range 2–6) |
 | Thu 2026-10-15 | P0 safety + sovereignty shipped |
 | Mon 2026-11-30 | ENBD mortgage MOU signed (target) |
