@@ -1,11 +1,11 @@
 ---
 Document: MASTER TREE ENHANCEMENT PROPOSAL
-Version: v1.0 DRAFT
+Version: v1.0.1 DRAFT
 Status: DRAFT — Awaiting Part III/IV/V review + 3 signatures
 Effective upon: Zhan Ryspayev + Dymo Tsvyk + Rudi Belin signatures
 Binding period: Upon signature through Sunset trigger OR 5 years (whichever earlier)
-Supersedes: None (first version)
-Last updated: 2026-04-21
+Supersedes: v1.0 DRAFT (2026-04-21, commit 9f864da)
+Last updated: 2026-04-21 (math corrections)
 Branch: research/vision-and-competitors-2026-04-19
 Classification: CONFIDENTIAL
 Prepared by: Agent (Claude Opus 4.7, 1M context)
@@ -13,6 +13,11 @@ Prepared for: Zhan Ryspayev (Founder/CEO/CTO) · Dymo Tsvyk (Co-founder/Ops/Amba
 ---
 
 # MASTER TREE ENHANCEMENT PROPOSAL — Phase 1 Owner-First / Phase 2 External
+
+## Version history
+
+- **v1.0 DRAFT** (2026-04-21, commit `9f864da`): Initial draft post-audit, 34 approved items, 20 deferred, 8 rejected, 22 Part III/IV/V defaults applied, AED 2.6–3.8 M 24-month budget per `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3.
+- **v1.0.1 DRAFT** (2026-04-21, this version): Math corrections per founder review — (1) Y1 Chief of Staff cost (Month 8-12 inclusion) added to §4.3 table; (2) Y1 header + total restated as ranges matching line-item sums; (3) §4.4 Y2 totals restated as ranges reflecting actual midpoint + range line-item arithmetic; (4) §6.4 Phase 1 burn-rate KPI precision (AED 61.5 k base target / ≤ AED 65 k ceiling); (5) downstream cascade across §4.1, §4.5, Appendix E, Appendix I D-34. 24-month budget restated AED 3.1 – 4.5 M, diverging from `IMPROVEMENTS_SUMMARY.md` §6.3 (explicit divergence note in §4.1).
 
 ## PREAMBLE — Recitals
 
@@ -239,12 +244,16 @@ The following Master Tree sections ship as owner-first Phase 1 builds (expanding
 
 ### §4.1 Tranche-based 24-month authorization [DEFAULT APPLIED — Q-34 C pending]
 
-Total 24-month enhancement budget **AED 2.6 – 3.8 M** (per `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3, aligned with audit-corrected numbers). Authorised in two tranches re-approved annually:
+Total 24-month enhancement budget **AED 3.1 – 4.5 M** (v1.0.1 math correction).
+
+**Divergence note from `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3.** The research-phase summary quoted AED 2.6 – 3.8 M as the 24-month enhancement envelope. Line-by-line reconciliation for this binding document produced AED 3.1 – 4.5 M due to two adjustments absent from the summary: (a) Y1 inclusion of Chief of Staff cost Months 8-12 (5 months × AED 30-45 k / mo = AED 150 – 225 k per Q-18 ratified trigger and §5.2 Dubai-market rate), (b) accurate midpoint + range arithmetic on Y2 line items (previous summary rounded both sum-labels downward). Budget remains within founder authority envelope and below Agency Y1 revenue target (AED 7.8 M base case). Owners may amend via §9.2 procedure if a tighter cap is preferred (see Issue 3 Option B in founder math-review memo for trim options).
+
+Authorised in two tranches re-approved annually:
 
 | Tranche | Period | Amount | Re-approval event |
 |:-:|---|---:|---|
-| **Y1** | Apr 20 2026 → Apr 19 2027 | **AED 1.5 M** | First anniversary Board meeting Mon 2027-04-19 |
-| **Y2** | Apr 20 2027 → Apr 19 2028 | **AED 1.3 – 2.3 M** | Second anniversary Board meeting Mon 2028-04-17 (nearest business day) |
+| **Y1** | Apr 20 2026 → Apr 19 2027 | **AED 1.5 – 1.7 M** | First anniversary Board meeting Mon 2027-04-19 |
+| **Y2** | Apr 20 2027 → Apr 19 2028 | **AED 1.6 – 2.8 M** | Second anniversary Board meeting Mon 2028-04-17 (nearest business day) |
 
 ### §4.2 Founder spending authority [DEFAULT APPLIED — Q-35 B pending]
 
@@ -252,7 +261,7 @@ Total 24-month enhancement budget **AED 2.6 – 3.8 M** (per `MASTER_TREE_IMPROV
 - **Above AED 100 000 single spend OR above AED 500 000 running monthly:** require Rudi written pre-approval (48-hour notice; email sufficient).
 - **Emergency bridge (< AED 250 000) if operational continuity at risk:** founder may deploy; notify Rudi within 24 hours.
 
-### §4.3 Y1 authorized line-items (AED 1 500 000)
+### §4.3 Y1 authorized line-items (AED 1 500 000 – 1 550 000 line-item sum; AED 1.5 – 1.7 M tranche envelope with high-end buffer)
 
 | Category | Line item | AED | Source |
 |---|---|---:|---|
@@ -270,12 +279,15 @@ Total 24-month enhancement budget **AED 2.6 – 3.8 M** (per `MASTER_TREE_IMPROV
 | Infra | Gitea UAE VM + misc sovereignty setup | 6 000 | SV-3 |
 | Infra | Status page + rate-limiter + backup storage | 24 000 | S-2, S-5, S-7 |
 | Ops | Virtual office + software + comms | 70 000 | AUDIT C-4 |
+| Ops | **Chief of Staff Month 8-12 (5 mo × AED 30-45 k)** | **150 000 – 225 000** | §5.2 · Q-18 modified (v1.0.1 add) |
 | Contingency | Reserve (flex) | 167 000 | Standard 11 % reserve |
-| **TOTAL Y1** | | **~AED 1 300 000 – 1 500 000** | — |
+| **TOTAL Y1** | | **~AED 1 500 000 – 1 700 000** | — |
 
-Ties to `docs/roadmap/MASTER_IMPLEMENTATION_PLAN.md` Appendix B Y1 opex AED 1.29 M (audit-corrected).
+Ties to `docs/roadmap/MASTER_IMPLEMENTATION_PLAN.md` Appendix B Y1 opex AED 1.29 M (audit-corrected) — note: `MASTER_IMPL` Appendix B tracked pre-CoS Y1 opex; this budget adds Y1 CoS 5-month cost to reflect Q-18 ratified hire trigger.
 
-### §4.4 Y2 authorized line-items (range AED 1 300 000 – 2 300 000)
+**Line-item sum reconciliation (v1.0.1 math check):** 70 + 145 (trademark midpoint) + 10 + 8 + 35 + 80 + 150 + 120 + 60 + 120 + 250 + 6 + 24 + 70 + 187.5 (CoS midpoint) + 167 = AED 1 502 500 midpoint. Low-low (trademark 130 + CoS 150) = AED 1 450 000. High-high (trademark 160 + CoS 225) = AED 1 555 000. Tranche envelope AED 1.5 – 1.7 M allows ~10 % buffer over the high-high case for in-year variance.
+
+### §4.4 Y2 authorized line-items (range AED 1 600 000 – 2 800 000 — v1.0.1 math-corrected)
 
 | Category | Line item | AED | Source |
 |---|---|---:|---|
@@ -292,8 +304,10 @@ Ties to `docs/roadmap/MASTER_IMPLEMENTATION_PLAN.md` Appendix B Y1 opex AED 1.29
 | Partnership | LeadingRE + DLD sandbox fees | 50 000 – 100 000 | Phase 2 prep |
 | Marketing | Phase 2 launch marketing (Q-28 B default) | 100 000 – 200 000 | Q-28 B |
 | Contingency | Reserve | 200 000 | Standard |
-| **TOTAL Y2 (with Equinix)** | | **~AED 2 300 000** | — |
-| **TOTAL Y2 (without Equinix)** | | **~AED 1 300 000** | — |
+| **TOTAL Y2 (with Equinix)** | | **~AED 2 300 000 – 2 800 000** | — |
+| **TOTAL Y2 (without Equinix)** | | **~AED 1 600 000 – 2 100 000** | — |
+
+**Line-item sum reconciliation (v1.0.1 math check, without Equinix):** low-low = 120 + 120 + 65 + 80 + 100 + 370 + 360 (CoS low) + 80 (Fine-tune low) + 50 (Partnership low) + 100 (Marketing low) + 200 = AED 1 645 000; high-high = 120 + 120 + 65 + 80 + 100 + 370 + 540 (CoS high) + 120 + 100 + 200 + 200 = AED 2 015 000. **With Equinix** add AED 600 – 800 k → AED 2 245 – 2 815 k. Tranche envelope AED 1.6 – 2.8 M covers both scenarios.
 
 ### §4.5 Emergency bridge provisions
 
@@ -393,7 +407,7 @@ Per `MASTER_IMPLEMENTATION_PLAN.md` §4 — unchanged by this document: Platform
 |---|:-:|---|---|---|
 | Agency deals closed | Monthly | 12 plots + 2 floors | 25 | < 60 % of plan for 2 consecutive months |
 | Revenue cumulative | Monthly | AED 7.8 M (base) | AED 15 M | < 75 % of plan mid-year |
-| Phase 1 burn rate | Monthly | ≤ AED 65 k / mo (Al Jurf incl.) | ≤ AED 135 k / mo (CoS incl.) | Exceeded 2 months without explanation |
+| Phase 1 burn rate | Monthly | Target AED 61.5 k / mo base (audit-corrected) · ≤ AED 65 k / mo ceiling (~5.7 % variance allowance; Al Jurf incl.) | ≤ AED 135 k / mo (CoS incl.) | Exceeded AED 65 k ceiling 2 months without explanation |
 | Cash runway | Monthly | ≥ 12 months at any time | ≥ 18 months | < 6 months triggers §7 Risk 5 protocol |
 | Ambassador treasury | Monthly | N / A Phase 1 | Multisig status | Balance > AED 250 k AND multisig not live = 48 h escalation |
 | LinkedIn followers (combined) | Monthly | 5 000+ | 20 000+ | — |
@@ -581,10 +595,10 @@ See §1.D. MB-1 architecture research (not engineering) + MB-2 journey maps. Tot
 
 ### APPENDIX E — Budget detail by line
 
-See §4.3 Y1 line items + §4.4 Y2 line items. Summary:
-- **Y1 authorised: AED 1 300 000 – 1 500 000.**
-- **Y2 authorised: AED 1 300 000 (without Equinix) – 2 300 000 (with Equinix).**
-- **24-month total: AED 2 600 000 – 3 800 000 — within `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3 range.**
+See §4.3 Y1 line items + §4.4 Y2 line items. Summary (v1.0.1 math-corrected):
+- **Y1 authorised: AED 1 500 000 – 1 700 000** (line-item sum 1.5–1.55 M + ~10 % buffer for variance).
+- **Y2 authorised: AED 1 600 000 – 2 100 000 (without Equinix)** · **AED 2 300 000 – 2 800 000 (with Equinix DX1 CapEx)**.
+- **24-month total: AED 3 100 000 – 4 500 000** — diverges from `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3 range (AED 2.6–3.8 M) by +AED 500 – 700 k due to Y1 CoS cost inclusion (AED 150 – 225 k) + Y2 line-item midpoint arithmetic corrections. Divergence fully documented in §4.1.
 
 ### APPENDIX F — Timeline Gantt (Phase 1)
 
@@ -687,7 +701,7 @@ This appendix lists every [DEFAULT APPLIED] tag in this proposal. Owners review 
 | D-31 | Q-31 C→A | Support stack: Slack/WhatsApp first 3 months then migrate Zendesk | §8.5 | Zhan + Dymo |
 | D-32 | Q-32 B | Generic onboarding wizard with role-conditional fields | §8.5 (implicit) | Zhan |
 | D-33 | Q-33 C + B | UAE Pass gate (residents) + Refinitiv screen (non-residents) for KYC at scale | §1.B SV-6 dependency | Zhan + BSA |
-| D-34 | Q-34 C | Tranched budget Y1 AED 1.5 M / Y2 AED 1.3 – 2.3 M, re-approved annually | §4.1 | Rudi + Zhan |
+| D-34 | Q-34 C | Tranched budget Y1 **AED 1.5 – 1.7 M** / Y2 **AED 1.6 – 2.8 M** (v1.0.1 math-corrected); 24-month total AED 3.1 – 4.5 M; re-approved annually; divergence from IMPROVEMENTS_SUMMARY §6.3 noted in §4.1 | §4.1 | Rudi + Zhan |
 | D-35 | Q-35 B | Founder spending authority AED 100 k single / AED 500 k monthly | §4.2 | Rudi + founders |
 | D-36 | Q-36 A | Sunset trigger reconfirm (MOU BINDING) | §5.3 | All three |
 | D-37 | Q-37 A | Dividend 70 / 10 / 10 / 10 reconfirm (MOU BINDING) | §5.3 | All three |
