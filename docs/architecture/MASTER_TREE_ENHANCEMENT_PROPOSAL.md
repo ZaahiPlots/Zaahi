@@ -363,6 +363,15 @@ Total 24-month enhancement budget **AED 3.1 – 4.5 M** (v1.0.1 math correction)
 
 **Divergence note from `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3.** The research-phase summary quoted AED 2.6 – 3.8 M as the 24-month enhancement envelope. Line-by-line reconciliation for this binding document produced AED 3.1 – 4.5 M due to two adjustments absent from the summary: (a) Y1 inclusion of Chief of Staff cost Months 8-12 (5 months × AED 30-45 k / mo = AED 150 – 225 k per Q-18 ratified trigger and §5.2 Dubai-market rate), (b) accurate midpoint + range arithmetic on Y2 line items (previous summary rounded both sum-labels downward). Budget remains within founder authority envelope and below Agency Y1 revenue target (AED 7.8 M base case). Owners may amend via §9.2 procedure if a tighter cap is preferred (see Issue 3 Option B in founder math-review memo for trim options).
 
+**Y1 budget scope — explicit separation from SV-14 Platform Dev Fund draws** (added v1.3 per AUDIT-002 Phase A audit finding). The AED 1.5-1.7 M Y1 envelope authorised in this §4.1 is funded from Rudi's AED 1 M wire plus reinvested Agency revenue. **SV-14 G42 migration Y1 add-on (AED 160-200 k per §1.B SV-14 HOW MUCH) is NOT included in this envelope** — it draws from the Platform Development Fund (70 % of Agency revenue net of operating costs · per §5.3 + MOU Dividend Policy · Y1 Dev Fund ≈ AED 5.46 M at AED 7.8 M Agency revenue target). Two distinct budget pools coexist:
+
+| Pool | Source | Y1 amount | Governance |
+|---|---|---:|---|
+| Y1 Enhancement Budget (§4.1) | Rudi AED 1 M wire + Agency reinvestment | AED 1.5–1.7 M | Tranche re-approval annually per §4.1 |
+| Platform Dev Fund (§5.3) | 70 % Agency net profit distribution | ~AED 5.46 M Y1 | Quarterly Board oversight per MOU §5 Dividend Policy |
+
+SV-14 draws ~3-4 % of Y1 Dev Fund · fiscally minor · does not compete with §4.1 envelope allocations. Founders clarifying for lawyer / Rudi reading: "Y1 spend commitment" = §4.1 AED 1.5-1.7 M + any Dev Fund draws ratified separately (e.g., SV-14 AED 160-200 k). Future SV / AU / MB items funded from Dev Fund follow the same pattern — budget impact reported as Dev Fund percentage, not Enhancement Budget delta.
+
 Authorised in two tranches re-approved annually:
 
 | Tranche | Period | Amount | Re-approval event |
