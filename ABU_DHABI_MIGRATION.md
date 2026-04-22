@@ -7,6 +7,36 @@ founder approval перед любым этапом реализации.
 
 ---
 
+> ## ⚠️ SUPERSEDED — 2026-04-22
+>
+> This research document is **HISTORICAL REFERENCE ONLY**. The vendor
+> recommendation has changed.
+>
+> **Current canonical plan:**
+> - Primary vendor: **G42 Core42 / Khazna Abu Dhabi** (NOT Oracle Cloud UAE Central).
+> - Architectural blueprint: `docs/architecture/78_G42_MIGRATION_ARCHITECTURE.md` v1.0 (commit `d4a3df3`).
+> - Ratification vehicle: `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` v1.3 §1.B SV-14 (commit `68b8709` · pending §9.4 unanimous vote).
+> - Commercial playbook: `docs/ops/CORE42_COMMERCIAL_APPROACH.md` v1.0 (commit `d99391f`).
+>
+> **Why superseded:** this doc predates SV-14 sovereignty analysis. Oracle
+> Cloud UAE was one of 3 candidates; G42 Core42 subsequently selected for:
+> (1) UAE Central Bank partnership 2026-02 regulated-sector approval;
+> (2) Abu Dhabi government 11M daily interactions on Core42;
+> (3) Microsoft $1.5B direct investment + Stargate UAE 1 GW cluster;
+> (4) Azure feature-parity inheritance via sovereign cloud.
+>
+> **What's still valid in this doc:** source-stack inventory (§1) · general
+> migration considerations (§5) · UAE regulatory framing (§4). These flowed
+> into §78 G42 Migration Architecture + MASTER_TREE_SOVEREIGNTY_PROPOSALS.
+>
+> **What's obsolete:** vendor recommendation (§0 Executive Summary · §5-§6
+> Phased plan · §7 Cost) — replaced by §78 + SV-14.
+>
+> **Supersession reference:** `docs/audits/FULL_SYSTEM_AUDIT_PHASE_A_2026-04-22.md`
+> AUDIT-C03 (commit `e03abcb`).
+
+---
+
 ## 0. Executive Summary
 
 **Что сегодня:**
