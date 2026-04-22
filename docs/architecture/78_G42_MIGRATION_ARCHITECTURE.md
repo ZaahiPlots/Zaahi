@@ -68,7 +68,7 @@ This document specifies:
 3. **Microsoft $1.5B direct investment + $15.2B UAE plan (2024-2026).** Azure sovereign-controls inheritance means Core42 services run the full Azure feature matrix — we get ISO 27001/27017/27018/27701 + SOC 1/2/3 transitively without needing separate Core42 certification audit. Microsoft's balance-sheet commitment underwrites Core42's continuity risk.
 4. **Stargate UAE 1 GW cluster (2026 live).** First 200 MW operational · OpenAI + Oracle as co-operators · provides Core42 AI Cloud + Compass platform with inference + training capacity. Positions ZAAHI for §41 Own AI 2027 roadmap without separate GPU-capacity negotiation.
 5. **Khazna Tier III/IV datacentres.** Physical presence Abu Dhabi + Dubai + Ajman · TIER III/IV certification · dark-fibre connectivity to Etisalat + du backbone. Dubai → Abu Dhabi <10 ms round-trip (vs Dubai → Frankfurt 120 ms on current Supabase).
-6. **PDPL 45/2021 alignment.** Core42 Sovereign Public Cloud explicitly markets PDPL compliance · data-residency guarantee (bytes stay in UAE borders) · DPA template supports Data Controller (tenant) + Data Processor (ZAAHI) + Sub-Processor (Core42) three-party model per §77 ARCHITECTURE D-12.
+6. **PDPL 45/2021 alignment (UAE Mainland tenants).** Core42 Sovereign Public Cloud explicitly markets PDPL compliance · data-residency guarantee (bytes stay in UAE borders) · DPA template supports Data Controller (tenant) + Data Processor (ZAAHI) + Sub-Processor (Core42) three-party model per §77 ARCHITECTURE D-12. **For ADGM and DIFC free-zone tenants, their own data protection regimes apply (ADGM DPR 2021 · DIFC DP Law 2020) — per-regime DPA templates required at Phase 2 Enterprise tenant onboarding · deferred to §77_BUILD_SPEC.**
 
 **Alternatives considered + rejected (full table §3.4):**
 - **du Datamena / Injazat (Etisalat / e&)** — legacy UAE telco · strong for non-AI workloads · but weaker sovereign-AI positioning than G42 · weaker government-counterparty signalling.
@@ -691,7 +691,7 @@ If all 5 criteria met → cutover SUCCESS · 48-hour observation window begins.
 | Risk | Probability | Impact | Mitigation |
 |---|:-:|:-:|---|
 | Data-in-transit during cutover (Frankfurt→Abu Dhabi) exposes PII | Low | Medium | ExpressRoute (if available from Core42) · or TLS-encrypted public internet (standard) · data encrypted at rest both ends · one-time risk window |
-| PDPL controller-processor reclassification triggers notification obligations | Low | Medium | DPO retainer reviews · 30-day advance notice to data subjects if material change · per §77 D-12 tenant = Data Controller · ZAAHI = Processor · Core42 = Sub-Processor |
+| Controller-Processor reclassification triggers notification obligations (PDPL 45/2021 · ADGM DPR 2021 · DIFC DP Law 2020 depending on tenant jurisdiction) | Low | Medium | DPO retainer reviews per regime · 30-day advance notice to data subjects if material change · per §77 D-12 3-regime model · DPA templates per jurisdiction at Phase 2 §77_BUILD_SPEC |
 | Existing user consent scope narrower than post-cutover processing | Low | Low | Phase 1 pre-external-launch = founders only · founders consent to migration · non-issue until external users Phase 2 |
 | Audit log continuity break at cutover | Low | Medium | `AuditLog` table migrated like all other tables · continuity preserved · mark migration event in log with special audit entry |
 
@@ -1075,7 +1075,7 @@ module b2c 'modules/b2c.bicep' = {
 - Data residency: UAE borders (PDPL 45/2021 aligned · DLD/RERA negotiable from strong position).
 - Latency: Dubai → Abu Dhabi <10ms (vs Dubai → Frankfurt ~120ms).
 - Vendor risk: Vercel + Supabase → Core42 · reduces US-process CLOUD Act surface by 2 of 7 most critical vendors.
-- Regulatory alignment: PDPL controller-processor-sub-processor three-party DPA model per §77 ARCHITECTURE.
+- Regulatory alignment: PDPL 45/2021 (UAE Mainland) · ADGM DPR 2021 · DIFC DP Law 2020 controller-processor-sub-processor three-party DPA model per §77 ARCHITECTURE D-12 · regime-appropriate DPA per tenant jurisdiction.
 - Phase 2 readiness: Enterprise tier gets dedicated Core42 subscription (per §77 D-14 hybrid multi-tenancy).
 
 **Risk posture.** Technical risks mitigated via Spec 05 Auth Abstraction + Spec 06 Secrets Rotation + pre-cutover rehearsal. Operational risks mitigated via bus-factor fix (BUS_FACTOR_RECOVERY.md) pre-Rudi wire. Strategic risks mitigated via D-11 Equinix contingency + multi-region capability.
