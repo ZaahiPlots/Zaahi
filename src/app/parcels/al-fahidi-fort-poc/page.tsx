@@ -57,6 +57,16 @@ export default function AlFahidiFortPoc() {
     mapRef.current = map;
 
     map.on("load", () => {
+      // Force pitch/bearing/zoom explicitly · defensive belt-and-suspenders
+      // against any React strict-mode remount or style-load reset path that
+      // may override the initial MapOptions values. Without this, the first
+      // paint can be flat (pitch=0) on some reload sequences.
+      map.jumpTo({
+        center: [FORT_LOCATION.lng, FORT_LOCATION.lat],
+        zoom: CAMERA.initialZoom,
+        pitch: CAMERA.initialPitch,
+        bearing: CAMERA.initialBearing,
+      });
       map.addLayer(createFortLayer());
     });
 

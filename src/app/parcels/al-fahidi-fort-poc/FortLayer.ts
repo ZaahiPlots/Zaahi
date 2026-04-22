@@ -54,7 +54,18 @@ export function createFortLayer(): CustomLayerInterface {
       fill.position.set(-50, 50, -30);
       scene.add(fill);
 
-      scene.add(buildFortGeometry());
+      // Build fort and DISABLE frustum culling on every mesh. We bypass
+      // Three.js frustum testing because our `camera.projectionMatrix` is
+      // overridden with MapLibre's MVP matrix each frame while camera.matrix
+      // stays at identity · the internal frustum Three.js computes would
+      // reject every mesh as out-of-view. Without this, the fort renders
+      // zero pixels despite correct transforms.
+      const fort = buildFortGeometry();
+      fort.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh) mesh.frustumCulled = false;
+      });
+      scene.add(fort);
 
       renderer = new THREE.WebGLRenderer({
         canvas: map.getCanvas(),
