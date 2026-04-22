@@ -14,7 +14,11 @@
 //     points south · Three.js Y axis points up.
 
 import * as THREE from "three";
-import type { CustomLayerInterface, Map as MLMap } from "maplibre-gl";
+import type {
+  CustomLayerInterface,
+  CustomRenderMethodInput,
+  Map as MLMap,
+} from "maplibre-gl";
 import maplibregl from "maplibre-gl";
 import { buildFortGeometry } from "./FortGeometry";
 import { FORT_LOCATION } from "./constants";
@@ -62,9 +66,14 @@ export function createFortLayer(): CustomLayerInterface {
 
     render(
       _gl: WebGLRenderingContext | WebGL2RenderingContext,
-      matrix: number[]
+      options: CustomRenderMethodInput
     ): void {
       if (!renderer || !mapRef) return;
+
+      // MapLibre v5 passes the MVP matrix via options.modelViewProjectionMatrix
+      // (world-space → clip-space). This replaces the raw number[] matrix arg
+      // that was passed by MapLibre v4 and earlier.
+      const matrix = options.modelViewProjectionMatrix;
 
       // Build transform: Three.js metres → Mercator map units at fort anchor.
       // rotationX flips Three.js Y-up into MapLibre Z-up (map vertical).

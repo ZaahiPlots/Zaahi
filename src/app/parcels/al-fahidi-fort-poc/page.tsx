@@ -52,7 +52,7 @@ export default function AlFahidiFortPoc() {
       zoom: CAMERA.initialZoom,
       pitch: CAMERA.initialPitch,
       bearing: CAMERA.initialBearing,
-      antialias: true,
+      canvasContextAttributes: { antialias: true },
     });
     mapRef.current = map;
 
