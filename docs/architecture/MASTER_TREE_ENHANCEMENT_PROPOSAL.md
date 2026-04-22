@@ -1,11 +1,11 @@
 ---
 Document: MASTER TREE ENHANCEMENT PROPOSAL
-Version: v1.2 DRAFT
-Status: DRAFT — Awaiting Part III/IV/V review + 3 signatures
+Version: v1.3 DRAFT
+Status: DRAFT — Awaiting Part III/IV/V review + SV-14 §50 canonical amendment unanimous ratification + 3 signatures
 Effective upon: Zhan Ryspayev + Dymo Tsvyk + Rudi Belin signatures
 Binding period: Upon signature through Sunset trigger OR 5 years (whichever earlier)
-Supersedes: v1.0.1 DRAFT (2026-04-21, commit 7ad1e40) · v1.0 DRAFT (2026-04-21, commit 9f864da)
-Last updated: 2026-04-22 (Super-Admin integration + D-21 Wall added)
+Supersedes: v1.2 DRAFT (2026-04-22, commit `45f23f5`) · v1.0.1 DRAFT (2026-04-21, commit `7ad1e40`) · v1.0 DRAFT (2026-04-21, commit `9f864da`)
+Last updated: 2026-04-22 (v1.3 SV-14 G42 Core42 primary infrastructure + §50 canonical amendment proposal · pending §9.4 unanimous ratification · MUST SIGN BEFORE MOU to avoid post-MOU amendment overhead)
 Branch: research/vision-and-competitors-2026-04-19
 Classification: CONFIDENTIAL
 Prepared by: Agent (Claude Opus 4.7, 1M context)
@@ -19,7 +19,8 @@ Prepared for: Zhan Ryspayev (Founder/CEO/CTO) · Dymo Tsvyk (Co-founder/Ops/Amba
 - **v1.0 DRAFT** (2026-04-21, commit `9f864da`): Initial draft post-audit, 34 approved items, 20 deferred, 8 rejected, 22 Part III/IV/V defaults applied, AED 2.6–3.8 M 24-month budget per `MASTER_TREE_IMPROVEMENTS_SUMMARY.md` §6.3.
 - **v1.0.1 DRAFT** (2026-04-21, commit `7ad1e40`): Math corrections per founder review — (1) Y1 Chief of Staff cost (Month 8-12 inclusion) added to §4.3 table; (2) Y1 header + total restated as ranges matching line-item sums; (3) §4.4 Y2 totals restated as ranges reflecting actual midpoint + range line-item arithmetic; (4) §6.4 Phase 1 burn-rate KPI precision (AED 61.5 k base target / ≤ AED 65 k ceiling); (5) downstream cascade across §4.1, §4.5, Appendix E, Appendix I D-34. 24-month budget restated AED 3.1 – 4.5 M, diverging from `IMPROVEMENTS_SUMMARY.md` §6.3 (explicit divergence note in §4.1).
 - **v1.1** — skipped per founder directive (version namespace reserved, not issued).
-- **v1.2 DRAFT** (2026-04-22, this version): Super-Admin integration + D-21 Wall added. (1) §1.E E-2 amended with Super-Admin cross-reference to Spec 03 v2 §14. (2) §2 DEFERRED gains D-21 Wall (Community Feed) — Phase 3 deferred, trigger = stable Phase 2 (≥500 external users) AND Community Manager hired AND Archibald AI battle-tested 6+ months; chicken-egg rationale documented. (3) §6.1 Phase 1 milestones gains M2.5 "Super-Admin mode live (Month 4-5)" enabling "каждая встреча = сделка" operational principle before Plot 1 first commission Fri 2026-06-19.
+- **v1.2 DRAFT** (2026-04-22, commit `45f23f5`): Super-Admin integration + D-21 Wall added. (1) §1.E E-2 amended with Super-Admin cross-reference to Spec 03 v2 §14. (2) §2 DEFERRED gains D-21 Wall (Community Feed) — Phase 3 deferred, trigger = stable Phase 2 (≥500 external users) AND Community Manager hired AND Archibald AI battle-tested 6+ months; chicken-egg rationale documented. (3) §6.1 Phase 1 milestones gains M2.5 "Super-Admin mode live (Month 4-5)" enabling "каждая встреча = сделка" operational principle before Plot 1 first commission Fri 2026-06-19.
+- **v1.3 DRAFT** (2026-04-22, this version): **SV-14 G42 Core42 / Khazna Abu Dhabi as primary infrastructure vendor — PENDING RATIFICATION per §9.4 unanimous founder + Rudi procedure. MUST BE SIGNED BEFORE MOU with Rudi to avoid post-MOU canonical amendment overhead.** (1) §1.B gains SV-14 full entry (8-attribute format) — Core42 Sovereign Public Cloud replaces Equinix DX1 as §50 DC1 primary; Equinix DX1 reclassified to DC3 contingency fallback retained in D-11 budget placeholder. (2) New §1.B.1 "§50 canonical amendment rider" — proposes MASTER_TREE_final.md §50 line-change from "DC1 Equinix Dubai Q3 2026" to "DC1 G42 Khazna / Core42 Abu Dhabi Q3 2026 (Sovereign Public Cloud · Azure-inherited · managed PostgreSQL · Container Apps · Blob Storage · App Configuration)"; DC2 Abu Dhabi/Bahrain retained; Ukraine 2028+ line flagged for separate future amendment (not amended here). (3) APPENDIX I adds D-50 (pending) tracking SV-14 §50 canonical amendment ratification status. (4) Y1 budget +AED 160-200k add-on (POC AED 15k · migration engineering AED 80k · Y1 hosting AED 60-120k · DPA legal AED 5-10k) funded from Platform Dev Fund (70% of AED 7.8M Agency Y1 = AED 5.46M Dev Fund · G42 spend ~3-4% of that). (5) Dependencies surfaced: Spec 05 Auth Abstraction (ship-stopper resolver) + Spec 06 Secrets Rotation Policy (pre-cutover ritual) + §78 G42 Migration Architecture (execution blueprint) + BUS_FACTOR_RECOVERY ops doc (pre-Rudi-wire governance).
 
 ## PREAMBLE — Recitals
 
@@ -120,10 +121,121 @@ Sourced from `docs/vision/MASTER_TREE_SOVEREIGNTY_PROPOSALS.md`. Re-sequenced pe
 **SV-7 · Multisig Ambassador treasury migration.** [RATIFIED — AUDIT-CORRECTED H-7]
 - WHO: Zhan · WHAT: Gnosis Safe 2-of-3 multisig (signers: Zhan + Dymo + Rudi counsel); USDT TRC-20 wallet address changes from single-sig `TELiibGkn3sg4EVzGYczzj2kkiAVfVN4j7` to multisig wallet · WHEN: Month 5-6 (BEFORE Ambassador treasury crosses AED 500 k watermark; soft-pilot Q-13 means this is operationally ready before pilot brokers onboard) · WHERE: Sovereignty §3.3 Phase 3 · HOW: 3 engineer-weeks + founder ceremony + smart-contract audit · HOW MUCH: AED 10 000 (legal + audit + gas) · HOW TO VERIFY: multisig wallet address published on `/join` page; signature ceremony memo filed.
 
-**SV-8 · UAE colocation for backups (Phase 2 prep).** [DEFAULT APPLIED — Q-27 pending]
+**SV-8 · UAE colocation for backups (Phase 2 prep).** [DEFAULT APPLIED — Q-27 pending · RECONTEXTUALISED v1.3: subsumed by SV-14 G42 Core42 primary deployment · SV-8 remains valid as fallback if SV-14 ratification fails or Core42 commercial terms exceed budget]
 - Timing deferred to Month 9-10 to unblock Phase 2 bank / government partnership conversations. Cost AED 15 k one-time + AED 60 – 100 k / yr (Khazna / Etisalat object storage). Referenced in §1.A S-5.
 
-**§1.B Sovereignty not ratified Phase 1 (deferred, see §2):** Passkeys (SV-9) · Local LLM production routing (SV-10) · Network International payment gateway (SV-11) · Patent PCT filing (SV-12) · Equinix DX1 hardware migration (SV-13, Year 2).
+**SV-14 · Primary infrastructure vendor — G42 Core42 / Khazna Abu Dhabi.** [PENDING RATIFICATION — §9.4 unanimous founder + Rudi · MUST SIGN BEFORE MOU EXECUTION · v1.3 NEW 2026-04-22]
+- WHO: Zhan + Dymo (commercial conversation with Core42 enterprise sales · Rudi warm-intro channel optional) · Zhan (technical migration + Azure Sovereign service provisioning · Auth Abstraction Spec 05 implementation · Spec 06 Secrets Rotation execution) · Rudi (unanimous ratification per §9.4 required for §50 canonical amendment).
+- WHAT: Replace prior Equinix DX1 Dubai designation as §50 DC1 primary infrastructure with **G42 Khazna Abu Dhabi + Core42 Sovereign Public Cloud** (Azure-inherited · Insight sovereign-controls platform · managed Azure Database for PostgreSQL Flex Server · Container Apps OR App Service for Next.js 15 · Blob Storage · Azure AD B2C OR External ID for auth · Azure Key Vault for secrets · Azure Front Door CDN). Migrate production zaahi.io away from Vercel (US) + Supabase Frankfurt (EU, US parent) to Core42 Abu Dhabi sovereign tenant. **Keep zaahi.io on Vercel as read-only live demo during Phase 1 · full deployment of Master Tree happens on G42 per Phase 2 readiness.** Equinix DX1 Dubai reclassified to DC3 contingency fallback, retained in D-11 Y2 CapEx placeholder (AED 600-800 k).
+- WHEN:
+  - Month 2-3: Core42 commercial conversation (founder-led · discovery call · RFQ submitted · indicative pricing received).
+  - Month 3-4: §50 canonical amendment ratified (Zhan + Dymo + Rudi unanimous).
+  - Month 3-4: POC tenant provisioned on Core42 sovereign subscription (minimal tier · throwaway data · exercise core flows).
+  - Month 4-5: Spec 05 Auth Abstraction implemented Phase 1a-c (adapter interface + SupabaseAuthAdapter · no behaviour change). Spec 06 Secrets Rotation policy in force (pre-cutover ritual procedure defined).
+  - Month 5-6: Supabase→Azure PostgreSQL dump-and-load rehearsal on sandbox (measure duration · verify RLS + migrations replay · verify `pg_dump`/`pg_restore` procedure).
+  - Month 7-8: production stack provisioned on Core42 · staging `staging.zaahi.io` served from Core42 sovereign tenant · AzureAdB2CAdapter validated · dual-run sync for final validation weeks.
+  - Month 9-10: **production cutover Option A big-bang** · 60-minute maintenance window · aligned with Phase 2 opening trigger (Phase 2 opens Mon 2027-01-18 by default per Q-1 C · extendable to Apr 19 2027 via 2-of-3 founder motion).
+  - Month 10+: Phase 2 tenantization cycle executes natively on G42 per §77 ARCHITECTURE v1.2 §12.3 (no Vercel-era retrofit needed).
+- WHERE:
+  - Canonical MASTER_TREE_final.md §50 Data Centres (amendment required · §9.4 unanimous procedure).
+  - §52 Sovereignty Config migration roadmap: SV-14 accelerates "AWS → Own Servers Q3 2026" destination by routing through Core42 managed-Azure sovereign path instead of Equinix DX1 bare-metal (faster · cheaper up-front · higher floor-cost over 5-year horizon but lower risk).
+  - §77 Web Platform ARCHITECTURE v1.2 §3.1 DataRegion enum already supports `UAE_DUBAI` (reinterpret as `UAE_ABU_DHABI` via value-only change at tenantization migration time · spec amendment deferred to §77 BUILD_SPEC Phase 2).
+- WHY:
+  1. **UAE sovereign cloud of record.** Core42 holds UAE Central Bank partnership (2026-02 · Sovereign Financial Cloud Services Infrastructure) + Abu Dhabi government partnership (11M daily digital interactions) + regulated-sector approval by proxy. ZAAHI MOUs with DLD · RERA · TAMM · ADGM become negotiable with strong "data lives in Abu Dhabi, not Frankfurt" posture.
+  2. **Vendor concentration risk reduction.** Current stack = 7 US-origin vendors (Vercel · Supabase Inc. · Namecheap · GitHub · Cloudflare · Anthropic · OpenAI latent). SV-14 collapses Vercel + Supabase → Core42 sovereign = reduces US-process surface by 2 of 7 most critical.
+  3. **Latency to UAE users.** Dubai → Frankfurt ~120 ms round-trip · Dubai → Abu Dhabi <10 ms · Metaverse (§39) requires <30 ms for WebGL interactivity · materially improves UX.
+  4. **PDPL 45/2021 residency alignment.** Current Frankfurt acceptable under UAE adequacy reasoning but inferior to Abu Dhabi-resident for sovereign counterparty negotiation (per MASTER_TREE_SOVEREIGNTY_PROPOSALS §1.2 risk analysis).
+  5. **Phase 2 tenantization foundation.** Per §77 ARCHITECTURE v1.2 D-14, Enterprise tier uses dedicated Supabase project. SV-14 reframes this: Enterprise tier = dedicated Core42 sovereign tenant subscription · achieves same compliance isolation with higher sovereign-cloud credibility.
+  6. **Revenue alignment.** Platform Dev Fund = 70% of Agency Y1 AED 7.8 M revenue = AED 5.46 M Y1 Dev Fund budget. SV-14 Y1 add-on AED 160-200 k = ~3-4% of Dev Fund · fiscally minor · strategically high-leverage.
+- HOW:
+  - (a) Core42 commercial conversation via founder channel (Dymo relationship + Rudi warm-intro optional) · discovery + RFQ + DPA draft review.
+  - (b) §50 canonical amendment ratified per §9.4 procedure (proposal filed · 30-day review window · unanimous vote · MUST SIGN BEFORE MOU).
+  - (c) POC tenant provisioned · Spec 05 Auth Abstraction implemented · Spec 06 Secrets Rotation in force.
+  - (d) §78 G42 Migration Architecture v1.0 (this session) authored as execution blueprint · component-by-component mapping · cutover procedure · rollback procedure.
+  - (e) Dump-and-load rehearsal Month 5-6 · staging validation Month 7-8.
+  - (f) Production cutover Option A big-bang Month 9-10 · aligned with Phase 2 opening.
+- HOW MUCH:
+  - **Y1 add-on: AED 160-200 k** (one-time + recurring blend).
+    - POC tenant (1 month): AED 15 k.
+    - Migration engineering labour (~6-8 eng-weeks): AED 80 k.
+    - Y1 production hosting (3-4 months post-cutover): AED 60-120 k.
+    - DPA legal review: AED 5-10 k.
+  - **Y2 recurring: ~AED 200 k** (full-year hosting at Phase 2 scale + monitoring + support).
+  - **Y5 at Phase 3 scale: ~AED 600 k** (scales with tenant count + AI workload + compliance surface).
+  - **Funding source:** Platform Dev Fund (per MOU: 70% of Agency revenue net of operating costs = ~AED 5.46 M Y1 Dev Fund · SV-14 draws ~3-4% of that budget).
+  - **Fallback trigger:** if Core42 pricing at Y5 scale exceeds AED 1 M / yr, evaluate Equinix DX1 own-hardware migration per D-11 Y2 CapEx placeholder (AED 600-800 k one-time · AED 150 k / yr OpEx · crossover ~Month 24-36 depending on tenant count).
+- HOW TO VERIFY:
+  - (a) Core42 Master Services Agreement (MSA) signed and filed `docs/legal/core42-msa.pdf`.
+  - (b) §50 canonical amended commit visible in `git log docs/architecture/MASTER_TREE_final.md` with unanimous ratification memo filed `docs/decisions/sv-14-ratification-YYYY-MM-DD.md`.
+  - (c) POC tenant URL + admin console login + Zhan+Dymo verify access.
+  - (d) `staging.zaahi.io` serving from Core42 sovereign tenant (DNS A-record points to Azure Front Door Abu Dhabi endpoint · validated via `dig` + HTTP response Via header).
+  - (e) Post-cutover production `zaahi.io` DNS flipped · all smoke tests green (per §78 G42 Migration Architecture §5.3 procedure · 10 critical-path flows).
+  - (f) Data Processing Agreement (DPA) signed with Core42 reflecting tenant = Data Controller · ZAAHI = Data Processor · Core42 = Sub-Processor (per §77 ARCHITECTURE D-12 PDPL model).
+  - (g) PDPL residency audit passed by external auditor (DPO retainer per S-10 applies) · formal memo filed.
+
+### §1.B.1 §50 canonical amendment rider (PROPOSED · pending §9.4 unanimous ratification)
+
+**Canonical file:** `docs/architecture/MASTER_TREE_final.md` — section §50 DATA CENTRES (line 739 as of 2026-04-22).
+
+**Amendment type:** per §9.4 — unanimous founder + Rudi required for canonical Master Tree changes.
+
+**Current canonical text (MUST NOT BE EDITED until ratified · currently unchanged at mtime 2026-04-20):**
+
+```
+## 50 DATA CENTRES / ДАТА-ЦЕНТРЫ
+
+├── DC1 Equinix Dubai Q3 2026 (3 App Servers, 2 DB Servers, Cache+Backup, Blockchain Nodes ×2)
+├── DC2 Abu Dhabi/Bahrain Q1 2027 (Failover Servers, 60-second Auto-Failover)
+├── GPU Cluster Q4 2027 (NVIDIA A100 ×8 AI, RTX 4090 ×8 Metaverse)
+└── Expansion 2028+ (KSA DC, Ukraine DC, Europe DC)
+
+**CRITICAL NODES:** Own Hardware · 60s Failover · GPU Cluster · Sovereign Data
+**SCALING MODULES:** Zaahi Cloud Infrastructure · DC-as-a-Service
+```
+
+**Proposed amended text (to be applied to canonical upon unanimous ratification):**
+
+```
+## 50 DATA CENTRES / ДАТА-ЦЕНТРЫ
+
+├── DC1 G42 Khazna / Core42 Abu Dhabi Q3 2026 (Sovereign Public Cloud · Azure-inherited · managed PostgreSQL · Container Apps · Blob Storage · App Configuration · Azure AD B2C · Key Vault)
+├── DC2 Abu Dhabi/Bahrain Q1 2027 (Failover region · 60-second Auto-Failover · Bahrain secondary for cross-jurisdiction diversity)
+├── DC3 Equinix DX1 Dubai CONTINGENCY (Y2+ fallback · triggered if Core42 Y5 cost >AED 1M/yr · 3 App Servers · 2 DB Servers · Cache+Backup · Blockchain Nodes ×2 · D-11 placeholder)
+├── GPU Cluster Q4 2027 (NVIDIA A100 ×8 AI, RTX 4090 ×8 Metaverse — primary Core42 AI Cloud · fallback Equinix colo)
+└── Expansion 2028+ (KSA DC via stc Cloud OR Core42 Riyadh when available · Europe DC · [Ukraine line deferred pending separate amendment per v1.1 geopolitical concerns])
+
+**CRITICAL NODES:** Sovereign-by-Design (Core42 primary) · 60s Failover · GPU Cluster · UAE Data Residency · PDPL 45/2021 aligned
+**SCALING MODULES:** Zaahi Cloud Infrastructure · DC-as-a-Service · Per-tenant sovereign subscription (Enterprise tier per §77 D-14)
+```
+
+**Scope of change:**
+1. DC1 vendor change: Equinix Dubai (bare-metal colocation plan) → G42 Khazna / Core42 Abu Dhabi (Sovereign Public Cloud managed-service plan).
+2. DC2 unchanged (Abu Dhabi/Bahrain failover retained · Bahrain rationale strengthened for cross-jurisdiction diversity).
+3. NEW DC3: Equinix DX1 Dubai reclassified from DC1 to contingency fallback · retains existing D-11 budget placeholder · triggered only if Core42 economics fail at Y5 scale.
+4. GPU Cluster line updated: primary Core42 AI Cloud (inherits Stargate UAE compute via Compass) · Equinix colo as fallback.
+5. Expansion line: Ukraine line flagged as separate future amendment (v1.1 geopolitical concerns · NOT amended here · placeholder maintained).
+6. Critical nodes + scaling modules refreshed to reflect sovereign-by-design posture + Enterprise tenant isolation per §77 D-14.
+
+**Risk if not ratified before MOU signing:**
+- MOU signing locks commercial framework at v1.2 state (Equinix DX1 primary assumption embedded).
+- Post-MOU canonical amendment = requires Rudi re-engagement + BSA review of SA Schedule + possible Term Sheet appendix revision · estimated 2-4 week delay + engagement-cost friction.
+- SV-14 ratification before MOU = clean single-decision · zero rework · MOU binds to v1.3 (including SV-14).
+
+**Ratification procedure (per §9.4):**
+1. Zhan files proposal (this v1.3 document satisfies filing requirement).
+2. 30-day review window opens immediately upon v1.3 commit (this session).
+3. Dymo review + signoff (tentative target: 2026-04-25 founder meeting).
+4. Rudi review + signoff (tentative target: 2026-04-28 weekly Sunday call per D-38).
+5. Upon unanimous signoff: agent applies canonical amendment to `MASTER_TREE_final.md` per founder explicit instruction (RED tier per AUTONOMY_PROTOCOL — requires current-turn written instruction · not ratification memo alone).
+6. Ratification memo filed `docs/decisions/sv-14-ratification-YYYY-MM-DD.md` with signatures.
+
+**Dependent artefacts prepared in same session (v1.3 commit chain):**
+- `docs/architecture/78_G42_MIGRATION_ARCHITECTURE.md` v1.0 — execution blueprint (investor-grade).
+- `docs/specs/phase-1/05-AUTH_ABSTRACTION_SPEC.md` v1.0 — ship-stopper resolver (Supabase Auth → Azure AD B2C migration path).
+- `docs/specs/phase-1/06-SECRETS_ROTATION_POLICY.md` v1.0 — pre-cutover rotation ritual.
+- `docs/ops/BUS_FACTOR_RECOVERY.md` v1.0 — pre-Rudi-wire governance (addresses audit 2026-04-22 bus-factor finding).
+
+**§1.B Sovereignty not ratified Phase 1 (deferred, see §2):** Passkeys (SV-9) · Local LLM production routing (SV-10) · Network International payment gateway (SV-11) · Patent PCT filing (SV-12) · Equinix DX1 hardware migration (SV-13, reclassified to DC3 contingency per SV-14).
 
 ### §1.C Autonomy wins approved
 
@@ -718,8 +830,9 @@ This appendix lists every [DEFAULT APPLIED] tag in this proposal. Owners review 
 | D-44 | Q-44 B | v7 holds with addendum memo to Rudi acknowledging revenue-timing shift | §8 Rudi comms | Rudi + Zhan |
 | D-45 | Q-45 B | If v7.1 issued: calendar + revenue-timing refresh (scope) | Appendix I note | Zhan + Rudi |
 | D-46 | Q-46 A | v7.1 issued before first Board meeting Month 1 (if confirmed via Q-44) | §8.1 timing | Rudi + Zhan + Dymo |
+| **D-50** | **Q-50 (new v1.3)** | **SV-14 G42 Core42 primary infrastructure vendor + §50 canonical amendment — PENDING §9.4 unanimous ratification · MUST SIGN BEFORE MOU EXECUTION** | §1.B SV-14 full entry · §1.B.1 canonical rider · §78 G42 Migration Architecture dependency | **Rudi + Zhan + Dymo unanimous** |
 
-**22 defaults applied.** Expected owner review time: ~30-45 minutes to read this Appendix + amend via §9.1 (minor) or §9.2 (medium) as needed.
+**22 defaults applied + 1 pending ratification (D-50 SV-14).** Expected owner review time: ~30-45 minutes to read this Appendix + amend via §9.1 (minor) or §9.2 (medium) as needed. **D-50 is the ONLY §9.4 canonical-amendment-requiring item in v1.3 · all other SV-14 dependencies (Spec 05/06/78/BUS_FACTOR) are GREEN-tier docs-only deliverables.**
 
 ---
 
