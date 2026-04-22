@@ -1,6 +1,7 @@
 # Spec 07 — Iconic Building POC · Al Fahidi Fort 3D render at real coordinates
 
-**Status:** DRAFT v1.0 · 2026-04-22
+**Status:** DRAFT v1.1 · 2026-04-22 (post-visual-hotfix · R-9 pipeline integration note added · R-10 production-deploy ratified)
+**Supersedes:** v1.0 (commit `e11e042`)
 **Classification:** CONFIDENTIAL — engineering integration spec
 **Author:** Agent (Claude Opus 4.7, 1M context)
 **Reviewer / deployer:** Zhan Ryspayev (Founder/CEO/CTO)
@@ -243,7 +244,13 @@ git push origin main
 
 ## §6 Future work (roadmap · not committed)
 
-### Tier 2 — additional public-domain UAE heritage buildings (Phase 2 Month 10+)
+### R-9 pipeline reference (added v1.1 · 2026-04-22)
+
+Enhancement Proposal v1.4 §1.G ratifies **R-9 · 3D Artist role** as the 2nd full-time content hire after videographer. Role spec in `docs/roles/3D_ARTIST_ROLE_SPEC_v1.0.md`. Artist creates LOD3+ `.glb` meshes · agent integrates (FortLayer.ts pattern becomes GLBLoader) · Zhan deploys · Dymo hires + licenses.
+
+**Al Fahidi LOD3 upgrade is the 3D Artist's Month 1 deliverable** (documented in role spec §10). Replaces current procedural implementation at `/parcels/al-fahidi-fort-poc`. Current LOD2 procedural stays in place until artist delivers LOD3 upgrade.
+
+### Tier 2 — additional public-domain UAE heritage buildings (Phase 2 Month 10+ · or earlier via 3D Artist pipeline post-R-9 hire)
 
 Candidates with same legal posture (pre-1950 construction · government-owned):
 - Al Jahili Fort (Al Ain, 1898) — circular watchtower on octagonal base · larger than Al Fahidi.
@@ -253,7 +260,9 @@ Candidates with same legal posture (pre-1950 construction · government-owned):
 - Fujairah Fort (1670) — hilltop fort · UAE's oldest at ~355 years.
 - Abu Dhabi Corniche Lighthouse (historic) — maritime heritage.
 
-Pattern: same `constants.ts` + `FortGeometry.ts` + `FortLayer.ts` trio per building. Effort per additional building: ~2-4 hours.
+**Month 1-6 target (once 3D Artist onboards):** 5-8 Tier 0 heritage forts delivered as LOD3 `.glb` meshes via artist pipeline. Agent-procedural pattern (like Al Fahidi v1.0 POC) remains available as emergency fallback for any building.
+
+Pattern: same `constants.ts` + `FortGeometry.ts`-equivalent (GLBLoader) + `FortLayer.ts` trio per building. Effort per additional building: ~2-4 agent hours for integration + per-building artist time per 3D Artist Role Spec §6.
 
 ### Tier 3 — modern iconic buildings (Phase 2-3 with negotiated permissions)
 
@@ -337,7 +346,17 @@ Alternatives:
 
 Agent recommends current `/parcels/al-fahidi-fort-poc` · `/parcels/` namespace already established · `-poc` suffix clearly flags experimental nature · aligns with future `/parcels/burj-khalifa-poc` · `/parcels/al-jahili-poc` etc. if Tier 2 expansion happens.
 
-### Q3 · Basemap style?
+### Q3 · `/assets/3d/` directory approach? (R-9 preparation)
+
+Once 3D Artist role (R-9 per Enhancement Proposal v1.4) is filled and first `.glb` files arrive, they need storage. Options:
+
+1. **Track in main repo** — simple · but `.glb` files (~3-5 MB each · 25-30 Y1) grow repo to ~100-150 MB. Git struggles with binary diffs. Vercel build ships full file to edge.
+2. **Git LFS** — standard for binary assets · `.glb` tracked via LFS pointer files in main repo · actual files in LFS storage. Recommended.
+3. **Separate asset repo** — `github.com/ZaahiPlots/assets-3d` · CDN serves to production · platform loads via URL. Cleaner separation but adds CDN infrastructure.
+
+Agent recommends **Git LFS** for Phase 2 (once first 3D Artist PR arrives). Simpler setup than separate repo · preserves everything-in-one-place workflow · Vercel supports LFS. Decision can be deferred to 3D Artist Month 1 onboarding.
+
+### Q4 · Basemap style?
 
 Current: CARTO dark basemap (matches `map/page.tsx` dark theme).
 
@@ -347,7 +366,7 @@ Alternatives:
 
 Zhan can swap the `DARK_STYLE` constant · one-line change.
 
-### Q4 · Additional lighting / post-processing?
+### Q5 · Additional lighting / post-processing?
 
 POC uses basic ambient + directional lighting. Could add:
 - Shadow mapping (Three.js ShadowMaterial · adds realism but ~2× GPU cost).
@@ -356,7 +375,9 @@ POC uses basic ambient + directional lighting. Could add:
 
 All optional · out of POC scope. Flag if Zhan wants.
 
-### Q5 · Should I proactively fix other building candidates?
+### Q6 · Should I proactively fix other building candidates? (superseded by R-9)
+
+**UPDATED v1.1:** per Enhancement Proposal v1.4 R-9 ratification, Tier 0 heritage expansion (Al Jahili · Al Hisn · Al Bidya · Ajman · Fujairah) is now the 3D Artist's Month 2-6 priority queue · not agent proactive work. Agent's role per Q-9 role division: integrate artist deliveries · not create procedural meshes for more buildings. **This question now answered: defer to artist pipeline.**
 
 Once deploy is verified successful, agent can add Al Jahili Fort + Al Hisn Fort + Al Bidya Mosque in subsequent sessions if founder wants Tier 2 heritage collection. Each ~2-4 agent hours.
 
