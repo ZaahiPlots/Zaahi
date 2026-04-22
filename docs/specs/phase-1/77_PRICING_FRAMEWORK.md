@@ -1,13 +1,22 @@
 # §77 Pricing Framework — Minimum Floors + Runtime Configurability
 
-**Status:** DRAFT v1.0 · 2026-04-22
-**Parent:** `docs/architecture/77_WEB_PLATFORM_ARCHITECTURE.md` v1.1 (commit `c306f18` · D-16 Pricing philosophy + D-17 Revenue model ratified)
+**Status:** DRAFT v1.1 · 2026-04-22 — **founder ratifications R-5 · R-6 · R-7 · R-8 incorporated**
+**Supersedes:** v1.0 DRAFT (2026-04-22, commit `1dfbdcf`)
+**Parent:** `docs/architecture/77_WEB_PLATFORM_ARCHITECTURE.md` v1.2 (D-16 Pricing philosophy · D-17 Floors ratified · D-18 Enterprise deal-fee hard floor 0.15% · D-19 annual-prepay 10% · D-20 Ambassador opt-out compensation)
 **Depends on:** Spec 02 v1.1 Invoice (commit `0caf9de` · Tax Invoice PDF pipeline) · Spec 03 v2.0 Admin §14 (commit `0cd6542` · Super-Admin governance)
 **Branch:** `research/vision-and-competitors-2026-04-19`
 **Classification:** CONFIDENTIAL
 **Prepared by:** Agent · Opus 4.7 · 2026-04-22
 **Prepared for:** Zhan (Founder) · Dymo (Ops) · Rudi (Board)
 **Preserves:** `MASTER_TREE_final.md` canonical untouched · `src/**` · `prisma/schema.prisma` read-only (schema described illustratively, not applied).
+
+**v1.1 change log (2026-04-22 founder ratifications):**
+- **R-5 · D-7/D-8/D-9 elevated from Agent-recommendation to FOUNDER-RATIFIED.** Launch + scale floors locked: Starter AED 1 000 / 700 · Pro AED 3 000 / 2 500 · Enterprise AED 22 000 / 20 000 + 0.25% deal fee · Custom AED 40 000+.
+- **R-6 · D-10 tightened.** Enterprise deal-fee hard floor raised from 0.10% → **0.15%** (0.10% unprofitable per §2 math).
+- **R-7 · new D-16.** Annual-prepay discount 10% default across all tiers · applied to monthly fee only, not deal fee.
+- **R-8 · new D-17 + new §3.6.** Enterprise Ambassador opt-out compensation: tenant choosing own Ambassador pays ZAAHI +AED 5 000/mo OR +0.05% deal fee · contract-time lock · 12-month minimum.
+- **Appendix B seed values updated** to reflect ratified floors + 10% annual-prepay default across all tiers.
+- **Prior pending D-16/D-17/D-18 renumbered** to D-18/D-19/D-20.
 
 ---
 
@@ -266,11 +275,12 @@ Full table also in `77_WEB_PLATFORM_ARCHITECTURE.md` v1.1 §9.3; expanded here w
 - At AED 50 M deal, tenant earns AED 1 000 000 commission; ZAAHI earns AED 125 000 (deal fee) + ZAAHI's own share unrelated.
 - **12.5% share is a reasonable platform-vs-broker split** — compares to Airbnb host fee ~15% of booking, Uber driver fee ~25% of ride; RE tenant keeps ~87.5% of commission, which is strong tenant economics.
 
-**Volume-commitment negotiation:**
-- Default deal fee = 0.25% floor.
-- Enterprise tenant commits to minimum annual deal volume (e.g., AED 500 M) → deal fee drops to 0.2%.
-- Enterprise tenant commits to multi-year (3+ years) → deal fee drops to 0.15%.
-- Floor beneath which ZAAHI won't go: **0.10%** (barely covers Deal Engine infrastructure + audit trail).
+**Volume-commitment negotiation (R-6 founder-ratified 2026-04-22 · D-10 tightened):**
+- Default deal fee = 0.25% (ratified D-9).
+- Enterprise tenant commits to minimum annual deal volume (e.g., AED 500 M) → deal fee drops to 0.20%.
+- Enterprise tenant commits to multi-year (3+ years) → deal fee drops to 0.15% (AT THE HARD FLOOR).
+- **HARD FLOOR = 0.15%** (tightened from prior 0.10% · below is unprofitable per §2 math · anything below 0.15% triggers Custom-tier bespoke contract instead of Enterprise).
+- Negotiable range 0.15-0.30% · above 0.30% is politically untenable (reaches 15%+ of tenant's 2% commission).
 
 **Alternatives rejected:**
 - Pure SaaS Enterprise: rejected — Enterprise deal volume is where SaaS-margin upside lives; leaving 0% deal fee forfeits material Y3+ revenue.
@@ -284,26 +294,66 @@ Full table also in `77_WEB_PLATFORM_ARCHITECTURE.md` v1.1 §9.3; expanded here w
 - Deal fee line on tenant's invoice = line-item #2 alongside monthly SaaS = line-item #1.
 - VAT 5% applies to both line items.
 
-**Recommended launch pricing:**
-- Starter Enterprise: AED 22 000/mo SaaS + 0.25% deal fee.
-- Mid Enterprise (volume-commit AED 500M+): AED 20 000/mo + 0.20%.
-- Large Enterprise (multi-year): AED 18 000/mo + 0.15%.
-- Strategic Enterprise (sovereign-arm bespoke): floor = AED 15 000/mo + 0.10% floor (Custom tier territory).
+**Ratified launch pricing (R-5/R-6 2026-04-22):**
+- Starter Enterprise: **AED 22 000/mo** SaaS + **0.25%** deal fee (default).
+- Mid Enterprise (volume-commit AED 500 M+): AED 20 000/mo + 0.20%.
+- Large Enterprise (multi-year 3+ yr): AED 18 000/mo + 0.15% (AT HARD FLOOR).
+- Sub-0.15% deal-fee contracts → escalate to Custom tier bespoke (NOT Enterprise · separate governance).
+- Scale floor (Y5+): AED 20 000/mo.
 
 ### §3.4 Custom — bespoke (Phase 3+)
 
 Out of Phase 1-2 scope per architecture v1.1 §1.4 + §5.4. Contract negotiated per deal with reference to Enterprise floor + premium.
 
-### §3.5 Floor values summary table (ratified)
+### §3.5 Floor values summary table (R-5 FOUNDER-RATIFIED 2026-04-22)
 
-| Tier | Monthly SaaS launch floor | Monthly SaaS scale floor (Y5+) | Deal fee floor | Currency |
-|---|---:|---:|:-:|---|
-| Starter | **AED 1 000** | AED 700 | none (Pure SaaS) | AED (others via PricingPlan) |
-| Pro | **AED 3 000** | AED 2 500 | none Phase 1-2 · 0.1% Phase 3+ Hybrid variant | AED |
-| Enterprise | **AED 22 000** | AED 20 000 | **0.25% floor** · negotiable 0.15-0.30% | AED |
-| Custom | AED 40 000+ | — | bespoke | multi-currency |
+| Tier | Monthly SaaS launch floor | Monthly SaaS scale floor (Y5+) | Deal fee default | Deal fee hard floor | Annual-prepay discount | Currency |
+|---|---:|---:|:-:|:-:|:-:|---|
+| Starter | **AED 1 000** | AED 700 | none (Pure SaaS) | n/a | 10% (D-16) | AED (others via PricingPlan) |
+| Pro | **AED 3 000** | AED 2 500 | none Phase 1-2 · 0.1% Phase 3+ Hybrid variant | n/a | 10% (D-16) | AED |
+| Enterprise | **AED 22 000** | AED 20 000 | **0.25%** (D-9) | **0.15%** (D-10 · R-6 tightened) | 10% on SaaS fee only (D-16) | AED |
+| Custom | AED 40 000+ | — | bespoke | bespoke | bespoke | multi-currency |
 
 **Floor = minimum; launch pricing CAN be above floor. Founder approves per-tenant custom pricing via Super-Admin §14.3 (governance §5.2 below).**
+
+### §3.6 Enterprise Ambassador opt-out compensation (R-8 · D-17 ratified 2026-04-22 · NEW)
+
+**Context:** Per architecture D-15, Enterprise tenants may elect to use their own Ambassador program instead of ZAAHI-shared (default). When a tenant opts out, ZAAHI loses the network-effect contribution that the tenant would otherwise provide (referral-link flows, tier upgrades of the tenant's users into the ZAAHI Ambassador ladder, brand extension). This section specifies the compensation mechanism.
+
+**Compensation mechanisms (tenant elects ONE at contract signing):**
+
+| Mechanism | Effect on pricing | Tenant profile fit |
+|---|---|---|
+| **A · Flat uplift** | Monthly SaaS fee floor +AED 5 000/mo → **AED 27 000/mo** minimum (from AED 22 000 base). Deal fee unchanged (0.25% default · 0.15% hard floor per D-10). | Tenant with uncertain deal volume · prefers predictable invoicing · prefers SaaS line-item cleanliness. |
+| **B · Deal-fee uplift** | Monthly SaaS fee unchanged (AED 22 000/mo floor). Deal fee floor +0.05% → **0.30% default · 0.20% hard floor** (0.15% hard floor + 0.05% opt-out stack). | Tenant with high deal volume · ZAAHI earns more via volume-proportional comp · tenant earns more at low volume months. |
+
+**Mechanism selection rules (governance):**
+- Tenant chooses **at contract signing** — NOT mid-term toggleable (prevents gaming · audit integrity).
+- 12-month minimum commitment per D-15 Ambassador program commitment — compensation sticks through full contract cycle.
+- At contract renewal, tenant may switch mechanism with 60-day advance notice (aligned with D-15 Ambassador direction-change rule).
+- If tenant later elects ZAAHI-shared Ambassador at renewal, opt-out compensation is **removed** at renewal date (not retroactive).
+
+**Contract artefact:** Enterprise MSA includes explicit clause stating (1) Ambassador program election (ZAAHI-shared vs own), (2) if own: opt-out compensation mechanism A or B, (3) AED 5 000 uplift OR 0.05% deal-fee uplift applied to PricingPlan at contract activation.
+
+**PricingPlan implementation (§4.1 extension):**
+- New `PricingPlan.ambassadorOwnOptOutMechanism` enum column: `NONE | FLAT_UPLIFT_A | DEAL_FEE_UPLIFT_B`.
+- When FLAT_UPLIFT_A: `baseMonthlyFeeSmallest` = 27 000 AED × 100 fils = `2 700 000` fils (AED 5 000 uplift baked into plan).
+- When DEAL_FEE_UPLIFT_B: `dealFeePercent` = `0.0030` (0.30% = 0.25% default + 0.05% uplift) · hard floor on negotiation = 0.20%.
+- Single source of truth: plan assignment at tenant onboarding locks compensation mechanism for the contract term.
+
+**Rationale (why this structure):**
+- Compensation reflects ZAAHI's foregone network effect — not arbitrary penalty.
+- Two mechanisms (A · B) reflect different tenant deal-volume profiles — flexibility without complexity.
+- Contract-time lock prevents mid-term gaming (tenant toggling to cheaper mechanism month-to-month).
+- 12-month minimum aligns with D-15 Ambassador commitment — single governance window for both decisions.
+- **Default remains ZAAHI-shared Ambassador** (D-15) — opt-out is explicit exception with explicit cost · preserves D-5 Ambassador scope invariant.
+
+**Alternatives rejected:**
+- **No compensation** — ZAAHI absorbs network loss · Enterprise free-rides on opt-out · rejected: breaks unit economics at scale.
+- **Single mechanism (flat-only)** — reduces contract flexibility · rejected: mechanism B attractive for high-volume tenants.
+- **Single mechanism (deal-fee-only)** — administrative complexity for low-volume tenants · rejected: mechanism A attractive for predictability.
+- **Mid-term toggleable** — audit integrity risk · commission ledger reconciliation nightmare · rejected: toggling destroys grandfathering.
+- **Shorter commitment (6 months)** — too short for network-effect cost-recovery · rejected: aligned with D-15 12-month minimum.
 
 ---
 
@@ -702,22 +752,24 @@ Similar process per jurisdiction added.
 | **D-2** | 60% gross margin target as floor threshold | 2026-04-22 | Agent · industry SaaS benchmark | Industry floor for investable SaaS · below = VC discount |
 | **D-3** | Runtime configurability via PricingPlan Prisma model | 2026-04-22 | Agent · founder directive | Market learning · multi-currency · per-tenant custom · promotional · deprecation · all require no-code-deploy updates |
 | **D-4** | Grandfathering policy — existing tenants preserved on original plan for minimum 12 months after deprecation | 2026-04-22 | Agent | Trust · consistency · legal goodwill · prevents churn-in-response-to-price-change |
-| **D-5** | Revenue model per tier: Starter + Pro = Pure SaaS · Enterprise = Hybrid (SaaS + 0.25% deal fee floor) | 2026-04-22 | Founder delegation · agent recommendation | See §3 — deal-fee scope limited to Enterprise aligns ZAAHI incentive with tenant success without complicating Starter/Pro billing |
+| **D-5** | Revenue model per tier: Starter + Pro = Pure SaaS · Enterprise = Hybrid (SaaS + 0.25% deal fee default) | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-5)** · agent recommendation | See §3 — deal-fee scope limited to Enterprise aligns ZAAHI incentive with tenant success without complicating Starter/Pro billing |
 | **D-6** | Base currency AED · multi-currency via per-currency PricingPlan rows · billing always in tenant's plan currency (no FX at invoice) | 2026-04-22 | Agent · founder expansion directive | Prevents FX-rate disputes · simpler per-jurisdiction accounting · cleaner Phase 3 cross-border |
-| **D-7** | Starter launch floor: AED 1 000/mo (below full-amortization AED 2 535 · absorbed by Platform Dev Fund Y2-Y3 ramp) | 2026-04-22 | Agent — per §2.3.1 math | Psychologically accessible · scale floor AED 700 · launch below absorbs amortization during ramp |
-| **D-8** | Pro launch floor: AED 3 000/mo (below full-amortization AED 4 247) | 2026-04-22 | Agent — per §2.3.2 math | Accessible for mid-tier broker · scale floor AED 2 500 · launch below absorbs amortization |
-| **D-9** | Enterprise launch floor: AED 22 000/mo + 0.25% deal fee (slightly below full-amortization AED 23 450) | 2026-04-22 | Agent — per §2.3.3 math | Dedicated infrastructure cost dominates · minimal amortization bypass · deal fee adds meaningful revenue upside · volume commitments allow lower SaaS fee negotiation |
-| **D-10** | Enterprise deal-fee floor 0.25% · 0.10% hard minimum beneath which ZAAHI won't go | 2026-04-22 | Agent | 0.25% = 12.5% of tenant's 2% commission · reasonable platform-vs-broker split · 0.10% covers only Deal Engine + audit · below = unprofitable |
+| **D-7** | **Starter launch floor: AED 1 000/mo** · scale floor AED 700/mo (Y5+) · below full-amortization AED 2 535 absorbed by Platform Dev Fund Y2-Y3 ramp | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-5)** — elevated from agent-recommendation | Psychologically accessible · launch below scale absorbs amortization during ramp · per §2.3.1 math |
+| **D-8** | **Pro launch floor: AED 3 000/mo** · scale floor AED 2 500/mo · below full-amortization AED 4 247 | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-5)** — elevated from agent-recommendation | Accessible for mid-tier broker · launch below scale absorbs amortization · per §2.3.2 math |
+| **D-9** | **Enterprise launch floor: AED 22 000/mo + 0.25% deal fee default** · scale floor AED 20 000/mo · slightly below full-amortization AED 23 450 | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-5)** — elevated from agent-recommendation | Dedicated infrastructure cost dominates · minimal amortization bypass · deal fee adds meaningful revenue upside · volume commitments allow lower SaaS fee negotiation · per §2.3.3 math |
+| **D-10** | **Enterprise deal-fee default 0.25% · HARD FLOOR 0.15%** (tightened from prior 0.10% — unprofitable per §2 math) · negotiable range 0.15-0.30% per volume commit · sub-0.15% requires Custom tier contract | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-6)** — tightened hard floor | 0.25% = 12.5% of tenant's 2% commission · reasonable platform-vs-broker split · 0.15% covers Deal Engine + audit with minimal margin · 0.10% was below COGS (unprofitable) · sub-0.15% contracts escalate to Custom tier bespoke |
 | **D-11** | Deal fee does NOT touch Ambassador commission pool (ZAAHI Ambassador = separate 2% ZAAHI Service Fee ledger per CLAUDE.md) | 2026-04-22 | Founder D-5 · agent preservation | Clean boundary · prevents commission double-counting · Ambassador program stays ZAAHI-scoped |
 | **D-12** | Approval thresholds: <10% increase single-founder · ≥10% dual-cosign · any decrease dual-cosign · bulk migration dual-cosign | 2026-04-22 | Agent | Dual-cosign on dilutive actions prevents panic-discount · fast single approval for routine · governance aligned with Spec 03 v2.0 §14 |
 | **D-13** | 60-day advance notice on price increases · immediate on decreases · 12-month grandfathering minimum on plan deprecation | 2026-04-22 | Agent · industry practice | Legal best practice · goodwill · prevents surprise-churn |
 | **D-14** | Every pricing action → AuditLog append-only (per Spec 03 v2.0 §14.9) with mandatory reason ≥ 20 chars | 2026-04-22 | Agent · governance inheritance | Audit trail for disputes · grandfathering evidence · Super-Admin accountability |
 | **D-15** | Phase 1 billing = manual Super-Admin invoicing via Spec 02 v1.1 pipeline · Phase 2 Stripe/Paddle evaluation at 5-10 tenants | 2026-04-22 | Founder R-4 ratified | Low volume doesn't justify 3-5% payment processor fee + complexity · Spec 02 v1.1 already produces FTA-compliant PDFs · migration path clean when Phase 2 threshold hits |
+| **D-16** | **Annual-prepay discount 10% default across all tiers** · applied to monthly fee ONLY (not deal fee) · reviewable post-pilot | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-7)** | 10% is industry-standard SaaS annual-prepay (Salesforce · HubSpot · Shopify sit 10-20%) · low end chosen for Phase 1-2 conservatism · better to raise later than cut · applied to monthly fee only because Enterprise deal fee is variable by transaction volume · prepaying deal fee is operationally impossible · reviewable if 12-month prepay uptake low (raise to 12-15% Phase 3) |
+| **D-17** | **Enterprise Ambassador opt-out compensation — NEW.** Tenant choosing own Ambassador (vs ZAAHI-shared default per architecture D-15) compensates ZAAHI via ONE mechanism (elected at contract signing): (A) +AED 5 000/mo flat uplift (monthly SaaS fee floor rises AED 22 000 → AED 27 000), OR (B) +0.05% deal-fee uplift (deal fee rises 0.25% default → 0.30% default · hard floor 0.15% → 0.20%). Contract-time lock · 12-month minimum · renewal-time switch with 60-day notice. | 2026-04-22 | **FOUNDER RATIFIED 2026-04-22 (R-8)** | Compensation reflects ZAAHI's foregone network-effect contribution when tenant opts out of shared Ambassador program · two mechanisms reflect different tenant deal-volume profiles · contract-time lock prevents mid-term gaming · 12-month minimum aligns with architecture D-15 · full spec §3.6 above |
 
 Future decisions (pending):
-- **D-16 (pending):** Annual-prepay discount % (default 10% · alternatives 8-15%).
-- **D-17 (pending):** Promotional Starter launch discount (AED 500 first 10 tenants?).
-- **D-18 (pending):** Currency expansion sequence post-Saudi (KZT next · USD next · EUR timing).
+- **D-18 (pending):** Promotional Starter launch discount (AED 500 first 10 tenants?).
+- **D-19 (pending):** Currency expansion sequence post-Saudi (KZT next · USD next · EUR timing).
+- **D-20 (pending):** Post-pilot review of D-16 annual-prepay 10% (raise to 12-15% if uptake insufficient).
 
 ---
 
@@ -738,26 +790,42 @@ Future decisions (pending):
 - **Deal fee** — percentage of tenant's deal value charged by ZAAHI on deals closed via Deal Engine (Enterprise tier).
 - **Pro-ration** — partial-month charge calculation when tenant changes plan mid-cycle.
 
-### Appendix B — Sample PricingPlan seed data (illustrative)
+### Appendix B — Sample PricingPlan seed data (illustrative · v1.1 R-5/R-6/R-7/R-8 ratified)
 
 ```sql
 -- Phase 2 Month 10 launch seed (illustrative — not applied)
+-- v1.1 2026-04-22: FOUNDER-RATIFIED floors (R-5) · 10% annual-prepay default (D-16 · R-7) ·
+-- Enterprise 0.25% deal fee default + 0.15% hard floor (D-10 · R-6) ·
+-- Enterprise-AED-own-ambassador-{A,B} plans for opt-out compensation (D-17 · R-8 · §3.6).
 
 INSERT INTO "PricingPlan" (name, tier, baseMonthlyFeeSmallest, currency, dealFeePercent, annualDiscountPct, userCap, listingCap, storageGB, customDomainIncluded, featuresJson, status, effectiveFrom, createdBy) VALUES
+
 ('Starter-AED-launch', 'STARTER', 100000, 'AED', 0.0000, 0.1000, 5, 50, 5, false,
-  '{"feasibilityV2": false, "metaverse3D": false, "apiAccess": false, "ambassadorIncluded": true, "zaahiFooterRemovable": false}',
+  '{"feasibilityV2": false, "metaverse3D": false, "apiAccess": false, "ambassadorIncluded": true, "zaahiFooterRemovable": false, "ambassadorOwnOptOutMechanism": "NONE"}',
   'ACTIVE', '2026-12-20', '<zhan-user-id>'),
--- AED 1 000/mo = 100 000 fils
+-- AED 1 000/mo = 100 000 fils · annual-prepay 10% (D-16)
 
 ('Pro-AED-launch', 'PRO', 300000, 'AED', 0.0000, 0.1000, 25, 300, 50, true,
-  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": false, "ambassadorIncluded": true, "zaahiFooterRemovable": false}',
+  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": false, "ambassadorIncluded": true, "zaahiFooterRemovable": false, "ambassadorOwnOptOutMechanism": "NONE"}',
   'ACTIVE', '2026-12-20', '<zhan-user-id>'),
--- AED 3 000/mo = 300 000 fils
+-- AED 3 000/mo = 300 000 fils · annual-prepay 10% (D-16)
 
-('Enterprise-AED-launch', 'ENTERPRISE', 2200000, 'AED', 0.0025, 0.1500, NULL, NULL, 500, true,
-  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": true, "complianceModule": true, "ambassadorIncluded": true, "ambassadorTenantOwnOptIn": true, "zaahiFooterRemovable": true, "dedicatedDB": true}',
+('Enterprise-AED-launch', 'ENTERPRISE', 2200000, 'AED', 0.0025, 0.1000, NULL, NULL, 500, true,
+  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": true, "complianceModule": true, "ambassadorIncluded": true, "ambassadorTenantOwnOptIn": true, "zaahiFooterRemovable": true, "dedicatedDB": true, "ambassadorOwnOptOutMechanism": "NONE"}',
+  'ACTIVE', '2026-12-20', '<zhan-user-id>'),
+-- AED 22 000/mo = 2 200 000 fils · 0.25% deal fee default · 10% annual-prepay (D-16 ratified — down from 15% in v1.0)
+-- ZAAHI-shared Ambassador (default per architecture D-15)
+
+('Enterprise-AED-own-ambassador-flat-A', 'ENTERPRISE', 2700000, 'AED', 0.0025, 0.1000, NULL, NULL, 500, true,
+  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": true, "complianceModule": true, "ambassadorIncluded": false, "ambassadorTenantOwnOptIn": true, "zaahiFooterRemovable": true, "dedicatedDB": true, "ambassadorOwnOptOutMechanism": "FLAT_UPLIFT_A"}',
+  'ACTIVE', '2026-12-20', '<zhan-user-id>'),
+-- Enterprise w/ own Ambassador · Mechanism A (flat uplift) · AED 27 000/mo (22k + 5k) · 0.25% deal fee · 10% annual-prepay (D-17 · R-8)
+
+('Enterprise-AED-own-ambassador-deal-B', 'ENTERPRISE', 2200000, 'AED', 0.0030, 0.1000, NULL, NULL, 500, true,
+  '{"feasibilityV2": true, "metaverse3D": true, "apiAccess": true, "complianceModule": true, "ambassadorIncluded": false, "ambassadorTenantOwnOptIn": true, "zaahiFooterRemovable": true, "dedicatedDB": true, "ambassadorOwnOptOutMechanism": "DEAL_FEE_UPLIFT_B"}',
   'ACTIVE', '2026-12-20', '<zhan-user-id>');
--- AED 22 000/mo = 2 200 000 fils · deal fee 0.25% · annual discount 15% (Enterprise premium)
+-- Enterprise w/ own Ambassador · Mechanism B (deal-fee uplift) · AED 22 000/mo · 0.30% deal fee (0.25% + 0.05%) · 10% annual-prepay (D-17 · R-8)
+-- Hard floor on negotiation: 0.20% deal fee (0.15% D-10 hard floor + 0.05% opt-out uplift)
 ```
 
 ### Appendix C — Comparable SaaS pricing benchmarks
@@ -795,12 +863,17 @@ enum InvoiceType {
 
 ---
 
-**End of §77 Pricing Framework v1.0 DRAFT.**
+**End of §77 Pricing Framework v1.1 DRAFT.**
 
-Next: founder ratification of D-7/D-8/D-9 floor values and D-5 revenue model per tier unblocks Phase 2 Month 10 seed `PricingPlan` rows. D-16/D-17/D-18 questions resolved during Phase 2 pilot tenant negotiations.
+v1.1 ratification status (2026-04-22):
+- **D-5/D-7/D-8/D-9** — FOUNDER RATIFIED (R-5) · floors locked · Phase 2 Month 10 seed unblocked.
+- **D-10** — FOUNDER RATIFIED (R-6) · hard floor tightened 0.10% → 0.15% · sub-0.15% contracts escalate to Custom tier.
+- **D-16** — FOUNDER RATIFIED (R-7) · 10% annual-prepay default.
+- **D-17** — FOUNDER RATIFIED (R-8) · Enterprise Ambassador opt-out compensation (new §3.6).
+- **D-18/D-19/D-20** — PENDING · Phase 2 pilot tenant negotiations + post-pilot data.
 
 Cross-references:
-- `docs/architecture/77_WEB_PLATFORM_ARCHITECTURE.md` v1.1 (commit `c306f18`) — D-16/D-17 ratified; §9 references this spec.
+- `docs/architecture/77_WEB_PLATFORM_ARCHITECTURE.md` v1.2 — D-16 Pricing philosophy · D-17 Floors ratified · D-18 Enterprise deal-fee hard floor · D-19 annual-prepay 10% · D-20 Ambassador opt-out compensation; §9 references this spec.
 - `docs/specs/phase-1/02-INVOICE_COMMISSION_SPEC.md` v1.1 (commit `0caf9de`) — Tax Invoice PDF pipeline · new TENANT_SUBSCRIPTION + TENANT_DEAL_FEE invoice types extend here.
 - `docs/specs/phase-1/03-ADMIN_PANEL_SPEC.md` v2.0 (commit `0cd6542`) — §14 Super-Admin governance model applied to pricing authority.
 - `docs/architecture/MASTER_TREE_ENHANCEMENT_PROPOSAL.md` v1.2 (commit `45f23f5`) — Platform Dev Fund budget absorbs Phase 2 amortization residual.
