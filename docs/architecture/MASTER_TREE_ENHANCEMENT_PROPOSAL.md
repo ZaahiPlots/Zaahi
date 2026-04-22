@@ -1,11 +1,11 @@
 ---
 Document: MASTER TREE ENHANCEMENT PROPOSAL
-Version: v1.3 DRAFT
+Version: v1.4 DRAFT
 Status: DRAFT — Awaiting Part III/IV/V review + SV-14 §50 canonical amendment unanimous ratification + 3 signatures
 Effective upon: Zhan Ryspayev + Dymo Tsvyk + Rudi Belin signatures
 Binding period: Upon signature through Sunset trigger OR 5 years (whichever earlier)
-Supersedes: v1.2 DRAFT (2026-04-22, commit `45f23f5`) · v1.0.1 DRAFT (2026-04-21, commit `7ad1e40`) · v1.0 DRAFT (2026-04-21, commit `9f864da`)
-Last updated: 2026-04-22 (v1.3 SV-14 G42 Core42 primary infrastructure + §50 canonical amendment proposal · pending §9.4 unanimous ratification · MUST SIGN BEFORE MOU to avoid post-MOU amendment overhead)
+Supersedes: v1.3 DRAFT (2026-04-22, commit `68b8709`) · v1.2 DRAFT (2026-04-22, commit `45f23f5`) · v1.0.1 DRAFT (2026-04-21, commit `7ad1e40`) · v1.0 DRAFT (2026-04-21, commit `9f864da`)
+Last updated: 2026-04-22 (v1.4 R-9 3D Artist role as 2nd full-time content hire + R-10 Al Fahidi Fort POC ratified for production deploy · both founder-ratified 2026-04-22 post-Al-Fahidi visual hotfix)
 Branch: research/vision-and-competitors-2026-04-19
 Classification: CONFIDENTIAL
 Prepared by: Agent (Claude Opus 4.7, 1M context)
@@ -20,7 +20,8 @@ Prepared for: Zhan Ryspayev (Founder/CEO/CTO) · Dymo Tsvyk (Co-founder/Ops/Amba
 - **v1.0.1 DRAFT** (2026-04-21, commit `7ad1e40`): Math corrections per founder review — (1) Y1 Chief of Staff cost (Month 8-12 inclusion) added to §4.3 table; (2) Y1 header + total restated as ranges matching line-item sums; (3) §4.4 Y2 totals restated as ranges reflecting actual midpoint + range line-item arithmetic; (4) §6.4 Phase 1 burn-rate KPI precision (AED 61.5 k base target / ≤ AED 65 k ceiling); (5) downstream cascade across §4.1, §4.5, Appendix E, Appendix I D-34. 24-month budget restated AED 3.1 – 4.5 M, diverging from `IMPROVEMENTS_SUMMARY.md` §6.3 (explicit divergence note in §4.1).
 - **v1.1** — skipped per founder directive (version namespace reserved, not issued).
 - **v1.2 DRAFT** (2026-04-22, commit `45f23f5`): Super-Admin integration + D-21 Wall added. (1) §1.E E-2 amended with Super-Admin cross-reference to Spec 03 v2 §14. (2) §2 DEFERRED gains D-21 Wall (Community Feed) — Phase 3 deferred, trigger = stable Phase 2 (≥500 external users) AND Community Manager hired AND Archibald AI battle-tested 6+ months; chicken-egg rationale documented. (3) §6.1 Phase 1 milestones gains M2.5 "Super-Admin mode live (Month 4-5)" enabling "каждая встреча = сделка" operational principle before Plot 1 first commission Fri 2026-06-19.
-- **v1.3 DRAFT** (2026-04-22, this version): **SV-14 G42 Core42 / Khazna Abu Dhabi as primary infrastructure vendor — PENDING RATIFICATION per §9.4 unanimous founder + Rudi procedure. MUST BE SIGNED BEFORE MOU with Rudi to avoid post-MOU canonical amendment overhead.** (1) §1.B gains SV-14 full entry (8-attribute format) — Core42 Sovereign Public Cloud replaces Equinix DX1 as §50 DC1 primary; Equinix DX1 reclassified to DC3 contingency fallback retained in D-11 budget placeholder. (2) New §1.B.1 "§50 canonical amendment rider" — proposes MASTER_TREE_final.md §50 line-change from "DC1 Equinix Dubai Q3 2026" to "DC1 G42 Khazna / Core42 Abu Dhabi Q3 2026 (Sovereign Public Cloud · Azure-inherited · managed PostgreSQL · Container Apps · Blob Storage · App Configuration)"; DC2 Abu Dhabi/Bahrain retained; Ukraine 2028+ line flagged for separate future amendment (not amended here). (3) APPENDIX I adds D-50 (pending) tracking SV-14 §50 canonical amendment ratification status. (4) Y1 budget +AED 160-200k add-on (POC AED 15k · migration engineering AED 80k · Y1 hosting AED 60-120k · DPA legal AED 5-10k) funded from Platform Dev Fund (70% of AED 7.8M Agency Y1 = AED 5.46M Dev Fund · G42 spend ~3-4% of that). (5) Dependencies surfaced: Spec 05 Auth Abstraction (ship-stopper resolver) + Spec 06 Secrets Rotation Policy (pre-cutover ritual) + §78 G42 Migration Architecture (execution blueprint) + BUS_FACTOR_RECOVERY ops doc (pre-Rudi-wire governance).
+- **v1.3 DRAFT** (2026-04-22, commit `68b8709`): **SV-14 G42 Core42 / Khazna Abu Dhabi as primary infrastructure vendor — PENDING RATIFICATION per §9.4 unanimous founder + Rudi procedure. MUST BE SIGNED BEFORE MOU with Rudi to avoid post-MOU canonical amendment overhead.** (1) §1.B gains SV-14 full entry (8-attribute format) — Core42 Sovereign Public Cloud replaces Equinix DX1 as §50 DC1 primary; Equinix DX1 reclassified to DC3 contingency fallback retained in D-11 budget placeholder. (2) New §1.B.1 "§50 canonical amendment rider" — proposes MASTER_TREE_final.md §50 line-change from "DC1 Equinix Dubai Q3 2026" to "DC1 G42 Khazna / Core42 Abu Dhabi Q3 2026 (Sovereign Public Cloud · Azure-inherited · managed PostgreSQL · Container Apps · Blob Storage · App Configuration)"; DC2 Abu Dhabi/Bahrain retained; Ukraine 2028+ line flagged for separate future amendment (not amended here). (3) APPENDIX I adds D-50 (pending) tracking SV-14 §50 canonical amendment ratification status. (4) Y1 budget +AED 160-200k add-on (POC AED 15k · migration engineering AED 80k · Y1 hosting AED 60-120k · DPA legal AED 5-10k) funded from Platform Dev Fund (70% of AED 7.8M Agency Y1 = AED 5.46M Dev Fund · G42 spend ~3-4% of that). (5) Dependencies surfaced: Spec 05 Auth Abstraction (ship-stopper resolver) + Spec 06 Secrets Rotation Policy (pre-cutover ritual) + §78 G42 Migration Architecture (execution blueprint) + BUS_FACTOR_RECOVERY ops doc (pre-Rudi-wire governance).
+- **v1.4 DRAFT** (2026-04-22, this version): **R-9 3D Artist role ratified as 2nd full-time content hire after videographer · R-10 Al Fahidi Fort POC ratified for production deploy post-visual-hotfix.** (1) New §1.G "3D Content Production Pipeline" consolidates R-9 + R-10 · role division (artist creates `.glb`/`.gltf` meshes · agent integrates into platform · Zhan production push · Dymo hiring + licensing). (2) New §4.6 "3D Content Production Pipeline (R-9 adjunct)" subsection detailing role · deliverables · priority tiers (Tier 0 pre-1950 heritage · Tier 1 modern iconic with per-building licensing · Tier 2 Enterprise tenant custom) · Y1 budget estimate AED 150-250k **flagged against existing §4.3 Y1 envelope AED 1.5-1.7 M** · reconciliation deferred to founder decision in next session (see §4.6 closing note). (3) Master Tree section mappings: §76 Media · §44 3D Engine · §80 Content Ops. (4) Spec 07 v1.1 cross-reference added for Al Fahidi POC production-ready status with visual hotfix at commit `b606765`. (5) Companion artefact: `docs/roles/3D_ARTIST_ROLE_SPEC_v1.0.md` (new this session · hiring + pipeline + 90-day deliverables + anti-patterns).
 
 ## PREAMBLE — Recitals
 
@@ -310,6 +311,38 @@ The following Master Tree sections ship as owner-first Phase 1 builds (expanding
 
 **Excluded from AMB-1 Phase 1:** external signup via `/join` public page · paid marketing · referral link amplification · public ambassador leaderboard publication. All deferred to Phase 2 Month 15 per Q-3 C staged sequence.
 
+### §1.G 3D Content Production — R-9 + R-10 (added v1.4 · 2026-04-22)
+
+**R-9 · 3D Artist role as 2nd full-time content hire.** [RATIFIED — founder directive 2026-04-22]
+
+- WHO: Dymo (hiring · licensing verification · strategic direction) · 3D Artist (full-time hire · creates custom LOD3+ meshes) · Agent (integration · MapLibre bindings · coordinate math · LOD switching · bundle optimisation · deploy pipeline) · Zhan (production push · infrastructure).
+- WHAT: dedicated 3D artist producing architecturally-accurate glTF 2.0 / `.glb` meshes for iconic UAE buildings · 25-30 buildings Y1 · scalable to 100+ Y2 · three priority tiers (Tier 0 pre-1950 heritage public-domain / Tier 1 modern iconic with per-building owner licensing / Tier 2 Enterprise tenant custom Phase 2+).
+- WHEN: Month 3-6 hire target per agent recommendation · sequenced after videographer role (1st full-time content hire · already budgeted S-1 Y1 AED 120 k per §4.3).
+- WHERE: §76 Media (primary) + §44 3D Engine + §80 Content Ops per Master Tree.
+- WHY: POC Al Fahidi Fort hotfix session 2026-04-22 validated capability to render real-world buildings procedurally (commits `e11e042` / `ff2afea` / `98b49d7` / `b606765`) · agent-procedural is sufficient for LOD2 wow-factor but LOD3+ requires skilled 3D artist to unlock iconic-building quality tier for Rudi demos / broker marketing / Phase 2 Enterprise tenant customisation.
+- HOW: dedicated GitHub PR workflow · artist commits `.glb` to `assets/3d/<building-slug>/model.glb` · agent integrates via research-branch task · Zhan reviews + deploys. Tools: Blender / Maya / 3ds Max (artist choice) · Substance Suite (texturing).
+- HOW MUCH: Y1 AED 150 – 250 k (6-9 months partial year · salary + benefits + software licences + one-time hardware) · **flagged against current §4.3 Y1 envelope AED 1.5 – 1.7 M · see §4.6 for reconciliation note**.
+- HOW TO VERIFY: (a) signed employment contract · (b) pipeline first delivery (Al Fahidi Fort LOD3 upgrade replacing current procedural) · (c) 5-8 Tier 0 heritage forts live at `/parcels/<slug>-poc/` routes by Month 6.
+
+**R-10 · Al Fahidi Fort POC finished and deployed to production.** [RATIFIED — founder directive 2026-04-22]
+
+- WHO: Zhan (deploy) · Agent (pre-deploy validation · visual hotfix · spec 07 v1.1).
+- WHAT: `/parcels/al-fahidi-fort-poc` route ships to production on zaahi.io with LOD2 procedural rendering · toggle + info panel + attribution · dark basemap · 60° pitch · 3 corner towers + crenellations + south gate recognisable.
+- WHEN: immediately post-hotfix verification (Zhan browser test at `localhost:3000/parcels/al-fahidi-fort-poc` · then merge to main · Vercel auto-deploy).
+- WHERE: §77 Web Platform extension · demonstrates real-building capability alongside ZAAHI Signature (untouched per CLAUDE.md).
+- WHY: working LOD2 demo has concrete value for Rudi call + broker demos · capability proof before 3D artist hire · parking POC would leave no visible proof of real-building capability during critical pre-MOU window (May 8 Rudi wire). Al Fahidi public-domain status (built 1787 · Dubai Municipality · architectural copyright expired) provides clean legal launch path.
+- HOW: §4 of Spec 07 `07-ICONIC_BUILDING_POC_SPEC.md` v1.0 step-by-step deploy procedure · ~15-30 min Zhan time.
+- HOW MUCH: AED 0 incremental (all engineering hours within existing agent + Zhan capacity).
+- HOW TO VERIFY: `https://zaahi.io/parcels/al-fahidi-fort-poc` renders fort at Al Fahidi coordinates with pitch 60° + sandstone building visible · existing `/parcels/map` ZAAHI Signature unaffected (regression sanity).
+
+**Commits forming the R-10 deliverable chain:**
+- `e11e042` — Spec 07 v1.0 selection + licensing evidence.
+- `ff2afea` — initial POC code (constants · FortGeometry · FortLayer · page).
+- `98b49d7` — TypeScript validation fixes (MapLibre v5 API signatures).
+- `b606765` — visual hotfix (frustum culling + jumpTo pitch/bearing).
+
+**R-9 + R-10 relationship:** R-10 ships today as LOD2 capability proof. R-9 establishes pipeline for LOD3+ upgrade post-hire (Al Fahidi replaced with artist-crafted model Month 1 of 3D artist onboarding · existing code in `FortLayer.ts` becomes .glb loader instead of procedural geometry · MapLibre CustomLayer integration layer identical).
+
 ---
 
 ## §2 DEFERRED — What is postponed and when re-considered
@@ -436,6 +469,64 @@ Ties to `docs/roadmap/MASTER_IMPLEMENTATION_PLAN.md` Appendix B Y1 opex AED 1.29
 ### §4.5 Emergency bridge provisions
 
 If Agency Y1 commissions underperform (< AED 3 M by Month 6, approximately 40 % of base case), founders may convene a Board meeting within 14 days to request emergency bridge capital. Rudi is not obligated to provide additional capital; SAFE + MOU terms remain as signed. Bridge options discussed in §7 Risk 5.
+
+### §4.6 3D Content Production Pipeline (R-9 adjunct · added v1.4)
+
+Per R-9 ratification 2026-04-22 (§1.G), ZAAHI adds a dedicated 3D artist as the second full-time content hire after the videographer. The role exists to unlock LOD3+ quality iconic-building rendering for Rudi demos · broker marketing · Phase 2 Enterprise tenant customisation.
+
+**Role division (do not conflate):**
+
+| Party | Scope |
+|---|---|
+| 3D Artist (hire) | Creates `.glb` / `.gltf` meshes · textures · PBR materials · architectural research · LOD3+ fidelity target |
+| Agent | Integrates `.glb` files into platform · MapLibre bindings · coordinate math · LOD switching · bundle optimisation · deploy pipeline |
+| Zhan | Production deploy · infrastructure · final QA |
+| Dymo | Hiring · per-building licensing verification · strategic direction · priority queue ownership |
+
+**Y1 output target:** 25-30 buildings delivered · ~1-2 buildings/week sustainable pace · three priority tiers.
+
+| Tier | Scope | Licensing posture | Month target |
+|:-:|---|---|:-:|
+| **Tier 0** | Pre-1950 heritage forts — Al Fahidi (LOD3 upgrade over current procedural) · Al Jahili · Al Hisn · Al Bidya Mosque · Ajman Fort · Fujairah Fort | Public domain (architectural copyright expired · 75-355 years old) · clean legal path | Month 1-6 |
+| **Tier 1** | Modern iconic — Burj Khalifa · Emirates Towers · Museum of the Future · Frame of Dubai · Louvre Abu Dhabi · Sheikh Zayed Grand Mosque | Per-building owner agreement required (Emaar · DFF · Dubai Muni · DCT · etc.) · Dymo negotiates before artist begins | Month 4-12 (as licensing lands) |
+| **Tier 2** | Enterprise tenant custom buildings | Tenant contractually permits — bundled into Enterprise AED 22 000/mo tier per §77 PRICING_FRAMEWORK | Phase 2+ (Month 10+) |
+
+**Technical specifications (mandatory for artist deliverables):**
+- Format: glTF 2.0 binary (`.glb`) — web-optimal single-file.
+- Polygon budget: ≤ 50 000 triangles per building (mobile performance budget).
+- Textures: ≤ 2048×2048 per map · PBR (albedo + normal + roughness + metallic).
+- Coordinate origin: centroid of building footprint at (0, 0, 0) · Y-axis up · 1 unit = 1 metre.
+- Handoff: GitHub PR to research branch · `assets/3d/<building-slug>/model.glb`.
+
+**Y1 budget estimate (flagged for §4.3 reconciliation):**
+
+| Line item | AED | Note |
+|---|---:|---|
+| 3D Artist salary 6-9 months (Month 3-12 partial year) | 108 000 – 225 000 | Dubai archviz market 2026 · AED 18-25 k/mo base range |
+| Software licenses (Blender free · Substance Suite optional) | 10 000 – 20 000 | One-time · annual renewal thereafter |
+| Hardware (workstation laptop + monitor) | 15 000 – 25 000 | One-time |
+| Licensing fees per Tier 1 building negotiation | 0 – 50 000 | TBD · Dymo-negotiated per building |
+| **Y1 subtotal (midpoint)** | **~AED 150 000 – 250 000** | |
+
+**CRITICAL RECONCILIATION NOTE — pending founder decision next session:**
+
+The §4.3 Y1 envelope is **AED 1.5 – 1.7 M** with a high-high line-item sum of AED 1 555 000 leaving ~AED 145 k of ceiling buffer above high-high. The R-9 3D Artist Y1 midpoint of AED 200 k **exceeds** that buffer by AED 55 k — meaning R-9 cannot be absorbed within the current §4.3 envelope without tranche ceiling adjustment.
+
+**Three resolution paths (founder picks at next session):**
+1. **Raise §4.3 Y1 ceiling** from AED 1.7 M → AED 1.9-2.0 M to accommodate R-9 · requires §9.2 amendment procedure (tranche-level change) · arithmetic reconciliation updated.
+2. **Fund R-9 from Platform Dev Fund** (70 % Agency revenue · AED 5.46 M Y1 at AED 7.8 M Agency base) · parallel to SV-14 precedent (which also draws from Platform Dev Fund · §1.B SV-14 line) · arguably appropriate since 3D content supports §77 Web Platform capability · no §4.3 change required.
+3. **Defer 3D Artist hire to Y2** · R-10 Al Fahidi ships today as LOD2 proof-of-capability · wait until Platform Dev Fund matures (Month 6+ once Agency commissions flow) · Y2 tranche AED 1.6-2.8 M has more room.
+
+Agent recommendation: **path 2 (Platform Dev Fund)**. 3D artist output directly supports §77 platform quality tier · aligns with SV-14 precedent · preserves §4.3 envelope integrity · Rudi governance pattern (quarterly Dev Fund oversight per MOU §5) applies.
+
+Founder decision required before artist recruitment begins.
+
+**Mapping to Master Tree:**
+- §76 Media — primary section (content production)
+- §44 3D Engine — secondary (rendering pipeline for artist output)
+- §80 Content Ops — tertiary (workflow + asset management)
+
+**Companion role spec:** `docs/roles/3D_ARTIST_ROLE_SPEC_v1.0.md` (new this session) · full hiring + pipeline + 90-day deliverables + anti-patterns.
 
 ---
 
