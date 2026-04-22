@@ -1,9 +1,9 @@
 ---
 Document: §77 WEB PLATFORM ARCHITECTURE
-Version: v1.0 DRAFT
-Status: DRAFT — architectural framework · awaiting Phase 1 production feedback before §77_BUILD_SPEC
-Supersedes: None (first version)
-Last updated: 2026-04-22
+Version: v1.1 DRAFT
+Status: DRAFT — founder ratifications 2026-04-22 incorporated · pricing framework cross-referenced · awaiting Phase 1 production feedback before §77_BUILD_SPEC
+Supersedes: v1.0 DRAFT (2026-04-22, commit `0e87128`)
+Last updated: 2026-04-22 (v1.1 ratifications + pricing framework reference + Ukraine removal)
 Branch: research/vision-and-competitors-2026-04-19
 Classification: CONFIDENTIAL — investor-grade artefact (Series A data-room usable)
 Prepared by: Agent (Claude Opus 4.7, 1M context)
@@ -66,11 +66,10 @@ Founder directive locked during `audit 2026-04-22` review: **write §77 ARCHITEC
 1. **Saudi Arabia (Q2 2027).** Largest GCC market · Vision 2030 driving RE boom · REGA (Real Estate General Authority) regulates · Arabic-primary. Similar jurisdictional pattern to Dubai RERA — translation effort manageable. Requires Saudi legal counsel + data-residency decision (ADGM vs Saudi-resident DB).
 2. **Kuwait (Q3 2027).** Smaller market · high HNWI concentration · Arabic-primary · Dymo's existing relationships applicable.
 3. **Kazakhstan (Q1 2028).** CIS anchor · Russian + Kazakh languages · Almaty + Astana · different regulatory frame (Ministry of Digital Development). Dymo CIS network applicable.
-4. **Ukraine (Q2 2028, post-stability).** Ukrainian + Russian languages · significant diaspora purchasing UAE real estate. Pre-war relationships via Dymo's Ukrainian clients.
-5. **Other CIS (Q3 2028+).** Uzbekistan · Azerbaijan · Armenia opportunistic.
+4. **Other CIS (Q3 2028+).** Uzbekistan · Azerbaijan · Armenia opportunistic. Specific geography selection deferred pending Phase 2 Saudi/Kazakhstan pilot traction data.
 
 **Phase 2 expansion requirements surfaced from above:**
-- Multi-currency support (AED · SAR · KWD · KZT · USD · RUB · UAH).
+- Multi-currency support (AED · SAR · KWD · KZT · USD · RUB).
 - Multi-language UI deeper than Phase 1 (all 6 languages per Master Tree §49).
 - Data-residency choices per jurisdiction (some regulators require in-country DB; DB-per-tenant Enterprise tier designed for this).
 - Jurisdiction-specific compliance modules (Saudi REGA · Kazakh civil code RE articles · etc.).
@@ -725,7 +724,7 @@ Tenant-resolution lookup caching: Redis / Upstash / in-memory for < 1 ms tenant-
 | Archibald | Included (standard rate-limit) |
 | Ambassador program | Shared ZAAHI Ambassador (tenant's users can become ZAAHI ambassadors, commissions flow to ZAAHI) |
 | Support | Email + docs · no SLA |
-| Target price (indicative) | **AED 2 000 – 4 000 / month** |
+| Pricing | **See `docs/specs/phase-1/77_PRICING_FRAMEWORK.md`** for minimum floor pricing + runtime configuration. Prices not hardcoded in this architecture document — they live in the `PricingPlan` Prisma model and can be changed by Super-Admin without code deploy. |
 
 ### §5.2 Pro tier
 
@@ -743,7 +742,7 @@ Tenant-resolution lookup caching: Redis / Upstash / in-memory for < 1 ms tenant-
 | Archibald | Included (elevated rate-limit) |
 | Ambassador program | Shared ZAAHI Ambassador OR opt-in to tenant's own (adds ~AED 500 / mo) |
 | Support | Priority email + video onboarding · 48-hr response SLA |
-| Target price (indicative) | **AED 6 000 – 12 000 / month** |
+| Pricing | **See `docs/specs/phase-1/77_PRICING_FRAMEWORK.md`** — Pro tier floor + runtime configurable per tenant. |
 
 ### §5.3 Enterprise tier
 
@@ -762,7 +761,7 @@ Tenant-resolution lookup caching: Redis / Upstash / in-memory for < 1 ms tenant-
 | Ambassador program | Tenant's own + full control |
 | Data region | Selectable (UAE Frankfurt · UAE Dubai · Saudi · Kazakhstan · EU) |
 | Support | Slack Connect + phone + named Customer Success · 12-hr response SLA |
-| Target price (indicative) | **AED 30 000 – 80 000 / month** |
+| Pricing | **See `docs/specs/phase-1/77_PRICING_FRAMEWORK.md`** — Enterprise floor + bespoke negotiation (volume commitments · multi-year contracts) · hybrid SaaS + deal-fee model (D-17). |
 
 ### §5.4 Custom tier (DEFERRED Phase 3)
 
@@ -1099,27 +1098,40 @@ Decision: Phase 1 start with manual invoicing; evaluate Stripe/Paddle at 10+ ten
 
 ### §9.2 Subscription mechanics
 
+**Pricing source of truth:** `docs/specs/phase-1/77_PRICING_FRAMEWORK.md` v1.0. Prices live in Prisma `PricingPlan` model · runtime-configurable by Super-Admin without code deploy · grandfathering policy preserves existing tenants on their original plan when new plans issued. Architecture document references framework · does not duplicate prices (avoids drift).
+
 Monthly billing cycle:
 - Day 0: tenant provisioned · 14-day free trial (Starter + Pro) OR immediate paid (Enterprise).
-- Day 14: trial ends · first invoice auto-generated for current cycle.
+- Day 14: trial ends · first invoice auto-generated via Spec 02 v1.1 Invoice pipeline · `type = TENANT_SUBSCRIPTION` (new invoice type added Phase 2 per Spec 02 v1.1 §3.1 extension).
 - Day 44: second invoice for next cycle.
-- Day 30 overdue: SUSPENDED status.
+- Day 30 overdue: SUSPENDED status (per §3.2 lifecycle).
 - Day 90 overdue: TERMINATED status.
 
 Annual billing (discount incentive):
-- 10-15% discount vs monthly.
+- 10-15% discount vs monthly (specific % in PricingPlan).
 - Prepaid · single invoice for 12 months.
 - Renewal auto-invoiced on anniversary.
 
-### §9.3 Revenue share from tenant transactions
+Phase 1 billing delivery: **manual invoicing by Super-Admin** (per Enhancement Proposal D-10 · ratified 2026-04-22). Spec 02 v1.1 Invoice pipeline handles PDF generation + Resend delivery. Payment confirmed by Super-Admin (bank wire · USDT) · invoice marked PAID. No Stripe/Paddle in Phase 1 (deferred to D-16 Phase 2 evaluation at 5-10 tenants).
 
-Two models for Phase 2 evaluation:
+### §9.3 Revenue share from tenant transactions (D-17 ratified below)
 
-**Model A — Pure SaaS (no deal-fee).** Tenant pays monthly fee; ZAAHI earns nothing on tenant's deals. Simple · predictable · Ambassador program remains ZAAHI-core.
+**Agent recommendation — now ratified as D-17 in §13:**
 
-**Model B — SaaS + deal-fee.** Tenant pays lower monthly fee + 0.5-1% of each tenant-side deal closed via platform. Higher revenue upside; more complex · requires deal visibility per tenant · VAT implications per jurisdiction.
+| Tier | Revenue model | Rationale |
+|---|---|---|
+| **Starter** | **Pure SaaS** (monthly fee only, no deal fee) | Small tenants · low deal volume · complexity not worth it · simple billing for self-service signup |
+| **Pro** | **Pure SaaS** (Phase 1-2 default) · hybrid option added §77_BUILD_SPEC after pilot data | Simpler invoicing · tenant predictability · aligns with "easy to change prices" directive · Pro volume interesting (AED 300 M – 1.5 B deal value per tenant/yr at 30-50 deals · 0.1% would yield AED 300 k – 1.5 M/yr but adds billing complexity) · revisit post-pilot |
+| **Enterprise** | **Hybrid — SaaS + deal fee floor 0.25%** (negotiable upward) | Enterprise uses Deal Engine infrastructure heavily · compliance overhead real · audit trail real · deal fee aligns ZAAHI incentive with tenant success · 0.25% floor = 12.5% of tenant's 2% commission (reasonable revenue share) · volume commitments earn lower SaaS fee in exchange · consistent with SaaS-hybrid industry norms (Shopify · Stripe Connect) |
+| **Custom** | Bespoke (Phase 3+) | Sovereign RE arms / long contract · negotiated per deal |
 
-**Recommendation:** Model A for Starter + Pro (simplicity wins at small scale). Optional Model B for Enterprise (larger deals · easier reconciliation · contract-negotiable). Final decision Phase 2 after 3+ pilot tenant negotiations.
+**Key constraint:** deal fee, where charged, **does NOT touch Ambassador commission pool** (ZAAHI Ambassador commission = 2% ZAAHI Service Fee per CLAUDE.md). Enterprise tenant deal fee = separate line on tenant's invoice, ZAAHI-retained, not flowing to ambassadors. Ambassador program stays ZAAHI-scoped per D-5.
+
+**Stream assignment** (Master Tree §56):
+- Starter + Pro → Stream 15 "SaaS subscriptions" (primary).
+- Enterprise → Stream 15 (primary monthly) + Stream 16 "Deal fees on Platform-enabled transactions" (secondary).
+
+**Floor calculation** (full math + sensitivity): `docs/specs/phase-1/77_PRICING_FRAMEWORK.md` §2-§3.
 
 ### §9.4 Which of 21 Revenue Streams (§56) is White-label?
 
@@ -1262,29 +1274,27 @@ Alerts: automated anomaly detection (Datadog / Grafana Phase 3 consideration).
 
 ### §11.5 Open questions for founder
 
+**v1.1 note:** Questions 1, 2, 3, 5 from v1.0 were ratified by founder 2026-04-22 and migrated to §13 Decision Tracker as D-10, D-11, D-5, and D-17 respectively. Remaining questions renumbered.
+
 **🔴 BLOCKING (must answer before `§77_BUILD_SPEC`):**
 
-1. **Stripe vs Paddle vs manual billing Phase 2?** Affects engineering scope · VAT handling · payment reliability.
-2. **"Powered by ZAAHI" footer policy: mandatory Pro · invisible Enterprise · invisible Custom?** Affects marketing visibility vs Enterprise pricing leverage.
-3. **Ambassador program tenant-option vs ZAAHI-only?** Affects pricing · contract · USDT wallet architecture. Decision D-5 in §13.
-4. **First pilot tenant — Dymo warm introduction available Month 8-10?** Affects Phase 2 schedule.
-5. **Revenue model — Pure SaaS (Model A) vs SaaS+deal-fee (Model B) Pro and Enterprise?** Pricing + contract impact.
+1. **First pilot tenant — Dymo warm introduction available Month 8-10?** Tenant identification converges with Enhancement Proposal v1.2 §1.F Ambassador soft-pilot Month 6-9: Dymo's warm-intro brokers approached during soft-pilot become Phase 2 Pro tier candidates at Month 10+. No new process required; same relationship funnel.
 
 **🟡 IMPORTANT (Phase 2 design period):**
 
-6. **Custom domain pricing — included in Pro vs add-on charge?**
-7. **Language enablement per tenant: 6 available from Day 1 or phased?** Affects Phase 2 translation budget.
-8. **Enterprise DB-per-tenant vendor — stay Supabase or consider Neon/AWS?**
-9. **Per-tenant archibald fine-tune (Phase 3) - part of Enterprise tier or separate SKU?**
-10. **SLA credits policy — self-triggered by tenant OR Super-Admin discretionary?**
+2. **Custom domain pricing — included in Pro vs add-on charge?** (Framework §5.2 currently "included" — reconfirm.)
+3. **Language enablement per tenant: 6 available from Day 1 or phased?** Affects Phase 2 translation budget (AED 4 250 – 9 000 one-time if all 6).
+4. **Enterprise DB-per-tenant vendor — stay Supabase or consider Neon/AWS?** D-14 currently recommends Supabase; founder ratification pending.
+5. **Per-tenant Archibald fine-tune (Phase 3) — part of Enterprise tier or separate SKU?**
+6. **SLA credits policy — self-triggered by tenant OR Super-Admin discretionary?**
 
 **🟢 NICE-TO-KNOW:**
 
-11. **Free trial length — 7 · 14 · 30 days?** Industry standard 14, but Pro might benefit from 30.
-12. **Demo tenant — marketing landing or full sample?**
-13. **Reseller / agency partner program — Phase 3 opportunity?** (mid-tier brokers sometimes have operational-consultant partners who'd resell.)
-14. **Brand guideline enforcement — tenant can upload logo, but moderate?** Brand-safety check.
-15. **Listing data — who owns when tenant churns?** Already answered in §3.6 but reconfirm contract language.
+7. **Free trial length — 7 · 14 · 30 days?** Pricing Framework §6.1 default 14; reconfirm Phase 2.
+8. **Demo tenant — marketing landing or full sample?**
+9. **Reseller / agency partner program — Phase 3 opportunity?** (mid-tier brokers sometimes have operational-consultant partners who'd resell.)
+10. **Brand guideline enforcement — tenant can upload logo, but moderate?** Brand-safety check.
+11. **Listing data — who owns when tenant churns?** Already answered in §3.6 but reconfirm contract language.
 
 ---
 
@@ -1404,21 +1414,24 @@ Architectural decisions captured in this document, with rationale, alternatives 
 | **D-2** | Phase 1 target: UAE mid-tier brokerages (30-100 listings) | 2026-04-22 | Founder | Dymo's network gives warm-intro pipeline; validates ICP fastest | Sovereign RE (long cycle · bespoke); Open SaaS (overhead) | — |
 | **D-3** | Phase 2 expansion: Saudi → Kuwait → Kazakhstan → other CIS | 2026-04-22 | Founder | GCC + CIS via Dymo network; Arabic + Russian already core language set | Europe (FR/UK) first (smaller addressable mkt, Brexit complication) | — |
 | **D-4** | Write ARCHITECTURE now; BUILD_SPEC wait for Phase 2 pilot feedback | 2026-04-22 | Founder + Agent | Speculative design risk on BUILD_SPEC without real tenant feedback; ARCHITECTURE is Series A data-room artefact | Write full BUILD_SPEC now (agent rejected: ahead of Phase 1 shipping = premature) | — |
-| **D-5** | Ambassador program stays ZAAHI-core for Starter + Pro; Enterprise has optional own | 2026-04-22 | Agent recommendation · pending founder Q-3 ratify | Simpler v1 · ZAAHI network effect · Enterprise flexibility retained | Fully tenant-scoped (complexity · scatter of Ambassador value); fully ZAAHI-only (Enterprise complaint) | — |
+| **D-5** | Ambassador program: Starter + Pro = ZAAHI-only (no tenant-own option). Enterprise = agent-recommended approach (see §13 D-15 below) | 2026-04-22 | **RATIFIED by founder 2026-04-22** | Simpler v1 · ZAAHI network effect preserved · Enterprise gets nuanced approach per D-15 | Fully tenant-scoped (complexity · scatter); fully ZAAHI-only across tiers (Enterprise complaint) | — |
 | **D-6** | v1 User = one tenant (single tenantId FK); Phase 3 membership junction for multi-tenant users | 2026-04-22 | Agent | Simpler + matches Supabase Auth model; Phase 3 extension | Junction table from Day 1 (over-engineering v1) | — |
 | **D-7** | RLS + Prisma middleware + host-resolution = 5-layer defence-in-depth | 2026-04-22 | Agent | RLS alone has bypass risk; 5 layers = any one broken 4 hold | Single RLS-only (too fragile); app-level only (no DB safety net) | — |
 | **D-8** | Runtime CSS custom properties for branding (not build-time) | 2026-04-22 | Agent | Works at any scale; build-time over-engineering for small tenant count | Build-time per tenant (CI/CD complexity) | — |
 | **D-9** | 6 languages phased (EN day 1; AR+RU Phase 2; UK+SQ+FR Phase 3) | 2026-04-22 | Founder-directive cross-border sequence | ROI per language vs effort | All-6 Phase 1 launch (~24 eng-weeks upfront, misaligns with resource) | — |
-| **D-10** | Phase 1 billing: manual Super-Admin invoicing; Phase 2 evaluate Stripe/Paddle | 2026-04-22 | Agent | 1-3 pilot tenants don't justify Stripe/Paddle complexity + 3-5% transaction fees | Stripe/Paddle Day 1 (overkill) | — |
-| **D-11** | "Powered by ZAAHI" mandatory Starter + Pro; removable Enterprise | 2026-04-22 | Pending founder ratify | Marketing + SEO · Enterprise paying for invisibility | Invisible all tiers (lost marketing); visible all tiers (Enterprise complaint) | — |
+| **D-10** | Phase 1 billing: manual Super-Admin invoicing via Spec 02 v1.1 Invoice pipeline; Phase 2 evaluate Stripe/Paddle at 5-10 tenants | 2026-04-22 | **RATIFIED by founder 2026-04-22** | 1-3 pilot tenants don't justify Stripe/Paddle complexity + 3-5% transaction fees · Spec 02 v1.1 already produces FTA-compliant tax invoice PDFs via jsPDF · pricing lives in PricingPlan (D-16) so billing automation can slot in later without pricing migration | Stripe/Paddle Day 1 (overkill); single unified pricing constants (breaks at multi-currency Phase 2+) | — |
+| **D-11** | "Powered by ZAAHI" footer: MANDATORY Starter + Pro (non-removable) · REMOVABLE Enterprise + Custom (customer pays for invisibility) | 2026-04-22 | **RATIFIED by founder 2026-04-22** | Marketing + SEO every Starter/Pro tenant = billboard for ZAAHI · Enterprise + Custom contract-negotiated premium (removability is pricing lever) | Invisible all tiers (lost marketing network effect); visible all tiers (Enterprise would pay premium without benefit) | — |
+| **D-15** | Enterprise Ambassador: **default = ZAAHI-only**; opt-out to own Ambassador at Enterprise CONTRACT-TIME decision ONLY (not mid-term toggle) · mutually exclusive (not parallel) · opt-out = 12-month minimum commitment · 60-day advance notice to switch direction at next renewal | 2026-04-22 | Agent recommendation · grounded in founder D-5 ratification | **Rationale:** (1) Network-effect protection — default = ZAAHI-only grows ZAAHI affiliate network by default. Opt-out is rare exception. (2) Complexity cost — dual Ambassador systems per tenant = engineering overhead (dual payout · dual commission ledger · dual UI). Mutually exclusive = single clean code path per tenant. (3) Enterprise customer expectations — large regulated brokerages with existing affiliate contracts can bring their own · clean separation prevents cross-contamination. (4) 12-month commitment prevents monthly toggling which destroys commission ledger audit integrity. **Alternatives considered:** (a) parallel Ambassador programs (rejected: Ambassador poaching wars within tenant · commission double-pay risk); (b) ZAAHI-only no opt-out (rejected: real Enterprise contracts will require own program · we'd lose contract); (c) Starter/Pro opt-in (rejected: founder D-5 already ratifies Starter/Pro = ZAAHI-only). | Parallel programs · no-opt-out · tenant-side-toggle · shorter commitment | Each rejected per rationale above |
+| **D-16** | **Pricing philosophy:** minimum floor values (not optimal / aspirational) + runtime configurability via `PricingPlan` Prisma model (Super-Admin changes prices without code deploy) · full spec in `docs/specs/phase-1/77_PRICING_FRAMEWORK.md` | 2026-04-22 | **Founder directive 2026-04-22 + agent framework** | Ship-first discipline (minimum floor reduces market-entry friction) · raise later (legacy grandfathering) · regional pricing (SAR · KZT · USD) · per-tenant Enterprise custom pricing · promotional campaigns — all require runtime flexibility | Hardcoded prices in code (breaks on every price change); single-currency only (breaks cross-border Phase 2); aspirational pricing (breaks market-entry) | Each rejected per rationale above |
+| **D-17** | **Revenue model per tier:** Starter + Pro = Pure SaaS (monthly fee only). Enterprise = Hybrid (SaaS + deal fee floor 0.25%, negotiable). Custom = bespoke contract-time. | 2026-04-22 | Agent recommendation · founder task delegation | **Starter Pure SaaS:** complexity not worth it at small deal volume · simple self-service billing. **Pro Pure SaaS Phase 1-2:** simpler invoicing · tenant predictability · aligns with "easy to change prices" directive · optional hybrid added §77_BUILD_SPEC after Phase 2 pilot data. **Enterprise Hybrid:** Enterprise uses Deal Engine infrastructure heavily · aligns ZAAHI incentive with tenant success · 0.25% floor = 12.5% of tenant's own 2% commission (reasonable revenue share) · volume commitments lower SaaS fee in exchange. **Deal fee does NOT touch Ambassador commission pool** (stays ZAAHI-scoped per D-5). | All-Pure-SaaS across tiers (Enterprise upside left on table); Hybrid across tiers (Starter billing complexity); deal fee from Ambassador pool (breaks D-5 Ambassador scope) | Each rejected per rationale above |
 | **D-12** | Tenant = Data Controller; ZAAHI = Data Processor (PDPL model) | 2026-04-22 | Agent | Standard SaaS model; legal compliance; tenant responsible for their users | Reverse (ZAAHI as controller): legally impossible (ZAAHI doesn't decide tenant's data purposes) | — |
 | **D-13** | Super-Admin §14 extends cross-tenant via same guardrails + dual audit log (tenant-scoped + ZAAHI-global) | 2026-04-22 | Agent | Spec 03 v2.0 §14 framework applies; dual audit preserves tenant visibility + Super-Admin accountability | Single audit log (tenant admins see ZAAHI admin actions — privacy concern); Super-Admin no-access (operationally impossible) | — |
 | **D-14** | Enterprise tier uses dedicated Supabase project (not Neon / AWS RDS) — initially | 2026-04-22 | Agent | Supabase-native reduces architectural fragmentation · reconsider at 3+ Enterprise tenants | Neon branching (tempting but non-Supabase); AWS RDS (too different from current) | — |
 
 Future decisions (captured on ratification):
-- **D-15 (pending):** Phase 2 first pilot tenant identity + contract structure.
-- **D-16 (pending):** Stripe vs Paddle vs manual billing Phase 2.
-- **D-17 (pending):** Free-trial length + conversion triggers.
+- **D-18 (pending):** Phase 2 first pilot tenant identity + contract structure (converges with Ambassador soft-pilot per §11.5 Q-1).
+- **D-19 (pending):** Stripe vs Paddle billing vendor at Phase 2 5-10 tenant threshold (re-evaluation trigger per D-10).
+- **D-20 (pending):** Free-trial length (default 14 · alternatives 7 / 30) + conversion trigger mechanics.
 
 ---
 
@@ -1638,21 +1651,23 @@ export const config = {
 
 **Strategic context.** ZAAHI builds an Agency-first platform (Y1 AED 7.8 M · 12 premium plot deals + 2 off-plan floors per investor package v7). The Platform (ADGM HoldCo) scales on a 5-10 year horizon toward Series A/B/C and IPO. **White-label is the scaling module that transforms ZAAHI from a Dubai-only agency into a region-serving SaaS platform.**
 
-**ICP (Phase 1 target).** UAE mid-tier brokerages (30-100 listings, 5-20 agents). ~200 such brokerages in Dubai alone. Pain points: plot-level data absence · no 3D tooling · no automated feasibility · no CRM · weak brand differentiation. Willingness to pay: AED 6 000 – 12 000 / month (Pro tier target).
+**ICP (Phase 1 target).** UAE mid-tier brokerages (30-100 listings, 5-20 agents). ~200 such brokerages in Dubai alone. Pain points: plot-level data absence · no 3D tooling · no automated feasibility · no CRM · weak brand differentiation.
 
-**Expansion (Phase 2 · Year 2+).** Cross-border GCC + CIS: Saudi Arabia · Kuwait · Kazakhstan · Ukraine · other CIS. ~500+ addressable brokerages across region.
+**Expansion (Phase 2 · Year 2+).** Cross-border GCC + CIS: Saudi Arabia · Kuwait · Kazakhstan · other CIS opportunistic. ~500+ addressable brokerages across region.
 
 **Technical architecture.** Hybrid multi-tenancy: **Starter + Pro = shared Supabase DB + Row-Level Security (RLS)**; **Enterprise = dedicated Supabase project per tenant** (data residency · compliance isolation · performance). 5-layer defence-in-depth ensures tenant isolation. `next-intl` for 6-language support with RTL for Arabic.
 
-**Product tiers.** Starter AED 2-4 k / mo (5 users · 50 listings · subdomain). Pro AED 6-12 k / mo (25 users · 300 listings · custom domain · full branding · 3D). Enterprise AED 30-80 k / mo (unlimited · dedicated DB · API access · compliance modules · data residency).
+**Product tiers.** Starter — single-agent / small team (5 users · 50 listings · subdomain · basic branding · shared ZAAHI Ambassador). Pro — mid-tier brokerage (25 users · 300 listings · custom domain · full branding · 3D Metaverse · Advanced Analytics · Feasibility v2 · shared ZAAHI Ambassador). Enterprise — 100+ users · dedicated DB · API access · compliance modules · data residency choice · optional tenant-owned Ambassador program (D-15 opt-out). Custom — bespoke Sovereign RE arms (Phase 3+).
 
-**Revenue projections.** Y2 AED 100-300 k (1-3 pilot tenants) → Y3 AED 800 k – 1.5 M (8-15 tenants) → Y5 AED 10-18 M (40-80 tenants · GCC expansion) → Y10 AED 150-250 M (300-500 tenants across 6-8 jurisdictions). SaaS margin 70-85%.
+**Pricing.** Minimum floor values + runtime configurability via `PricingPlan` Prisma model (Super-Admin changes prices without code deploy). Floor methodology + per-tier calculation in `docs/specs/phase-1/77_PRICING_FRAMEWORK.md`. Revenue model: Starter + Pro = Pure SaaS (monthly fee); Enterprise = Hybrid (SaaS + 0.25% deal fee floor, negotiable).
+
+**Revenue projections.** Phased across Y1-Y10 per P&L Statement scenarios. Contribution 16-30% of Platform revenue at Y3+. SaaS gross margin target ≥ 60% (floor) · aspirational 70-85% at scale. Full numbers: Pricing Framework §2-§3.
 
 **Build plan.** Phase 1 (Month 2-5): Tier 1 Perfection ships (Specs 02·01·03·04). No tenantization. Phase 2 prep (Month 6-9): draft tenant migration · identify pilot tenant · write this ARCHITECTURE. Phase 2 build (Month 10-17): apply tenant migration · launch Starter tier · onboard first pilot · launch Pro tier · write §77_BUILD_SPEC grounded in pilot data. Phase 3 (Month 18-24): Enterprise tier · i18n 6 languages · DB-per-tenant. Year 2+: cross-border expansion.
 
 **Effort.** Phase 2 + 3 total = 36-57 engineer-weeks over 15 months. Zhan primary engineer + Month 8-10 Chief of Staff + Phase 2 specialist part-time hire (quant analyst AED 30-50 k 3-month engagement).
 
-**Risks managed.** RLS defence-in-depth (5 layers) · DPA template per tenant · "Powered by ZAAHI" footer (Starter/Pro) · Super-Admin §14 with iron-clad guardrails for cross-tenant access. 14 architectural decisions captured in §13.
+**Risks managed.** RLS defence-in-depth (5 layers) · DPA template per tenant · "Powered by ZAAHI" footer mandatory on Starter + Pro (removable Enterprise+Custom — D-11 ratified) · Super-Admin §14 with iron-clad guardrails for cross-tenant access. 17 architectural decisions captured in §13 (D-1 through D-17).
 
 **Investor-relevant ratios.** SaaS revenue % of total Y3 = ~20% (Platform) → Y5 = ~30% (Platform/Agency blended). Gross margin lifts ZAAHI blended from 40-50% (Agency) to 55-70% (Agency + SaaS blended) — improves Platform IPO multiple.
 
@@ -1660,6 +1675,8 @@ export const config = {
 
 ---
 
-**End of §77 WEB PLATFORM ARCHITECTURE v1.0 DRAFT.**
+**End of §77 WEB PLATFORM ARCHITECTURE v1.1 DRAFT.**
 
-Next: Phase 1 execution continues per audit §8.2. Founder ratification of D-11 (Powered by ZAAHI) and D-16 (billing vendor) unblocks Phase 2 build. `§77_BUILD_SPEC.md` written Month 15-17 grounded in first pilot tenant feedback.
+**v1.1 changes vs v1.0** (commit `0e87128`): header version bump · §1.3 Ukraine removed · §5 hardcoded prices replaced with cross-reference to `docs/specs/phase-1/77_PRICING_FRAMEWORK.md` · §9.2 subscription mechanics reference Spec 02 v1.1 · §9.3 revenue model recommendation ratified as D-17 · §11.5 resolved questions migrated to §13 + renumbered · §13 D-5 / D-10 / D-11 status → RATIFIED · §13 added D-15 (Enterprise Ambassador) · D-16 (Pricing philosophy) · D-17 (Revenue model) · Appendix E investor 1-pager updated to reference pricing framework + remove hardcoded prices.
+
+Next: Phase 1 execution continues per audit §8.2. D-18 (pilot tenant identity) · D-19 (Phase 2 billing vendor) · D-20 (free-trial length) pending resolution during Ambassador soft-pilot Month 6-9. `§77_BUILD_SPEC.md` written Month 15-17 grounded in first pilot tenant feedback.
