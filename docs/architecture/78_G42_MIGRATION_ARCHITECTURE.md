@@ -95,7 +95,7 @@ This document specifies:
 
 **Production zaahi.io runtime:**
 - Next.js 15 application + all current routes (`/`, `/parcels/*`, `/ambassador`, `/join`, `/admin`, `/api/*`).
-- Prisma 7.7 + Supabase PostgreSQL (Frankfurt) · 19 models · 13 migrations · 114 parcels · ~50-500 users · ~5-20 deals · ~1 k activity-log rows.
+- Prisma 7.7 + Supabase PostgreSQL (Frankfurt) · 15 models · 12 migrations · 114 parcels · ~50-500 users · ~5-20 deals · ~1 k activity-log rows.
 - Supabase Auth (email + password + Google OAuth latent + admin-approval gate).
 - Supabase Storage (PDFs · plot-guidelines · affection plans · site plans).
 - Local `data/**` geodata (KML + PMTiles + Excel + master-plans · per CLAUDE.md immutable).
@@ -222,7 +222,7 @@ This section enumerates every component of the current zaahi.io runtime that mus
 | Document | 100-500 | ~8 (metadata only · files in Storage) | No | ~0.5 MB |
 | Modules | fixed seed | ~5 | No | negligible |
 | Others (4) | varies | varies | varies | ~1 MB |
-| **Total OLTP** | **~700 – 9 000 rows** | 19 models | Mixed | **~15 MB pg_dump est** |
+| **Total OLTP** | **~700 – 9 000 rows** | 15 models | Mixed | **~15 MB pg_dump est** |
 
 **Object storage (Supabase Storage):**
 - PDFs: plot-guidelines · affection plans · site plans.
@@ -514,10 +514,10 @@ This hybrid achieves:
 
 **T-45min:**
 - Execute `pg_restore` on Azure Database for PostgreSQL Flex Server at Abu Dhabi.
-- Verify schema applied · all 19 tables present · row counts match Supabase.
+- Verify schema applied · all 15 tables present · row counts match Supabase.
 
 **T-40min:**
-- Run `prisma migrate status` on Azure PostgreSQL · confirm all 13 migrations applied · no pending migrations.
+- Run `prisma migrate status` on Azure PostgreSQL · confirm all 12 migrations applied · no pending migrations.
 - Verify RLS policies present via `\d+ Parcel` etc.
 
 **T-35min:**

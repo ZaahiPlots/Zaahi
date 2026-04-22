@@ -241,8 +241,8 @@ TECHNOLOGY STACK
 ───────────────────────────────────────────────────────────────────
 Runtime:                Next.js 15 · React 19 · TypeScript 5
 Database:               PostgreSQL 16 via Prisma 7.7 ORM
-                        (currently Supabase Frankfurt · 19 models · 
-                        13 migrations · ~15 MB OLTP footprint)
+                        (currently Supabase Frankfurt · 15 models · 
+                        12 migrations · ~15 MB OLTP footprint)
 Auth:                   Supabase Auth (email + password + Google 
                         OAuth · admin-approval gated · migration to 
                         Azure AD B2C planned per Spec 05)
@@ -592,7 +592,7 @@ Phase 2 multi-tenant launch Jan 2027.
 
 ### 2.1 Current state (Phase 1 · through Dec 2026)
 - Compute: Next.js 15 · ~2 vCPU · 4 GB RAM · single region
-- Database: PostgreSQL 16 · ~15 MB OLTP · ~19 tables · 114 parcels · 50-200 users
+- Database: PostgreSQL 16 · ~15 MB OLTP · ~15 tables · 114 parcels · 50-200 users
 - Storage: ~150 MB object storage (PDFs) · ~5-50 GB packaged geodata
 - Traffic: <100 DAU peak · <1 TB/month bandwidth
 - AI: 50M-150M Claude tokens/month

@@ -128,9 +128,9 @@ These pages/components currently assume "there is one ZAAHI"; Phase 2 tenantizes
 | `/ambassador` dashboard (431 lines) | ZAAHI referral + commission tree | LOW — stays ZAAHI-core |
 | Legal pages `/terms · /privacy · /disclaimer · /ambassador-terms` | ZAAHI DIFC-LCIA arbitration · ZAAHI-specific clauses | MEDIUM — tenant-specific legal pages per jurisdiction |
 
-### §2.2 Single-tenant database models (19 Prisma · 0 tenantId)
+### §2.2 Single-tenant database models (15 Prisma current · 0 tenantId · +4 planned extensions)
 
-Per `prisma/schema.prisma` 480 lines, 19 models, ALL require `tenantId: String @@index` addition for multi-tenant isolation. Classification:
+Per `prisma/schema.prisma` 480 lines · 15 models currently (plus 4 planned extensions per Spec 03 v1 — FeatureFlag · TierConfig · Invoice per Spec 02 v1.1 · FeasibilityScenario per Spec 04 v1.1), ALL will require `tenantId: String @@index` addition for multi-tenant isolation. Classification:
 
 **Tenant-scoped (15 models — each row owned by exactly one tenant):**
 - User · Parcel · Deal · DealMessage · DealAuditEvent · AffectionPlan · Document · AmbassadorApplication · Commission · ReferralClick · SavedParcel · ParcelView · Notification · ActivityLog · SavedSearch

@@ -98,11 +98,11 @@ src/
 **`src/app/admin/ambassadors/` (4 components):**
 - `page.tsx` (644 lines) + ApplicationDetailModal · ApproveConfirmModal · RejectModal
 
-### 1.4 `prisma/schema.prisma` (480 lines, 13 migrations, 19 models)
+### 1.4 `prisma/schema.prisma` (480 lines, 12 migrations, 15 models)
 
 **Enums (5):** UserRole · ParcelStatus · DealStatus · DocumentType · CommissionStatus
 
-**Models (19):**
+**Models (15):**
 
 | Model | Purpose | Notes |
 |---|---|---|
@@ -627,7 +627,7 @@ Dashboard has "Portfolio stats below are placeholder figures — live data lands
 ### 4.4 White-label (§77 scaling) — **0 % done · DOES NOT EXIST**
 
 **Current single-tenancy state:**
-- Prisma schema: **NO `Tenant` model · NO `tenantId` foreign key on any of 19 models**.
+- Prisma schema: **NO `Tenant` model · NO `tenantId` foreign key on any of 15 models**.
 - `src/app/layout.tsx` hardcodes `<html lang="en">` + "ZAAHI — Real Estate OS" title.
 - `src/app/page.tsx` brands the landing page with GOLD `#C8A96E` hardcoded.
 - `src/lib/constants.ts` + `src/lib/ambassador-plans.ts` + `globals.css` all hardcode ZAAHI palette + tier prices.
