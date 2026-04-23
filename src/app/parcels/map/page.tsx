@@ -316,46 +316,52 @@ function deriveLandUse(
 }
 
 /**
- * Generate villa-community 3D features inside a plot polygon.
+ * Generate a single estate-villa 3D feature for a plot polygon.
  *
  * Used exclusively for FUTURE_DEVELOPMENT plots whose AffectionPlan carries
- * `buildingStyle === "VILLA_COMMUNITY"` — a founder-specified intent flag
- * (see plot 9235849 · Al Yalayis 3 · 2026-04-23). Does NOT alter the ZAAHI
- * Signature podium/body/crown path; the call site short-circuits BEFORE
- * that code runs.
+ * `buildingStyle === "VILLA_COMMUNITY"`. Emits ONE rectangular footprint at
+ * the polygon centroid, sized as a percentage of plot area, sized so that
+ * the large setback on every side visually represents the surrounding
+ * estate grounds (gardens, pool, driveway, servant quarters) — matching how
+ * a Dubai luxury-estate plot is actually developed.
+ *
+ * Replaces the prior 10-villa grid algorithm (commit f711da8) which founder
+ * rejected as "doesn't look like houses". Renamed for clarity; callsite
+ * unchanged structurally.
  *
  * Algorithm:
- *   1. Compute polygon bbox.
- *   2. Build a cols×rows sampling grid sized to yield ~1.5× `count`
- *      candidate centers.
- *   3. Keep cell centers that pass a ray-casting point-in-polygon test.
- *   4. Take the first `count` (deterministic — grid order is fixed).
- *   5. For each, emit an axis-aligned square footprint of `villaSizeM`
- *      metres per side at height `floors × floorH`.
+ *   1. Compute polygon area in m² (equirectangular · same as seed scripts).
+ *   2. Compute vertex-average centroid.
+ *   3. Compute bbox in metres → pick villa long-axis from wider dimension.
+ *   4. Binary-shrink scale from `footprintPct` down to `minFootprintPct`
+ *      until all 4 corners fit inside polygon.
+ *   5. Emit ONE axis-aligned rectangle feature.
+ *
+ * Deterministic output (no RNG).
  *
  * Color defaults to Residential yellow (#FFD700) — consistent with the
- * 9-category ZAAHI legend for a cottage-village use; plot fill underneath
+ * 9-category ZAAHI legend for a residential estate; plot fill underneath
  * stays the FUTURE_DEVELOPMENT gold from the outer polygon layer.
- *
- * Deterministic output: identical villas every render, no RNG.
  */
-function generateVillaFeatures(opts: {
+function generateEstateVillaFeatures(opts: {
   parcelId: string;
   plotRing: number[][];
-  count: number;
-  villaSizeM?: number;
+  footprintPct?: number; // fraction of plot area occupied by villa footprint
+  aspectRatio?: number; // long/short (1.4 = villa-like, not square, not strip)
   floors?: number;
   floorH?: number;
   color?: string;
+  minFootprintPct?: number; // give-up floor on binary shrink
 }): GeoJSON.Feature[] {
   const {
     parcelId,
     plotRing,
-    count,
-    villaSizeM = 20,
-    floors = 2,
+    footprintPct = 0.15,
+    aspectRatio = 1.4,
+    floors = 3,
     floorH = 4,
     color = "#FFD700",
+    minFootprintPct = 0.04,
   } = opts;
 
   const lngs = plotRing.map((p) => p[0]);
@@ -364,17 +370,36 @@ function generateVillaFeatures(opts: {
   const maxLng = Math.max(...lngs);
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
-  const wLng = maxLng - minLng;
-  const hLat = maxLat - minLat;
   const latMid = (minLat + maxLat) / 2;
 
-  // Grid sized to produce ~2× count candidates so we have slack when
-  // the polygon is non-rectangular. cols/rows scale with aspect ratio.
-  const aspect = Math.max(wLng / hLat, 0.2);
-  const target = Math.max(count * 2, 16);
-  const cols = Math.max(2, Math.ceil(Math.sqrt(target * aspect)));
-  const rows = Math.max(2, Math.ceil(Math.sqrt(target / aspect)));
+  // Equirectangular projection to metres at polygon mid-latitude.
+  const mPerDegLat = 111_320;
+  const mPerDegLng = 111_320 * Math.cos((latMid * Math.PI) / 180);
 
+  // Polygon area (shoelace in metre-projected space).
+  const ringM = plotRing.map((p) => [p[0] * mPerDegLng, p[1] * mPerDegLat]);
+  let areaM2 = 0;
+  for (let i = 0; i < ringM.length - 1; i++) {
+    areaM2 +=
+      ringM[i][0] * ringM[i + 1][1] - ringM[i + 1][0] * ringM[i][1];
+  }
+  areaM2 = Math.abs(areaM2) / 2;
+
+  // Vertex-average centroid (simple, adequate for fit test on convex-ish plots).
+  const pts =
+    plotRing[0][0] === plotRing[plotRing.length - 1][0] &&
+    plotRing[0][1] === plotRing[plotRing.length - 1][1]
+      ? plotRing.slice(0, -1)
+      : plotRing;
+  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+
+  // Bbox orientation — villa long axis aligns with plot's wider dimension.
+  const bboxWm = (maxLng - minLng) * mPerDegLng;
+  const bboxHm = (maxLat - minLat) * mPerDegLat;
+  const widerEW = bboxWm >= bboxHm;
+
+  // Ray-casting point-in-polygon.
   const pointInPoly = (x: number, y: number): boolean => {
     let inside = false;
     for (let i = 0, j = plotRing.length - 1; i < plotRing.length; j = i++) {
@@ -387,47 +412,69 @@ function generateVillaFeatures(opts: {
     return inside;
   };
 
-  // Villa footprint size in degrees at the polygon's mid-latitude.
-  const mPerDegLat = 111_320;
-  const mPerDegLng = 111_320 * Math.cos((latMid * Math.PI) / 180);
-  const dLng = villaSizeM / mPerDegLng;
-  const dLat = villaSizeM / mPerDegLat;
-
-  const centers: [number, number][] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cx = minLng + (wLng * (c + 0.5)) / cols;
-      const cy = minLat + (hLat * (r + 0.5)) / rows;
-      if (pointInPoly(cx, cy)) centers.push([cx, cy]);
+  // Binary shrink: start at footprintPct, reduce by 20 % per iteration
+  // until all 4 corners fit inside polygon, or we hit minFootprintPct.
+  let scale = footprintPct;
+  let corners: [number, number][] = [];
+  let fit = false;
+  let usedScale = scale;
+  while (scale >= minFootprintPct) {
+    const villaArea = areaM2 * scale;
+    const shortM = Math.sqrt(villaArea / aspectRatio);
+    const longM = shortM * aspectRatio;
+    const villaWm = widerEW ? longM : shortM;
+    const villaHm = widerEW ? shortM : longM;
+    const dLng = villaWm / mPerDegLng;
+    const dLat = villaHm / mPerDegLat;
+    corners = [
+      [cx - dLng / 2, cy - dLat / 2],
+      [cx + dLng / 2, cy - dLat / 2],
+      [cx + dLng / 2, cy + dLat / 2],
+      [cx - dLng / 2, cy + dLat / 2],
+    ];
+    if (corners.every((p) => pointInPoly(p[0], p[1]))) {
+      fit = true;
+      usedScale = scale;
+      break;
     }
+    scale *= 0.8;
   }
 
-  const selected = centers.slice(0, count);
+  if (!fit) {
+    console.warn(
+      `[estate-villa] parcel ${parcelId}: could not fit villa at any scale ≥ ${minFootprintPct}; emitting 0 features.`,
+    );
+    return [];
+  }
+
   const totalH = floors * floorH;
 
-  return selected.map((c, idx) => ({
-    type: "Feature",
-    geometry: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [c[0] - dLng / 2, c[1] - dLat / 2],
-          [c[0] + dLng / 2, c[1] - dLat / 2],
-          [c[0] + dLng / 2, c[1] + dLat / 2],
-          [c[0] - dLng / 2, c[1] + dLat / 2],
-          [c[0] - dLng / 2, c[1] - dLat / 2],
+  return [
+    {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            corners[0],
+            corners[1],
+            corners[2],
+            corners[3],
+            corners[0], // close ring
+          ],
         ],
-      ],
+      },
+      properties: {
+        parcelId,
+        villaIndex: 0,
+        landUse: "RESIDENTIAL",
+        color,
+        height: totalH,
+        base: 0,
+        footprintPctUsed: Math.round(usedScale * 1000) / 1000,
+      },
     },
-    properties: {
-      parcelId,
-      villaIndex: idx,
-      landUse: "RESIDENTIAL",
-      color,
-      height: totalH,
-      base: 0,
-    },
-  }));
+  ];
 }
 
 const DHCC2_SRC = "dda-dhcc-phase2";
@@ -2350,23 +2397,25 @@ function ParcelsMapPageInner() {
         if (!hasLandUse) continue;
         // FUTURE_DEVELOPMENT — by default no 3D (flat polygon only), BUT
         // if the AffectionPlan declares `buildingStyle === "VILLA_COMMUNITY"`,
-        // render a cottage-village layout of N small villas scattered inside
-        // the plot via the self-contained `generateVillaFeatures` helper.
+        // render ONE large estate-villa at the plot centroid via the self-
+        // contained `generateEstateVillaFeatures` helper. Setbacks around the
+        // villa represent the surrounding estate grounds (gardens, pool,
+        // driveway, servant quarters) in the visual model.
         // Either way, we `continue` past the ZAAHI Signature podium/body/
         // crown path so those rules never fire for FUTURE_DEVELOPMENT plots.
         if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") {
           if (it.plan?.buildingStyle === "VILLA_COMMUNITY") {
             const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
-            const villas = generateVillaFeatures({
+            const villa = generateEstateVillaFeatures({
               parcelId: it.id,
               plotRing,
-              count: 10,
-              villaSizeM: 20,
-              floors: 2,
+              footprintPct: 0.15,
+              aspectRatio: 1.4,
+              floors: 3,
               floorH: 4,
               color: "#FFD700",
             });
-            buildingFeatures.push(...villas);
+            buildingFeatures.push(...villa);
           }
           continue;
         }
