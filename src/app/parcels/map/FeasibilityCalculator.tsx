@@ -209,6 +209,15 @@ function mapCategoryToDefaults(cat: string) {
   const c = cat.toUpperCase().trim();
   // Construction default ~500 AED/sqft BUA per spec. We vary brand/sales
   // per category to give useful starting points — user can overwrite.
+  //
+  // COMMUNITY / VILLA_COMMUNITY — cottage-village developments (e.g. plot
+  // 9235849 Al Yalayis 3). Low-rise villa construction is ~20% cheaper
+  // per sqft than typical residential tower (no core structure, fewer
+  // MEP risers), and sales price per sqft is lower than a branded tower
+  // but achievable with strong community amenities. Added 2026-04-23
+  // on founder instruction — target-use option, NOT a new Land Use
+  // legend category (9-category legend remains founder-locked).
+  if (c.includes("VILLA") || c.includes("COMMUNITY")) return { construction: 420, brand: 0, sales: 1500, rent: 85 };
   if (c.includes("RESIDENTIAL")) return { construction: 500, brand: 0, sales: 1800, rent: 100 };
   if (c.includes("COMMERCIAL")) return { construction: 580, brand: 0, sales: 2200, rent: 160 };
   if (c.includes("MIXED")) return { construction: 520, brand: 0, sales: 1700, rent: 140 };

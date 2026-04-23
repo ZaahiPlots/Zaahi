@@ -315,6 +315,121 @@ function deriveLandUse(
   return null;
 }
 
+/**
+ * Generate villa-community 3D features inside a plot polygon.
+ *
+ * Used exclusively for FUTURE_DEVELOPMENT plots whose AffectionPlan carries
+ * `buildingStyle === "VILLA_COMMUNITY"` — a founder-specified intent flag
+ * (see plot 9235849 · Al Yalayis 3 · 2026-04-23). Does NOT alter the ZAAHI
+ * Signature podium/body/crown path; the call site short-circuits BEFORE
+ * that code runs.
+ *
+ * Algorithm:
+ *   1. Compute polygon bbox.
+ *   2. Build a cols×rows sampling grid sized to yield ~1.5× `count`
+ *      candidate centers.
+ *   3. Keep cell centers that pass a ray-casting point-in-polygon test.
+ *   4. Take the first `count` (deterministic — grid order is fixed).
+ *   5. For each, emit an axis-aligned square footprint of `villaSizeM`
+ *      metres per side at height `floors × floorH`.
+ *
+ * Color defaults to Residential yellow (#FFD700) — consistent with the
+ * 9-category ZAAHI legend for a cottage-village use; plot fill underneath
+ * stays the FUTURE_DEVELOPMENT gold from the outer polygon layer.
+ *
+ * Deterministic output: identical villas every render, no RNG.
+ */
+function generateVillaFeatures(opts: {
+  parcelId: string;
+  plotRing: number[][];
+  count: number;
+  villaSizeM?: number;
+  floors?: number;
+  floorH?: number;
+  color?: string;
+}): GeoJSON.Feature[] {
+  const {
+    parcelId,
+    plotRing,
+    count,
+    villaSizeM = 20,
+    floors = 2,
+    floorH = 4,
+    color = "#FFD700",
+  } = opts;
+
+  const lngs = plotRing.map((p) => p[0]);
+  const lats = plotRing.map((p) => p[1]);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const wLng = maxLng - minLng;
+  const hLat = maxLat - minLat;
+  const latMid = (minLat + maxLat) / 2;
+
+  // Grid sized to produce ~2× count candidates so we have slack when
+  // the polygon is non-rectangular. cols/rows scale with aspect ratio.
+  const aspect = Math.max(wLng / hLat, 0.2);
+  const target = Math.max(count * 2, 16);
+  const cols = Math.max(2, Math.ceil(Math.sqrt(target * aspect)));
+  const rows = Math.max(2, Math.ceil(Math.sqrt(target / aspect)));
+
+  const pointInPoly = (x: number, y: number): boolean => {
+    let inside = false;
+    for (let i = 0, j = plotRing.length - 1; i < plotRing.length; j = i++) {
+      const [xi, yi] = plotRing[i];
+      const [xj, yj] = plotRing[j];
+      const intersect =
+        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  };
+
+  // Villa footprint size in degrees at the polygon's mid-latitude.
+  const mPerDegLat = 111_320;
+  const mPerDegLng = 111_320 * Math.cos((latMid * Math.PI) / 180);
+  const dLng = villaSizeM / mPerDegLng;
+  const dLat = villaSizeM / mPerDegLat;
+
+  const centers: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = minLng + (wLng * (c + 0.5)) / cols;
+      const cy = minLat + (hLat * (r + 0.5)) / rows;
+      if (pointInPoly(cx, cy)) centers.push([cx, cy]);
+    }
+  }
+
+  const selected = centers.slice(0, count);
+  const totalH = floors * floorH;
+
+  return selected.map((c, idx) => ({
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [c[0] - dLng / 2, c[1] - dLat / 2],
+          [c[0] + dLng / 2, c[1] - dLat / 2],
+          [c[0] + dLng / 2, c[1] + dLat / 2],
+          [c[0] - dLng / 2, c[1] + dLat / 2],
+          [c[0] - dLng / 2, c[1] - dLat / 2],
+        ],
+      ],
+    },
+    properties: {
+      parcelId,
+      villaIndex: idx,
+      landUse: "RESIDENTIAL",
+      color,
+      height: totalH,
+      base: 0,
+    },
+  }));
+}
+
 const DHCC2_SRC = "dda-dhcc-phase2";
 const DHCC2_LINE = "dda-dhcc-phase2-line";
 const BARSHA_HEIGHTS_SRC = "dda-barsha-heights";
@@ -2233,8 +2348,28 @@ function ParcelsMapPageInner() {
         // Skip 3D building generation for parcels without a land use —
         // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
-        // Skip 3D for future-development land — flat polygon only.
-        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
+        // FUTURE_DEVELOPMENT — by default no 3D (flat polygon only), BUT
+        // if the AffectionPlan declares `buildingStyle === "VILLA_COMMUNITY"`,
+        // render a cottage-village layout of N small villas scattered inside
+        // the plot via the self-contained `generateVillaFeatures` helper.
+        // Either way, we `continue` past the ZAAHI Signature podium/body/
+        // crown path so those rules never fire for FUTURE_DEVELOPMENT plots.
+        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") {
+          if (it.plan?.buildingStyle === "VILLA_COMMUNITY") {
+            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+            const villas = generateVillaFeatures({
+              parcelId: it.id,
+              plotRing,
+              count: 10,
+              villaSizeM: 20,
+              floors: 2,
+              floorH: 4,
+              color: "#FFD700",
+            });
+            buildingFeatures.push(...villas);
+          }
+          continue;
+        }
 
 
         // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
