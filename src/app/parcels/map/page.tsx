@@ -200,8 +200,8 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   HEALTHCARE: "#E63946",          // bright red
   AGRICULTURAL: "#606C38",        // olive
   AGRICULTURE: "#606C38",         // olive (alias)
-  FUTURE_DEVELOPMENT: "#C8A96E",  // gold
-  "FUTURE DEVELOPMENT": "#C8A96E",
+  FUTURE_DEVELOPMENT: "#A8926E",  // sandstone (warm earth · distinct from gold brand colour)
+  "FUTURE DEVELOPMENT": "#A8926E",
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
@@ -2095,6 +2095,12 @@ function ParcelsMapPageInner() {
       case "INDUSTRIAL":
       case "WAREHOUSE":
         return 4;
+      case "FUTURE_DEVELOPMENT":
+      case "FUTURE DEVELOPMENT":
+        // Follow the INDUSTRIAL pattern: 4 m inset. Visually produces
+        // one near-plot-sized block, same treatment founder ratified
+        // 2026-04-23 for FUTURE_DEVELOPMENT plots.
+        return 4;
       case "EDUCATIONAL":
       case "EDUCATION":
       case "HEALTHCARE":
@@ -2233,8 +2239,14 @@ function ParcelsMapPageInner() {
         // Skip 3D building generation for parcels without a land use —
         // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
-        // Skip 3D for future-development land — flat polygon only.
-        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") continue;
+        // NB: FUTURE_DEVELOPMENT plots flow through the standard ZAAHI
+        // 3D path below — they are NOT short-circuited. The path's
+        // `defaultSetbackM` / height-fallback / FLAT-tier branches all
+        // carry an explicit `case "FUTURE_DEVELOPMENT"` so the render
+        // matches the INDUSTRIAL pattern (one block per plot, filling
+        // most of the plot, no podium/body/crown taper).
+        // Founder decision 2026-04-23, supersedes the prior "flat
+        // polygon only" rule.
 
 
         // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
@@ -2282,6 +2294,8 @@ function ParcelsMapPageInner() {
             landUse === "HOTEL"        ? 50 :
             landUse === "HOSPITALITY"  ? 50 :
             landUse === "INDUSTRIAL"   ? 12 :
+            landUse === "FUTURE_DEVELOPMENT" ? 16 :
+            landUse === "FUTURE DEVELOPMENT" ? 16 :
             landUse === "WAREHOUSE"    ? 12 :
             landUse === "EDUCATIONAL"  ? 12 :
             landUse === "EDUCATION"    ? 12 :
@@ -2334,10 +2348,17 @@ function ParcelsMapPageInner() {
         // AffectionPlan.buildingStyle === "FLAT" → single block of full
         // footprint at full height (correct for most commercial office
         // buildings where there is no visual podium/tower distinction).
+        // FUTURE_DEVELOPMENT → same flat-block render (founder 2026-04-23:
+        // match the INDUSTRIAL pattern regardless of floor count · no
+        // podium/body/crown taper for pre-master-plan land).
         // Default/null/"SIGNATURE" → ZAAHI tiered model below.
         // Per-plot opt-in keeps the renderer free of hardcoded plot-number
         // overrides (per CLAUDE.md rule).
-        if (it.plan?.buildingStyle === "FLAT") {
+        const forceFlat =
+          it.plan?.buildingStyle === "FLAT" ||
+          landUse === "FUTURE_DEVELOPMENT" ||
+          landUse === "FUTURE DEVELOPMENT";
+        if (forceFlat) {
           pushTier(footprintRing, 0, totalH);
         } else if (floors <= 4) {
           // Podium only — short building, no taper.
