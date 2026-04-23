@@ -200,8 +200,8 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   HEALTHCARE: "#E63946",          // bright red
   AGRICULTURAL: "#606C38",        // olive
   AGRICULTURE: "#606C38",         // olive (alias)
-  FUTURE_DEVELOPMENT: "#C8A96E",  // gold
-  "FUTURE DEVELOPMENT": "#C8A96E",
+  FUTURE_DEVELOPMENT: "#A8926E",  // sandstone (warm earth · distinct from gold brand colour)
+  "FUTURE DEVELOPMENT": "#A8926E",
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
