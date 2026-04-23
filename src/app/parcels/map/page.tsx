@@ -315,186 +315,6 @@ function deriveLandUse(
   return null;
 }
 
-/**
- * Generate a single standard 3D placeholder building for a FUTURE_DEVELOPMENT
- * plot polygon.
- *
- * STANDARD FUTURE_DEVELOPMENT TREATMENT — applies to EVERY plot whose landUse
- * resolves to FUTURE_DEVELOPMENT. No per-plot opt-in, no buildingStyle flag,
- * no AffectionPlan.raw metadata required. When a new FUTURE_DEVELOPMENT plot
- * is added via the standard seed pattern (see scripts/seed-9235849-al-yalayis-3.ts
- * and scripts/seed-tb02-dubai-water-canal.ts for the canonical template),
- * it renders automatically with this building.
- *
- * Founder decision 2026-04-23 · supersedes:
- *   - the prior "flat polygon only / земля без зданий" rule in CLAUDE.md
- *   - the 10-villa-grid render (deprecated · commit f711da8)
- *   - the per-plot VILLA_COMMUNITY opt-in (deprecated · commit a870354)
- *
- * Algorithm:
- *   1. Polygon area in m² via equirectangular shoelace.
- *   2. Vertex-average centroid.
- *   3. Bbox in metres picks long axis orientation (widerEW flag).
- *   4. Scale-aware footprint: clamp(plot_area × footprintPct, minM2, maxM2)
- *      keeps the building visually readable across plot sizes — a big plot
- *      gets a substantial compound, a small plot gets a villa-sized box.
- *   5. Binary shrink (×0.8 per iteration) from target scale until all 4
- *      corners fit inside polygon.
- *   6. Emit ONE axis-aligned rectangle feature at height floors × floorH.
- *
- * Deterministic (no RNG). Same output for the same polygon every render.
- *
- * Color defaults to warm sandstone #A8926E — earth-tone, distinguishable
- * from the FUTURE_DEVELOPMENT plot-fill color (#C8A96E gold) underneath,
- * and different from every 9-category legend color (not yellow, not lime,
- * not gold) so the building reads as a distinct structure at z14+ zooms.
- */
-function generateFutureDevelopmentBuilding(opts: {
-  parcelId: string;
-  plotRing: number[][];
-  footprintPct?: number; // target fraction of plot area
-  minFootprintM2?: number; // absolute floor — smallest building to still read as a structure
-  maxFootprintM2?: number; // absolute cap — don't grow monstrous on huge plots
-  aspectRatio?: number; // long/short (1.4 = villa-like, not square, not strip)
-  floors?: number;
-  floorH?: number;
-  color?: string;
-  minFootprintPct?: number; // binary-shrink give-up floor (fraction of plot area)
-}): GeoJSON.Feature[] {
-  const {
-    parcelId,
-    plotRing,
-    footprintPct = 0.15,
-    minFootprintM2 = 100, // small safety floor — keeps tiny plots from going 0; visible from same zoom the plot is
-    maxFootprintM2 = 80_000, // cap — stops mega-plots producing cartoon-scale boxes
-    aspectRatio = 1.4,
-    floors = 4,
-    floorH = 4,
-    color = "#A8926E",
-    minFootprintPct = 0.005, // binary-shrink give-up floor (0.5% of plot area)
-  } = opts;
-
-  const lngs = plotRing.map((p) => p[0]);
-  const lats = plotRing.map((p) => p[1]);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const latMid = (minLat + maxLat) / 2;
-
-  // Equirectangular projection to metres at polygon mid-latitude.
-  const mPerDegLat = 111_320;
-  const mPerDegLng = 111_320 * Math.cos((latMid * Math.PI) / 180);
-
-  // Polygon area (shoelace in metre-projected space).
-  const ringM = plotRing.map((p) => [p[0] * mPerDegLng, p[1] * mPerDegLat]);
-  let areaM2 = 0;
-  for (let i = 0; i < ringM.length - 1; i++) {
-    areaM2 +=
-      ringM[i][0] * ringM[i + 1][1] - ringM[i + 1][0] * ringM[i][1];
-  }
-  areaM2 = Math.abs(areaM2) / 2;
-
-  // Vertex-average centroid (simple, adequate for fit test on convex-ish plots).
-  const pts =
-    plotRing[0][0] === plotRing[plotRing.length - 1][0] &&
-    plotRing[0][1] === plotRing[plotRing.length - 1][1]
-      ? plotRing.slice(0, -1)
-      : plotRing;
-  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-  const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-
-  // Bbox orientation — villa long axis aligns with plot's wider dimension.
-  const bboxWm = (maxLng - minLng) * mPerDegLng;
-  const bboxHm = (maxLat - minLat) * mPerDegLat;
-  const widerEW = bboxWm >= bboxHm;
-
-  // Ray-casting point-in-polygon.
-  const pointInPoly = (x: number, y: number): boolean => {
-    let inside = false;
-    for (let i = 0, j = plotRing.length - 1; i < plotRing.length; j = i++) {
-      const [xi, yi] = plotRing[i];
-      const [xj, yj] = plotRing[j];
-      const intersect =
-        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-      if (intersect) inside = !inside;
-    }
-    return inside;
-  };
-
-  // Scale-aware target area: clamp(plot_area × footprintPct, minM2, maxM2).
-  // Protects both ends of the plot-size spectrum — small plots still get a
-  // readable building, huge plots don't get cartoonish mega-boxes.
-  const rawTargetM2 = areaM2 * footprintPct;
-  const targetM2 = Math.max(minFootprintM2, Math.min(maxFootprintM2, rawTargetM2));
-  const targetScale = targetM2 / areaM2;
-
-  // Binary shrink: start at targetScale, reduce by 20 % per iteration until
-  // all 4 corners fit inside polygon, or we hit minFootprintPct.
-  // `do`-form ensures at least one attempt even when `targetScale < minFootprintPct`
-  // (e.g., a 10M m² plot where the 80k m² cap produces a very small target fraction).
-  let scale = targetScale;
-  let corners: [number, number][] = [];
-  let fit = false;
-  let usedScale = scale;
-  do {
-    const bldgArea = areaM2 * scale;
-    const shortM = Math.sqrt(bldgArea / aspectRatio);
-    const longM = shortM * aspectRatio;
-    const bldgWm = widerEW ? longM : shortM;
-    const bldgHm = widerEW ? shortM : longM;
-    const dLng = bldgWm / mPerDegLng;
-    const dLat = bldgHm / mPerDegLat;
-    corners = [
-      [cx - dLng / 2, cy - dLat / 2],
-      [cx + dLng / 2, cy - dLat / 2],
-      [cx + dLng / 2, cy + dLat / 2],
-      [cx - dLng / 2, cy + dLat / 2],
-    ];
-    if (corners.every((p) => pointInPoly(p[0], p[1]))) {
-      fit = true;
-      usedScale = scale;
-      break;
-    }
-    scale *= 0.8;
-  } while (scale >= minFootprintPct);
-
-  if (!fit) {
-    console.warn(
-      `[fd-building] parcel ${parcelId}: could not fit building at any scale ≥ ${minFootprintPct}; emitting 0 features.`,
-    );
-    return [];
-  }
-
-  const totalH = floors * floorH;
-
-  return [
-    {
-      type: "Feature",
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            corners[0],
-            corners[1],
-            corners[2],
-            corners[3],
-            corners[0], // close ring
-          ],
-        ],
-      },
-      properties: {
-        parcelId,
-        landUse: "FUTURE_DEVELOPMENT",
-        color,
-        height: totalH,
-        base: 0,
-        footprintPctUsed: Math.round(usedScale * 10000) / 10000,
-      },
-    },
-  ];
-}
-
 const DHCC2_SRC = "dda-dhcc-phase2";
 const DHCC2_LINE = "dda-dhcc-phase2-line";
 const BARSHA_HEIGHTS_SRC = "dda-barsha-heights";
@@ -2275,6 +2095,12 @@ function ParcelsMapPageInner() {
       case "INDUSTRIAL":
       case "WAREHOUSE":
         return 4;
+      case "FUTURE_DEVELOPMENT":
+      case "FUTURE DEVELOPMENT":
+        // Follow the INDUSTRIAL pattern: 4 m inset. Visually produces
+        // one near-plot-sized block, same treatment founder ratified
+        // 2026-04-23 for FUTURE_DEVELOPMENT plots.
+        return 4;
       case "EDUCATIONAL":
       case "EDUCATION":
       case "HEALTHCARE":
@@ -2413,25 +2239,15 @@ function ParcelsMapPageInner() {
         // Skip 3D building generation for parcels without a land use —
         // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
-        // STANDARD FUTURE_DEVELOPMENT TREATMENT — applies to EVERY plot whose
-        // landUse resolves to FUTURE_DEVELOPMENT. No per-plot opt-in, no
-        // buildingStyle flag, no AffectionPlan.raw metadata required. New
-        // plots added via the standard seed pattern render automatically.
-        // Founder decision 2026-04-23, supersedes "flat polygon only" rule
-        // and the deprecated per-plot VILLA_COMMUNITY approach (f711da8,
-        // a870354 in the git history).
-        // We `continue` past the ZAAHI Signature podium/body/crown path so
-        // those rules never fire for FUTURE_DEVELOPMENT plots.
-        if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") {
-          const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
-          const building = generateFutureDevelopmentBuilding({
-            parcelId: it.id,
-            plotRing,
-          });
-          buildingFeatures.push(...building);
-          continue;
-        }
-
+        // NB: FUTURE_DEVELOPMENT plots flow through the standard ZAAHI
+        // 3D path below — they are NOT short-circuited. The path's
+        // `defaultSetbackM` / height-fallback / FLAT-tier branches all
+        // carry an explicit `case "FUTURE_DEVELOPMENT"` so the render
+        // matches the INDUSTRIAL pattern (one block per plot, filling
+        // most of the plot, no podium/body/crown taper).
+        // Founder decision 2026-04-23, supersedes the prior "flat
+        // polygon only" rule and both per-plot VILLA_COMMUNITY attempts
+        // (f711da8 · a870354 · 37de050 in the git history).
 
         // ── ZAAHI 3D — minimal version per founder spec (4th attempt) ──
         // ONE feature per parcel. ONE fill-extrusion layer below. The
@@ -2478,6 +2294,8 @@ function ParcelsMapPageInner() {
             landUse === "HOTEL"        ? 50 :
             landUse === "HOSPITALITY"  ? 50 :
             landUse === "INDUSTRIAL"   ? 12 :
+            landUse === "FUTURE_DEVELOPMENT" ? 16 :
+            landUse === "FUTURE DEVELOPMENT" ? 16 :
             landUse === "WAREHOUSE"    ? 12 :
             landUse === "EDUCATIONAL"  ? 12 :
             landUse === "EDUCATION"    ? 12 :
@@ -2530,10 +2348,17 @@ function ParcelsMapPageInner() {
         // AffectionPlan.buildingStyle === "FLAT" → single block of full
         // footprint at full height (correct for most commercial office
         // buildings where there is no visual podium/tower distinction).
+        // FUTURE_DEVELOPMENT → same flat-block render (founder 2026-04-23:
+        // match the INDUSTRIAL pattern regardless of floor count · no
+        // podium/body/crown taper for pre-master-plan land).
         // Default/null/"SIGNATURE" → ZAAHI tiered model below.
         // Per-plot opt-in keeps the renderer free of hardcoded plot-number
         // overrides (per CLAUDE.md rule).
-        if (it.plan?.buildingStyle === "FLAT") {
+        const forceFlat =
+          it.plan?.buildingStyle === "FLAT" ||
+          landUse === "FUTURE_DEVELOPMENT" ||
+          landUse === "FUTURE DEVELOPMENT";
+        if (forceFlat) {
           pushTier(footprintRing, 0, totalH);
         } else if (floors <= 4) {
           // Podium only — short building, no taper.
