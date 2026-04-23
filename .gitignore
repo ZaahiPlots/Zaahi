@@ -15,6 +15,10 @@ data/tiles/
 # Raw KMZ/KML source material + instruction screenshots from founder.
 # Reference-only; individual layers are ingested into data/layers/.
 data/master-plans/kadastr/
+# Land Advertisement Monitor runtime cache (Spec 09 descoped MVP).
+# Contains extracted social-post data — never commit. An example shape
+# file (data/land-monitor/cache.json.example) IS committed for reference.
+data/land-monitor/cache.json
 .env
 .env.local
 .env.*.local

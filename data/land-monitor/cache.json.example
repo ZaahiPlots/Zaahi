@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "lastIngestedAt": "2026-04-23T15:00:00.000Z",
+  "items": [
+    {
+      "id": "abc1234567890def",
+      "source": "REDDIT",
+      "sourceLabel": "r/dubairealestate",
+      "sourceUrl": "https://www.reddit.com/r/dubairealestate/comments/example",
+      "sourceId": "example",
+      "title": "Freehold plot in JVC — 2,400 sqft, AED 2.3M",
+      "snippet": "Selling my freehold land plot 6457940 in JVC. 2,400 sqft, residential category...",
+      "postedAt": "2026-04-23T14:32:00.000Z",
+      "ingestedAt": "2026-04-23T15:00:00.000Z",
+      "extracted": {
+        "plotNumber": "6457940",
+        "community": "Jumeirah Village Circle",
+        "priceAed": 2300000,
+        "areaSqft": 2400,
+        "transactionType": "sale",
+        "brokerName": null,
+        "brokerPhone": null,
+        "confidence": 0.92
+      },
+      "match": {
+        "plotNumber": "6457940",
+        "lng": 55.2049,
+        "lat": 25.0554,
+        "community": "Jumeirah Village Circle",
+        "tier": 1,
+        "confidence": 0.99
+      },
+      "author": "u/example_broker"
+    },
+    {
+      "id": "b0b1cafe00001111",
+      "source": "DLD_TRANSACTIONS_CSV",
+      "sourceLabel": "DLD Transactions (CSV snapshot)",
+      "sourceUrl": "https://dubailand.gov.ae/en/open-data/real-estate-data/",
+      "sourceId": "csv-6420-Dubai Hills Estate-8500000",
+      "title": "DLD transaction · Dubai Hills Estate",
+      "snippet": "RESIDENTIAL LAND · Dubai Hills Estate · AED 8500000 · 2026-04-10",
+      "postedAt": "2026-04-10T00:00:00.000Z",
+      "ingestedAt": "2026-04-23T15:00:00.000Z",
+      "extracted": {
+        "plotNumber": null,
+        "community": "Dubai Hills Estate",
+        "priceAed": 8500000,
+        "areaSqft": null,
+        "transactionType": "sale",
+        "brokerName": null,
+        "brokerPhone": null,
+        "confidence": 0.7
+      },
+      "match": {
+        "plotNumber": "",
+        "lng": 55.244,
+        "lat": 25.101,
+        "community": "Dubai Hills Estate",
+        "tier": 2,
+        "confidence": 0.55
+      },
+      "author": "DLD Open Data"
+    }
+  ],
+  "stats": {
+    "totalFetched": 2,
+    "perSource": {
+      "REDDIT": 1,
+      "DLD_PULSE": 0,
+      "DLD_TRANSACTIONS_CSV": 1,
+      "SKIPPED_PORTALS": 3
+    },
+    "extracted": 2,
+    "matched": 2,
+    "skippedPortals": [
+      "Bayut (ToS prohibits automated scraping · partner API negotiation pending per Spec 09 §2.1.1)",
+      "PropertyFinder (ToS prohibits scraping · Mubadala-adjacency → partner-API route preferred · Spec 09 §2.1.2)",
+      "Dubizzle (ToS prohibits scraping · shared Dubizzle Group ownership with Bayut · Spec 09 §2.1.3)"
+    ],
+    "startedAt": "2026-04-23T14:59:40.000Z",
+    "finishedAt": "2026-04-23T15:00:00.000Z",
+    "durationMs": 20000,
+    "errors": []
+  }
+}
