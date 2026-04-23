@@ -316,52 +316,62 @@ function deriveLandUse(
 }
 
 /**
- * Generate a single estate-villa 3D feature for a plot polygon.
+ * Generate a single standard 3D placeholder building for a FUTURE_DEVELOPMENT
+ * plot polygon.
  *
- * Used exclusively for FUTURE_DEVELOPMENT plots whose AffectionPlan carries
- * `buildingStyle === "VILLA_COMMUNITY"`. Emits ONE rectangular footprint at
- * the polygon centroid, sized as a percentage of plot area, sized so that
- * the large setback on every side visually represents the surrounding
- * estate grounds (gardens, pool, driveway, servant quarters) — matching how
- * a Dubai luxury-estate plot is actually developed.
+ * STANDARD FUTURE_DEVELOPMENT TREATMENT — applies to EVERY plot whose landUse
+ * resolves to FUTURE_DEVELOPMENT. No per-plot opt-in, no buildingStyle flag,
+ * no AffectionPlan.raw metadata required. When a new FUTURE_DEVELOPMENT plot
+ * is added via the standard seed pattern (see scripts/seed-9235849-al-yalayis-3.ts
+ * and scripts/seed-tb02-dubai-water-canal.ts for the canonical template),
+ * it renders automatically with this building.
  *
- * Replaces the prior 10-villa grid algorithm (commit f711da8) which founder
- * rejected as "doesn't look like houses". Renamed for clarity; callsite
- * unchanged structurally.
+ * Founder decision 2026-04-23 · supersedes:
+ *   - the prior "flat polygon only / земля без зданий" rule in CLAUDE.md
+ *   - the 10-villa-grid render (deprecated · commit f711da8)
+ *   - the per-plot VILLA_COMMUNITY opt-in (deprecated · commit a870354)
  *
  * Algorithm:
- *   1. Compute polygon area in m² (equirectangular · same as seed scripts).
- *   2. Compute vertex-average centroid.
- *   3. Compute bbox in metres → pick villa long-axis from wider dimension.
- *   4. Binary-shrink scale from `footprintPct` down to `minFootprintPct`
- *      until all 4 corners fit inside polygon.
- *   5. Emit ONE axis-aligned rectangle feature.
+ *   1. Polygon area in m² via equirectangular shoelace.
+ *   2. Vertex-average centroid.
+ *   3. Bbox in metres picks long axis orientation (widerEW flag).
+ *   4. Scale-aware footprint: clamp(plot_area × footprintPct, minM2, maxM2)
+ *      keeps the building visually readable across plot sizes — a big plot
+ *      gets a substantial compound, a small plot gets a villa-sized box.
+ *   5. Binary shrink (×0.8 per iteration) from target scale until all 4
+ *      corners fit inside polygon.
+ *   6. Emit ONE axis-aligned rectangle feature at height floors × floorH.
  *
- * Deterministic output (no RNG).
+ * Deterministic (no RNG). Same output for the same polygon every render.
  *
- * Color defaults to Residential yellow (#FFD700) — consistent with the
- * 9-category ZAAHI legend for a residential estate; plot fill underneath
- * stays the FUTURE_DEVELOPMENT gold from the outer polygon layer.
+ * Color defaults to warm sandstone #A8926E — earth-tone, distinguishable
+ * from the FUTURE_DEVELOPMENT plot-fill color (#C8A96E gold) underneath,
+ * and different from every 9-category legend color (not yellow, not lime,
+ * not gold) so the building reads as a distinct structure at z14+ zooms.
  */
-function generateEstateVillaFeatures(opts: {
+function generateFutureDevelopmentBuilding(opts: {
   parcelId: string;
   plotRing: number[][];
-  footprintPct?: number; // fraction of plot area occupied by villa footprint
+  footprintPct?: number; // target fraction of plot area
+  minFootprintM2?: number; // absolute floor — smallest building to still read as a structure
+  maxFootprintM2?: number; // absolute cap — don't grow monstrous on huge plots
   aspectRatio?: number; // long/short (1.4 = villa-like, not square, not strip)
   floors?: number;
   floorH?: number;
   color?: string;
-  minFootprintPct?: number; // give-up floor on binary shrink
+  minFootprintPct?: number; // binary-shrink give-up floor (fraction of plot area)
 }): GeoJSON.Feature[] {
   const {
     parcelId,
     plotRing,
     footprintPct = 0.15,
+    minFootprintM2 = 100, // small safety floor — keeps tiny plots from going 0; visible from same zoom the plot is
+    maxFootprintM2 = 80_000, // cap — stops mega-plots producing cartoon-scale boxes
     aspectRatio = 1.4,
-    floors = 3,
+    floors = 4,
     floorH = 4,
-    color = "#FFD700",
-    minFootprintPct = 0.04,
+    color = "#A8926E",
+    minFootprintPct = 0.005, // binary-shrink give-up floor (0.5% of plot area)
   } = opts;
 
   const lngs = plotRing.map((p) => p[0]);
@@ -412,20 +422,29 @@ function generateEstateVillaFeatures(opts: {
     return inside;
   };
 
-  // Binary shrink: start at footprintPct, reduce by 20 % per iteration
-  // until all 4 corners fit inside polygon, or we hit minFootprintPct.
-  let scale = footprintPct;
+  // Scale-aware target area: clamp(plot_area × footprintPct, minM2, maxM2).
+  // Protects both ends of the plot-size spectrum — small plots still get a
+  // readable building, huge plots don't get cartoonish mega-boxes.
+  const rawTargetM2 = areaM2 * footprintPct;
+  const targetM2 = Math.max(minFootprintM2, Math.min(maxFootprintM2, rawTargetM2));
+  const targetScale = targetM2 / areaM2;
+
+  // Binary shrink: start at targetScale, reduce by 20 % per iteration until
+  // all 4 corners fit inside polygon, or we hit minFootprintPct.
+  // `do`-form ensures at least one attempt even when `targetScale < minFootprintPct`
+  // (e.g., a 10M m² plot where the 80k m² cap produces a very small target fraction).
+  let scale = targetScale;
   let corners: [number, number][] = [];
   let fit = false;
   let usedScale = scale;
-  while (scale >= minFootprintPct) {
-    const villaArea = areaM2 * scale;
-    const shortM = Math.sqrt(villaArea / aspectRatio);
+  do {
+    const bldgArea = areaM2 * scale;
+    const shortM = Math.sqrt(bldgArea / aspectRatio);
     const longM = shortM * aspectRatio;
-    const villaWm = widerEW ? longM : shortM;
-    const villaHm = widerEW ? shortM : longM;
-    const dLng = villaWm / mPerDegLng;
-    const dLat = villaHm / mPerDegLat;
+    const bldgWm = widerEW ? longM : shortM;
+    const bldgHm = widerEW ? shortM : longM;
+    const dLng = bldgWm / mPerDegLng;
+    const dLat = bldgHm / mPerDegLat;
     corners = [
       [cx - dLng / 2, cy - dLat / 2],
       [cx + dLng / 2, cy - dLat / 2],
@@ -438,11 +457,11 @@ function generateEstateVillaFeatures(opts: {
       break;
     }
     scale *= 0.8;
-  }
+  } while (scale >= minFootprintPct);
 
   if (!fit) {
     console.warn(
-      `[estate-villa] parcel ${parcelId}: could not fit villa at any scale ≥ ${minFootprintPct}; emitting 0 features.`,
+      `[fd-building] parcel ${parcelId}: could not fit building at any scale ≥ ${minFootprintPct}; emitting 0 features.`,
     );
     return [];
   }
@@ -466,12 +485,11 @@ function generateEstateVillaFeatures(opts: {
       },
       properties: {
         parcelId,
-        villaIndex: 0,
-        landUse: "RESIDENTIAL",
+        landUse: "FUTURE_DEVELOPMENT",
         color,
         height: totalH,
         base: 0,
-        footprintPctUsed: Math.round(usedScale * 1000) / 1000,
+        footprintPctUsed: Math.round(usedScale * 10000) / 10000,
       },
     },
   ];
@@ -2395,28 +2413,22 @@ function ParcelsMapPageInner() {
         // Skip 3D building generation for parcels without a land use —
         // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
-        // FUTURE_DEVELOPMENT — by default no 3D (flat polygon only), BUT
-        // if the AffectionPlan declares `buildingStyle === "VILLA_COMMUNITY"`,
-        // render ONE large estate-villa at the plot centroid via the self-
-        // contained `generateEstateVillaFeatures` helper. Setbacks around the
-        // villa represent the surrounding estate grounds (gardens, pool,
-        // driveway, servant quarters) in the visual model.
-        // Either way, we `continue` past the ZAAHI Signature podium/body/
-        // crown path so those rules never fire for FUTURE_DEVELOPMENT plots.
+        // STANDARD FUTURE_DEVELOPMENT TREATMENT — applies to EVERY plot whose
+        // landUse resolves to FUTURE_DEVELOPMENT. No per-plot opt-in, no
+        // buildingStyle flag, no AffectionPlan.raw metadata required. New
+        // plots added via the standard seed pattern render automatically.
+        // Founder decision 2026-04-23, supersedes "flat polygon only" rule
+        // and the deprecated per-plot VILLA_COMMUNITY approach (f711da8,
+        // a870354 in the git history).
+        // We `continue` past the ZAAHI Signature podium/body/crown path so
+        // those rules never fire for FUTURE_DEVELOPMENT plots.
         if (landUse === "FUTURE_DEVELOPMENT" || landUse === "FUTURE DEVELOPMENT") {
-          if (it.plan?.buildingStyle === "VILLA_COMMUNITY") {
-            const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
-            const villa = generateEstateVillaFeatures({
-              parcelId: it.id,
-              plotRing,
-              footprintPct: 0.15,
-              aspectRatio: 1.4,
-              floors: 3,
-              floorH: 4,
-              color: "#FFD700",
-            });
-            buildingFeatures.push(...villa);
-          }
+          const plotRing = (it.geometry as GeoJSON.Polygon).coordinates[0];
+          const building = generateFutureDevelopmentBuilding({
+            parcelId: it.id,
+            plotRing,
+          });
+          buildingFeatures.push(...building);
           continue;
         }
 
