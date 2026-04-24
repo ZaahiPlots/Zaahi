@@ -25,6 +25,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import type {
+  ExpressionSpecification,
   GeoJSONSource,
   Map as MLMap,
   MapMouseEvent,
@@ -82,6 +83,7 @@ export function useBuildingsLayer({
   >(null);
   const mouseEnterRef = useRef<(() => void) | null>(null);
   const mouseLeaveRef = useRef<(() => void) | null>(null);
+  const mapClickDiagRef = useRef<((e: MapMouseEvent) => void) | null>(null);
 
   // ── Fetch once on mount ──────────────────────────────────────────
   useEffect(() => {
@@ -173,12 +175,38 @@ export function useBuildingsLayer({
       console.log("[BUILDINGS] installing pin source + layers");
       map.addSource(PIN_SRC_ID, { type: "geojson", data: pinFc });
 
+      // Zoom-responsive radii so the pin stays visible when zoomed out
+      // AND clickable when zoomed into the tower (at z17+ the 3D model
+      // renders on top of a 6 px dot; users click the tower and miss the
+      // pin). MapLibre's layer-scoped click picker is 2D — radius here
+      // is literally the hit zone. 28 px at z20 gives a forgiving target.
+      const circleRadiusExpr: ExpressionSpecification = [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10, 6,
+        14, 10,
+        16, 16,
+        18, 22,
+        20, 28,
+      ];
+      const haloRadiusExpr: ExpressionSpecification = [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10, 14,
+        14, 22,
+        16, 32,
+        18, 44,
+        20, 56,
+      ];
+
       map.addLayer({
         id: PIN_HALO_ID,
         type: "circle",
         source: PIN_SRC_ID,
         paint: {
-          "circle-radius": 14,
+          "circle-radius": haloRadiusExpr,
           "circle-color": [
             "match",
             ["get", "status"],
@@ -197,7 +225,7 @@ export function useBuildingsLayer({
         type: "circle",
         source: PIN_SRC_ID,
         paint: {
-          "circle-radius": 6,
+          "circle-radius": circleRadiusExpr,
           "circle-color": [
             "match",
             ["get", "status"],
@@ -228,14 +256,44 @@ export function useBuildingsLayer({
       const mouseLeave = () => {
         map.getCanvas().style.cursor = "";
       };
+
+      // Backup: a map-level click that queries the pin layers via
+      // queryRenderedFeatures and fires onSelectBuilding if a pin is
+      // under the cursor. The layer-scoped `map.on('click', LAYER, fn)`
+      // is the primary path, but if something is interfering (e.g. a
+      // CustomLayer above the pin, or an unusual state where the
+      // layer-scoped bucket isn't registering), this second handler
+      // catches the click anyway. Also logs every click so we can
+      // confirm in devtools whether MapLibre sees the pin at the
+      // click point at all.
+      const mapClickDiag = (e: MapMouseEvent) => {
+        if (!map.getLayer(PIN_CIRCLE_ID)) return;
+        const hits = map.queryRenderedFeatures(e.point, {
+          layers: [PIN_CIRCLE_ID, PIN_HALO_ID],
+        });
+        if (hits.length === 0) return;
+        const id = hits[0].properties?.id;
+        console.log(
+          "[BUILDINGS] map-level click caught a pin @",
+          e.lngLat.toArray(),
+          "hits:",
+          hits.length,
+          "first id:",
+          id,
+        );
+        if (typeof id === "string") onSelectBuildingRef.current(id);
+      };
+
       map.on("click", PIN_CIRCLE_ID, clickHandler);
       map.on("mouseenter", PIN_CIRCLE_ID, mouseEnter);
       map.on("mouseleave", PIN_CIRCLE_ID, mouseLeave);
+      map.on("click", mapClickDiag);
       clickHandlerRef.current = clickHandler;
       mouseEnterRef.current = mouseEnter;
       mouseLeaveRef.current = mouseLeave;
+      mapClickDiagRef.current = mapClickDiag;
       handlersInstalledRef.current = true;
-      console.log("[BUILDINGS] pin click handlers installed");
+      console.log("[BUILDINGS] pin click handlers installed (layer-scoped + map-level backup)");
     }
 
     // Toggle pin visibility.
@@ -316,6 +374,29 @@ export function useBuildingsLayer({
       }
       liveLayersRef.current.push({ buildingId: b.id, layerId: layer.id });
     }
+
+    // After the CustomLayers are in place, lift the pin layers to the
+    // absolute top of the layer stack. MapLibre renders in add-order;
+    // each CustomLayer was added AFTER the pins, so without this move
+    // the 3D tower visually occludes the pin. Moving the pin above puts
+    // the gold dot in front of the façade — users can see what to click,
+    // and the halo is the unmistakable target. Click picking itself is
+    // 2D-radius-based and already works regardless, but visual guidance
+    // matters.
+    if (map.getLayer(PIN_HALO_ID)) {
+      try {
+        map.moveLayer(PIN_HALO_ID);
+      } catch {
+        /* layer missing or race — benign */
+      }
+    }
+    if (map.getLayer(PIN_CIRCLE_ID)) {
+      try {
+        map.moveLayer(PIN_CIRCLE_ID);
+      } catch {
+        /* layer missing or race — benign */
+      }
+    }
   }, [mapRef, mapReady, enabled, statusFilter, buildings]);
 
   // ── Cleanup on full unmount ──────────────────────────────────────
@@ -338,6 +419,9 @@ export function useBuildingsLayer({
         if (mouseLeaveRef.current)
           map.off("mouseleave", PIN_CIRCLE_ID, mouseLeaveRef.current);
         map.removeLayer(PIN_CIRCLE_ID);
+      }
+      if (mapClickDiagRef.current) {
+        map.off("click", mapClickDiagRef.current);
       }
       if (map.getLayer(PIN_HALO_ID)) map.removeLayer(PIN_HALO_ID);
       if (map.getSource(PIN_SRC_ID)) map.removeSource(PIN_SRC_ID);
