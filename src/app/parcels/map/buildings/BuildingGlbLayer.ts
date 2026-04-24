@@ -175,13 +175,24 @@ export function createBuildingGlbLayer(
         },
       );
 
+      // `antialias: true` used to be set here, but the MapLibre canvas
+      // is already created with antialias enabled (page.tsx passes
+      // `canvasContextAttributes: { antialias: true }`). Creating the
+      // Three.js renderer ALSO with antialias doubles up the multisample
+      // framebuffer dance — Three.js sets up its own MSAA FBO on top of
+      // MapLibre's, and when Three.js hands control back the resolved
+      // attachment sizes don't line up with MapLibre's next pass →
+      // repeating "clear: Framebuffer not complete. COLOR_ATTACHMENT0:
+      // Attachment has no width or height" + "drawElementsInstanced:
+      // Framebuffer must be complete" warnings even after the FBO
+      // null-bind fix. Let the canvas provide antialiasing; Three.js
+      // just draws into it.
       renderer = new THREE.WebGLRenderer({
         canvas: map.getCanvas(),
         context: gl as WebGLRenderingContext,
-        antialias: true,
       });
       renderer.autoClear = false;
-      console.log(tag, "WebGLRenderer ready (sharing MapLibre GL context)");
+      console.log(tag, "WebGLRenderer ready (sharing MapLibre GL context · no-MSAA)");
     },
 
     render(
@@ -248,8 +259,40 @@ export function createBuildingGlbLayer(
         .multiply(rotationX);
 
       camera.projectionMatrix = m.multiply(l);
+
+      // Three.js state reset sequence — sequentially strict, to leave
+      // MapLibre's next pass with a clean gl context:
+      //   1. `resetState()`          — Three-internal state tracking
+      //                                reset to defaults (sets
+      //                                _currentRenderTarget = null,
+      //                                resets bindingStates, etc.).
+      //   2. `state.reset()`         — lower-level WebGLState tracker
+      //                                reset; re-arms the enable/disable
+      //                                cache so the next call actually
+      //                                emits gl commands instead of
+      //                                skipping as "already set".
+      //   3. `setRenderTarget(null)` — explicit render-target binding;
+      //                                because `_currentRenderTarget`
+      //                                was just reset to `null`, this
+      //                                forces a real
+      //                                `gl.bindFramebuffer(null)` to fire
+      //                                rather than short-circuit.
       renderer.resetState();
+      renderer.state.reset();
+      renderer.setRenderTarget(null);
       renderer.render(scene, camera);
+
+      // After Three.js finishes, restore a clean framebuffer binding for
+      // MapLibre's next draw call. Without this, the next MapLibre pass
+      // (e.g. the style's background clear, or a fill-extrusion render)
+      // inherits whatever internal FBO Three.js left bound at the end of
+      // its frame — which triggers the repeating
+      //   "clear: Framebuffer not complete. COLOR_ATTACHMENT0: Attachment
+      //    has no width or height."
+      // warnings on every frame, even though the 3D model itself renders
+      // correctly. Belt-and-braces alongside the pre-render bind above.
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
       mapRef.triggerRepaint();
     },
 
