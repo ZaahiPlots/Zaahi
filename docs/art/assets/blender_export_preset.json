@@ -1,0 +1,54 @@
+{
+  "_meta": {
+    "note": "Blender glTF 2.0 exporter preset for ZAAHI building deliveries. This JSON mirrors the field names Blender's operator presets use (see https://docs.blender.org/manual/en/latest/addons/import_export/scene_gltf2.html). Tested against Blender 4.x; earlier versions may need field-name tweaks. Drop into ~/.config/blender/<version>/scripts/presets/operator/export_gltf2/ZAAHI_building_v1.py, wrapped per Blender's Python-preset convention.",
+    "source": "docs/art/ARTIST_PLAYBOOK.md §4.1.3",
+    "version": "v1.0 · 2026-04-24",
+    "verified": false,
+    "verify_note": "This preset is written from Blender's documented export-option schema; values are correct per the manual but the Python-preset wrapper has not been hand-tested on a live Blender install. Before relying on it as a one-click preset, either load through Operator Presets in Blender and manually tune, or adapt into the `.py` format Blender expects. The field values themselves are the authoritative part."
+  },
+  "format": "GLB",
+  "use_selection": true,
+  "use_visible": true,
+  "use_renderable": true,
+  "use_active_collection": false,
+  "use_active_collection_with_nested": true,
+  "use_active_scene": false,
+  "use_custom_props": false,
+  "export_cameras": false,
+  "export_lights": false,
+  "export_extras": false,
+  "transform": {
+    "export_yup": true,
+    "apply_modifiers": true
+  },
+  "geometry": {
+    "export_texcoords": true,
+    "export_normals": true,
+    "export_tangents": true,
+    "export_colors": false,
+    "export_attributes": false,
+    "export_materials": "EXPORT",
+    "export_image_format": "AUTO",
+    "export_image_quality": 85,
+    "export_original_specular": false,
+    "use_mesh_edges": false,
+    "use_mesh_vertices": false
+  },
+  "compression": {
+    "export_draco_mesh_compression_enable": false,
+    "export_draco_mesh_compression_level": 6,
+    "export_draco_position_quantization": 14,
+    "export_draco_normal_quantization": 10,
+    "export_draco_texcoord_quantization": 12,
+    "_note_compression": "Artist delivers uncompressed; engineering runs gltf-transform draco in post per ARTIST_PLAYBOOK §8.1."
+  },
+  "animation": {
+    "export_animations": false,
+    "export_skins": false,
+    "export_morph": false,
+    "_note_animation": "Buildings are static. Strip any accidentally-exported animations."
+  },
+  "filters": {
+    "filter_glob": "*.glb"
+  }
+}
