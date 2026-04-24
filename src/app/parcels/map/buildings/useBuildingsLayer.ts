@@ -4,28 +4,31 @@
 //   1. Fetch /api/buildings once the map is ready.
 //   2. For each building with modelPath → create a MapLibre CustomLayer
 //      that renders the glTF at the building's real centroid.
-//   3. Publish a clickable MapLibre GeoJSON pin source (circle layer)
-//      with one feature per building — click opens the BuildingCard.
-//   4. Toggle ALL per-building layers + the pin layer on/off via a
-//      single "completed/UC visible" flag.
+//   3. Publish a clickable GeoJSON polygon source (footprint fill + gold
+//      outline) — one feature per building. Click opens BuildingCard.
+//      Mirrors the LISTED-plot click UX so the map surface feels
+//      consistent across the two data planes.
+//   4. Toggle ALL per-building layers + the footprint layer on/off via
+//      a single "completed/UC visible" flag.
 //   5. Clean up on unmount (removeLayer + removeSource).
 //
 // The hook is additive — it does not touch any existing ZAAHI Signature
 // layer, source, mouse handler, or selection logic on /parcels/map.
 //
-// 2026-04-24 rev: storage of fetched buildings moved from `useRef` to
-// `useState` because the previous ref-based design didn't re-render the
-// parent when the fetch completed. If the fetch finished AFTER the
-// map-ready transition, the main effect had already run once with an
-// empty list and nothing re-triggered it — pins + 3D layers silently
-// never got added. Also: `onSelectBuilding` is now read through a ref so
-// parent re-renders don't churn the layer effect, and every branch
-// console.logs under "[BUILDINGS]" for visibility in browser devtools.
+// 2026-04-24 rev 1: storage of fetched buildings moved from `useRef` to
+// `useState`; `onSelectBuilding` mirrored in a ref so parent re-renders
+// don't churn the layer effect; verbose `[BUILDINGS]` logs added.
+// 2026-04-24 rev 2: pin circle + halo layers removed. Replaced with a
+// clickable footprint polygon (fill + line) that uses `footprintPolygon`
+// from the Building row when present, else synthesises a 40 m × 40 m
+// square centred on the WGS84 centroid. Hover state via feature-state
+// boosts fill opacity 0.15 → 0.35; click opens the BuildingCard. The
+// map-level diagnostic click handler is gone — footprint clicks are
+// generous enough that the backup no longer earns its keep.
 
 import { useEffect, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import type {
-  ExpressionSpecification,
   GeoJSONSource,
   Map as MLMap,
   MapMouseEvent,
@@ -34,19 +37,79 @@ import type {
 import { apiFetch } from "@/lib/api-fetch";
 import type { BuildingDTO } from "./types";
 import {
-  buildingLayerId,
   createBuildingGlbLayer,
 } from "./BuildingGlbLayer";
 
-const PIN_SRC_ID = "zaahi-buildings-pins";
-const PIN_CIRCLE_ID = "zaahi-buildings-pin-circle";
-const PIN_HALO_ID = "zaahi-buildings-pin-halo";
+const SRC_ID = "zaahi-buildings-footprints";
+const FILL_ID = "zaahi-buildings-fill";
+const LINE_ID = "zaahi-buildings-line";
 
-const STATUS_COLOR: Record<string, string> = {
-  COMPLETED: "#C8A96E",          // ZAAHI gold
-  UNDER_CONSTRUCTION: "#E67E22", // amber
-  PLANNED: "#6B7280",            // subtle grey
-};
+const GOLD = "#C8A96E";           // ZAAHI gold — matches LISTED plot outline
+const GOLD_FILL = "#C8A96E";      // same hue for fill
+const AMBER = "#E67E22";          // under-construction accent (reserved)
+
+// Default footprint half-size when a Building row has no footprintPolygon.
+// 40 m × 40 m gives a generous click target that approximates a typical
+// tower base (API Horizon Pointe's real footprint is ~63 m × 60 m; this
+// is conservative).
+const DEFAULT_FOOTPRINT_HALF_M = 20;
+
+/**
+ * Square polygon ring (5 points, closed) around the given WGS84 centroid,
+ * sized `halfM` metres in each direction. Returned in GeoJSON order
+ * [lng, lat]. The lat → degree conversion uses the standard 111320 m/°
+ * approximation; the lng conversion scales by cos(latitude) for the
+ * Mercator squeeze. Accuracy is ~1 m at Dubai latitude — ample for a
+ * click-area hitbox.
+ */
+function defaultFootprintRing(
+  lat: number,
+  lng: number,
+  halfM: number,
+): [number, number][] {
+  const dLat = halfM / 111_320;
+  const latRad = (lat * Math.PI) / 180;
+  const dLng = halfM / (111_320 * Math.cos(latRad));
+  return [
+    [lng - dLng, lat - dLat],
+    [lng + dLng, lat - dLat],
+    [lng + dLng, lat + dLat],
+    [lng - dLng, lat + dLat],
+    [lng - dLng, lat - dLat],
+  ];
+}
+
+function buildingToFeature(b: BuildingDTO): GeoJSON.Feature<GeoJSON.Polygon> {
+  // Prefer the artist-supplied / OSM-sourced footprint polygon; otherwise
+  // synthesize a small square around the centroid so there's always a
+  // clickable surface.
+  let geometry: GeoJSON.Polygon;
+  const fp = b.footprintPolygon as GeoJSON.Polygon | null | undefined;
+  if (
+    fp &&
+    typeof fp === "object" &&
+    fp.type === "Polygon" &&
+    Array.isArray(fp.coordinates) &&
+    fp.coordinates.length > 0
+  ) {
+    geometry = fp;
+  } else {
+    geometry = {
+      type: "Polygon",
+      coordinates: [defaultFootprintRing(b.centroidLat, b.centroidLng, DEFAULT_FOOTPRINT_HALF_M)],
+    };
+  }
+  return {
+    type: "Feature",
+    id: b.id,
+    geometry,
+    properties: {
+      id: b.id,
+      name: b.name,
+      status: b.status,
+    },
+  };
+}
 
 interface Options {
   mapRef: MutableRefObject<MLMap | null>;
@@ -71,19 +134,22 @@ export function useBuildingsLayer({
   const [buildings, setBuildings] = useState<BuildingDTO[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Ref mirror of the latest onSelectBuilding so we can register the pin
-  // click handler once and still invoke the latest callback.
+  // Ref mirror of the latest onSelectBuilding so the click handler stays
+  // stable across parent re-renders.
   const onSelectBuildingRef = useRef(onSelectBuilding);
   onSelectBuildingRef.current = onSelectBuilding;
 
   const liveLayersRef = useRef<LiveLayer[]>([]);
   const handlersInstalledRef = useRef(false);
+  const hoveredIdRef = useRef<string | number | null>(null);
+
   const clickHandlerRef = useRef<
     ((e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void) | null
   >(null);
-  const mouseEnterRef = useRef<(() => void) | null>(null);
+  const mouseMoveRef = useRef<
+    ((e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void) | null
+  >(null);
   const mouseLeaveRef = useRef<(() => void) | null>(null);
-  const mapClickDiagRef = useRef<((e: MapMouseEvent) => void) | null>(null);
 
   // ── Fetch once on mount ──────────────────────────────────────────
   useEffect(() => {
@@ -104,6 +170,7 @@ export function useBuildingsLayer({
             status: b.status,
             modelPath: b.modelPath,
             centroid: [b.centroidLat, b.centroidLng],
+            hasFootprint: !!b.footprintPolygon,
           })),
         );
         setBuildings(items);
@@ -119,7 +186,7 @@ export function useBuildingsLayer({
     };
   }, []);
 
-  // ── Effect: attach / detach layers based on enabled + mapReady + buildings ──
+  // ── Main effect: attach / detach layers ─────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map) {
@@ -150,167 +217,122 @@ export function useBuildingsLayer({
       activeBuildings.length,
     );
 
-    // ── Pin source + circle layers (one feature per active building) ──
-    const pinFc: GeoJSON.FeatureCollection = {
+    // ── Footprint source + fill + line ────────────────────────────
+    const fc: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
       type: "FeatureCollection",
-      features: activeBuildings.map((b) => ({
-        type: "Feature" as const,
-        id: b.id,
-        geometry: {
-          type: "Point" as const,
-          coordinates: [b.centroidLng, b.centroidLat],
-        },
-        properties: {
-          id: b.id,
-          name: b.name,
-          status: b.status,
-        },
-      })),
+      features: activeBuildings.map(buildingToFeature),
     };
 
-    const existingSrc = map.getSource(PIN_SRC_ID) as GeoJSONSource | undefined;
+    const existingSrc = map.getSource(SRC_ID) as GeoJSONSource | undefined;
     if (existingSrc) {
-      existingSrc.setData(pinFc);
+      existingSrc.setData(fc);
     } else {
-      console.log("[BUILDINGS] installing pin source + layers");
-      map.addSource(PIN_SRC_ID, { type: "geojson", data: pinFc });
+      console.log("[BUILDINGS] installing footprint source + fill/line layers");
+      map.addSource(SRC_ID, { type: "geojson", data: fc });
 
-      // Zoom-responsive radii so the pin stays visible when zoomed out
-      // AND clickable when zoomed into the tower (at z17+ the 3D model
-      // renders on top of a 6 px dot; users click the tower and miss the
-      // pin). MapLibre's layer-scoped click picker is 2D — radius here
-      // is literally the hit zone. 28 px at z20 gives a forgiving target.
-      const circleRadiusExpr: ExpressionSpecification = [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        10, 6,
-        14, 10,
-        16, 16,
-        18, 22,
-        20, 28,
-      ];
-      const haloRadiusExpr: ExpressionSpecification = [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        10, 14,
-        14, 22,
-        16, 32,
-        18, 44,
-        20, 56,
-      ];
-
+      // Tan fill · hover boosts opacity 0.15 → 0.35 · matches LISTED-plot
+      // visual language (ZAAHI Signature uses its own fill-opacity stack,
+      // but the hover-bump pattern is the same).
       map.addLayer({
-        id: PIN_HALO_ID,
-        type: "circle",
-        source: PIN_SRC_ID,
+        id: FILL_ID,
+        type: "fill",
+        source: SRC_ID,
         paint: {
-          "circle-radius": haloRadiusExpr,
-          "circle-color": [
+          "fill-color": [
             "match",
             ["get", "status"],
-            "COMPLETED", STATUS_COLOR.COMPLETED,
-            "UNDER_CONSTRUCTION", STATUS_COLOR.UNDER_CONSTRUCTION,
-            "PLANNED", STATUS_COLOR.PLANNED,
-            "#C8A96E",
+            "COMPLETED", GOLD_FILL,
+            "UNDER_CONSTRUCTION", AMBER,
+            "PLANNED", "#6B7280",
+            GOLD_FILL,
           ],
-          "circle-opacity": 0.18,
-          "circle-blur": 0.4,
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            0.35,
+            0.15,
+          ],
         },
       });
 
       map.addLayer({
-        id: PIN_CIRCLE_ID,
-        type: "circle",
-        source: PIN_SRC_ID,
+        id: LINE_ID,
+        type: "line",
+        source: SRC_ID,
         paint: {
-          "circle-radius": circleRadiusExpr,
-          "circle-color": [
+          "line-color": [
             "match",
             ["get", "status"],
-            "COMPLETED", STATUS_COLOR.COMPLETED,
-            "UNDER_CONSTRUCTION", STATUS_COLOR.UNDER_CONSTRUCTION,
-            "PLANNED", STATUS_COLOR.PLANNED,
-            "#C8A96E",
+            "COMPLETED", GOLD,
+            "UNDER_CONSTRUCTION", AMBER,
+            "PLANNED", "#6B7280",
+            GOLD,
           ],
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 2,
-          "circle-opacity": 1,
+          "line-width": 2,
+          "line-opacity": 0.8,
         },
       });
     }
 
-    if (!handlersInstalledRef.current && map.getLayer(PIN_CIRCLE_ID)) {
+    // Install hover + click handlers once. Wrapped in a guard so re-runs
+    // don't duplicate listeners. Handlers read the latest onSelectBuilding
+    // through its ref mirror.
+    if (!handlersInstalledRef.current && map.getLayer(FILL_ID)) {
       const clickHandler = (
         e: MapMouseEvent & { features?: MapGeoJSONFeature[] },
       ) => {
         const f = e.features?.[0];
         const id = f?.properties?.id;
-        console.log("[BUILDINGS] pin click", { id });
+        console.log("[BUILDINGS] footprint click", { id });
         if (typeof id === "string") onSelectBuildingRef.current(id);
       };
-      const mouseEnter = () => {
+      const mouseMove = (
+        e: MapMouseEvent & { features?: MapGeoJSONFeature[] },
+      ) => {
+        const f = e.features?.[0];
+        if (!f || f.id === undefined) return;
+        const fid = f.id as string | number;
+        if (hoveredIdRef.current !== null && hoveredIdRef.current !== fid) {
+          map.setFeatureState(
+            { source: SRC_ID, id: hoveredIdRef.current },
+            { hover: false },
+          );
+        }
+        hoveredIdRef.current = fid;
+        map.setFeatureState({ source: SRC_ID, id: fid }, { hover: true });
         map.getCanvas().style.cursor = "pointer";
       };
       const mouseLeave = () => {
+        if (hoveredIdRef.current !== null) {
+          map.setFeatureState(
+            { source: SRC_ID, id: hoveredIdRef.current },
+            { hover: false },
+          );
+        }
+        hoveredIdRef.current = null;
         map.getCanvas().style.cursor = "";
       };
 
-      // Backup: a map-level click that queries the pin layers via
-      // queryRenderedFeatures and fires onSelectBuilding if a pin is
-      // under the cursor. The layer-scoped `map.on('click', LAYER, fn)`
-      // is the primary path, but if something is interfering (e.g. a
-      // CustomLayer above the pin, or an unusual state where the
-      // layer-scoped bucket isn't registering), this second handler
-      // catches the click anyway. Also logs every click so we can
-      // confirm in devtools whether MapLibre sees the pin at the
-      // click point at all.
-      const mapClickDiag = (e: MapMouseEvent) => {
-        if (!map.getLayer(PIN_CIRCLE_ID)) return;
-        const hits = map.queryRenderedFeatures(e.point, {
-          layers: [PIN_CIRCLE_ID, PIN_HALO_ID],
-        });
-        if (hits.length === 0) return;
-        const id = hits[0].properties?.id;
-        console.log(
-          "[BUILDINGS] map-level click caught a pin @",
-          e.lngLat.toArray(),
-          "hits:",
-          hits.length,
-          "first id:",
-          id,
-        );
-        if (typeof id === "string") onSelectBuildingRef.current(id);
-      };
-
-      map.on("click", PIN_CIRCLE_ID, clickHandler);
-      map.on("mouseenter", PIN_CIRCLE_ID, mouseEnter);
-      map.on("mouseleave", PIN_CIRCLE_ID, mouseLeave);
-      map.on("click", mapClickDiag);
+      map.on("click", FILL_ID, clickHandler);
+      map.on("mousemove", FILL_ID, mouseMove);
+      map.on("mouseleave", FILL_ID, mouseLeave);
       clickHandlerRef.current = clickHandler;
-      mouseEnterRef.current = mouseEnter;
+      mouseMoveRef.current = mouseMove;
       mouseLeaveRef.current = mouseLeave;
-      mapClickDiagRef.current = mapClickDiag;
       handlersInstalledRef.current = true;
-      console.log("[BUILDINGS] pin click handlers installed (layer-scoped + map-level backup)");
+      console.log("[BUILDINGS] footprint handlers installed (click + hover)");
     }
 
-    // Toggle pin visibility.
-    const pinVisibility = enabled ? "visible" : "none";
-    if (map.getLayer(PIN_HALO_ID)) {
-      map.setLayoutProperty(PIN_HALO_ID, "visibility", pinVisibility);
-    }
-    if (map.getLayer(PIN_CIRCLE_ID)) {
-      map.setLayoutProperty(PIN_CIRCLE_ID, "visibility", pinVisibility);
-    }
+    // Toggle visibility.
+    const vis = enabled ? "visible" : "none";
+    if (map.getLayer(FILL_ID)) map.setLayoutProperty(FILL_ID, "visibility", vis);
+    if (map.getLayer(LINE_ID)) map.setLayoutProperty(LINE_ID, "visibility", vis);
 
     // ── Per-building glTF CustomLayers ──
     const targetIds = new Set(
       activeBuildings.filter((b) => b.modelPath).map((b) => b.id),
     );
 
-    // Remove layers that are no longer needed.
     liveLayersRef.current = liveLayersRef.current.filter((live) => {
       if (!targetIds.has(live.buildingId)) {
         console.log(
@@ -324,25 +346,17 @@ export function useBuildingsLayer({
       return true;
     });
 
-    // Add layers for any newly-visible buildings.
     const liveIds = new Set(liveLayersRef.current.map((l) => l.buildingId));
     for (const b of activeBuildings) {
       if (!b.modelPath) {
         console.log(
           "[BUILDINGS] building",
           b.name,
-          "has no modelPath — skipping GLB layer (pin-only)",
+          "has no modelPath — skipping GLB layer (footprint-only)",
         );
         continue;
       }
-      if (liveIds.has(b.id)) {
-        console.log(
-          "[BUILDINGS] layer for",
-          b.name,
-          "already present — skipping re-add",
-        );
-        continue;
-      }
+      if (liveIds.has(b.id)) continue;
 
       const modelUrl = b.modelPath.startsWith("/") ? b.modelPath : `/${b.modelPath}`;
       console.log(
@@ -352,7 +366,7 @@ export function useBuildingsLayer({
         modelUrl,
         "scaleFactor:",
         b.scaleFactor,
-        "rotationDeg:",
+        "rotationDeg (DB):",
         b.rotationDeg,
       );
       const layer = createBuildingGlbLayer({
@@ -375,26 +389,21 @@ export function useBuildingsLayer({
       liveLayersRef.current.push({ buildingId: b.id, layerId: layer.id });
     }
 
-    // After the CustomLayers are in place, lift the pin layers to the
-    // absolute top of the layer stack. MapLibre renders in add-order;
-    // each CustomLayer was added AFTER the pins, so without this move
-    // the 3D tower visually occludes the pin. Moving the pin above puts
-    // the gold dot in front of the façade — users can see what to click,
-    // and the halo is the unmistakable target. Click picking itself is
-    // 2D-radius-based and already works regardless, but visual guidance
-    // matters.
-    if (map.getLayer(PIN_HALO_ID)) {
+    // Keep the footprint layers above the 3D CustomLayers so the gold
+    // outline + hover tint read through the tower — matches the way
+    // LISTED-plot outlines sit on top of ZAAHI Signature extrusions.
+    if (map.getLayer(FILL_ID)) {
       try {
-        map.moveLayer(PIN_HALO_ID);
+        map.moveLayer(FILL_ID);
       } catch {
-        /* layer missing or race — benign */
+        /* race — benign */
       }
     }
-    if (map.getLayer(PIN_CIRCLE_ID)) {
+    if (map.getLayer(LINE_ID)) {
       try {
-        map.moveLayer(PIN_CIRCLE_ID);
+        map.moveLayer(LINE_ID);
       } catch {
-        /* layer missing or race — benign */
+        /* race — benign */
       }
     }
   }, [mapRef, mapReady, enabled, statusFilter, buildings]);
@@ -411,20 +420,17 @@ export function useBuildingsLayer({
       }
       liveLayersRef.current = [];
 
-      if (map.getLayer(PIN_CIRCLE_ID)) {
+      if (map.getLayer(FILL_ID)) {
         if (clickHandlerRef.current)
-          map.off("click", PIN_CIRCLE_ID, clickHandlerRef.current);
-        if (mouseEnterRef.current)
-          map.off("mouseenter", PIN_CIRCLE_ID, mouseEnterRef.current);
+          map.off("click", FILL_ID, clickHandlerRef.current);
+        if (mouseMoveRef.current)
+          map.off("mousemove", FILL_ID, mouseMoveRef.current);
         if (mouseLeaveRef.current)
-          map.off("mouseleave", PIN_CIRCLE_ID, mouseLeaveRef.current);
-        map.removeLayer(PIN_CIRCLE_ID);
+          map.off("mouseleave", FILL_ID, mouseLeaveRef.current);
+        map.removeLayer(FILL_ID);
       }
-      if (mapClickDiagRef.current) {
-        map.off("click", mapClickDiagRef.current);
-      }
-      if (map.getLayer(PIN_HALO_ID)) map.removeLayer(PIN_HALO_ID);
-      if (map.getSource(PIN_SRC_ID)) map.removeSource(PIN_SRC_ID);
+      if (map.getLayer(LINE_ID)) map.removeLayer(LINE_ID);
+      if (map.getSource(SRC_ID)) map.removeSource(SRC_ID);
     };
   }, [mapRef]);
 
@@ -439,7 +445,3 @@ export function flyToBuilding(map: MLMap, b: BuildingDTO) {
     duration: 1800,
   });
 }
-
-// Keep the named export consumers imported to avoid the unused-import lint
-// rule tripping on the helper while keeping the symbol exportable.
-export { buildingLayerId };

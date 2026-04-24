@@ -75,7 +75,37 @@ export function createBuildingGlbLayer(
     renderingMode: "3d",
 
     onAdd(map: MLMap, gl: WebGLRenderingContext | WebGL2RenderingContext): void {
-      console.log(tag, "onAdd — creating scene, renderer, GLTFLoader");
+      // Admin-only rotation override — `?buildingRotation=<deg>` in the
+      // URL replaces the DB `rotationDeg` for this session on every
+      // building that renders. Captured ONCE at onAdd time so the model
+      // doesn't spin when the param changes; founder reloads to try a
+      // new angle. Useful for quick iteration (0 / 45 / 90 / …) before
+      // committing the correct value to the DB.
+      let effectiveRotationDeg = rotationDeg;
+      if (typeof window !== "undefined" && typeof window.location !== "undefined") {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const raw = params.get("buildingRotation");
+          if (raw !== null) {
+            const parsed = Number.parseFloat(raw);
+            if (Number.isFinite(parsed)) {
+              effectiveRotationDeg = parsed;
+            }
+          }
+        } catch {
+          /* non-browser or malformed URL — fall through to DB value */
+        }
+      }
+      console.log(
+        tag,
+        "onAdd — creating scene, renderer, GLTFLoader · DB rotationDeg:",
+        rotationDeg,
+        "· effective rotation:",
+        effectiveRotationDeg,
+        effectiveRotationDeg === rotationDeg
+          ? ""
+          : "(overridden via ?buildingRotation URL param)",
+      );
       mapRef = map;
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.65));
@@ -145,8 +175,8 @@ export function createBuildingGlbLayer(
           scaled.scale.setScalar(scaleFactor);
           scaled.add(root);
 
-          if (rotationDeg !== 0) {
-            scaled.rotateY((rotationDeg * Math.PI) / 180);
+          if (effectiveRotationDeg !== 0) {
+            scaled.rotateY((effectiveRotationDeg * Math.PI) / 180);
           }
 
           wrapper.add(scaled);
