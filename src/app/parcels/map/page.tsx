@@ -3598,6 +3598,37 @@ function ParcelsMapPageInner() {
           </span>
         </div>
 
+        {/* Buildings — digital-twin layer (completed + under-construction
+            real towers). Two toggles match the LayerToggle styling used by
+            the country/category sections below. Counts live so users see
+            "· 1" / "· 0" without opening devtools. */}
+        <div
+          style={{
+            padding: "8px 14px 2px",
+            fontSize: 9,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: GOLD,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontWeight: 700,
+            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+          }}
+        >
+          Buildings
+        </div>
+        <LayerToggle
+          label={`Completed · ${loadedBuildings.filter((b) => b.status === "COMPLETED").length}`}
+          checked={completedVisible}
+          onChange={setCompletedVisible}
+          color="rgba(255, 255, 255, 0.9)"
+        />
+        <LayerToggle
+          label={`Under construction · ${loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}`}
+          checked={underConstructionVisible}
+          onChange={setUnderConstructionVisible}
+          color="rgba(255, 255, 255, 0.9)"
+        />
+
         {/* Country → category → layer hierarchy (Phase 1 RBAC scaffold).
             Labels + lock tiers come from LAYER_META; counts/on summed
             per country. Inside each country, categories render as
@@ -4043,36 +4074,6 @@ function ParcelsMapPageInner() {
         </button>
       </div>
 
-      {/* Digital-twin Buildings layer toggles — sits just under the
-          layer-switcher icon on the left edge. Minimal pill with two
-          chips (Completed · Under Construction) so the map header stays
-          untouched. Pure additive. */}
-      <div
-        style={{
-          position: "absolute",
-          top: 90,
-          left: 12,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          zIndex: 11,
-          pointerEvents: "auto",
-        }}
-      >
-        <BuildingsToggleChip
-          label="Completed"
-          active={completedVisible}
-          count={loadedBuildings.filter((b) => b.status === "COMPLETED").length}
-          onClick={() => setCompletedVisible((v) => !v)}
-        />
-        <BuildingsToggleChip
-          label="Under constr."
-          active={underConstructionVisible}
-          count={loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}
-          onClick={() => setUnderConstructionVisible((v) => !v)}
-        />
-      </div>
-
       <BuildingCard
         buildingId={selectedBuildingId}
         onClose={() => setSelectedBuildingId(null)}
@@ -4089,58 +4090,6 @@ function ParcelsMapPageInner() {
       />
       <WelcomeTour />
     </div>
-  );
-}
-
-// Compact glassmorphism chip for the Buildings layer toggles. Matches
-// the visual language of the other on-map chrome buttons.
-function BuildingsToggleChip({
-  label,
-  active,
-  count,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  count: number;
-  onClick: () => void;
-}) {
-  const GOLD_LOCAL = "#C8A96E";
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      title={`${label} buildings — ${count} shown`}
-      style={{
-        padding: "4px 10px",
-        fontSize: 10,
-        fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif",
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        borderRadius: 6,
-        border: `1px solid ${active ? GOLD_LOCAL : "rgba(200, 169, 110, 0.3)"}`,
-        background: active ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-        color: GOLD_LOCAL,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-        transition: "border-color 150ms ease, background 150ms ease",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          background: active ? GOLD_LOCAL : "rgba(200, 169, 110, 0.35)",
-        }}
-      />
-      {label}
-      <span style={{ opacity: 0.65, fontWeight: 500 }}>· {count}</span>
-    </button>
   );
 }
 

@@ -12,8 +12,17 @@
 //
 // The hook is additive — it does not touch any existing ZAAHI Signature
 // layer, source, mouse handler, or selection logic on /parcels/map.
+//
+// 2026-04-24 rev: storage of fetched buildings moved from `useRef` to
+// `useState` because the previous ref-based design didn't re-render the
+// parent when the fetch completed. If the fetch finished AFTER the
+// map-ready transition, the main effect had already run once with an
+// empty list and nothing re-triggered it — pins + 3D layers silently
+// never got added. Also: `onSelectBuilding` is now read through a ref so
+// parent re-renders don't churn the layer effect, and every branch
+// console.logs under "[BUILDINGS]" for visibility in browser devtools.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import type {
   GeoJSONSource,
@@ -34,15 +43,15 @@ const PIN_HALO_ID = "zaahi-buildings-pin-halo";
 
 const STATUS_COLOR: Record<string, string> = {
   COMPLETED: "#C8A96E",          // ZAAHI gold
-  UNDER_CONSTRUCTION: "#E67E22", // amber — matches 9-category UNDER
+  UNDER_CONSTRUCTION: "#E67E22", // amber
   PLANNED: "#6B7280",            // subtle grey
 };
 
 interface Options {
   mapRef: MutableRefObject<MLMap | null>;
-  mapReady: boolean;               // true once the style has finished loading
-  enabled: boolean;                // master on/off toggle
-  statusFilter?: BuildingDTO["status"][]; // per-status sub-toggles
+  mapReady: boolean;
+  enabled: boolean;
+  statusFilter?: BuildingDTO["status"][];
   onSelectBuilding: (id: string) => void;
 }
 
@@ -58,52 +67,86 @@ export function useBuildingsLayer({
   statusFilter,
   onSelectBuilding,
 }: Options): { buildings: BuildingDTO[]; error: string | null } {
-  const buildingsRef = useRef<BuildingDTO[]>([]);
+  const [buildings, setBuildings] = useState<BuildingDTO[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // Ref mirror of the latest onSelectBuilding so we can register the pin
+  // click handler once and still invoke the latest callback.
+  const onSelectBuildingRef = useRef(onSelectBuilding);
+  onSelectBuildingRef.current = onSelectBuilding;
+
   const liveLayersRef = useRef<LiveLayer[]>([]);
-  const clickHandlerRef = useRef<((e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void) | null>(null);
+  const handlersInstalledRef = useRef(false);
+  const clickHandlerRef = useRef<
+    ((e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void) | null
+  >(null);
   const mouseEnterRef = useRef<(() => void) | null>(null);
   const mouseLeaveRef = useRef<(() => void) | null>(null);
-  const resultRef = useRef<{ buildings: BuildingDTO[]; error: string | null }>({
-    buildings: [],
-    error: null,
-  });
 
   // ── Fetch once on mount ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+    console.log("[BUILDINGS] fetching /api/buildings …");
     apiFetch("/api/buildings")
       .then(async (res) => {
-        if (!res.ok) throw new Error(`GET /api/buildings ${res.status}`);
+        if (!res.ok) throw new Error(`GET /api/buildings → ${res.status}`);
         const json = (await res.json()) as { items: BuildingDTO[] };
         if (cancelled) return;
-        buildingsRef.current = json.items ?? [];
-        resultRef.current = { buildings: buildingsRef.current, error: null };
+        const items = json.items ?? [];
+        console.log(
+          "[BUILDINGS] fetch ok — items:",
+          items.length,
+          items.map((b) => ({
+            id: b.id,
+            name: b.name,
+            status: b.status,
+            modelPath: b.modelPath,
+            centroid: [b.centroidLat, b.centroidLng],
+          })),
+        );
+        setBuildings(items);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        console.error("[buildings] fetch failed", err);
-        resultRef.current = {
-          buildings: [],
-          error: err instanceof Error ? err.message : String(err),
-        };
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[BUILDINGS] fetch failed:", msg);
+        setError(msg);
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // ── Effect: attach / detach layers based on enabled + mapReady ───
+  // ── Effect: attach / detach layers based on enabled + mapReady + buildings ──
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) return;
+    if (!map) {
+      console.log("[BUILDINGS] effect skipped — no map instance yet");
+      return;
+    }
+    if (!mapReady) {
+      console.log("[BUILDINGS] effect skipped — map style not ready yet");
+      return;
+    }
 
-    const activeBuildings = buildingsRef.current.filter((b) => {
+    const activeBuildings = buildings.filter((b) => {
       if (!enabled) return false;
       if (statusFilter && statusFilter.length > 0) {
         return statusFilter.includes(b.status);
       }
       return true;
     });
+
+    console.log(
+      "[BUILDINGS] effect run — enabled:",
+      enabled,
+      "filter:",
+      statusFilter,
+      "buildings loaded:",
+      buildings.length,
+      "active:",
+      activeBuildings.length,
+    );
 
     // ── Pin source + circle layers (one feature per active building) ──
     const pinFc: GeoJSON.FeatureCollection = {
@@ -127,6 +170,7 @@ export function useBuildingsLayer({
     if (existingSrc) {
       existingSrc.setData(pinFc);
     } else {
+      console.log("[BUILDINGS] installing pin source + layers");
       map.addSource(PIN_SRC_ID, { type: "geojson", data: pinFc });
 
       map.addLayer({
@@ -141,7 +185,7 @@ export function useBuildingsLayer({
             "COMPLETED", STATUS_COLOR.COMPLETED,
             "UNDER_CONSTRUCTION", STATUS_COLOR.UNDER_CONSTRUCTION,
             "PLANNED", STATUS_COLOR.PLANNED,
-            /* other */ "#C8A96E",
+            "#C8A96E",
           ],
           "circle-opacity": 0.18,
           "circle-blur": 0.4,
@@ -160,21 +204,23 @@ export function useBuildingsLayer({
             "COMPLETED", STATUS_COLOR.COMPLETED,
             "UNDER_CONSTRUCTION", STATUS_COLOR.UNDER_CONSTRUCTION,
             "PLANNED", STATUS_COLOR.PLANNED,
-            /* other */ "#C8A96E",
+            "#C8A96E",
           ],
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 2,
           "circle-opacity": 1,
         },
       });
+    }
 
-      // Click on pin → open card.
+    if (!handlersInstalledRef.current && map.getLayer(PIN_CIRCLE_ID)) {
       const clickHandler = (
         e: MapMouseEvent & { features?: MapGeoJSONFeature[] },
       ) => {
         const f = e.features?.[0];
         const id = f?.properties?.id;
-        if (typeof id === "string") onSelectBuilding(id);
+        console.log("[BUILDINGS] pin click", { id });
+        if (typeof id === "string") onSelectBuildingRef.current(id);
       };
       const mouseEnter = () => {
         map.getCanvas().style.cursor = "pointer";
@@ -182,14 +228,14 @@ export function useBuildingsLayer({
       const mouseLeave = () => {
         map.getCanvas().style.cursor = "";
       };
-
       map.on("click", PIN_CIRCLE_ID, clickHandler);
       map.on("mouseenter", PIN_CIRCLE_ID, mouseEnter);
       map.on("mouseleave", PIN_CIRCLE_ID, mouseLeave);
-
       clickHandlerRef.current = clickHandler;
       mouseEnterRef.current = mouseEnter;
       mouseLeaveRef.current = mouseLeave;
+      handlersInstalledRef.current = true;
+      console.log("[BUILDINGS] pin click handlers installed");
     }
 
     // Toggle pin visibility.
@@ -209,6 +255,11 @@ export function useBuildingsLayer({
     // Remove layers that are no longer needed.
     liveLayersRef.current = liveLayersRef.current.filter((live) => {
       if (!targetIds.has(live.buildingId)) {
+        console.log(
+          "[BUILDINGS] removing layer",
+          live.layerId,
+          "(building no longer active)",
+        );
         if (map.getLayer(live.layerId)) map.removeLayer(live.layerId);
         return false;
       }
@@ -218,10 +269,34 @@ export function useBuildingsLayer({
     // Add layers for any newly-visible buildings.
     const liveIds = new Set(liveLayersRef.current.map((l) => l.buildingId));
     for (const b of activeBuildings) {
-      if (!b.modelPath) continue;
-      if (liveIds.has(b.id)) continue;
+      if (!b.modelPath) {
+        console.log(
+          "[BUILDINGS] building",
+          b.name,
+          "has no modelPath — skipping GLB layer (pin-only)",
+        );
+        continue;
+      }
+      if (liveIds.has(b.id)) {
+        console.log(
+          "[BUILDINGS] layer for",
+          b.name,
+          "already present — skipping re-add",
+        );
+        continue;
+      }
 
       const modelUrl = b.modelPath.startsWith("/") ? b.modelPath : `/${b.modelPath}`;
+      console.log(
+        "[BUILDINGS] addLayer for",
+        b.name,
+        "modelUrl:",
+        modelUrl,
+        "scaleFactor:",
+        b.scaleFactor,
+        "rotationDeg:",
+        b.rotationDeg,
+      );
       const layer = createBuildingGlbLayer({
         buildingId: b.id,
         modelUrl,
@@ -232,16 +307,23 @@ export function useBuildingsLayer({
       });
       if (!map.getLayer(layer.id)) {
         map.addLayer(layer);
+        console.log(
+          "[BUILDINGS] layer added —",
+          layer.id,
+          "getLayer post-check:",
+          map.getLayer(layer.id) ? "present" : "MISSING",
+        );
       }
       liveLayersRef.current.push({ buildingId: b.id, layerId: layer.id });
     }
-  }, [mapRef, mapReady, enabled, statusFilter, onSelectBuilding]);
+  }, [mapRef, mapReady, enabled, statusFilter, buildings]);
 
   // ── Cleanup on full unmount ──────────────────────────────────────
   useEffect(() => {
     return () => {
       const map = mapRef.current;
       if (!map) return;
+      console.log("[BUILDINGS] unmount cleanup");
 
       for (const live of liveLayersRef.current) {
         if (map.getLayer(live.layerId)) map.removeLayer(live.layerId);
@@ -262,7 +344,7 @@ export function useBuildingsLayer({
     };
   }, [mapRef]);
 
-  return resultRef.current;
+  return { buildings, error };
 }
 
 export function flyToBuilding(map: MLMap, b: BuildingDTO) {
@@ -273,3 +355,7 @@ export function flyToBuilding(map: MLMap, b: BuildingDTO) {
     duration: 1800,
   });
 }
+
+// Keep the named export consumers imported to avoid the unused-import lint
+// rule tripping on the helper while keeping the symbol exportable.
+export { buildingLayerId };
