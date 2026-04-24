@@ -75,6 +75,16 @@ enum CommissionStatus {
   REVERSED
 }
 
+// Digital-twin building layers on /parcels/map. Independent of the LISTED
+// Parcel pipeline — Parcel = tradable land; Building = contextual 3D of
+// completed / under-construction / planned towers for map context and
+// SEO. Driven by scraped data (propsearch.ae · bayut · OSM) + artist GLB.
+enum BuildingStatus {
+  COMPLETED
+  UNDER_CONSTRUCTION
+  PLANNED
+}
+
 // ── MODELS ────────────────────────────────────────────
 
 model User {
@@ -477,4 +487,75 @@ model SavedSearch {
   updatedAt       DateTime  @updatedAt
 
   @@index([userId])
+}
+
+// Contextual 3D buildings on /parcels/map — the "digital twin" layer.
+// Separate from Parcel (tradable land). A Building is a real physical
+// tower (completed or under construction) sourced from propsearch.ae /
+// OSM / developer sites, optionally paired with an artist-supplied
+// glTF for photo-realistic rendering or a procedural placeholder.
+//
+// Append-only by convention. When a new source is scraped, add a new
+// row rather than updating fields in place — provenance matters.
+//
+// linkedParcelId is nullable: a Building may (later) be linked to a
+// LISTED Parcel if DDA attribution lands on the same plot. No FK —
+// this is a loose reference so the Building table is independent of
+// Parcel lifecycle.
+model Building {
+  id                  String         @id @default(cuid())
+
+  // ── Identity ──
+  name                String
+  status              BuildingStatus
+
+  // ── Location ──
+  community           String
+  masterPlan          String?
+  plotNumber          String?        // nullable — may not be in DDA yet
+  emirate             String         @default("Dubai")
+  centroidLat         Float
+  centroidLng         Float
+  footprintPolygon    Json?          // GeoJSON Polygon from OSM if available
+
+  // ── Construction ──
+  developer           String?
+  architect           String?
+  completionYear      Int?           // COMPLETED
+  expectedCompletion  Int?           // UNDER_CONSTRUCTION / PLANNED
+  constructionStarted Int?
+
+  // ── Specs ──
+  floors              Int?
+  heightM             Float?
+  totalUnits          Int?
+  buildingType        String?        // "residential" | "commercial" | "mixed_use" | "hotel" | ...
+
+  // ── Rich content (card) ──
+  description         String?        @db.Text
+  amenities           Json?          // ["Pool", "Gym", ...]
+  photos              Json?          // [{ url, credit?, alt? }, ...]
+
+  // ── 3D ──
+  modelPath           String?        // e.g. "models/candidate-sample.glb" (served under /public)
+  rotationDeg         Float          @default(0)
+  scaleFactor         Float          @default(1)    // 0.01 for cm-sourced models
+  modelProvider       String?        // artist name, or "procedural"
+
+  // ── Provenance ──
+  propsearchUrl       String?
+  sources             Json?          // [{ label, url, fetchedAt }, ...]
+  confidenceLevel     String         @default("medium") // "high" | "medium" | "low"
+
+  // ── Workflow ──
+  workflowStatus      String         @default("draft") // "draft" | "pending_review" | "live" | "archived"
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Future linkage when DDA sync finds a matching Parcel row.
+  linkedParcelId      String?
+
+  @@index([community])
+  @@index([status])
+  @@index([workflowStatus])
 }
