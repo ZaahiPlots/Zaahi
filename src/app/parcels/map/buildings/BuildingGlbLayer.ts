@@ -12,6 +12,10 @@
 // without a GLB fall back to the pin-only symbol rendering and can
 // later be swapped in by dropping a .glb into /public/models/ and
 // updating the DB row.
+//
+// 2026-04-24 rev: [BUILDINGS] console.logs at every lifecycle step —
+// onAdd, first render, GLB load start, progress, success (with vertex
+// count), error. No behavioural change from the previous revision.
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -50,6 +54,7 @@ export function createBuildingGlbLayer(
     onLoaded,
     onError,
   } = params;
+  const tag = `[BUILDINGS:${buildingId}]`;
 
   const merc = maplibregl.MercatorCoordinate.fromLngLat(
     [centroidLng, centroidLat],
@@ -61,6 +66,8 @@ export function createBuildingGlbLayer(
   const scene = new THREE.Scene();
   let renderer: THREE.WebGLRenderer | null = null;
   let mapRef: MLMap | null = null;
+  let firstRenderLogged = false;
+  let gltfLoaded = false;
 
   return {
     id: buildingLayerId(buildingId),
@@ -68,6 +75,7 @@ export function createBuildingGlbLayer(
     renderingMode: "3d",
 
     onAdd(map: MLMap, gl: WebGLRenderingContext | WebGL2RenderingContext): void {
+      console.log(tag, "onAdd — creating scene, renderer, GLTFLoader");
       mapRef = map;
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.65));
@@ -80,25 +88,56 @@ export function createBuildingGlbLayer(
       fill.position.set(-60, 40, -40);
       scene.add(fill);
 
-      // Wrapper group sits at world (0,0,0); we populate it with the
-      // loaded gltf scene and apply rotation + scale. Centring onto the
-      // model's own bbox bottom-centre is deferred to load time because
-      // we need the bbox.
       const wrapper = new THREE.Group();
       scene.add(wrapper);
+
+      console.log(tag, "GLTFLoader.load →", modelUrl);
+      const t0 = performance.now();
 
       new GLTFLoader().load(
         modelUrl,
         (gltf) => {
+          gltfLoaded = true;
           const root = gltf.scene;
 
-          // Compute model bounding box in raw model units so we can
-          // translate so that the footprint centre sits at (0,0,0) and
-          // the bottom of the model rests on Y=0 (map ground plane).
+          let vertexCount = 0;
+          let meshCount = 0;
+          root.traverse((obj) => {
+            const m = obj as THREE.Mesh;
+            if (m.isMesh && m.geometry) {
+              meshCount++;
+              const pos = m.geometry.getAttribute("position");
+              if (pos) vertexCount += pos.count;
+            }
+          });
+
           const bbox = new THREE.Box3().setFromObject(root);
           const centreX = (bbox.min.x + bbox.max.x) / 2;
           const centreZ = (bbox.min.z + bbox.max.z) / 2;
           const minY = bbox.min.y;
+          const sizeX = bbox.max.x - bbox.min.x;
+          const sizeY = bbox.max.y - bbox.min.y;
+          const sizeZ = bbox.max.z - bbox.min.z;
+
+          console.log(
+            tag,
+            "GLB loaded in",
+            Math.round(performance.now() - t0),
+            "ms · meshes:",
+            meshCount,
+            "vertices:",
+            vertexCount,
+            "bbox size (raw units):",
+            [sizeX.toFixed(1), sizeY.toFixed(1), sizeZ.toFixed(1)],
+            "→ after scaleFactor",
+            scaleFactor,
+            "metres:",
+            [
+              (sizeX * scaleFactor).toFixed(2),
+              (sizeY * scaleFactor).toFixed(2),
+              (sizeZ * scaleFactor).toFixed(2),
+            ],
+          );
 
           root.position.set(-centreX, -minY, -centreZ);
 
@@ -106,10 +145,6 @@ export function createBuildingGlbLayer(
           scaled.scale.setScalar(scaleFactor);
           scaled.add(root);
 
-          // Rotation: rotationDeg is "yaw around vertical (map up)"
-          // in degrees, following glTF/artist convention (+X east,
-          // +Z south). We apply the rotation on the scaled group so
-          // the model pivots around its footprint centre.
           if (rotationDeg !== 0) {
             scaled.rotateY((rotationDeg * Math.PI) / 180);
           }
@@ -124,12 +159,18 @@ export function createBuildingGlbLayer(
           mapRef?.triggerRepaint();
           onLoaded?.();
         },
-        undefined,
+        (progress) => {
+          // GLB lengths vary and the fetch may not report total; log at
+          // milestones to avoid spamming.
+          if (progress.lengthComputable) {
+            const pct = Math.floor((progress.loaded / progress.total) * 100);
+            if (pct === 25 || pct === 50 || pct === 75 || pct === 100) {
+              console.log(tag, "GLB download", pct, "%");
+            }
+          }
+        },
         (err) => {
-          console.error(
-            `[buildings] glTF load failed for ${buildingId} (${modelUrl})`,
-            err,
-          );
+          console.error(tag, "GLTF load FAILED for", modelUrl, err);
           onError?.(err);
         },
       );
@@ -140,6 +181,7 @@ export function createBuildingGlbLayer(
         antialias: true,
       });
       renderer.autoClear = false;
+      console.log(tag, "WebGLRenderer ready (sharing MapLibre GL context)");
     },
 
     render(
@@ -148,9 +190,18 @@ export function createBuildingGlbLayer(
     ): void {
       if (!renderer || !mapRef) return;
 
+      if (!firstRenderLogged) {
+        firstRenderLogged = true;
+        console.log(
+          tag,
+          "first render tick — gltfLoaded:",
+          gltfLoaded,
+          "(will keep ticking every frame)",
+        );
+      }
+
       const matrix = options.modelViewProjectionMatrix;
 
-      // Three.js Y-up → MapLibre Z-up: rotate 90° around +X.
       const rotationX = new THREE.Matrix4().makeRotationAxis(
         new THREE.Vector3(1, 0, 0),
         Math.PI / 2,
@@ -169,6 +220,7 @@ export function createBuildingGlbLayer(
     },
 
     onRemove(): void {
+      console.log(tag, "onRemove — disposing");
       scene.clear();
       renderer?.dispose();
       renderer = null;
