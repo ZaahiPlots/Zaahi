@@ -10,6 +10,9 @@ import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import MiniMap from "./MiniMap";
 import TermsAcceptModal from "./TermsAcceptModal";
+import BuildingCard from "./buildings/BuildingCard";
+import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
+import type { BuildingDTO } from "./buildings/types";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { apiFetch } from "@/lib/api-fetch";
@@ -1381,6 +1384,35 @@ function ParcelsMapPageInner() {
   const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  // Digital-twin Buildings layer state — completely additive, isolated
+  // from the ZAAHI Signature rendering for LISTED plots.
+  const [mapStyleReady, setMapStyleReady] = useState(false);
+  const [completedVisible, setCompletedVisible] = useState(true);
+  const [underConstructionVisible, setUnderConstructionVisible] = useState(true);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const buildingsStatusFilter = useMemo<BuildingDTO["status"][]>(() => {
+    const f: BuildingDTO["status"][] = [];
+    if (completedVisible) f.push("COMPLETED");
+    if (underConstructionVisible) f.push("UNDER_CONSTRUCTION");
+    return f;
+  }, [completedVisible, underConstructionVisible]);
+  const buildingsEnabled = buildingsStatusFilter.length > 0;
+  // Ref mirror of the fetched list so the MapLibre click handler always
+  // sees the latest items without needing hook re-registration.
+  const loadedBuildingsRef = useRef<BuildingDTO[]>([]);
+  const { buildings: loadedBuildings } = useBuildingsLayer({
+    mapRef,
+    mapReady: mapStyleReady,
+    enabled: buildingsEnabled,
+    statusFilter: buildingsStatusFilter,
+    onSelectBuilding: (id) => {
+      setSelectedBuildingId(id);
+      const map = mapRef.current;
+      const b = loadedBuildingsRef.current.find((x) => x.id === id);
+      if (map && b) flyToBuilding(map, b);
+    },
+  });
+  loadedBuildingsRef.current = loadedBuildings;
   const [theme, setTheme] = useState<Theme>("light");
   const [baseMap, setBaseMap] = useState<BaseMap>("light");
   const [is3D, setIs3D] = useState(true);
@@ -2637,6 +2669,10 @@ function ParcelsMapPageInner() {
     }
 
     map.on("load", async () => {
+      // Signal to the Buildings hook that the style is ready so it can
+      // safely addLayer/addSource. Purely additive — doesn't affect any
+      // existing load-time code path below.
+      setMapStyleReady(true);
       // ── Hover handlers stashed on a ref so loadLayer can attach them
       // to freshly-loaded layers (since loadLayer fires on demand and
       // doesn't have direct closure access to the popup).
@@ -4007,6 +4043,41 @@ function ParcelsMapPageInner() {
         </button>
       </div>
 
+      {/* Digital-twin Buildings layer toggles — sits just under the
+          layer-switcher icon on the left edge. Minimal pill with two
+          chips (Completed · Under Construction) so the map header stays
+          untouched. Pure additive. */}
+      <div
+        style={{
+          position: "absolute",
+          top: 90,
+          left: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          zIndex: 11,
+          pointerEvents: "auto",
+        }}
+      >
+        <BuildingsToggleChip
+          label="Completed"
+          active={completedVisible}
+          count={loadedBuildings.filter((b) => b.status === "COMPLETED").length}
+          onClick={() => setCompletedVisible((v) => !v)}
+        />
+        <BuildingsToggleChip
+          label="Under constr."
+          active={underConstructionVisible}
+          count={loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}
+          onClick={() => setUnderConstructionVisible((v) => !v)}
+        />
+      </div>
+
+      <BuildingCard
+        buildingId={selectedBuildingId}
+        onClose={() => setSelectedBuildingId(null)}
+      />
+
       <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel
         parcelId={selectedParcelId}
@@ -4018,6 +4089,58 @@ function ParcelsMapPageInner() {
       />
       <WelcomeTour />
     </div>
+  );
+}
+
+// Compact glassmorphism chip for the Buildings layer toggles. Matches
+// the visual language of the other on-map chrome buttons.
+function BuildingsToggleChip({
+  label,
+  active,
+  count,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  count: number;
+  onClick: () => void;
+}) {
+  const GOLD_LOCAL = "#C8A96E";
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      title={`${label} buildings — ${count} shown`}
+      style={{
+        padding: "4px 10px",
+        fontSize: 10,
+        fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif",
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        borderRadius: 6,
+        border: `1px solid ${active ? GOLD_LOCAL : "rgba(200, 169, 110, 0.3)"}`,
+        background: active ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
+        color: GOLD_LOCAL,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+        transition: "border-color 150ms ease, background 150ms ease",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          background: active ? GOLD_LOCAL : "rgba(200, 169, 110, 0.35)",
+        }}
+      />
+      {label}
+      <span style={{ opacity: 0.65, fontWeight: 500 }}>· {count}</span>
+    </button>
   );
 }
 
