@@ -185,7 +185,7 @@ export function createBuildingGlbLayer(
     },
 
     render(
-      _gl: WebGLRenderingContext | WebGL2RenderingContext,
+      gl: WebGLRenderingContext | WebGL2RenderingContext,
       options: CustomRenderMethodInput,
     ): void {
       if (!renderer || !mapRef) return;
@@ -200,7 +200,41 @@ export function createBuildingGlbLayer(
         );
       }
 
-      const matrix = options.modelViewProjectionMatrix;
+      // CRITICAL · CustomLayers cannot assume GL state. Before Three.js
+      // draws, unbind whatever framebuffer MapLibre left bound. On
+      // /parcels/map the fill-extrusion layers (`zaahi-plots-buildings-3d`,
+      // any PMTiles 3D layer) finish their depth pass with an internal
+      // FBO still bound; if we don't reset to the default framebuffer,
+      // Three.js draws into that FBO whose COLOR_ATTACHMENT0 isn't sized
+      // for the Three viewport — producing repeating WebGL warnings
+      //   "Framebuffer not complete. COLOR_ATTACHMENT0: Attachment has
+      //    no width or height."
+      //   "drawElementsInstanced: Framebuffer must be complete."
+      // plus zero visible pixels. Al Fahidi / candidate-sample-poc don't
+      // hit this because they run on a raster-only basemap with no
+      // fill-extrusion layers to leave stray FBO state.
+      //
+      // Three.js's `resetState()` resets its own tracking to
+      // `_currentRenderTarget = null`, but then `render()`'s internal
+      // `setRenderTarget(_currentRenderTarget)` is a no-op when the
+      // tracked target is already null — so the actual `gl.bindFramebuffer`
+      // call that would release MapLibre's FBO never fires. Binding
+      // explicitly here is required by the MapLibre CustomLayerInterface
+      // contract:
+      //   "The custom layer cannot make any assumptions about the current
+      //    GL state and must bind a framebuffer before rendering."
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+      // MapLibre v5 exposes both a legacy `modelViewProjectionMatrix`
+      // (kept for v4-era CustomLayer code) and the newer
+      // `defaultProjectionData.mainMatrix`. Newer official Three.js
+      // examples use `defaultProjectionData.mainMatrix` — it's the
+      // canonical path for mercator + globe compatibility. Prefer it;
+      // fall back to `modelViewProjectionMatrix` if a downlevel MapLibre
+      // ever lands.
+      const matrix =
+        options.defaultProjectionData?.mainMatrix ??
+        options.modelViewProjectionMatrix;
 
       const rotationX = new THREE.Matrix4().makeRotationAxis(
         new THREE.Vector3(1, 0, 0),
