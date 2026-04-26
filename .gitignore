@@ -21,3 +21,11 @@ data/master-plans/kadastr/
 *.log
 dist/
 __pycache__/
+# Broker registry raw downloads (DLD gateway JSON dumps, ADREC SPA JSON
+# captures, PDPL audit log with redacted-value snippets). Large;
+# PDPL-sensitive (raw includes the personal data the processed CSVs strip).
+# Regeneratable from cited sources via scripts/brokers/*. README at
+# data/raw/brokers/README.md is committed for reference.
+data/raw/brokers/*
+!data/raw/brokers/README.md
+!data/raw/brokers/.gitkeep
