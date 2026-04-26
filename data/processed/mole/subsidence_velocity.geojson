@@ -1,0 +1,89 @@
+{
+  "type": "FeatureCollection",
+  "name": "uae_subsidence_velocity_v0_1",
+  "metadata": {
+    "title": "UAE InSAR ground subsidence velocity — Phase 1 v0.1 seed dataset",
+    "version": "0.1",
+    "generated": "2026-04-26",
+    "generator": "ZAAHI engineering agent (research/mole-data-2026-04-26)",
+    "data_origin": "SEED dataset — single point digitised from peer-reviewed academic literature (Remah, UAE study). Full PS-InSAR processing pipeline NOT yet run; this file is a SCHEMA TEMPLATE for the SNAP-StaMPS output.",
+    "intended_use": "Phase 1 v0.1 stub — proves the parcel-page integration end-to-end with one cited point. Replace with full PS-InSAR raster (~10-50k points across UAE bbox) once the pipeline runs on Жан's Getac X600 Server.",
+    "blocker_log": [
+      "COMET-LiCS LiCSAR portal does NOT cover UAE — coverage limited to Alpine-Himalayan and Tibetan Plateau as of 2026-04-26 (verified via WebFetch on https://comet.nerc.ac.uk/comet-lics-portal-velocities/).",
+      "European Ground Motion Service (EGMS) does NOT cover UAE — explicitly Europe-only (excluded by name).",
+      "Sentinel-1 raw SLC data IS free + global via Copernicus Data Space Ecosystem (https://dataspace.copernicus.eu/) but requires SNAP + StaMPS PS-InSAR processing pipeline (multi-hour, GB-scale download, Жан's X600 Server class compute).",
+      "ICEYE / Capella commercial SAR is Phase 2-3 budget item per `Y1_LAUNCH_PLAN_2026-04-25.md` deferral."
+    ],
+    "licence": "CC-BY 4.0 (derivation from cited peer-reviewed open-access publication)",
+    "citations": [
+      "ScienceDirect — Persistent scatterer interferometry, Remah, UAE — 40 mm/yr subsidence bowl, std deviation <2 mm/yr — https://www.sciencedirect.com/science/article/pii/S0048969721010135"
+    ],
+    "uae_bbox": [51.5, 22.5, 56.5, 26.5],
+    "schema": {
+      "point_id": "stable string ID per persistent scatterer",
+      "velocity_los_mm_yr": "Line-of-sight velocity in mm/year; negative = subsidence, positive = uplift",
+      "velocity_uncertainty_mm_yr": "Standard deviation of the velocity estimate",
+      "stability_class": "derived: STABLE | CAUTION | WARNING | CRITICAL — see stability_zones.geojson for thresholds",
+      "data_source": "SENTINEL_1_PSI | ICEYE_PSI | CITED_LITERATURE | SYNTHETIC_TEMPLATE",
+      "observation_period_start": "ISO date — start of SAR time-series",
+      "observation_period_end": "ISO date — end of SAR time-series",
+      "citation": "URL or DOI for the source"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "REMAH_BOWL_CENTROID_001",
+        "velocity_los_mm_yr": -40.0,
+        "velocity_uncertainty_mm_yr": 2.0,
+        "stability_class": "CRITICAL",
+        "data_source": "CITED_LITERATURE",
+        "observation_period_start": "2015-01-01",
+        "observation_period_end": "2020-12-31",
+        "citation": "https://www.sciencedirect.com/science/article/pii/S0048969721010135",
+        "note": "Centroid of documented Remah subsidence bowl. -40 mm/yr is the maximum rate reported in the paper; bowl extent is several km radius. Single seed point — the full PS-InSAR pipeline will produce ~thousands of points across this bowl alone."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [55.00, 24.40]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "DUBAI_DOWNTOWN_TEMPLATE_002",
+        "velocity_los_mm_yr": 0.0,
+        "velocity_uncertainty_mm_yr": 0.0,
+        "stability_class": "STABLE",
+        "data_source": "SYNTHETIC_TEMPLATE",
+        "observation_period_start": "2023-01-01",
+        "observation_period_end": "2026-04-01",
+        "citation": "PLACEHOLDER — replace with PS-InSAR output",
+        "note": "Template point at Dubai Downtown. Awaits real data from SNAP-StaMPS pipeline."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [55.2744, 25.1972]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "ABUDHABI_DOWNTOWN_TEMPLATE_003",
+        "velocity_los_mm_yr": 0.0,
+        "velocity_uncertainty_mm_yr": 0.0,
+        "stability_class": "STABLE",
+        "data_source": "SYNTHETIC_TEMPLATE",
+        "observation_period_start": "2023-01-01",
+        "observation_period_end": "2026-04-01",
+        "citation": "PLACEHOLDER — replace with PS-InSAR output",
+        "note": "Template point at Abu Dhabi Corniche. Awaits real data."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [54.3773, 24.4539]
+      }
+    }
+  ]
+}

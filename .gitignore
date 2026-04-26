@@ -19,6 +19,13 @@ data/master-plans/kadastr/
 # Contains extracted social-post data — never commit. An example shape
 # file (data/land-monitor/cache.json.example) IS committed for reference.
 data/land-monitor/cache.json
+# Mole Agent (§41) raw subsurface downloads — large InSAR rasters (Sentinel-1
+# SLC products are GB-scale), USGS shapefiles, etc. Kept on disk for
+# processing only; processed GeoJSONs in data/processed/mole/ ARE committed.
+# README at data/raw/mole/README.md documents what's intended to live here.
+data/raw/mole/*
+!data/raw/mole/README.md
+!data/raw/mole/.gitkeep
 .env
 .env.local
 .env.*.local
