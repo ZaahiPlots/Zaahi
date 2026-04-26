@@ -1,0 +1,168 @@
+{
+  "type": "FeatureCollection",
+  "name": "uae_geology_zones_v0_1",
+  "metadata": {
+    "title": "UAE generalised geology zones — Phase 1 v0.1 approximation",
+    "version": "0.1",
+    "generated": "2026-04-26",
+    "generator": "ZAAHI engineering agent (research/mole-data-2026-04-26)",
+    "data_origin": "Hand-digitised polygons approximated from cited academic literature — NOT precision GIS",
+    "intended_use": "Coarse-zoom (city-scale) Mole Agent context layer; replace with USGS geo2bg shapefile (DOI 10.5066/P9GI9NS4, public domain) once direct download path is unblocked",
+    "licence": "CC0 — derived from public-domain academic descriptions",
+    "citations": [
+      "Alsharhan & Kendall (2003) — coastal sabkha extent description, Geology of the Arabian Peninsula",
+      "IJERA Vol 5 Issue 6 — Geotechnical properties of Sabkha soil, southern UAE — https://www.ijera.com/papers/Vol5_issue6/Part%20-%203/E56032429.pdf",
+      "Springer Discover Sustainability 2025 — Sabkha soils Abu Dhabi Metropolitan — https://link.springer.com/article/10.1007/s43621-025-01187-9",
+      "USGS Open-File Report 97-470B — Maps showing geology of the Arabian Peninsula (referenced for regional structure) — https://pubs.usgs.gov/publication/ofr97470B"
+    ],
+    "uae_bbox": [51.5, 22.5, 56.5, 26.5],
+    "schema": {
+      "zone_type": "one of: COASTAL_SABKHA | INTERIOR_SABKHA | RUB_AL_KHALI_DUNES | HAJAR_OPHIOLITE | COASTAL_SAND | URBAN_INFILL",
+      "foundation_risk": "one of: LOW | MEDIUM | HIGH | CRITICAL",
+      "source": "cited academic source for the polygon",
+      "precision": "always APPROXIMATE in v0.1; replace with USGS geo2bg in v0.2"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AE_SABKHA_COAST_001",
+        "zone_type": "COASTAL_SABKHA",
+        "name": "Abu Dhabi → Umm Al Quwain coastal sabkha belt",
+        "foundation_risk": "CRITICAL",
+        "description": "Coastal sabkha extending ~24 km inland between Abu Dhabi and Umm Al Quwain per Alsharhan & Kendall (2003). Hypersaline, brine-saturated silt+sand; foundation cost penalty 30-60% via piles + dewatering.",
+        "source": "Alsharhan & Kendall (2003) + IJERA UAE sabkha properties",
+        "precision": "APPROXIMATE",
+        "color_hint": "#E63946"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [54.20, 24.30],
+          [54.40, 24.40],
+          [54.65, 24.50],
+          [55.00, 24.95],
+          [55.30, 25.20],
+          [55.55, 25.55],
+          [55.75, 25.60],
+          [55.85, 25.45],
+          [55.65, 25.35],
+          [55.30, 25.05],
+          [54.90, 24.80],
+          [54.55, 24.40],
+          [54.30, 24.20],
+          [54.20, 24.30]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AE_SABKHA_MATTI_002",
+        "zone_type": "INTERIOR_SABKHA",
+        "name": "Sabkhat Matti (northern Rub Al Khali)",
+        "foundation_risk": "CRITICAL",
+        "description": "Largest UAE sabkha; extends ~150 km in northern Rub Al Khali per Alsharhan & Kendall (2003). Major foundation-cost driver for any deep development; specialist geotechnical investigation mandatory.",
+        "source": "Alsharhan & Kendall (2003)",
+        "precision": "APPROXIMATE",
+        "color_hint": "#E63946"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [51.50, 22.90],
+          [52.00, 23.00],
+          [52.60, 23.10],
+          [53.20, 23.05],
+          [53.50, 22.85],
+          [53.30, 22.55],
+          [52.80, 22.50],
+          [52.20, 22.55],
+          [51.70, 22.70],
+          [51.50, 22.90]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AE_DUNES_RUBALKHALI_003",
+        "zone_type": "RUB_AL_KHALI_DUNES",
+        "name": "Rub Al Khali sand dune system (UAE portion)",
+        "foundation_risk": "MEDIUM",
+        "description": "Aeolian sand dunes covering southern Abu Dhabi emirate. Bearing capacity acceptable for shallow foundations; deep foundations OK but require careful liquefaction analysis under seismic loading.",
+        "source": "Springer 2018 ME geotechnical review + general UAE geology context",
+        "precision": "APPROXIMATE",
+        "color_hint": "#FFD700"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [52.00, 22.50],
+          [54.50, 22.50],
+          [55.50, 23.00],
+          [55.80, 23.50],
+          [55.50, 24.20],
+          [55.00, 24.30],
+          [54.20, 24.20],
+          [53.50, 23.80],
+          [52.50, 23.20],
+          [51.80, 22.90],
+          [52.00, 22.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AE_HAJAR_OPHIOLITE_004",
+        "zone_type": "HAJAR_OPHIOLITE",
+        "name": "Hajar Mountains ophiolite (eastern UAE — Fujairah / Ras Al Khaimah)",
+        "foundation_risk": "LOW",
+        "description": "Cretaceous Semail Ophiolite — peridotite + gabbro bedrock at or near surface. Excellent bearing capacity; rock-anchored foundations standard.",
+        "source": "USGS OFR 97-470B regional + general UAE geology",
+        "precision": "APPROXIMATE",
+        "color_hint": "#708090"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [56.00, 24.50],
+          [56.50, 24.50],
+          [56.55, 25.20],
+          [56.40, 25.80],
+          [56.10, 26.10],
+          [55.90, 25.90],
+          [55.95, 25.30],
+          [56.00, 24.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AE_COASTAL_SAND_005",
+        "zone_type": "COASTAL_SAND",
+        "name": "Dubai + northern Emirates coastal sand (developable)",
+        "foundation_risk": "MEDIUM",
+        "description": "Quaternary coastal sand + sabkha-margin transition. Most Dubai urban development sits here; standard pile + raft foundations work with site-specific groundwater + bearing investigation.",
+        "source": "Synthesised from Dubai borehole data (groundwater 4.5-4.6m typical)",
+        "precision": "APPROXIMATE",
+        "color_hint": "#F4A460"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [54.90, 24.80],
+          [55.30, 25.05],
+          [55.55, 25.20],
+          [55.65, 25.05],
+          [55.45, 24.85],
+          [55.10, 24.70],
+          [54.90, 24.80]
+        ]]
+      }
+    }
+  ]
+}

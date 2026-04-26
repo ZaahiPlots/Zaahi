@@ -1,0 +1,108 @@
+{
+  "type": "FeatureCollection",
+  "name": "uae_groundwater_depth_v0_1",
+  "metadata": {
+    "title": "UAE Quaternary aquifer groundwater depth + decline zones — Phase 1 v0.1",
+    "version": "0.1",
+    "generated": "2026-04-26",
+    "generator": "ZAAHI engineering agent (research/mole-data-2026-04-26)",
+    "data_origin": "Polygons digitised from cited peer-reviewed UAE Quaternary aquifer studies. NOT precision contour data — coarse representative zones for Phase 1 v0.1 demonstration.",
+    "intended_use": "Phase 1 v0.1 informational layer — cite-able source for 'this region has shallow groundwater + active depletion' on parcel page. Replace with MoCCAE / FAO AQUASTAT raster once direct API/download access is secured.",
+    "blocker_log": [
+      "MoCCAE Environmental Geospatial Platform (gis.moccae.gov.ae) returned 'request rejected' to anonymous fetch on 2026-04-26 — requires authenticated/authorised access.",
+      "FAO AQUASTAT (data.apps.fao.org/aquastat/) provides UAE country-level aggregates only; spatial raster of water-table depth not openly available for download.",
+      "Bayanat.ae national data portal — not browsed in this acquisition session due to time budget; Phase 2 follow-up."
+    ],
+    "licence": "CC-BY 4.0 (derived from cited open-access papers)",
+    "citations": [
+      "MDPI Water 2021, 13, 864 — Spatial and Temporal Changes of Groundwater Storage in the Quaternary Aquifer, UAE — https://www.mdpi.com/2073-4441/13/6/864",
+      "MDPI Water 2025, 17, 21 — Groundwater Storage Assessment in Abu Dhabi Emirate — https://www.mdpi.com/2073-4441/17/21",
+      "Springer Discover Sustainability 2025 — Sustainable groundwater control in Sabkha (AD Metropolitan) — https://link.springer.com/article/10.1007/s43621-025-01187-9"
+    ],
+    "key_facts": {
+      "quaternary_aquifer_volume_1969_km3": 238,
+      "quaternary_aquifer_volume_2015_km3": 10,
+      "annual_abstraction_2015_billion_m3": 2.854,
+      "al_khazna_water_table_drop_25yr_m": 80,
+      "dubai_typical_groundwater_depth_m": 4.5
+    },
+    "schema": {
+      "zone_id": "stable string ID",
+      "depth_class": "SHALLOW (<5m) | MODERATE (5-15m) | DEEP (>15m) | DECLINING_FAST | DEPLETED",
+      "depth_estimate_m": "approximate depth to water table in metres; NULL when zone is depletion-rate-defined",
+      "decline_rate_m_per_year": "documented or estimated rate of water table fall",
+      "foundation_implication": "narrative — what this means for foundation design",
+      "source": "citation"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "DUBAI_COASTAL_SHALLOW_001",
+        "depth_class": "SHALLOW",
+        "depth_estimate_m": 4.5,
+        "decline_rate_m_per_year": 0.0,
+        "foundation_implication": "Dewatering required for any basement >2m below grade. Sulphate-resistant cement mandatory due to brackish water. Standard Dubai coastal practice.",
+        "source": "MDPI Water 2021 + Dubai borehole averages (4.5-4.6m) per general geotech reports",
+        "color_hint": "#1B4965"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [54.90, 24.95],
+          [55.55, 25.55],
+          [55.85, 25.55],
+          [56.05, 25.30],
+          [55.55, 24.85],
+          [54.90, 24.85],
+          [54.90, 24.95]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AL_KHAZNA_DECLINING_002",
+        "depth_class": "DECLINING_FAST",
+        "depth_estimate_m": 80,
+        "decline_rate_m_per_year": 3.2,
+        "foundation_implication": "Documented 80m water table drop in 25 years (~3.2 m/yr). Significant land subsidence risk; correlate with Layer 1 InSAR. Foundation design must account for ongoing settlement.",
+        "source": "Springer Discover Sustainability 2025 — Al Khazna agricultural area, ~40km W of Al Ain",
+        "color_hint": "#E67E22"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [55.30, 24.10],
+          [55.55, 24.10],
+          [55.55, 24.30],
+          [55.30, 24.30],
+          [55.30, 24.10]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "AD_INTERIOR_DEEP_003",
+        "depth_class": "DEEP",
+        "depth_estimate_m": 30,
+        "decline_rate_m_per_year": 1.5,
+        "foundation_implication": "Deep water table; foundation design dominated by bearing capacity not groundwater. Aquifer depletion ongoing — long-term subsidence risk.",
+        "source": "MDPI Water 2025 — Abu Dhabi Emirate Quaternary aquifer assessment",
+        "color_hint": "#84CC16"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [54.20, 23.20],
+          [55.30, 23.20],
+          [55.30, 24.10],
+          [54.20, 24.10],
+          [54.20, 23.20]
+        ]]
+      }
+    }
+  ]
+}

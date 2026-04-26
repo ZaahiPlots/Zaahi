@@ -1,0 +1,55 @@
+{
+  "type": "FeatureCollection",
+  "name": "uae_ground_stability_zones_v0_1",
+  "metadata": {
+    "title": "UAE ground stability classification zones — Phase 1 v0.1 derived layer",
+    "version": "0.1",
+    "generated": "2026-04-26",
+    "generator": "ZAAHI engineering agent (research/mole-data-2026-04-26)",
+    "data_origin": "DERIVED from subsidence_velocity.geojson (Layer 1) per the threshold schema below. Currently a SEED layer — only the Remah bowl is real-data; remaining geometry awaits full PS-InSAR pipeline output.",
+    "classification_thresholds": {
+      "STABLE": "abs(velocity_los_mm_yr) < 2.0",
+      "CAUTION": "2.0 <= abs(velocity_los_mm_yr) < 5.0",
+      "WARNING": "5.0 <= abs(velocity_los_mm_yr) < 10.0",
+      "CRITICAL": "abs(velocity_los_mm_yr) >= 10.0"
+    },
+    "color_ramp_recommendation": {
+      "STABLE": "#2D6A4F",
+      "CAUTION": "#FFD700",
+      "WARNING": "#E67E22",
+      "CRITICAL": "#E63946"
+    },
+    "derivation_logic": "Take subsidence_velocity.geojson points → bin by stability_class → either (a) buffer + dissolve points to polygon hulls per class, or (b) interpolate to raster + threshold. v0.1 ships pre-built representative polygons for the Remah CRITICAL zone only.",
+    "licence": "CC-BY 4.0 (derived from cited Remah paper)",
+    "citations": [
+      "Same as Layer 1 subsidence_velocity.geojson"
+    ],
+    "uae_bbox": [51.5, 22.5, 56.5, 26.5]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "REMAH_CRITICAL_001",
+        "stability_class": "CRITICAL",
+        "max_velocity_los_mm_yr": -40.0,
+        "data_source": "CITED_LITERATURE",
+        "citation": "https://www.sciencedirect.com/science/article/pii/S0048969721010135",
+        "note": "Approximate hull around the documented Remah subsidence bowl. Polygon is APPROXIMATE — replace with PS-InSAR-derived hull in v0.2.",
+        "color_hint": "#E63946"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [54.93, 24.34],
+          [55.07, 24.34],
+          [55.10, 24.42],
+          [55.05, 24.48],
+          [54.95, 24.48],
+          [54.90, 24.42],
+          [54.93, 24.34]
+        ]]
+      }
+    }
+  ]
+}
