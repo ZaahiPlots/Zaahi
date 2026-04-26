@@ -21,3 +21,11 @@ data/master-plans/kadastr/
 *.log
 dist/
 __pycache__/
+# Dubai Pulse raw downloads (DLD CSVs from data.dubai Liferay portal).
+# Large (Transactions alone is 100-500 MB) + PDPL-sensitive (raw includes
+# personal data the normalizer strips). Regeneratable via
+# scripts/dubai-pulse/refresh.sh. README at data/raw/dubai-pulse/README.md
+# is committed for reference.
+data/raw/dubai-pulse/*
+!data/raw/dubai-pulse/README.md
+!data/raw/dubai-pulse/.gitkeep

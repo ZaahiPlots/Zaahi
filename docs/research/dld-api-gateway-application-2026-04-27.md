@@ -1,14 +1,24 @@
 # ZAAHI · DLD API Gateway Application — Ready-to-Submit Draft
 
 **Document type:** Draft narrative for the DLD API Gateway business-account application form.
-**Audience:** Dymo (submitter, post-trade-licence on or after 2026-05-05). Companion to `dld-public-data-audit-2026-04-27.md`.
+**Audience:** Dymo (submitter, post-trade-licence on or after 2026-05-05). Companion to `dld-public-data-audit-2026-04-27.md` and `dubai-pulse-pipeline-runbook.md`.
 **Branch:** `research/dld-legitimate-access-2026-04-27` (off `main`).
-**Status:** v1.0 · CONFIDENTIAL · internal · Dymo-ready · pending counsel review (~AED 5-10k from line 3 buffer per `Y1_LAUNCH_PLAN_2026-04-25.md` v1.2).
+**Status:** v1.1 · CONFIDENTIAL · internal · **DEFERRED 2026-04-27** · activation review after 2026-05-09 · draft narrative preserved + ready-to-submit when activated.
 **Constraint check:** read-only on `src/**`, `prisma/schema.prisma`, canonical files · no main push.
+
+> ## ⚠️ STATUS: DEFERRED 2026-04-27 — DECISION REVIEW AFTER 2026-05-09
+>
+> Founder decision 2026-04-27: defer DLD API Gateway application. The 9 free Dubai Pulse open-data CSVs cover ~80% of Phase 2 needs at AED 0 (per `dld-public-data-audit-2026-04-27.md` §3.1) and a working Playwright + pandas pipeline is committed in `scripts/dubai-pulse/` + `docs/research/dubai-pulse-pipeline-runbook.md` (this branch).
+>
+> The application narrative below remains valid and ready to submit when activated — no rewrite needed. **§11 Decision Log** at the bottom records the deferral + activation triggers + revision date (2026-05-09 + Phase 2 launch milestones).
 
 ---
 
 ## §0 · How to use this document
+
+**ACTIVATION GATE (founder review 2026-05-09 + later milestones — see §11):** confirm one of the activation triggers fired before submitting. Until then, the pipeline runs on the free Dubai Pulse path (`dubai-pulse-pipeline-runbook.md`).
+
+When activated:
 
 1. **Wait for trade licence issuance** (target W3-W4 per `Y1_LAUNCH_PLAN_2026-04-25.md` cash-flow §3.2).
 2. **Open the registration portal:** [DLD API Gateway Registration](https://dubailand.gov.ae/en/eservices/api-gateway-registration?appId=2). The general info page is at [DLD API Gateway](https://dubailand.gov.ae/en/eservices/api-gateway/).
@@ -16,7 +26,7 @@
 4. **For each requested API,** copy the per-API justification from §4 into the form's "Reason for use" field.
 5. **Counsel pre-review** strongly recommended before submission (AED 5-10k from line 3 buffer). Specifically the data retention + cross-border transfer language in §6.
 
-**Recommended submission scope (per `dld-public-data-audit-2026-04-27.md`):** apply for **two** APIs only on day 1 — Dubai Brokers API + Rental Index API. Combined cost AED 63,000/yr including VAT. Trakheesi/Ejari/Oqood/Mollak APIs remain Phase 3 triggers.
+**Recommended submission scope (when activated, per `dld-public-data-audit-2026-04-27.md`):** apply for **two** APIs only on day 1 — Dubai Brokers API + Rental Index API. Combined cost AED 63,000/yr including VAT. Trakheesi/Ejari/Oqood/Mollak APIs remain Phase 3 triggers.
 
 ---
 
@@ -405,7 +415,53 @@ Founders are available at:
 
 | Version | Date | Author | Summary |
 |---|---|---|---|
-| v1.0 | 2026-04-27 | ZAAHI engineering agent | Initial paste-ready application narrative for DLD API Gateway. §1 12-row gate checklist (DLD account, trade licence, RERA, UBO, CT, goAML, privacy policy, bank, counsel review, founder sign-off, plus trade-licence activity-code verification). §2 applicant company info template. §3 main use-case narrative justifying Dubai Brokers + Rental Index APIs (deliberately scoped to Phase 2 needs only). §4 per-API justifications with volume estimates (10-100 broker lookups/day Y1, 100-1,000 rental-index lookups/day Y1). §5 9-control security posture (Supabase Auth + RLS, server-side token, HTTPS, audit log, rate limit, incident response, cross-border posture, vendor sovereignty). §6 7-section data-retention + PDPL policy (cache TTL, audit retention, derivative data, personal data handling, breach notification, CT/AML compliance, data minimisation). §7 optional cover note. §8 7 open questions for founder before submission. Counsel pre-review (~AED 5-10k from line 3 buffer) recommended before submission. No `src/` edits. No schema edits. No canonical edits. No main push. |
+| v1.0 | 2026-04-27 | ZAAHI engineering agent | Initial paste-ready application narrative for DLD API Gateway. §1 12-row gate checklist (DLD account, trade licence, RERA, UBO, CT, goAML, privacy policy, bank, counsel review, founder sign-off, plus trade-licence activity-code verification). §2 applicant company info template. §3 main use-case narrative justifying Dubai Brokers + Rental Index APIs (deliberately scoped to Phase 2 needs only). §4 per-API justifications with volume estimates (10-100 broker lookups/day Y1, 100-1,000 rental-index lookups/day Y1). §5 9-control security posture. §6 7-section data-retention + PDPL policy. §7 optional cover note. §8 7 open questions for founder before submission. Counsel pre-review (~AED 5-10k from line 3 buffer) recommended before submission. |
+| v1.1 | 2026-04-27 | ZAAHI engineering agent | **Status changed to DEFERRED** per founder decision 2026-04-27. Free Dubai Pulse pipeline (Playwright + pandas, 9 datasets, ~80% Phase 2 coverage at AED 0) committed in this branch as the interim path. Application draft narrative preserved unchanged — ready to submit on activation without rewrite. §11 Decision Log added below: deferral rationale + activation triggers + review date (2026-05-09 + Phase 2 milestones). §0 prefixed with activation-gate prompt. |
+
+---
+
+## §11 · Decision Log
+
+### Entry 1 — DEFER 2026-04-27
+
+**Decision:** Defer submission of DLD API Gateway application.
+
+**Decided by:** Founder Zhan + Co-founder Dymo (joint per FOUNDER_DIRECTIVE-2026-04-24 GOV-2).
+
+**Rationale:**
+- `dld-public-data-audit-2026-04-27.md` §3.1 found ~80% of Phase 2 ZAAHI broker-outreach + market-intelligence needs are covered by 9 FREE Dubai Pulse open-data CSV datasets (Brokers, Transactions, Rents, Projects, Valuations, Land, Buildings, Units, Developers).
+- A production-ready Playwright + pandas pipeline (`scripts/dubai-pulse/` + `dubai-pulse-pipeline-runbook.md`) was built in this same branch — refresh runs in ~25-60 minutes weekly via cron / systemd timer on the Getac.
+- The two highest-leverage paid APIs (Dubai Brokers + Rental Index) cost AED 63,000/yr including VAT — material against the AED 150k line 3 envelope of `Y1_LAUNCH_PLAN_2026-04-25.md` v1.2 (line 3 already absorbs counsel + LLC + RERA + DREI + Trakheesi setup).
+- The free pipeline delivers MVP-grade data (monthly refresh cadence at source); the paid APIs add only real-time validation polish that Phase 2 can defer.
+- The bridge salary trade-off in `Y1_LAUNCH_PLAN_2026-04-25.md` v1.2 §2.2 (AED 15k vs AED 25k) means cash discipline is heightened — every AED 31,500 line item should clear a clear-trigger bar.
+
+### Activation triggers — review the decision when ANY of these fires
+
+| # | Trigger | Action |
+|---|---|---|
+| T1 | **2026-05-09 founder review** (post Rudi-departure ratification window per `Y1_LAUNCH_PLAN_2026-04-25.md` §8 D-5) | Joint founder re-review of this decision; if free pipeline working as expected and budget OK, submit Brokers + Rental Index applications |
+| T2 | **First closed deal on `zaahi.io`** (Plot 9235849 expected M3-M5) | Real-time broker validation becomes operationally required; activate Dubai Brokers API |
+| T3 | **Phase 2 broker outreach reaches 50+ active conversations** | Volume justifies real-time validation cadence beyond what monthly CSVs can support; activate Dubai Brokers API |
+| T4 | **Parcel-page rental projection feature ships on `zaahi.io`** | Per `MASTER_TREE_final.md` §41 Falcon Agent rental analytics; live Rental Index becomes the differentiator vs static CSV; activate Rental Index API |
+| T5 | **Phase 3 launch (M18+)** | All operational APIs (Trakheesi, Ejari, Oqood) activate per their own triggers — ZAAHI publishes own listings → Trakheesi; ZAAHI manages contracts → Ejari; ZAAHI brokers off-plan → Oqood |
+| T6 | **DLD or government partnership outreach** (Dymo BD-led) | DLD may waive or discount API fees in a partnership context; revisit pricing assumptions |
+| T7 | **Free pipeline blocker** (Liferay portal change breaks Playwright; persistent 5xx; published-data-disable event) | The audit already noted a Liferay portal migration is in progress; if it breaks the free path, paid API becomes load-bearing |
+
+### Reversal protocol
+
+If founder decides to activate after a trigger fires:
+
+1. Re-open this document. The §3-§7 narrative is **unchanged-since-v1.0** and ready to paste.
+2. Confirm §1 gate checklist (LLC active, RERA active, counsel reviewed §6 retention, etc.).
+3. Submit at https://dubailand.gov.ae/en/eservices/api-gateway-registration?appId=2.
+4. Add Entry 2 to this Decision Log with date + APIs requested + counsel-review confirmation.
+
+### Status of related work while DEFERRED
+
+- ✅ Free Dubai Pulse pipeline operational — see `dubai-pulse-pipeline-runbook.md`.
+- ✅ 17,491-row Property Finder broker baseline live (commit `172f186` on `research/broker-registry-2026-04-26`).
+- ⏸ ADREC Playwright scraper + DLD-gateway Bearer-auth scraper (commit `536c62f`) remain as Phase 2 follow-up paths if needed.
+- ⏸ Pre-submission checklist file from §1 — **not split into its own file**, kept inline in this document for centralised review at activation time.
 
 ---
 

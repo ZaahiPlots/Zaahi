@@ -3,18 +3,20 @@
 **Document type:** Audit of publicly-accessible Dubai Land Department datasets vs ZAAHI Phase 2 data needs.
 **Audience:** Zhan + Dymo. Companion to `dld-api-gateway-application-2026-04-27.md` and `broker-registry-acquisition-log.md` (commit `172f186`).
 **Branch:** `research/dld-legitimate-access-2026-04-27` (off `main`).
-**Status:** v1.0 · CONFIDENTIAL · internal · audit-only — informs Phase 2 sequencing decision.
+**Status:** v1.1 · CONFIDENTIAL · internal · audit + finalized matrix · **paid APIs DEFERRED 2026-04-27** per founder decision (review after 2026-05-09); free pipeline production-ready in `dubai-pulse-pipeline-runbook.md`.
 **Constraint check:** read-only on `src/**`, `prisma/schema.prisma`, canonical files · no main push · all sources cited with URLs · no fabricated data.
 
 ---
 
-## §0 · Headline finding
+## §0 · Headline finding (v1.1 — finalized)
 
-**~85-90% of ZAAHI Phase 2 broker-outreach + market-intelligence data needs are covered by FREE Dubai Pulse open datasets.**
+**~80% of ZAAHI Phase 2 broker-outreach + market-intelligence data needs are covered by FREE Dubai Pulse open datasets — production pipeline shipped this branch.**
 
-The remaining ~10-15% requires the paid DLD API Gateway (AED 30,000 + 5% VAT per API annually) and is concentrated on **operational integrations** (Trakheesi listing validation, Ejari rental contract issuance, Oqood off-plan registration) that ZAAHI does not need until it operates as a regulated participant — typically Phase 3 (M18+).
+The remaining ~20% splits into two layers:
+- **~13%** = real-time validation polish (Dubai Brokers API + Rental Index API @ AED 63,000/yr including VAT) — **DEFERRED 2026-04-27 per founder; activation triggers in §6.5 below**.
+- **~7%** = operational integrations (Trakheesi listing validation, Ejari rental contract issuance, Oqood off-plan registration) — Phase 3 (M18+) by definition; ZAAHI does not act as a regulated participant until then.
 
-**Recommendation for 5 May 2026 (post trade-licence):** apply for **two** API Gateway subscriptions only — Dubai Brokers API + Rental Index API (~AED 63,000/yr including VAT) — and absorb everything else from FREE Dubai Pulse CSVs. Defer Trakheesi/Ejari/Mollak/Oqood APIs to Phase 3 when their operational triggers fire.
+**Decision 2026-04-27 (founder-ratified):** **DO NOT submit any DLD API Gateway application now**. Run on FREE Dubai Pulse path via `scripts/dubai-pulse/refresh.sh` (committed this branch). Re-evaluate after 2026-05-09 founder review or whenever an activation trigger from §6.5 fires.
 
 ---
 
@@ -149,7 +151,53 @@ Note that [data.dubai](https://data.dubai/) is the new Liferay portal Dubai Puls
 
 ---
 
-## §6 · Open questions for founder (before 5 May application)
+## §6 · Trigger criteria + open questions
+
+### 6.0 · Pipeline status (v1.1 update)
+
+✅ **Free Dubai Pulse pipeline LIVE this branch:**
+- `scripts/dubai-pulse/download_datasets.py` — Playwright headless Chromium retrieves all 9 CSVs from data.dubai
+- `scripts/dubai-pulse/normalize.py` — pandas-based PDPL filter + ZAAHI naming + money-to-fils + dedup
+- `scripts/dubai-pulse/refresh.sh` — orchestrator with cron / systemd-timer recipes
+- Full operator runbook: `docs/research/dubai-pulse-pipeline-runbook.md`
+
+⏸ **Paid DLD API Gateway DEFERRED** per founder 2026-04-27 — see `dld-api-gateway-application-2026-04-27.md` §11 Decision Log Entry 1.
+
+### 6.1 · Trigger criteria — when to activate Dubai Brokers API (~AED 31,500/yr)
+
+Activate when ANY of:
+- **T-A.1** Free pipeline broker-validation latency becomes operational blocker — e.g. monthly CSV refresh causes ZAAHI to onboard 2+ expired/suspended brokers per month
+- **T-A.2** First closed deal (Plot 9235849 expected M3-M5) — real-time validation becomes load-bearing in deal-engine fraud-detection
+- **T-A.3** Phase 2 broker outreach reaches 50+ active conversations needing live RERA-status checks
+- **T-A.4** ZAAHI's RERA broker license issued + ZAAHI starts publishing under own broker permit (status verification needed at every listing publication)
+
+### 6.2 · Trigger criteria — when to activate Rental Index API (~AED 31,500/yr)
+
+Activate when ANY of:
+- **T-B.1** Parcel-page rental projection feature ships on `zaahi.io` per `MASTER_TREE_final.md` §41 Falcon Agent rental analytics
+- **T-B.2** Real-time rental-yield comparison vs commercial alternatives (Property Finder, Bayut) becomes a UX differentiator
+- **T-B.3** Rents CSV monthly cadence too stale for client-facing analytics (rental indices move faster than the monthly snapshot)
+
+### 6.3 · Trigger criteria — when to activate Trakheesi API (~AED 31,500/yr)
+
+Activate when:
+- **T-C.1** ZAAHI publishes its own listings under a ZAAHI Trakheesi permit (vs broker-permit pass-through pattern of Phase 2). This requires the Trakheesi `Listing Validation API` to verify each ad-permit before it goes live on `zaahi.io`.
+
+### 6.4 · Trigger criteria — when to activate Ejari API (~AED 31,500/yr)
+
+Activate when:
+- **T-D.1** ZAAHI manages rental contract lifecycle (issue, renew, terminate) — currently advisory only.
+
+### 6.5 · Trigger criteria — when to activate Oqood API (~AED 31,500/yr)
+
+Activate when:
+- **T-E.1** ZAAHI brokers off-plan deals at scale (multi-deal volume monthly) — currently 1-deal-per-deal volume goes through partner brokerages' Oqood access.
+
+### 6.6 · Mollak APIs — never activate (out of scope)
+
+ZAAHI is not a Joint Owners' Property association. Mollak APIs (Integration, Budget, Virtual Account, Budget Supplier, Authorized Signatory) do not match the platform's role. Skip permanently unless ZAAHI pivots into JOP service-charge management.
+
+### 6.7 · Open questions for founder (re-evaluation after 2026-05-09)
 
 1. **Apply for both Dubai Brokers API + Rental Index API on day 1?** Total AED 63,000/yr including VAT. Recommend: **both** — Brokers powers deal validation, Rental Index powers parcel-page rental projection. Combined absorb is in line 3 (legal/compliance) of `Y1_LAUNCH_PLAN_2026-04-25.md` v1.2 (~AED 150k); should fit if other line-3 items stay in budget.
 2. **Or just Dubai Brokers API for v1?** Saves AED 31,500/yr but Rental Index gap means parcel-page rental projection runs on stale CSV data (Rents CSV refreshed monthly, not real-time). Acceptable for MVP but a UX gap vs commercial alternatives.
@@ -222,7 +270,8 @@ Note that [data.dubai](https://data.dubai/) is the new Liferay portal Dubai Puls
 
 | Version | Date | Author | Summary |
 |---|---|---|---|
-| v1.0 | 2026-04-27 | ZAAHI engineering agent | Initial public-data audit. 9 free DLD CSV datasets enumerated (Transactions, Rents, Projects, Valuations, Land, Buildings, Units, Brokers, Developers) all at Dubai Pulse without auth. 10 paid DLD API Gateway APIs enumerated with pricing AED 30,000 + 5% VAT each per year. 15-row coverage matrix maps Phase 2 needs against free vs paid sources — finds **80% of Phase 2 needs covered by FREE CSVs**, **93% if Dubai Brokers + Rental Index APIs added (~AED 63k/yr)**, remaining 7% are operational integrations (Trakheesi/Ejari/Oqood) appropriately deferred to Phase 3. Pipeline strategy in §4 (now: free CSV ingest + cross-ref with PF scrape; M2+: optional Brokers + Rental Index APIs; Phase 3: operational APIs as triggers fire). 7 open questions for founder before 5 May API application. No `src/` edits. No schema edits. No canonical edits. No main push. |
+| v1.0 | 2026-04-27 | ZAAHI engineering agent | Initial public-data audit. 9 free DLD CSV datasets enumerated (Transactions, Rents, Projects, Valuations, Land, Buildings, Units, Brokers, Developers) all at Dubai Pulse without auth. 10 paid DLD API Gateway APIs enumerated with pricing AED 30,000 + 5% VAT each per year. 15-row coverage matrix maps Phase 2 needs against free vs paid sources — finds **80% of Phase 2 needs covered by FREE CSVs**, **93% if Dubai Brokers + Rental Index APIs added (~AED 63k/yr)**, remaining 7% are operational integrations (Trakheesi/Ejari/Oqood) appropriately deferred to Phase 3. Pipeline strategy in §4. 7 open questions for founder. |
+| v1.1 | 2026-04-27 | ZAAHI engineering agent | **Founder-ratified DEFER 2026-04-27** of all paid DLD API Gateway subscriptions; review after 2026-05-09. Free Dubai Pulse pipeline now LIVE in this branch (`scripts/dubai-pulse/` + `dubai-pulse-pipeline-runbook.md` — Playwright-based download since data.dubai Liferay portal blocks anonymous direct CSV access; pandas normalizer with per-dataset PDPL policy + money-to-fils + ISO-date + E.164-phone-with-mobile-redaction; cron-ready `refresh.sh` orchestrator). §6 expanded with **per-API trigger criteria** (T-A.1-4 Brokers, T-B.1-3 Rental Index, T-C.1 Trakheesi, T-D.1 Ejari, T-E.1 Oqood; §6.6 Mollak ruled out as out-of-scope). §0 headline updated to reflect FREE pipeline production status + activation gates for paid path. Companion `dld-api-gateway-application-2026-04-27.md` v1.1 added §11 Decision Log Entry 1 with same trigger criteria. |
 
 ---
 
