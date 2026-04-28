@@ -1,0 +1,5511 @@
+{
+  "generatedAt": "2026-04-28T14:44:41.971Z",
+  "totals": {
+    "parcelsTotal": 116,
+    "byEmirate": {
+      "Abu Dhabi": 3,
+      "Dubai": 113
+    },
+    "byStatus": {
+      "LISTED": 113,
+      "VACANT": 3
+    },
+    "withoutAffection": 0,
+    "withoutGeometry": 0
+  },
+  "bug3_majan_area": [
+    {
+      "id": "cmnshxpui0008q4ewg2se2ed1",
+      "plotNumber": "6458042",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 47000000,
+      "areaSqft": 20637.45,
+      "latitude": 25.0982862261597,
+      "longitude": 56.9801928335051,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T05:59:43.386Z",
+      "affection": {
+        "maxFloors": 8,
+        "maxHeightMeters": 34.2,
+        "maxHeightCode": "G+7+R",
+        "plotAreaSqft": 20637.45,
+        "plotAreaSqm": 1917.4,
+        "maxGfaSqft": 82501,
+        "maxGfaSqm": 7664.63,
+        "far": 3.99,
+        "landUseMix": [
+          {
+            "sub": "OFFICES - RETAIL",
+            "areaSqm": 1917.4,
+            "category": "COMMERCIAL"
+          }
+        ],
+        "buildingLimitGeometry": null,
+        "buildingStyle": "FLAT",
+        "fetchedAt": "2026-04-14T17:54:50.801Z"
+      }
+    },
+    {
+      "id": "cmnshs4100000q4ewchn42bcf",
+      "plotNumber": "6457790",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 50000000,
+      "areaSqft": 28252.38,
+      "latitude": 25.0952387166871,
+      "longitude": 55.3212362925023,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T05:55:21.829Z",
+      "affection": {
+        "maxFloors": 13,
+        "maxHeightMeters": 52,
+        "maxHeightCode": "G+3P+9",
+        "plotAreaSqft": 28252.38,
+        "plotAreaSqm": 2624.73,
+        "maxGfaSqft": 149999.94,
+        "maxGfaSqm": 13935.45,
+        "far": 5.31,
+        "landUseMix": [
+          {
+            "sub": "RETAIL",
+            "areaSqm": 1680,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "APARTMENT",
+            "areaSqm": 12255.45,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.32149456267867,
+                25.095163596550815
+              ],
+              [
+                55.32115819034843,
+                25.095034996189472
+              ],
+              [
+                55.321005960875596,
+                25.095365170291505
+              ],
+              [
+                55.32134234188005,
+                25.09549377099318
+              ],
+              [
+                55.32149456267867,
+                25.095163596550815
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:17:34.806Z"
+      }
+    },
+    {
+      "id": "cmnsih35l001mq4ewip0yg6og",
+      "plotNumber": "6439705",
+      "district": "LIWAN 2",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 9000000,
+      "areaSqft": 8072.88,
+      "latitude": 25.0986952540857,
+      "longitude": 55.3597274328039,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T06:14:47.097Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 8072.88,
+        "plotAreaSqm": 750,
+        "maxGfaSqft": 13562.53,
+        "maxGfaSqm": 1260,
+        "far": 1.68,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.35992405061386,
+                25.098617256053288
+              ],
+              [
+                55.35976566147801,
+                25.098524416303185
+              ],
+              [
+                55.35962078825782,
+                25.098729368522218
+              ],
+              [
+                55.359779176555634,
+                25.09882220120261
+              ],
+              [
+                55.35992405061386,
+                25.098617256053288
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-10T06:14:47.509Z"
+      }
+    },
+    {
+      "id": "cmnsih73t001oq4ewq6jovl2r",
+      "plotNumber": "6439661",
+      "district": "LIWAN 2",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 10000000,
+      "areaSqft": 8072.68,
+      "latitude": 25.0988174039703,
+      "longitude": 55.3599358377742,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T06:14:52.217Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 8072.68,
+        "plotAreaSqm": 749.98,
+        "maxGfaSqft": 13562.53,
+        "maxGfaSqm": 1260,
+        "far": 1.68,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.36013245465534,
+                25.09873940476029
+              ],
+              [
+                55.359974067189334,
+                25.098646572456015
+              ],
+              [
+                55.35982919317981,
+                25.098851516750614
+              ],
+              [
+                55.35998758179208,
+                25.09894434920668
+              ],
+              [
+                55.36013245465534,
+                25.09873940476029
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-10T06:14:52.567Z"
+      }
+    },
+    {
+      "id": "cmnsihan8001qq4ewwsti1ppw",
+      "plotNumber": "6439709",
+      "district": "LIWAN 2",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 6500000,
+      "areaSqft": 8072.91,
+      "latitude": 25.0995282841577,
+      "longitude": 55.362723994256,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T06:14:56.804Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 8072.91,
+        "plotAreaSqm": 750,
+        "maxGfaSqft": 13562.53,
+        "maxGfaSqm": 1260,
+        "far": 1.68,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.36292061049968,
+                25.099450275843676
+              ],
+              [
+                55.36276222001642,
+                25.099357446528046
+              ],
+              [
+                55.362617349821704,
+                25.099562402550085
+              ],
+              [
+                55.36277574045992,
+                25.09965523201771
+              ],
+              [
+                55.36292061049968,
+                25.099450275843676
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-10T06:14:57.131Z"
+      }
+    },
+    {
+      "id": "cmnsik64h0024q4ewf19v1k9v",
+      "plotNumber": "6453276",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 79000000,
+      "areaSqft": 43908.36,
+      "latitude": 25.0975385251769,
+      "longitude": 55.3153045076043,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T06:17:10.913Z",
+      "affection": {
+        "maxFloors": 12,
+        "maxHeightMeters": 48,
+        "maxHeightCode": "G+2P+9",
+        "plotAreaSqft": 43908.36,
+        "plotAreaSqm": 4079.22,
+        "maxGfaSqft": 197774.15,
+        "maxGfaSqm": 18373.82,
+        "far": 4.5,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31558187493801,
+                25.097211468048513
+              ],
+              [
+                55.31530747316898,
+                25.09710655146177
+              ],
+              [
+                55.31501632187567,
+                25.097739491795778
+              ],
+              [
+                55.315030381718714,
+                25.097744982166567
+              ],
+              [
+                55.315046508469614,
+                25.097751204007047
+              ],
+              [
+                55.315062664972885,
+                25.097757361755168
+              ],
+              [
+                55.31507885023729,
+                25.09776345450807
+              ],
+              [
+                55.315095065254035,
+                25.097769483168598
+              ],
+              [
+                55.315111309031856,
+                25.097775446833882
+              ],
+              [
+                55.3151275815706,
+                25.097781346406656
+              ],
+              [
+                55.315143881879,
+                25.097787180984042
+              ],
+              [
+                55.31516020995704,
+                25.097792950566042
+              ],
+              [
+                55.31517656580485,
+                25.09779865424991
+              ],
+              [
+                55.3151929494221,
+                25.097804293841115
+              ],
+              [
+                55.31520935882631,
+                25.097809867533897
+              ],
+              [
+                55.31522579600007,
+                25.097815376231274
+              ],
+              [
+                55.31524225896075,
+                25.097820819030222
+              ],
+              [
+                55.31525874770831,
+                25.097826195930757
+              ],
+              [
+                55.315275262242615,
+                25.097831507835608
+              ],
+              [
+                55.31529180256374,
+                25.097836753842017
+              ],
+              [
+                55.31529332821989,
+                25.09783723067221
+              ],
+              [
+                55.31558187493801,
+                25.097211468048513
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-10T07:22:50.227Z"
+      }
+    },
+    {
+      "id": "cmnrb9k2d0000niewkblchwad",
+      "plotNumber": "6457940",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 60500000,
+      "areaSqft": 25199.29,
+      "latitude": 25.0945931842676,
+      "longitude": 55.3166808872688,
+      "hasGeometry": true,
+      "createdAt": "2026-04-09T10:05:12.277Z",
+      "affection": {
+        "maxFloors": 11,
+        "maxHeightMeters": 44,
+        "maxHeightCode": "G+10",
+        "plotAreaSqft": 25199.29,
+        "plotAreaSqm": 2341.09,
+        "maxGfaSqft": 151196.77,
+        "maxGfaSqm": 14046.64,
+        "far": 6,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.316871574336965,
+                25.09434094324262
+              ],
+              [
+                55.31667857505376,
+                25.094267149172
+              ],
+              [
+                55.31626175209375,
+                25.094649693250922
+              ],
+              [
+                55.31665915648667,
+                25.09480164732796
+              ],
+              [
+                55.316871574336965,
+                25.09434094324262
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-10T07:04:41.264Z"
+      }
+    },
+    {
+      "id": "cmnud60j0000awfewl0j7i935",
+      "plotNumber": "6437605",
+      "district": "LIWAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 86000000,
+      "areaSqft": 49704.98,
+      "latitude": 25.10530095658,
+      "longitude": 55.3726451287736,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T13:21:44.748Z",
+      "affection": {
+        "maxFloors": 32,
+        "maxHeightMeters": 128,
+        "maxHeightCode": "G+3P+28",
+        "plotAreaSqft": 49704.98,
+        "plotAreaSqm": 4617.74,
+        "maxGfaSqft": 347935.01,
+        "maxGfaSqm": 32324.22,
+        "far": 7,
+        "landUseMix": [
+          {
+            "sub": "OFFICES",
+            "areaSqm": null,
+            "category": "COMMERCIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.37292675069857,
+                25.10530649940651
+              ],
+              [
+                55.37288589563604,
+                25.105090728642647
+              ],
+              [
+                55.37247066345714,
+                25.105155908845266
+              ],
+              [
+                55.372551473543844,
+                25.10558269069792
+              ],
+              [
+                55.37267881581482,
+                25.105657307738674
+              ],
+              [
+                55.37292675069857,
+                25.10530649940651
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:19:20.347Z"
+      }
+    },
+    {
+      "id": "cmnud5y1h0006wfewv32g7hj3",
+      "plotNumber": "6439740",
+      "district": "LIWAN 2",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 7700000,
+      "areaSqft": 8072.91,
+      "latitude": 25.1010629953161,
+      "longitude": 55.3637672751196,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T13:21:41.525Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 8072.91,
+        "plotAreaSqm": 750,
+        "maxGfaSqft": 13562.53,
+        "maxGfaSqm": 1260,
+        "far": 1.68,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.36396389315241,
+                25.10098498563369
+              ],
+              [
+                55.36380549990516,
+                25.100892157453867
+              ],
+              [
+                55.363660629645246,
+                25.101097114452504
+              ],
+              [
+                55.363819023047476,
+                25.10118994278433
+              ],
+              [
+                55.36396389315241,
+                25.10098498563369
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T18:05:11.230Z"
+      }
+    },
+    {
+      "id": "cmnud5z9n0008wfewe2hsqq02",
+      "plotNumber": "6439755",
+      "district": "LIWAN 2",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 10000000,
+      "areaSqft": 8110.1,
+      "latitude": 25.0983326584489,
+      "longitude": 55.3653603914869,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T13:21:43.115Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 8110.1,
+        "plotAreaSqm": 753.45,
+        "maxGfaSqft": 13624.96,
+        "maxGfaSqm": 1265.8,
+        "far": 1.68,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.36541079643486,
+                25.09821080650089
+              ],
+              [
+                55.365387363617366,
+                25.098197056578343
+              ],
+              [
+                55.365242374231585,
+                25.098401941193256
+              ],
+              [
+                55.36526668259319,
+                25.098416203703867
+              ],
+              [
+                55.36540330632509,
+                25.098495018283277
+              ],
+              [
+                55.36554655641018,
+                25.098289125535413
+              ],
+              [
+                55.36541079643486,
+                25.09821080650089
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T18:05:12.652Z"
+      }
+    },
+    {
+      "id": "cmnueslbo000oi7ewazbectuv",
+      "plotNumber": "6452459",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 124000000,
+      "areaSqft": 55405.18,
+      "latitude": 25.0922051940319,
+      "longitude": 55.3109139658454,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:17.748Z",
+      "affection": {
+        "maxFloors": 31,
+        "maxHeightMeters": 124,
+        "maxHeightCode": "G+M+3P+26",
+        "plotAreaSqft": 55405.18,
+        "plotAreaSqm": 5147.31,
+        "maxGfaSqft": 388030.47,
+        "maxGfaSqm": 36049.21,
+        "far": 7,
+        "landUseMix": [
+          {
+            "sub": "OFFICES",
+            "areaSqm": null,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "RETAIL",
+            "areaSqm": null,
+            "category": "COMMERCIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.310804027651415,
+                25.0921092291633
+              ],
+              [
+                55.310859925743095,
+                25.09228813298055
+              ],
+              [
+                55.310900104313326,
+                25.09240798548551
+              ],
+              [
+                55.31127057098765,
+                25.092301520813393
+              ],
+              [
+                55.311224280001106,
+                25.0921008116291
+              ],
+              [
+                55.311183752344235,
+                25.091899071444068
+              ],
+              [
+                55.31077087873586,
+                25.091995010774173
+              ],
+              [
+                55.31080354219457,
+                25.092107622218148
+              ],
+              [
+                55.310804027651415,
+                25.0921092291633
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:20:56.924Z"
+      }
+    },
+    {
+      "id": "cmnuesm8k000qi7ewn22i9u2v",
+      "plotNumber": "6457890",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 98000000,
+      "areaSqft": 81924.03,
+      "latitude": 25.0958671309053,
+      "longitude": 55.3131492654565,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:18.932Z",
+      "affection": {
+        "maxFloors": 19,
+        "maxHeightMeters": 76,
+        "maxHeightCode": "G+2P+16",
+        "plotAreaSqft": 81924.03,
+        "plotAreaSqm": 7610.99,
+        "maxGfaSqft": 245773.01,
+        "maxGfaSqm": 22833.06,
+        "far": 3,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.312942207900704,
+                25.09603857997606
+              ],
+              [
+                55.313027366614605,
+                25.096135525672654
+              ],
+              [
+                55.31330138703895,
+                25.095908777518062
+              ],
+              [
+                55.313698068191336,
+                25.096060435181805
+              ],
+              [
+                55.3139338220968,
+                25.095844083919513
+              ],
+              [
+                55.31348272908868,
+                25.09567159980329
+              ],
+              [
+                55.312972077465766,
+                25.09547634365259
+              ],
+              [
+                55.31295524347887,
+                25.095492919191475
+              ],
+              [
+                55.312887385480614,
+                25.095640080251727
+              ],
+              [
+                55.31289068795434,
+                25.095740689740875
+              ],
+              [
+                55.312900957746336,
+                25.095840908789953
+              ],
+              [
+                55.31291815391641,
+                25.095940337713465
+              ],
+              [
+                55.312942207900704,
+                25.09603857997606
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T18:05:30.570Z"
+      }
+    },
+    {
+      "id": "cmnuesngk000si7ew01rglpsc",
+      "plotNumber": "6455974",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 178000000,
+      "areaSqft": 63848.68,
+      "latitude": 25.0932665133701,
+      "longitude": 55.3128084235466,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:20.516Z",
+      "affection": {
+        "maxFloors": 24,
+        "maxHeightMeters": 96,
+        "maxHeightCode": "G+P+22",
+        "plotAreaSqft": 63848.68,
+        "plotAreaSqm": 5931.74,
+        "maxGfaSqft": 446949.85,
+        "maxGfaSqm": 41523,
+        "far": 7,
+        "landUseMix": [
+          {
+            "sub": "OFFICES",
+            "areaSqm": 12347,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "RETAIL",
+            "areaSqm": 110,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "APARTMENT",
+            "areaSqm": 29066,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31331433261823,
+                25.09300037990397
+              ],
+              [
+                55.312686066172525,
+                25.092760145084586
+              ],
+              [
+                55.31266963747583,
+                25.09291881529039
+              ],
+              [
+                55.31266020177886,
+                25.09307795742232
+              ],
+              [
+                55.31265777425585,
+                25.093237316010775
+              ],
+              [
+                55.31266235883089,
+                25.093396635237657
+              ],
+              [
+                55.312673948171586,
+                25.093555659347146
+              ],
+              [
+                55.31269252370054,
+                25.09371413305614
+              ],
+              [
+                55.31271805562508,
+                25.09387180196416
+              ],
+              [
+                55.312883363460344,
+                25.093935008275604
+              ],
+              [
+                55.31331433261823,
+                25.09300037990397
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:21:03.477Z"
+      }
+    },
+    {
+      "id": "cmnuesojq000ui7ew770gejv3",
+      "plotNumber": "6457941",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 56000000,
+      "areaSqft": 23323.04,
+      "latitude": 25.0942044891875,
+      "longitude": 55.3156642850735,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:21.926Z",
+      "affection": {
+        "maxFloors": 11,
+        "maxHeightMeters": 44,
+        "maxHeightCode": "G+10",
+        "plotAreaSqft": 23323.04,
+        "plotAreaSqm": 2166.78,
+        "maxGfaSqft": 139935.68,
+        "maxGfaSqm": 13000.45,
+        "far": 6,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31605751414258,
+                25.09402969004193
+              ],
+              [
+                55.31564320061294,
+                25.09387126692435
+              ],
+              [
+                55.31543076707944,
+                25.094331970179358
+              ],
+              [
+                55.31564068014403,
+                25.094412232386397
+              ],
+              [
+                55.31605751414258,
+                25.09402969004193
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T18:05:35.055Z"
+      }
+    },
+    {
+      "id": "cmnuespca000wi7ewlpmfobub",
+      "plotNumber": "6457920",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 27000000,
+      "areaSqft": 16646.64,
+      "latitude": 25.0953454656996,
+      "longitude": 55.3167371088371,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:22.954Z",
+      "affection": {
+        "maxFloors": 10,
+        "maxHeightMeters": 40,
+        "maxHeightCode": "G+9",
+        "plotAreaSqft": 16646.64,
+        "plotAreaSqm": 1546.52,
+        "maxGfaSqft": 66585.55,
+        "maxGfaSqm": 6186,
+        "far": 4,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31685872952487,
+                25.095132509885424
+              ],
+              [
+                55.316717041740596,
+                25.095078341634608
+              ],
+              [
+                55.31651689767953,
+                25.095512408899598
+              ],
+              [
+                55.31665858488464,
+                25.09556657282483
+              ],
+              [
+                55.31685872952487,
+                25.095132509885424
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T18:05:36.612Z"
+      }
+    },
+    {
+      "id": "cmnuesq5l000yi7ewrkox60ck",
+      "plotNumber": "6457802",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 26000000,
+      "areaSqft": 15545.97,
+      "latitude": 25.0945160667213,
+      "longitude": 55.3227290179775,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:24.009Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 15545.97,
+        "plotAreaSqm": 1444.27,
+        "maxGfaSqft": 38864.17,
+        "maxGfaSqm": 3610.6,
+        "far": 2.5,
+        "landUseMix": [
+          {
+            "sub": "OFFICES",
+            "areaSqm": 2888.48,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "RETAIL",
+            "areaSqm": 722.12,
+            "category": "COMMERCIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.32272982577856,
+                25.094289132435087
+              ],
+              [
+                55.322720684874874,
+                25.094285638191142
+              ],
+              [
+                55.32254665462793,
+                25.09466311393368
+              ],
+              [
+                55.3225557955547,
+                25.094666608188177
+              ],
+              [
+                55.32268462210764,
+                25.094715859960065
+              ],
+              [
+                55.32269376304225,
+                25.094719354206042
+              ],
+              [
+                55.32286779688283,
+                25.094341879196683
+              ],
+              [
+                55.322858655971295,
+                25.09433838496127
+              ],
+              [
+                55.32272982577856,
+                25.094289132435087
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:21:14.639Z"
+      }
+    },
+    {
+      "id": "cmnuesr3p0010i7ewz7g4lzdq",
+      "plotNumber": "6455948",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 47000000,
+      "areaSqft": 40936.72,
+      "latitude": 25.0918462021508,
+      "longitude": 55.3228885464479,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T14:07:25.237Z",
+      "affection": {
+        "maxFloors": 9,
+        "maxHeightMeters": 36,
+        "maxHeightCode": "G+2P+6",
+        "plotAreaSqft": 40936.72,
+        "plotAreaSqm": 3803.15,
+        "maxGfaSqft": 118716.57,
+        "maxGfaSqm": 11029.13,
+        "far": 2.9,
+        "landUseMix": [
+          {
+            "sub": "PRIVATE HOSPITAL",
+            "areaSqm": null,
+            "category": "FACILITIES"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.32295346078633,
+                25.091678892363475
+              ],
+              [
+                55.3227431099705,
+                25.091488857710566
+              ],
+              [
+                55.322397392216715,
+                25.091806841543832
+              ],
+              [
+                55.32273002081309,
+                25.09210673318903
+              ],
+              [
+                55.322800150286824,
+                25.09209632601829
+              ],
+              [
+                55.32284148006296,
+                25.092044329012474
+              ],
+              [
+                55.3228768260879,
+                25.09198879383036
+              ],
+              [
+                55.32290582625815,
+                25.091930289416897
+              ],
+              [
+                55.32292818348337,
+                25.091869415135317
+              ],
+              [
+                55.32294366872959,
+                25.091806794626677
+              ],
+              [
+                55.322952123365354,
+                25.091743069420698
+              ],
+              [
+                55.32295346078633,
+                25.091678892363475
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:21:21.602Z"
+      }
+    },
+    {
+      "id": "cmnsijvto0022q4ewhfmeq8vg",
+      "plotNumber": "6458188",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 200000000,
+      "areaSqft": 136935.67,
+      "latitude": 25.0959592902085,
+      "longitude": 55.3256352837411,
+      "hasGeometry": true,
+      "createdAt": "2026-04-10T06:16:57.564Z",
+      "affection": {
+        "maxFloors": 38,
+        "maxHeightMeters": 152,
+        "maxHeightCode": "G+4P+33",
+        "plotAreaSqft": 136935.67,
+        "plotAreaSqm": 12721.74,
+        "maxGfaSqft": 1163885.49,
+        "maxGfaSqm": 108128.5,
+        "far": 8.5,
+        "landUseMix": [
+          {
+            "sub": "RETAIL",
+            "areaSqm": null,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "HOTEL APARTMENT",
+            "areaSqm": null,
+            "category": "HOSPITALITY"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.32566594478862,
+                25.095373864426104
+              ],
+              [
+                55.325556890682236,
+                25.095610423525912
+              ],
+              [
+                55.32555959993901,
+                25.095612354620986
+              ],
+              [
+                55.32556029286606,
+                25.0956128538705
+              ],
+              [
+                55.325562366688835,
+                25.095614376895384
+              ],
+              [
+                55.325562815752434,
+                25.0956147118341
+              ],
+              [
+                55.325562878204956,
+                25.095614758779668
+              ],
+              [
+                55.32556712101112,
+                25.09561796100772
+              ],
+              [
+                55.325567214194294,
+                25.09561803052329
+              ],
+              [
+                55.32556780798854,
+                25.095618484630766
+              ],
+              [
+                55.32556980349248,
+                25.095620036539017
+              ],
+              [
+                55.325570292207196,
+                25.09562042203302
+              ],
+              [
+                55.32557445173224,
+                25.0956237434177
+              ],
+              [
+                55.325574586549976,
+                25.095623851753114
+              ],
+              [
+                55.325574722359015,
+                25.09562396099132
+              ],
+              [
+                55.325574978116066,
+                25.095624168634053
+              ],
+              [
+                55.325575135733764,
+                25.09562429683086
+              ],
+              [
+                55.32557705291907,
+                25.095625874011546
+              ],
+              [
+                55.32557753271073,
+                25.095626273948834
+              ],
+              [
+                55.325581582189244,
+                25.095629694628567
+              ],
+              [
+                55.32558173881538,
+                25.095629826436255
+              ],
+              [
+                55.32558230385844,
+                25.095630311235205
+              ],
+              [
+                55.32558414272516,
+                25.095631912785585
+              ],
+              [
+                55.32558440343773,
+                25.09563214119149
+              ],
+              [
+                55.32558459376763,
+                25.095632310915878
+              ],
+              [
+                55.32558852328668,
+                25.095635820960027
+              ],
+              [
+                55.32558869180792,
+                25.09563597172581
+              ],
+              [
+                55.3255892647798,
+                25.095636489926388
+              ],
+              [
+                55.325591025328244,
+                25.09563811133279
+              ],
+              [
+                55.32559145852591,
+                25.09563851578129
+              ],
+              [
+                55.32559530674628,
+                25.095642149495912
+              ],
+              [
+                55.32559552384064,
+                25.095642354428378
+              ],
+              [
+                55.32559574390879,
+                25.09564256387471
+              ],
+              [
+                55.32559604427177,
+                25.095642854571473
+              ],
+              [
+                55.325597726502025,
+                25.095644494028434
+              ],
+              [
+                55.325598139872426,
+                25.095644901184084
+              ],
+              [
+                55.325601883002626,
+                25.09564864141594
+              ],
+              [
+                55.32560213082642,
+                25.09564888877862
+              ],
+              [
+                55.32560260863014,
+                25.09564937447568
+              ],
+              [
+                55.3256042135338,
+                25.095651028372323
+              ],
+              [
+                55.325604324558626,
+                25.095651143025613
+              ],
+              [
+                55.325604618972434,
+                25.09565145087405
+              ],
+              [
+                55.32560823024771,
+                25.09565526692873
+              ],
+              [
+                55.32560827188195,
+                25.095655311164982
+              ],
+              [
+                55.32560852069611,
+                25.095655574776956
+              ],
+              [
+                55.325608983628776,
+                25.095656072208797
+              ],
+              [
+                55.32561051120593,
+                25.09565773873965
+              ],
+              [
+                55.32561089384332,
+                25.095658162142914
+              ],
+              [
+                55.325614386150505,
+                25.095662067562152
+              ],
+              [
+                55.32561442877593,
+                25.095662114506663
+              ],
+              [
+                55.32561469444104,
+                25.095662412423486
+              ],
+              [
+                55.32561474896185,
+                25.09566247381239
+              ],
+              [
+                55.325615142502556,
+                25.095662923395565
+              ],
+              [
+                55.325616593744726,
+                25.09566459985249
+              ],
+              [
+                55.32561695853761,
+                25.09566502506029
+              ],
+              [
+                55.32562033088543,
+                25.09566901803856
+              ],
+              [
+                55.325620412170636,
+                25.095669115538325
+              ],
+              [
+                55.325620692703865,
+                25.095669449565357
+              ],
+              [
+                55.32562106939126,
+                25.09566990366133
+              ],
+              [
+                55.32562110507735,
+                25.09566994789726
+              ],
+              [
+                55.32562247899335,
+                25.095671631571978
+              ],
+              [
+                55.32562281305487,
+                25.095672045945335
+              ],
+              [
+                55.32562606147812,
+                25.095676122871517
+              ],
+              [
+                55.325626131858954,
+                25.09567621134335
+              ],
+              [
+                55.32562642527762,
+                25.095676581480483
+              ],
+              [
+                55.32562683071034,
+                25.09567710057496
+              ],
+              [
+                55.325628130274346,
+                25.095678789662177
+              ],
+              [
+                55.32562844252625,
+                25.095679200423447
+              ],
+              [
+                55.325631570990126,
+                25.09568336490869
+              ],
+              [
+                55.32563166317869,
+                25.09568348768563
+              ],
+              [
+                55.325631967499945,
+                25.095683895738258
+              ],
+              [
+                55.325632345175045,
+                25.09568440941485
+              ],
+              [
+                55.325633569395904,
+                25.095686100303595
+              ],
+              [
+                55.32563386479461,
+                25.09568651377216
+              ],
+              [
+                55.32563685842979,
+                25.09569074866375
+              ],
+              [
+                55.32563696053048,
+                25.09569089491233
+              ],
+              [
+                55.32563727377155,
+                25.095691341783073
+              ],
+              [
+                55.32563748292922,
+                25.095691642405153
+              ],
+              [
+                55.32563761774156,
+                25.095691839208648
+              ],
+              [
+                55.32563876860214,
+                25.095693529190804
+              ],
+              [
+                55.32563905606917,
+                25.095693956200012
+              ],
+              [
+                55.32564191884081,
+                25.09569826601182
+              ],
+              [
+                55.32564200508085,
+                25.095698395107597
+              ],
+              [
+                55.32564232525905,
+                25.095698880796355
+              ],
+              [
+                55.32564266625327,
+                25.095699406206585
+              ],
+              [
+                55.32564374474505,
+                25.095701093476723
+              ],
+              [
+                55.325643915241656,
+                25.095701364306485
+              ],
+              [
+                55.3256440203152,
+                25.095701530415415
+              ],
+              [
+                55.32564674924942,
+                25.09570591153635
+              ],
+              [
+                55.325646817646216,
+                25.095706021673724
+              ],
+              [
+                55.32564714277876,
+                25.09570654708313
+              ],
+              [
+                55.325647486744515,
+                25.09570711401939
+              ],
+              [
+                55.325648492867636,
+                25.095708795869324
+              ],
+              [
+                55.32564874365467,
+                25.095709220168395
+              ],
+              [
+                55.32565133776033,
+                25.095713668987504
+              ],
+              [
+                55.32565140913048,
+                25.095713790860604
+              ],
+              [
+                55.325651736243294,
+                25.0957143559905
+              ],
+              [
+                55.32565184825456,
+                25.09571455098735
+              ],
+              [
+                55.32565206930302,
+                25.095714940980898
+              ],
+              [
+                55.32565300504026,
+                25.09571661650802
+              ],
+              [
+                55.32565322906171,
+                25.095717023653712
+              ],
+              [
+                55.32565568635637,
+                25.09572153565719
+              ],
+              [
+                55.32565577259453,
+                25.095721695445985
+              ],
+              [
+                55.32565609970479,
+                25.095722302101738
+              ],
+              [
+                55.32565640302455,
+                25.095722875355012
+              ],
+              [
+                55.32565726936748,
+                25.0957245409484
+              ],
+              [
+                55.32565731595577,
+                25.095724629418985
+              ],
+              [
+                55.32565747950984,
+                25.095724949898838
+              ],
+              [
+                55.3256597970195,
+                25.095729523281086
+              ],
+              [
+                55.325659866406006,
+                25.0957296605006
+              ],
+              [
+                55.32566019153105,
+                25.095730307779384
+              ],
+              [
+                55.3256604869183,
+                25.09573090811433
+              ],
+              [
+                55.32566128584972,
+                25.095732561968642
+              ],
+              [
+                55.325661482112984,
+                25.095732972723834
+              ],
+              [
+                55.325663658846544,
+                25.095737602971123
+              ],
+              [
+                55.32566372624995,
+                25.095737746509677
+              ],
+              [
+                55.3256640553367,
+                25.095738454272
+              ],
+              [
+                55.32566433387022,
+                25.0957390654389
+              ],
+              [
+                55.32566506539029,
+                25.095740704845927
+              ],
+              [
+                55.32566523786218,
+                25.095741096642428
+              ],
+              [
+                55.32566727183713,
+                25.095745780143712
+              ],
+              [
+                55.32566733725732,
+                25.0957459318068
+              ],
+              [
+                55.32566765147229,
+                25.095746663039474
+              ],
+              [
+                55.32566788044226,
+                25.095747204693122
+              ],
+              [
+                55.32566791513452,
+                25.095747289552122
+              ],
+              [
+                55.3256685822174,
+                25.095748912706544
+              ],
+              [
+                55.325668742792686,
+                25.095749309918826
+              ],
+              [
+                55.32567063301782,
+                25.09575404396589
+              ],
+              [
+                55.325670714296486,
+                25.095754247988495
+              ],
+              [
+                55.32567101859527,
+                25.09575502164926
+              ],
+              [
+                55.3256712475619,
+                25.095755617467088
+              ],
+              [
+                55.32567185119909,
+                25.095757222563485
+              ],
+              [
+                55.32567199591316,
+                25.095757611650317
+              ],
+              [
+                55.32567374536185,
+                25.095762407076116
+              ],
+              [
+                55.32567380384187,
+                25.095762569571686
+              ],
+              [
+                55.32567409723316,
+                25.09576338475775
+              ],
+              [
+                55.32567432124056,
+                25.095764020295697
+              ],
+              [
+                55.325674863414854,
+                25.095765605528726
+              ],
+              [
+                55.325674995241116,
+                25.095765997323095
+              ],
+              [
+                55.32567659201917,
+                25.09577081982307
+              ],
+              [
+                55.32567666734814,
+                25.095771049122
+              ],
+              [
+                55.32567694586645,
+                25.095771906735894
+              ],
+              [
+                55.32567704894766,
+                25.095772229018095
+              ],
+              [
+                55.325677130222694,
+                25.095772491718552
+              ],
+              [
+                55.325677612916905,
+                25.095774055282824
+              ],
+              [
+                55.325677731855585,
+                25.0957744461738
+              ],
+              [
+                55.325679180919046,
+                25.09577930748379
+              ],
+              [
+                55.32567924930833,
+                25.095779539490543
+              ],
+              [
+                55.32567951196232,
+                25.095780439532227
+              ],
+              [
+                55.32567968342969,
+                25.095781044374426
+              ],
+              [
+                55.32568010763533,
+                25.09578258356179
+              ],
+              [
+                55.32568017701453,
+                25.09578283903975
+              ],
+              [
+                55.325680211704096,
+                25.095782967230107
+              ],
+              [
+                55.325681511070506,
+                25.09578786283631
+              ],
+              [
+                55.32568157747574,
+                25.095788116508658
+              ],
+              [
+                55.325681821291305,
+                25.095789058977964
+              ],
+              [
+                55.32568197293165,
+                25.09578966201366
+              ],
+              [
+                55.32568234063148,
+                25.095791175921473
+              ],
+              [
+                55.32568242883914,
+                25.09579154965887
+              ],
+              [
+                55.32568357751725,
+                25.095796476853053
+              ],
+              [
+                55.325683634009586,
+                25.09579671969205
+              ],
+              [
+                55.32568385700412,
+                25.095797702783415
+              ],
+              [
+                55.32568389268299,
+                25.095797864375072
+              ],
+              [
+                55.325683994763615,
+                25.0957983356087
+              ],
+              [
+                55.325684307940406,
+                25.09579982333433
+              ],
+              [
+                55.32568438127895,
+                25.095800177210762
+              ],
+              [
+                55.32568537926901,
+                25.095805131479256
+              ],
+              [
+                55.32568543377662,
+                25.09580540681666
+              ],
+              [
+                55.325685632976004,
+                25.095806431432663
+              ],
+              [
+                55.32568574397124,
+                25.0958070254389
+              ],
+              [
+                55.32568600559924,
+                25.095808484274315
+              ],
+              [
+                55.3256860204645,
+                25.09580856642409
+              ],
+              [
+                55.32568607298771,
+                25.095808868843466
+              ],
+              [
+                55.32568691731588,
+                25.095813846575165
+              ],
+              [
+                55.32568695596432,
+                25.095814080385875
+              ],
+              [
+                55.32568713037724,
+                25.095815145623735
+              ],
+              [
+                55.3256872334373,
+                25.095815809140255
+              ],
+              [
+                55.32568744351658,
+                25.095817237279984
+              ],
+              [
+                55.32568749207194,
+                25.09581757851681
+              ],
+              [
+                55.3256881847211,
+                25.095822576100886
+              ],
+              [
+                55.32568822039386,
+                25.095822836090786
+              ],
+              [
+                55.32568836704555,
+                25.095823952783196
+              ],
+              [
+                55.325688445323955,
+                25.09582457928624
+              ],
+              [
+                55.32568860781995,
+                25.09582597673048
+              ],
+              [
+                55.32568864745226,
+                25.095826331507894
+              ],
+              [
+                55.32568918643992,
+                25.095831344430557
+              ],
+              [
+                55.32568921616258,
+                25.095831636015916
+              ],
+              [
+                55.325689331089016,
+                25.095832781594257
+              ],
+              [
+                55.32568937864317,
+                25.09583328171265
+              ],
+              [
+                55.325689389540365,
+                25.09583340629081
+              ],
+              [
+                55.325689505444586,
+                25.095834770331397
+              ],
+              [
+                55.3256895321903,
+                25.095835107956155
+              ],
+              [
+                55.32568991751669,
+                25.095840132606472
+              ],
+              [
+                55.325689939308134,
+                25.095840429607843
+              ],
+              [
+                55.32569002151733,
+                25.095841614002143
+              ],
+              [
+                55.32569006113141,
+                25.095842262168883
+              ],
+              [
+                55.32569013242657,
+                25.095843592805906
+              ],
+              [
+                55.32569014826914,
+                25.095843901542544
+              ],
+              [
+                55.325690379934485,
+                25.095848933406824
+              ],
+              [
+                55.32569038389449,
+                25.095849020972455
+              ],
+              [
+                55.32569039379322,
+                25.0958492601981
+              ],
+              [
+                55.325690440311135,
+                25.095850482505483
+              ],
+              [
+                55.325690459108266,
+                25.095851105394523
+              ],
+              [
+                55.325690488768544,
+                25.09585240082269
+              ],
+              [
+                55.325690494697284,
+                25.095852713169776
+              ],
+              [
+                55.325690571710375,
+                25.095857749539736
+              ],
+              [
+                55.325690575656694,
+                25.09585805737305
+              ],
+              [
+                55.32569058549205,
+                25.09585931669074
+              ],
+              [
+                55.32569058646333,
+                25.09585963987039
+              ],
+              [
+                55.32569058545289,
+                25.095859946800687
+              ],
+              [
+                55.32569057645635,
+                25.095861142925866
+              ],
+              [
+                55.325690573464264,
+                25.095861432704083
+              ],
+              [
+                55.32569050377199,
+                25.095866215397592
+              ],
+              [
+                55.325690496811774,
+                25.09586654850693
+              ],
+              [
+                55.32569046599523,
+                25.09586790712354
+              ],
+              [
+                55.3256904481129,
+                25.095868516469626
+              ],
+              [
+                55.32569040938579,
+                25.095869548295262
+              ],
+              [
+                55.32569039846479,
+                25.0958698064773
+              ],
+              [
+                55.32569018899074,
+                25.09587459096906
+              ],
+              [
+                55.32569017112351,
+                25.095874957479094
+              ],
+              [
+                55.325690090728955,
+                25.095876477682943
+              ],
+              [
+                55.325690055002894,
+                25.09587707529255
+              ],
+              [
+                55.3256899964588,
+                25.09587794281915
+              ],
+              [
+                55.32568998058314,
+                25.09587816669693
+              ],
+              [
+                55.325689632319495,
+                25.095882939445975
+              ],
+              [
+                55.325689599578666,
+                25.095883357411225
+              ],
+              [
+                55.32568945969256,
+                25.09588503829905
+              ],
+              [
+                55.32568944282694,
+                25.095885239608396
+              ],
+              [
+                55.3256894081062,
+                25.09588561243669
+              ],
+              [
+                55.325689339658716,
+                25.095886315664764
+              ],
+              [
+                55.32568931981908,
+                25.09588651607122
+              ],
+              [
+                55.32568883276569,
+                25.095891278883
+              ],
+              [
+                55.32568878416137,
+                25.095891724832253
+              ],
+              [
+                55.32568857586164,
+                25.095893563695427
+              ],
+              [
+                55.32568850047928,
+                25.095894191996013
+              ],
+              [
+                55.32568843105063,
+                25.09589473092603
+              ],
+              [
+                55.3256884161734,
+                25.095894841059096
+              ],
+              [
+                55.325687789337884,
+                25.095899610182826
+              ],
+              [
+                55.325687721895264,
+                25.095900095851487
+              ],
+              [
+                55.325687434277036,
+                25.09590209088395
+              ],
+              [
+                55.325687347993245,
+                25.095902662311598
+              ],
+              [
+                55.325687288488346,
+                25.09590303784685
+              ],
+              [
+                55.325687271628546,
+                25.09590314527161
+              ],
+              [
+                55.32568650897901,
+                25.09590787737612
+              ],
+              [
+                55.32568641674858,
+                25.09590842442958
+              ],
+              [
+                55.32568604088977,
+                25.095910572922666
+              ],
+              [
+                55.32568602403066,
+                25.09591066951459
+              ],
+              [
+                55.32568592585307,
+                25.095911200318476
+              ],
+              [
+                55.32568588420246,
+                25.095911417875786
+              ],
+              [
+                55.32568498276336,
+                25.095916135529368
+              ],
+              [
+                55.325684869712745,
+                25.095916708761113
+              ],
+              [
+                55.32568439669128,
+                25.09591900800614
+              ],
+              [
+                55.32568434512543,
+                25.095919251742295
+              ],
+              [
+                55.32568433421727,
+                25.095919303197707
+              ],
+              [
+                55.325684256868946,
+                25.09591966158003
+              ],
+              [
+                55.32568321961528,
+                25.095924350339033
+              ],
+              [
+                55.32568320573248,
+                25.09592441082165
+              ],
+              [
+                55.325683086737044,
+                25.095924929888906
+              ],
+              [
+                55.32568253440434,
+                25.095927267947502
+              ],
+              [
+                55.32568238962884,
+                25.095927862843272
+              ],
+              [
+                55.325681227468365,
+                25.09593247666869
+              ],
+              [
+                55.32568121358575,
+                25.095932534443097
+              ],
+              [
+                55.32568103410641,
+                25.09593322954081
+              ],
+              [
+                55.32568044113546,
+                25.0959354457279
+              ],
+              [
+                55.32568042626181,
+                25.095935498085833
+              ],
+              [
+                55.32568028644842,
+                25.095936007221916
+              ],
+              [
+                55.32567897756538,
+                25.095940639997206
+              ],
+              [
+                55.32567895178446,
+                25.095940729366774
+              ],
+              [
+                55.325678876424675,
+                25.09594099386462
+              ],
+              [
+                55.325678718764884,
+                25.095941533692812
+              ],
+              [
+                55.3256781069688,
+                25.095943576553537
+              ],
+              [
+                55.32567794732742,
+                25.095944098326896
+              ],
+              [
+                55.32567650461271,
+                25.095948697694016
+              ],
+              [
+                55.325676477840666,
+                25.09594878345257
+              ],
+              [
+                55.32567645206037,
+                25.095948862892037
+              ],
+              [
+                55.325676318200614,
+                25.095949283560262
+              ],
+              [
+                55.325676151620186,
+                25.095949797208636
+              ],
+              [
+                55.32567552992117,
+                25.0959516676462
+              ],
+              [
+                55.325675372266076,
+                25.09595213164454
+              ],
+              [
+                55.325673796711264,
+                25.095956693992576
+              ],
+              [
+                55.32567373920211,
+                25.09595685919034
+              ],
+              [
+                55.32567353891178,
+                25.095957431514826
+              ],
+              [
+                55.32567335349511,
+                25.09595795148139
+              ],
+              [
+                55.32567272684876,
+                25.095959668453506
+              ],
+              [
+                55.325672563247004,
+                25.095960108077637
+              ],
+              [
+                55.325670854852234,
+                25.09596463069838
+              ],
+              [
+                55.32567077850504,
+                25.09596483110191
+              ],
+              [
+                55.32567050187069,
+                25.095965552373944
+              ],
+              [
+                55.32567029166893,
+                25.0959660894912
+              ],
+              [
+                55.325669680895906,
+                25.09596761959769
+              ],
+              [
+                55.325669528202916,
+                25.095967997836343
+              ],
+              [
+                55.325667689942414,
+                25.095972478021714
+              ],
+              [
+                55.32566764334146,
+                25.095972590861358
+              ],
+              [
+                55.3256675937661,
+                25.095972709117248
+              ],
+              [
+                55.32566723186563,
+                25.095973576628143
+              ],
+              [
+                55.32566699192135,
+                25.09597414082595
+              ],
+              [
+                55.325666400985966,
+                25.09597550212178
+              ],
+              [
+                55.3256662611844,
+                25.09597581987774
+              ],
+              [
+                55.325664293058324,
+                25.09598025491955
+              ],
+              [
+                55.32566416812951,
+                25.09598053476135
+              ],
+              [
+                55.32566371204103,
+                25.095981543094233
+              ],
+              [
+                55.325663529606004,
+                25.09598194028878
+              ],
+              [
+                55.32566346218452,
+                25.095982084723115
+              ],
+              [
+                55.32566287224688,
+                25.095983342204303
+              ],
+              [
+                55.325662718565816,
+                25.095983667181436
+              ],
+              [
+                55.325660499613264,
+                25.095988296298515
+              ],
+              [
+                55.32566037468579,
+                25.09598855447464
+              ],
+              [
+                55.325659845231755,
+                25.095989640439047
+              ],
+              [
+                55.325659561667116,
+                25.095990211856474
+              ],
+              [
+                55.32565894694804,
+                25.095991426907766
+              ],
+              [
+                55.32565878533675,
+                25.095991741051638
+              ],
+              [
+                55.325656416691,
+                25.09599633044051
+              ],
+              [
+                55.325656275901004,
+                25.095996600351384
+              ],
+              [
+                55.3256556988609,
+                25.095997698048887
+              ],
+              [
+                55.32565541232427,
+                25.09599823516216
+              ],
+              [
+                55.32565477480649,
+                25.095999407783648
+              ],
+              [
+                55.3256546022902,
+                25.095999721926965
+              ],
+              [
+                55.325652102789604,
+                25.09600423096546
+              ],
+              [
+                55.325651939196966,
+                25.09600452254083
+              ],
+              [
+                55.32565131357944,
+                25.09600563106863
+              ],
+              [
+                55.32565118667135,
+                25.09600585494065
+              ],
+              [
+                55.325651016138956,
+                25.096006150126605
+              ],
+              [
+                55.325650357805166,
+                25.096007280318375
+              ],
+              [
+                55.325650174384066,
+                25.096007591752908
+              ],
+              [
+                55.32564753708819,
+                25.096012034884442
+              ],
+              [
+                55.32564738341127,
+                25.096012292156335
+              ],
+              [
+                55.32564670921639,
+                25.0960134106117
+              ],
+              [
+                55.32564635427325,
+                25.096013989247275
+              ],
+              [
+                55.32564567611488,
+                25.096015076106664
+              ],
+              [
+                55.325645586883596,
+                25.09601521783163
+              ],
+              [
+                55.32564551153271,
+                25.096015337891657
+              ],
+              [
+                55.325642739415784,
+                25.096019712408157
+              ],
+              [
+                55.325642567893624,
+                25.09601998141468
+              ],
+              [
+                55.325641843138825,
+                25.096021107089296
+              ],
+              [
+                55.3256414743176,
+                25.096021669474904
+              ],
+              [
+                55.32564077930867,
+                25.09602271390477
+              ],
+              [
+                55.32564060877871,
+                25.096022969370306
+              ],
+              [
+                55.32563770283231,
+                25.096027271660873
+              ],
+              [
+                55.32563752437105,
+                25.096027533445127
+              ],
+              [
+                55.32563674806502,
+                25.096028665436208
+              ],
+              [
+                55.32563669254381,
+                25.096028745776856
+              ],
+              [
+                55.32563636338268,
+                25.096029216988118
+              ],
+              [
+                55.32563565449731,
+                25.096030218085932
+              ],
+              [
+                55.32563547504526,
+                25.096030470842773
+              ],
+              [
+                55.325632438243666,
+                25.09603469729658
+              ],
+              [
+                55.32563224094592,
+                25.096034969009974
+              ],
+              [
+                55.325631412097465,
+                25.096036104609226
+              ],
+              [
+                55.32563102146843,
+                25.096036631786955
+              ],
+              [
+                55.32563029176641,
+                25.096037601287875
+              ],
+              [
+                55.32563011628112,
+                25.096037832379245
+              ],
+              [
+                55.325626951598565,
+                25.096041980288238
+              ],
+              [
+                55.3256267136527,
+                25.096042289011688
+              ],
+              [
+                55.32562583027921,
+                25.09604342641356
+              ],
+              [
+                55.325625449566445,
+                25.096043910260434
+              ],
+              [
+                55.32562471788495,
+                25.09604482649979
+              ],
+              [
+                55.325624526537474,
+                25.09604506390948
+              ],
+              [
+                55.325621234965546,
+                25.09604912966275
+              ],
+              [
+                55.325621084267084,
+                25.096049315618593
+              ],
+              [
+                55.32562100098645,
+                25.09604941672073
+              ],
+              [
+                55.32562006407932,
+                25.096050555022508
+              ],
+              [
+                55.32561964569367,
+                25.096051056922146
+              ],
+              [
+                55.32561890608393,
+                25.09605192982969
+              ],
+              [
+                55.32561872266874,
+                25.0960521446714
+              ],
+              [
+                55.325615308173084,
+                25.096056124658194
+              ],
+              [
+                55.32561505535784,
+                25.096056416228855
+              ],
+              [
+                55.325614062934456,
+                25.096057553624966
+              ],
+              [
+                55.325613784342224,
+                25.096057870470922
+              ],
+              [
+                55.32561364752482,
+                25.096058023928983
+              ],
+              [
+                55.32561290196943,
+                25.096058855310325
+              ],
+              [
+                55.32561269674349,
+                25.096059082789196
+              ],
+              [
+                55.32560916031564,
+                25.096062974301326
+              ],
+              [
+                55.32560891047563,
+                25.096063246914692
+              ],
+              [
+                55.32560786352752,
+                25.096064380696976
+              ],
+              [
+                55.32560739061684,
+                25.09606488439921
+              ],
+              [
+                55.32560664010722,
+                25.096065673351653
+              ],
+              [
+                55.32560646660764,
+                25.096065855695343
+              ],
+              [
+                55.3256028122132,
+                25.096069656024817
+              ],
+              [
+                55.3256027715648,
+                25.09606969754857
+              ],
+              [
+                55.32560253758852,
+                25.096069938566984
+              ],
+              [
+                55.32560143413308,
+                25.09607106692986
+              ],
+              [
+                55.32560097411252,
+                25.096071530912333
+              ],
+              [
+                55.32560022162264,
+                25.096072279241515
+              ],
+              [
+                55.32560002829526,
+                25.09607247061153
+              ],
+              [
+                55.32559625890854,
+                25.096076176147537
+              ],
+              [
+                55.325595973379095,
+                25.096076455078165
+              ],
+              [
+                55.32559481341641,
+                25.09607757621615
+              ],
+              [
+                55.32559464884058,
+                25.096077734186416
+              ],
+              [
+                55.32559432365481,
+                25.096078042905265
+              ],
+              [
+                55.32559357017606,
+                25.096078750611234
+              ],
+              [
+                55.32559339072925,
+                25.096078917608086
+              ],
+              [
+                55.325589509324494,
+                25.09608252564254
+              ],
+              [
+                55.325589190087825,
+                25.096082819015184
+              ],
+              [
+                55.32558797262672,
+                25.09608393022001
+              ],
+              [
+                55.32558750666063,
+                25.09608435087081
+              ],
+              [
+                55.325586755167016,
+                25.09608501885644
+              ],
+              [
+                55.325586649085494,
+                25.096085112735476
+              ],
+              [
+                55.3255865529182,
+                25.09608519668492
+              ],
+              [
+                55.32558256147829,
+                25.096088704509736
+              ],
+              [
+                55.325582237285424,
+                25.096088987951983
+              ],
+              [
+                55.325580963317364,
+                25.09609008741824
+              ],
+              [
+                55.32558048446439,
+                25.09609049452728
+              ],
+              [
+                55.32557973693866,
+                25.096091122792693
+              ],
+              [
+                55.32557953072472,
+                25.096091295204538
+              ],
+              [
+                55.32557543321528,
+                25.096094700111667
+              ],
+              [
+                55.32557510604919,
+                25.09609496910997
+              ],
+              [
+                55.32557376566012,
+                25.096096064059008
+              ],
+              [
+                55.32557323624649,
+                25.096096490122857
+              ],
+              [
+                55.325572492688565,
+                25.096097079570775
+              ],
+              [
+                55.32557231522619,
+                25.096097218582877
+              ],
+              [
+                55.32556811462153,
+                25.09610051696151
+              ],
+              [
+                55.325567785473446,
+                25.096100774224134
+              ],
+              [
+                55.32556639650902,
+                25.096101845699405
+              ],
+              [
+                55.325565918650106,
+                25.096102208574386
+              ],
+              [
+                55.32556586313121,
+                25.096102251000087
+              ],
+              [
+                55.32556512750651,
+                25.09610280253344
+              ],
+              [
+                55.32556493021644,
+                25.0961029487664
+              ],
+              [
+                55.3255606294907,
+                25.09610613971396
+              ],
+              [
+                55.325560278532585,
+                25.09610639787816
+              ],
+              [
+                55.32555883207024,
+                25.096107451295634
+              ],
+              [
+                55.32555827291723,
+                25.09610785298397
+              ],
+              [
+                55.32555754522567,
+                25.09610836750553
+              ],
+              [
+                55.325557371729786,
+                25.09610848936583
+              ],
+              [
+                55.32555297584003,
+                25.09611156927162
+              ],
+              [
+                55.325552757730996,
+                25.096111720919883
+              ],
+              [
+                55.325552596132056,
+                25.0961118328507
+              ],
+              [
+                55.325551091180536,
+                25.096112866404837
+              ],
+              [
+                55.32555054789135,
+                25.096113234692748
+              ],
+              [
+                55.325549831107004,
+                25.096113713105375
+              ],
+              [
+                55.325549638774895,
+                25.0961138403811
+              ],
+              [
+                55.32554514970401,
+                25.096116806536987
+              ],
+              [
+                55.325544767022784,
+                25.096117056574855
+              ],
+              [
+                55.32554320457356,
+                25.096118068460207
+              ],
+              [
+                55.32554288236804,
+                25.096118276072637
+              ],
+              [
+                55.32554264046626,
+                25.09611842862238
+              ],
+              [
+                55.325541935580425,
+                25.096118871828867
+              ],
+              [
+                55.32554174523153,
+                25.09611899098006
+              ],
+              [
+                55.32553716595372,
+                25.096121841580743
+              ],
+              [
+                55.32553677831634,
+                25.096122080785484
+              ],
+              [
+                55.325535159360946,
+                25.0961230682939
+              ],
+              [
+                55.32553455559904,
+                25.096123430259418
+              ],
+              [
+                55.325533863603006,
+                25.096123839162573
+              ],
+              [
+                55.32553370993631,
+                25.09612392942813
+              ],
+              [
+                55.325529045408445,
+                25.09612666357108
+              ],
+              [
+                55.32552897501917,
+                25.096126705093244
+              ],
+              [
+                55.32552863001281,
+                25.09612690457982
+              ],
+              [
+                55.32552695356,
+                25.096127865905764
+              ],
+              [
+                55.325526349799354,
+                25.096128207108325
+              ],
+              [
+                55.32552567366717,
+                25.096128582611044
+              ],
+              [
+                55.32552550909543,
+                25.09612867377874
+              ],
+              [
+                55.3255207622919,
+                25.096131286950428
+              ],
+              [
+                55.32552034094882,
+                25.09613151622326
+              ],
+              [
+                55.3255186069987,
+                25.09613244956126
+              ],
+              [
+                55.325518450358295,
+                25.096132533507486
+              ],
+              [
+                55.32551797349757,
+                25.096132784443054
+              ],
+              [
+                55.32551731422055,
+                25.09613312744812
+              ],
+              [
+                55.325517179391,
+                25.09613319695171
+              ],
+              [
+                55.325512354277286,
+                25.09613568915233
+              ],
+              [
+                55.32551189922764,
+                25.096135922034303
+              ],
+              [
+                55.32551010976318,
+                25.09613682377351
+              ],
+              [
+                55.32550953475549,
+                25.096137109007856
+              ],
+              [
+                55.325508893324816,
+                25.096137422223524
+              ],
+              [
+                55.32550880409954,
+                25.096137465550154
+              ],
+              [
+                55.32550870396895,
+                25.096137514292643
+              ],
+              [
+                55.32550380451071,
+                25.09613988191145
+              ],
+              [
+                55.32550333657399,
+                25.096140104862627
+              ],
+              [
+                55.32550149060387,
+                25.096140974100244
+              ],
+              [
+                55.32550088783843,
+                25.096141253013933
+              ],
+              [
+                55.32550026524546,
+                25.09614153644025
+              ],
+              [
+                55.325500105631626,
+                25.096141609553474
+              ],
+              [
+                55.32549513579442,
+                25.096143851687927
+              ],
+              [
+                55.32549469859169,
+                25.096144045753135
+              ],
+              [
+                55.32549464109113,
+                25.0961440710267
+              ],
+              [
+                55.3254927396069,
+                25.09614490505457
+              ],
+              [
+                55.3254921388254,
+                25.09614516410813
+              ],
+              [
+                55.3254915380442,
+                25.096145418648025
+              ],
+              [
+                55.32549138239626,
+                25.096145484539527
+              ],
+              [
+                55.325486345154275,
+                25.09614759938432
+              ],
+              [
+                55.32548585540885,
+                25.09614780157134
+              ],
+              [
+                55.32548520704228,
+                25.096148056108678
+              ],
+              [
+                55.325483897419446,
+                25.096148595875707
+              ],
+              [
+                55.32548339974295,
+                25.096148800770504
+              ],
+              [
+                55.32548326987144,
+                25.096148850414128
+              ],
+              [
+                55.3254826889195,
+                25.096149072456516
+              ],
+              [
+                55.32548253029781,
+                25.09614913293146
+              ],
+              [
+                55.3254815716279,
+                25.09614950029439
+              ],
+              [
+                55.32547743358163,
+                25.096151125903393
+              ],
+              [
+                55.32547694780266,
+                25.09615131184134
+              ],
+              [
+                55.325474938264605,
+                25.09615207093614
+              ],
+              [
+                55.32547428097647,
+                25.096152313737377
+              ],
+              [
+                55.32547372580121,
+                25.09615251501817
+              ],
+              [
+                55.32547358998152,
+                25.096152564661462
+              ],
+              [
+                55.32546842982675,
+                25.096154419511073
+              ],
+              [
+                55.32546816116169,
+                25.096154515186882
+              ],
+              [
+                55.32546792422099,
+                25.09615459822605
+              ],
+              [
+                55.32546586214332,
+                25.09615531579207
+              ],
+              [
+                55.32546518899424,
+                25.096155545051385
+              ],
+              [
+                55.32546465761319,
+                25.096155721959516
+              ],
+              [
+                55.32546453666455,
+                25.096155761673497
+              ],
+              [
+                55.325459321993115,
+                25.096157483817663
+              ],
+              [
+                55.32545880944861,
+                25.096157649893925
+              ],
+              [
+                55.32545669582281,
+                25.096158324125742
+              ],
+              [
+                55.32545637560658,
+                25.096158425215208
+              ],
+              [
+                55.325456035562844,
+                25.09615853081731
+              ],
+              [
+                55.32545552896725,
+                25.096158685158304
+              ],
+              [
+                55.32545539116534,
+                25.096158726676844
+              ],
+              [
+                55.32545012594277,
+                25.09616031521304
+              ],
+              [
+                55.325449610425046,
+                25.096160467748067
+              ],
+              [
+                55.32544744624259,
+                25.09616109684025
+              ],
+              [
+                55.3254466848632,
+                25.09616131165101
+              ],
+              [
+                55.32544618818229,
+                25.09616144884052
+              ],
+              [
+                55.325440858529284,
+                25.09616290828166
+              ],
+              [
+                55.3254407593914,
+                25.096162935358485
+              ],
+              [
+                55.32544028848664,
+                25.096163060813762
+              ],
+              [
+                55.32543807374779,
+                25.096163641155357
+              ],
+              [
+                55.32543746702458,
+                25.096163796393718
+              ],
+              [
+                55.32543701495649,
+                25.09616390921168
+              ],
+              [
+                55.32543685237059,
+                25.096163949826163
+              ],
+              [
+                55.32543149695102,
+                25.096165268438728
+              ],
+              [
+                55.32543092393525,
+                25.096165405624124
+              ],
+              [
+                55.32542866161415,
+                25.09616593631254
+              ],
+              [
+                55.32542856247649,
+                25.09616595977839
+              ],
+              [
+                55.32542799739218,
+                25.09616608793684
+              ],
+              [
+                55.32542757308342,
+                25.096166181798814
+              ],
+              [
+                55.3254274650235,
+                25.09616620526419
+              ],
+              [
+                55.325422071940814,
+                25.096167386658493
+              ],
+              [
+                55.32542150983103,
+                25.096167507595183
+              ],
+              [
+                55.325419199927765,
+                25.096167987727668
+              ],
+              [
+                55.3254184990261,
+                25.096168128517142
+              ],
+              [
+                55.325418098511044,
+                25.096168206131097
+              ],
+              [
+                55.32541801226154,
+                25.09616822237576
+              ],
+              [
+                55.32541258548127,
+                25.09616926564926
+              ],
+              [
+                55.325412001562285,
+                25.09616937484917
+              ],
+              [
+                55.3254096460598,
+                25.096169800814906
+              ],
+              [
+                55.325408971926386,
+                25.09616991813462
+              ],
+              [
+                55.32540860611001,
+                25.09616997950114
+              ],
+              [
+                55.3254085069728,
+                25.096169995745104
+              ],
+              [
+                55.325403049469074,
+                25.096170900897963
+              ],
+              [
+                55.32540255477447,
+                25.09617098121506
+              ],
+              [
+                55.3254024447323,
+                25.09617099745842
+              ],
+              [
+                55.32540004561344,
+                25.096171367452033
+              ],
+              [
+                55.325399422041016,
+                25.09617146040051
+              ],
+              [
+                55.32539908596636,
+                25.096171508227567
+              ],
+              [
+                55.325398941226226,
+                25.096171528982758
+              ],
+              [
+                55.325393457955975,
+                25.09617229420976
+              ],
+              [
+                55.32539286115119,
+                25.09617237361861
+              ],
+              [
+                55.325390419407405,
+                25.096172686737397
+              ],
+              [
+                55.32538993363633,
+                25.096172747194718
+              ],
+              [
+                55.32538973139705,
+                25.096172770655027
+              ],
+              [
+                55.32538942605541,
+                25.096172805845402
+              ],
+              [
+                55.32538933881495,
+                25.09617281577083
+              ],
+              [
+                55.32538383473504,
+                25.096173441072228
+              ],
+              [
+                55.32538322306069,
+                25.09617350693921
+              ],
+              [
+                55.32538074067488,
+                25.096173760475065
+              ],
+              [
+                55.32538003878656,
+                25.096173827239905
+              ],
+              [
+                55.32537976516919,
+                25.096173851599126
+              ],
+              [
+                55.32537970469577,
+                25.096173857012296
+              ],
+              [
+                55.32537418278032,
+                25.096174342388267
+              ],
+              [
+                55.32537387446517,
+                25.09617436855108
+              ],
+              [
+                55.32537355425368,
+                25.096174394713255
+              ],
+              [
+                55.32537103320871,
+                25.096174586860794
+              ],
+              [
+                55.32537032735611,
+                25.096174635570666
+              ],
+              [
+                55.32537006067872,
+                25.096174652708346
+              ],
+              [
+                55.3253645040746,
+                25.09617499815797
+              ],
+              [
+                55.32536386166995,
+                25.0961750342329
+              ],
+              [
+                55.325361302957305,
+                25.096175163186718
+              ],
+              [
+                55.325361039254304,
+                25.096175175810863
+              ],
+              [
+                55.325360653613586,
+                25.09617519203938
+              ],
+              [
+                55.32536044245304,
+                25.096175200152658
+              ],
+              [
+                55.325360343316596,
+                25.096175204661026
+              ],
+              [
+                55.325354801592084,
+                25.09617540747874
+              ],
+              [
+                55.325354171084875,
+                25.096175426402294
+              ],
+              [
+                55.32535157668735,
+                25.09617549125975
+              ],
+              [
+                55.32535076476127,
+                25.09617550565983
+              ],
+              [
+                55.32535061605691,
+                25.0961755074573
+              ],
+              [
+                55.325345100116984,
+                25.096175568546446
+              ],
+              [
+                55.325344984127625,
+                25.096175569442938
+              ],
+              [
+                55.3253444507749,
+                25.09617557212244
+              ],
+              [
+                55.325341823666776,
+                25.096175570175475
+              ],
+              [
+                55.32534118721292,
+                25.09617556562749
+              ],
+              [
+                55.325341041482886,
+                25.09617556381417
+              ],
+              [
+                55.32534093639862,
+                25.096175562905778
+              ],
+              [
+                55.32533538973563,
+                25.096175483166046
+              ],
+              [
+                55.32533472750696,
+                25.096175469589294
+              ],
+              [
+                55.32533204686983,
+                25.096175398128572
+              ],
+              [
+                55.325331357875,
+                25.096175375523007
+              ],
+              [
+                55.32533123990325,
+                25.096175371002953
+              ],
+              [
+                55.32532569424088,
+                25.096175149533323
+              ],
+              [
+                55.32532502606515,
+                25.096175118804215
+              ],
+              [
+                55.325322338492974,
+                25.096174978734993
+              ],
+              [
+                55.32532169906716,
+                25.09617494168827
+              ],
+              [
+                55.32532152855367,
+                25.096174930846228
+              ],
+              [
+                55.32531601065851,
+                25.096174570356347
+              ],
+              [
+                55.32531533554439,
+                25.096174522474833
+              ],
+              [
+                55.32531259642621,
+                25.09617430928099
+              ],
+              [
+                55.32531188463252,
+                25.09617424875918
+              ],
+              [
+                55.32530634097145,
+                25.096173743829723
+              ],
+              [
+                55.32530582645803,
+                25.09617369415139
+              ],
+              [
+                55.32530565495358,
+                25.096173676990116
+              ],
+              [
+                55.325302907909254,
+                25.096173391576784
+              ],
+              [
+                55.325302216935185,
+                25.09617331570952
+              ],
+              [
+                55.3252976418364,
+                25.096172781041886
+              ],
+              [
+                55.32518858928756,
+                25.096409334428884
+              ],
+              [
+                55.32528443488605,
+                25.09644597540593
+              ],
+              [
+                55.325293225093674,
+                25.096449265453533
+              ],
+              [
+                55.32530172683056,
+                25.096452315357148
+              ],
+              [
+                55.32531027814361,
+                25.096455249712736
+              ],
+              [
+                55.325318875067325,
+                25.09645806852002
+              ],
+              [
+                55.32532751760175,
+                25.096460770876305
+              ],
+              [
+                55.32533620277284,
+                25.09646335587867
+              ],
+              [
+                55.32534492859779,
+                25.096465824429753
+              ],
+              [
+                55.32535369507672,
+                25.096468173821304
+              ],
+              [
+                55.325362497252755,
+                25.096470404955802
+              ],
+              [
+                55.32537133611725,
+                25.096472517833313
+              ],
+              [
+                55.325380207704804,
+                25.09647451064811
+              ],
+              [
+                55.32538911102406,
+                25.096476383400155
+              ],
+              [
+                55.32539804310089,
+                25.09647813608929
+              ],
+              [
+                55.325407003935304,
+                25.096479767812767
+              ],
+              [
+                55.325415989561876,
+                25.096481278570373
+              ],
+              [
+                55.32542499898916,
+                25.096482668362025
+              ],
+              [
+                55.32543402924314,
+                25.09648393628485
+              ],
+              [
+                55.32544308032381,
+                25.096485081436114
+              ],
+              [
+                55.325452148265654,
+                25.09648610471831
+              ],
+              [
+                55.32546123207728,
+                25.096487006131404
+              ],
+              [
+                55.32547032977604,
+                25.096487783869822
+              ],
+              [
+                55.32547943937906,
+                25.096488439738906
+              ],
+              [
+                55.32548855791233,
+                25.096488971933045
+              ],
+              [
+                55.32549768438444,
+                25.0964893813549
+              ],
+              [
+                55.32550681681265,
+                25.096489667101647
+              ],
+              [
+                55.325515952222794,
+                25.096489830075846
+              ],
+              [
+                55.32552509061491,
+                25.09648986937478
+              ],
+              [
+                55.32553422703208,
+                25.096489785900932
+              ],
+              [
+                55.32554336246572,
+                25.096489578751594
+              ],
+              [
+                55.325552492950266,
+                25.09648924882928
+              ],
+              [
+                55.32556161650303,
+                25.09648879523119
+              ],
+              [
+                55.32557073213256,
+                25.09648821886
+              ],
+              [
+                55.325579837856104,
+                25.096487519715588
+              ],
+              [
+                55.325588930699595,
+                25.0964866968951
+              ],
+              [
+                55.325598008680174,
+                25.096485752203872
+              ],
+              [
+                55.325607070806484,
+                25.096484684739128
+              ],
+              [
+                55.32561611509574,
+                25.096483495403508
+              ],
+              [
+                55.32562513857381,
+                25.096482184196862
+              ],
+              [
+                55.32563413925796,
+                25.09648075111908
+              ],
+              [
+                55.325643116156705,
+                25.096479197072867
+              ],
+              [
+                55.325652066295945,
+                25.096477522058073
+              ],
+              [
+                55.32566098868431,
+                25.096475726074626
+              ],
+              [
+                55.32566988133891,
+                25.09647381092795
+              ],
+              [
+                55.32567874128574,
+                25.09647177481237
+              ],
+              [
+                55.32568756654195,
+                25.096469619533288
+              ],
+              [
+                55.32569635710747,
+                25.096467345993464
+              ],
+              [
+                55.32570510802548,
+                25.096464953289875
+              ],
+              [
+                55.32571382028723,
+                25.096462443228063
+              ],
+              [
+                55.3257224909186,
+                25.096459815807904
+              ],
+              [
+                55.32573111694542,
+                25.096457071931976
+              ],
+              [
+                55.32573969737632,
+                25.096454211600225
+              ],
+              [
+                55.32574823121984,
+                25.09645123571535
+              ],
+              [
+                55.32575671550177,
+                25.096448146082697
+              ],
+              [
+                55.325765148239455,
+                25.096444940896667
+              ],
+              [
+                55.325773527449996,
+                25.096441622865402
+              ],
+              [
+                55.325781852142015,
+                25.096438191988852
+              ],
+              [
+                55.3257901203327,
+                25.09643464916967
+              ],
+              [
+                55.32579833003925,
+                25.0964309953105
+              ],
+              [
+                55.32580647828751,
+                25.096427231313903
+              ],
+              [
+                55.32581456606882,
+                25.096423357180004
+              ],
+              [
+                55.32582258842624,
+                25.096419374713985
+              ],
+              [
+                55.32583054635108,
+                25.096415284818637
+              ],
+              [
+                55.325838435877834,
+                25.096411087493806
+              ],
+              [
+                55.32584625700641,
+                25.096406784544964
+              ],
+              [
+                55.32585400676269,
+                25.09640237597195
+              ],
+              [
+                55.32586168316383,
+                25.096397863580165
+              ],
+              [
+                55.325869286209766,
+                25.096393248272364
+              ],
+              [
+                55.32587681391776,
+                25.096388530048436
+              ],
+              [
+                55.32588426331354,
+                25.096383711616475
+              ],
+              [
+                55.325891633405725,
+                25.096378792976424
+              ],
+              [
+                55.32589892221151,
+                25.0963737759337
+              ],
+              [
+                55.325906129730846,
+                25.096368660488267
+              ],
+              [
+                55.32591325199819,
+                25.096363448445434
+              ],
+              [
+                55.32592029000483,
+                25.096358140708013
+              ],
+              [
+                55.32592723978521,
+                25.09635273908127
+              ],
+              [
+                55.32593410133932,
+                25.096347243565226
+              ],
+              [
+                55.32594087268427,
+                25.096341656868006
+              ],
+              [
+                55.325947551837324,
+                25.096335978989504
+              ],
+              [
+                55.32595413879843,
+                25.096330210832498
+              ],
+              [
+                55.32596063059329,
+                25.096324356007774
+              ],
+              [
+                55.32596702623065,
+                25.096318412709827
+              ],
+              [
+                55.32597332471892,
+                25.09631238454958
+              ],
+              [
+                55.32597952407532,
+                25.096306272429675
+              ],
+              [
+                55.32598562429986,
+                25.09630007635011
+              ],
+              [
+                55.32599162142688,
+                25.096293799921657
+              ],
+              [
+                55.32599751743915,
+                25.096287442241703
+              ],
+              [
+                55.32600330837107,
+                25.09628100601826
+              ],
+              [
+                55.326008994222605,
+                25.09627449215407
+              ],
+              [
+                55.32601457301091,
+                25.09626790245452
+              ],
+              [
+                55.32602004473594,
+                25.096261237822382
+              ],
+              [
+                55.326025406423454,
+                25.0962545009657
+              ],
+              [
+                55.326030659064834,
+                25.096247691884543
+              ],
+              [
+                55.32603579968589,
+                25.096240812384263
+              ],
+              [
+                55.32604082729511,
+                25.096233865173016
+              ],
+              [
+                55.32604574189251,
+                25.096226850250833
+              ],
+              [
+                55.32605054149519,
+                25.0962197703258
+              ],
+              [
+                55.3260552261032,
+                25.09621262539796
+              ],
+              [
+                55.32605979274223,
+                25.096205419078117
+              ],
+              [
+                55.32606424240367,
+                25.096198151366323
+              ],
+              [
+                55.326068573104685,
+                25.096190824067975
+              ],
+              [
+                55.32607278484514,
+                25.096183439891274
+              ],
+              [
+                55.32607687465093,
+                25.09617599973882
+              ],
+              [
+                55.326080843513346,
+                25.096168504513447
+              ],
+              [
+                55.326084690440915,
+                25.09616095692327
+              ],
+              [
+                55.3260884134508,
+                25.096153358773723
+              ],
+              [
+                55.32609201254303,
+                25.09614571006478
+              ],
+              [
+                55.326095486726054,
+                25.096138014407373
+              ],
+              [
+                55.32609883599984,
+                25.09613027270421
+              ],
+              [
+                55.326102058381565,
+                25.096122486760724
+              ],
+              [
+                55.32610515387121,
+                25.096114657479628
+              ],
+              [
+                55.32610812147722,
+                25.096106788471833
+              ],
+              [
+                55.326110960208304,
+                25.096098878834564
+              ],
+              [
+                55.32611367006423,
+                25.09609093308149
+              ],
+              [
+                55.32611625104501,
+                25.096082951212658
+              ],
+              [
+                55.326118701167836,
+                25.096074935033418
+              ],
+              [
+                55.32612102142395,
+                25.096066887252054
+              ],
+              [
+                55.32612320983064,
+                25.096058807868438
+              ],
+              [
+                55.32612526638766,
+                25.09605070139631
+              ],
+              [
+                55.32612719109511,
+                25.09604256693293
+              ],
+              [
+                55.32612898296143,
+                25.096034408089146
+              ],
+              [
+                55.32613064198659,
+                25.09602622576777
+              ],
+              [
+                55.3261321681705,
+                25.096018021774228
+              ],
+              [
+                55.3261335595304,
+                25.096009797913926
+              ],
+              [
+                55.326134818048835,
+                25.096001556895164
+              ],
+              [
+                55.326135941743125,
+                25.095993298717836
+              ],
+              [
+                55.32613693061309,
+                25.09598502699294
+              ],
+              [
+                55.32613778565002,
+                25.09597674352594
+              ],
+              [
+                55.32613850487119,
+                25.09596844831677
+              ],
+              [
+                55.32613909025916,
+                25.095960144976473
+              ],
+              [
+                55.326139538839826,
+                25.095951834407632
+              ],
+              [
+                55.326139853587186,
+                25.09594351841588
+              ],
+              [
+                55.32614003251844,
+                25.095935198806593
+              ],
+              [
+                55.32614007563346,
+                25.09592687828796
+              ],
+              [
+                55.32613998392357,
+                25.095918557762783
+              ],
+              [
+                55.326139756397296,
+                25.09591023993923
+              ],
+              [
+                55.32613939404595,
+                25.095901925720064
+              ],
+              [
+                55.32613889587807,
+                25.095893617813466
+              ],
+              [
+                55.32613826288497,
+                25.095885317122196
+              ],
+              [
+                55.32613749407522,
+                25.095877025451717
+              ],
+              [
+                55.32613659143139,
+                25.095868745510273
+              ],
+              [
+                55.326135553962075,
+                25.095860479103333
+              ],
+              [
+                55.326134381667224,
+                25.095852227133612
+              ],
+              [
+                55.32613307553813,
+                25.095843991406625
+              ],
+              [
+                55.32613163557463,
+                25.095835774630594
+              ],
+              [
+                55.326130061776695,
+                25.09582757861097
+              ],
+              [
+                55.32612835513562,
+                25.09581940425054
+              ],
+              [
+                55.32612651565128,
+                25.095811254257523
+              ],
+              [
+                55.32612454332366,
+                25.095803129534627
+              ],
+              [
+                55.32612243914402,
+                25.09579503188738
+              ],
+              [
+                55.326120204103596,
+                25.095786964024025
+              ],
+              [
+                55.32611783721094,
+                25.09577892774999
+              ],
+              [
+                55.32611533945738,
+                25.09577092396806
+              ],
+              [
+                55.32611271282557,
+                25.095762954483778
+              ],
+              [
+                55.326109956324046,
+                25.095755021102566
+              ],
+              [
+                55.32610707094404,
+                25.095747126532697
+              ],
+              [
+                55.326104057676915,
+                25.095739270774168
+              ],
+              [
+                55.32610091652251,
+                25.095731457437964
+              ],
+              [
+                55.32609764847219,
+                25.095723686524103
+              ],
+              [
+                55.32609425451712,
+                25.095715961643553
+              ],
+              [
+                55.32609073564868,
+                25.09570828279638
+              ],
+              [
+                55.32608709186677,
+                25.09570065178805
+              ],
+              [
+                55.32608332416263,
+                25.095693071326814
+              ],
+              [
+                55.32607943352752,
+                25.095685543218153
+              ],
+              [
+                55.326075420952805,
+                25.09567806746213
+              ],
+              [
+                55.326071287429706,
+                25.095670646766987
+              ],
+              [
+                55.32606703295814,
+                25.09566328293819
+              ],
+              [
+                55.32606265952079,
+                25.095655976878565
+              ],
+              [
+                55.32605816810884,
+                25.09564873129636
+              ],
+              [
+                55.326053558722265,
+                25.095641547094296
+              ],
+              [
+                55.32604883235239,
+                25.09563442517513
+              ],
+              [
+                55.326043991973144,
+                25.09562736824722
+              ],
+              [
+                55.326039036593116,
+                25.09562037721326
+              ],
+              [
+                55.32603396819491,
+                25.095613453878787
+              ],
+              [
+                55.326028786778465,
+                25.09560660004928
+              ],
+              [
+                55.326023495317784,
+                25.0955998166276
+              ],
+              [
+                55.32601809381278,
+                25.095593105419198
+              ],
+              [
+                55.32601258424612,
+                25.0955864673269
+              ],
+              [
+                55.32600696661764,
+                25.095579905058923
+              ],
+              [
+                55.326001242910074,
+                25.095573418615338
+              ],
+              [
+                55.3259954141146,
+                25.095567010704404
+              ],
+              [
+                55.32598948221393,
+                25.095560682228907
+              ],
+              [
+                55.32598344720795,
+                25.09555443409161
+              ],
+              [
+                55.32597731207068,
+                25.09554826809811
+              ],
+              [
+                55.32597107680199,
+                25.095542186053866
+              ],
+              [
+                55.325964743384596,
+                25.09553618795896
+              ],
+              [
+                55.3259583128097,
+                25.095530276521643
+              ],
+              [
+                55.32595178606861,
+                25.09552445264466
+              ],
+              [
+                55.32594516613531,
+                25.095518717230945
+              ],
+              [
+                55.325938454001076,
+                25.095513072085964
+              ],
+              [
+                55.325931650657274,
+                25.095507517209757
+              ],
+              [
+                55.32592475709506,
+                25.095502055310575
+              ],
+              [
+                55.325917775297114,
+                25.095496687291245
+              ],
+              [
+                55.32591070724606,
+                25.09549141405458
+              ],
+              [
+                55.325903553933216,
+                25.09548623650336
+              ],
+              [
+                55.32589631734118,
+                25.09548115644316
+              ],
+              [
+                55.325888999452665,
+                25.095476173874033
+              ],
+              [
+                55.325881600267465,
+                25.09547129150421
+              ],
+              [
+                55.32587412275973,
+                25.095466508431077
+              ],
+              [
+                55.325866568911984,
+                25.09546182736294
+              ],
+              [
+                55.32585893872415,
+                25.095457249202504
+              ],
+              [
+                55.32585123517031,
+                25.095452773949933
+              ],
+              [
+                55.32584346023304,
+                25.09544840341076
+              ],
+              [
+                55.325835614903674,
+                25.09544413758504
+              ],
+              [
+                55.32582770017341,
+                25.09543997918104
+              ],
+              [
+                55.32581971901635,
+                25.09543592729614
+              ],
+              [
+                55.325811673415075,
+                25.095431983735885
+              ],
+              [
+                55.325803564360925,
+                25.095428148500368
+              ],
+              [
+                55.32579539284508,
+                25.095424424297796
+              ],
+              [
+                55.325787162832995,
+                25.09542081022563
+              ],
+              [
+                55.325778874324605,
+                25.095417307186615
+              ],
+              [
+                55.325770529302496,
+                25.095413916986278
+              ],
+              [
+                55.32576353050174,
+                25.095411173213446
+              ],
+              [
+                55.32576213074081,
+                25.095410637819334
+              ],
+              [
+                55.32576145465246,
+                25.095410376894026
+              ],
+              [
+                55.32576094609929,
+                25.09541017916879
+              ],
+              [
+                55.32566594478862,
+                25.095373864426104
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:22:42.621Z"
+      }
+    },
+    {
+      "id": "cmnusommj0000h2ewkqpqnhv5",
+      "plotNumber": "6453277",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 76000000,
+      "areaSqft": 42165.57,
+      "latitude": 25.0976661771153,
+      "longitude": 55.3157307070296,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T20:36:07.435Z",
+      "affection": {
+        "maxFloors": 12,
+        "maxHeightMeters": 48,
+        "maxHeightCode": "G+2P+9",
+        "plotAreaSqft": 42165.57,
+        "plotAreaSqm": 3917.31,
+        "maxGfaSqft": 189762.14,
+        "maxGfaSqm": 17629.48,
+        "far": 4.5,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31580949198025,
+                25.097298495404285
+              ],
+              [
+                55.31571898479714,
+                25.097263890933554
+              ],
+              [
+                55.315435265200264,
+                25.097879187177583
+              ],
+              [
+                55.31544242164988,
+                25.09788117225473
+              ],
+              [
+                55.315459332850786,
+                25.097885788177386
+              ],
+              [
+                55.315476266864415,
+                25.09789033639566
+              ],
+              [
+                55.315493221708145,
+                25.09789481600654
+              ],
+              [
+                55.31551019837318,
+                25.09789922791292
+              ],
+              [
+                55.315527196859485,
+                25.097903572114742
+              ],
+              [
+                55.31554421518455,
+                25.097907846806343
+              ],
+              [
+                55.31556125533074,
+                25.097912054696128
+              ],
+              [
+                55.31557831432424,
+                25.09791619307553
+              ],
+              [
+                55.315595394147685,
+                25.097920262847524
+              ],
+              [
+                55.315612492818154,
+                25.097924264914585
+              ],
+              [
+                55.315629769942035,
+                25.097928234502483
+              ],
+              [
+                55.31563083365191,
+                25.09792848649278
+              ],
+              [
+                55.315631839861986,
+                25.097928738476202
+              ],
+              [
+                55.315645855411994,
+                25.097932352897722
+              ],
+              [
+                55.31565972227127,
+                25.097935864388287
+              ],
+              [
+                55.315673606984525,
+                25.097939317201828
+              ],
+              [
+                55.31568750856049,
+                25.097942710435497
+              ],
+              [
+                55.31570142799053,
+                25.0979460440894
+              ],
+              [
+                55.31571536428312,
+                25.09794931906617
+              ],
+              [
+                55.31572452032878,
+                25.09795142804201
+              ],
+              [
+                55.315993208831294,
+                25.0973687390312
+              ],
+              [
+                55.31580949198025,
+                25.097298495404285
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T20:36:07.565Z"
+      }
+    },
+    {
+      "id": "cmnusopmq0002h2ewoprlw7fp",
+      "plotNumber": "6453278",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 83700000,
+      "areaSqft": 46545.41,
+      "latitude": 25.09793335414,
+      "longitude": 55.3162239126294,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T20:36:11.330Z",
+      "affection": {
+        "maxFloors": 12,
+        "maxHeightMeters": 48,
+        "maxHeightCode": "G+2P+9",
+        "plotAreaSqft": 46545.41,
+        "plotAreaSqm": 4324.21,
+        "maxGfaSqft": 209393.26,
+        "maxGfaSqm": 19453.27,
+        "far": 4.5,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31628242505789,
+                25.097479319816244
+              ],
+              [
+                55.316130318049744,
+                25.097421162437755
+              ],
+              [
+                55.315871810685145,
+                25.09798177557889
+              ],
+              [
+                55.31587426625973,
+                25.097982227235946
+              ],
+              [
+                55.31588914841953,
+                25.097984898377263
+              ],
+              [
+                55.31590404546008,
+                25.097987502716375
+              ],
+              [
+                55.31591895639,
+                25.09799004025314
+              ],
+              [
+                55.315933881209375,
+                25.09799251008484
+              ],
+              [
+                55.31594881892667,
+                25.097994913114086
+              ],
+              [
+                55.31596376954202,
+                25.097997248438134
+              ],
+              [
+                55.31597873206387,
+                25.097999516959582
+              ],
+              [
+                55.315993707483585,
+                25.098001718678578
+              ],
+              [
+                55.316008694810016,
+                25.098003851789503
+              ],
+              [
+                55.31602369305152,
+                25.098005918097726
+              ],
+              [
+                55.31603870220816,
+                25.098007916700503
+              ],
+              [
+                55.31605372227997,
+                25.09800984759783
+              ],
+              [
+                55.31606875227537,
+                25.09801171169231
+              ],
+              [
+                55.31608379318599,
+                25.0980135071786
+              ],
+              [
+                55.316098843028804,
+                25.09801523586193
+              ],
+              [
+                55.31611390180404,
+                25.09801689593684
+              ],
+              [
+                55.3161289695114,
+                25.098018489208798
+              ],
+              [
+                55.31614404615114,
+                25.098020013872308
+              ],
+              [
+                55.3161565403,
+                25.09802122047218
+              ],
+              [
+                55.3161692606016,
+                25.09802157671981
+              ],
+              [
+                55.31618459417071,
+                25.098021939587646
+              ],
+              [
+                55.31619992874032,
+                25.098022237457005
+              ],
+              [
+                55.31621526530207,
+                25.098022468522526
+              ],
+              [
+                55.31623060286429,
+                25.09802263458959
+              ],
+              [
+                55.31624594043569,
+                25.098022734755343
+              ],
+              [
+                55.316261279007676,
+                25.098022769019913
+              ],
+              [
+                55.316276617588784,
+                25.098022737383133
+              ],
+              [
+                55.31629195617902,
+                25.09802263984505
+              ],
+              [
+                55.31630729378698,
+                25.09802247640553
+              ],
+              [
+                55.31632263041264,
+                25.098022247064588
+              ],
+              [
+                55.31633796506459,
+                25.0980219518221
+              ],
+              [
+                55.31635329873407,
+                25.098021591580917
+              ],
+              [
+                55.31636862943855,
+                25.098021164535346
+              ],
+              [
+                55.31638395916049,
+                25.098020672491074
+              ],
+              [
+                55.316399284925886,
+                25.098020114545054
+              ],
+              [
+                55.31641460871758,
+                25.098019489794734
+              ],
+              [
+                55.31642992855242,
+                25.098018800948136
+              ],
+              [
+                55.31644524443075,
+                25.098018045297035
+              ],
+              [
+                55.31646055635243,
+                25.098017223744165
+              ],
+              [
+                55.316475864317304,
+                25.098016337192266
+              ],
+              [
+                55.31649116634274,
+                25.09801538473839
+              ],
+              [
+                55.316502013090826,
+                25.09801466287793
+              ],
+              [
+                55.31628242505789,
+                25.097479319816244
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T20:36:11.629Z"
+      }
+    },
+    {
+      "id": "cmnusoruz0004h2ewmbt6x1og",
+      "plotNumber": "6453279",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 113000000,
+      "areaSqft": 62930.77,
+      "latitude": 25.0978073897136,
+      "longitude": 55.3169907868183,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T20:36:14.219Z",
+      "affection": {
+        "maxFloors": 12,
+        "maxHeightMeters": 48,
+        "maxHeightCode": "G+2P+9",
+        "plotAreaSqft": 62930.77,
+        "plotAreaSqm": 5846.46,
+        "maxGfaSqft": 283089.23,
+        "maxGfaSqm": 26299.85,
+        "far": 4.5,
+        "landUseMix": [
+          {
+            "sub": "APARTMENT",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.317019809660565,
+                25.097568571402228
+              ],
+              [
+                55.316595741267676,
+                25.09740646045943
+              ],
+              [
+                55.31643571878273,
+                25.09746604095662
+              ],
+              [
+                55.3166551617751,
+                25.09800102900104
+              ],
+              [
+                55.31666116068254,
+                25.09800036887259
+              ],
+              [
+                55.3166768910939,
+                25.097998568778543
+              ],
+              [
+                55.31669261160044,
+                25.097996699171038
+              ],
+              [
+                55.316708322202004,
+                25.097994760952812
+              ],
+              [
+                55.31672402289858,
+                25.09799275412388
+              ],
+              [
+                55.31673971170763,
+                25.097990676878535
+              ],
+              [
+                55.31675539061152,
+                25.09798853192522
+              ],
+              [
+                55.31677105663633,
+                25.097986317458137
+              ],
+              [
+                55.31678671176467,
+                25.097984034380236
+              ],
+              [
+                55.31680235401375,
+                25.097981682691323
+              ],
+              [
+                55.31681798437507,
+                25.09797926148875
+              ],
+              [
+                55.316833600865706,
+                25.097976771675036
+              ],
+              [
+                55.31684920447689,
+                25.097974214153037
+              ],
+              [
+                55.31686479421748,
+                25.09797158711721
+              ],
+              [
+                55.31688037008719,
+                25.097968892372972
+              ],
+              [
+                55.31689593109487,
+                25.09796612811479
+              ],
+              [
+                55.31691147724025,
+                25.097963296148123
+              ],
+              [
+                55.316927008523415,
+                25.097960395570244
+              ],
+              [
+                55.316942523952875,
+                25.097957427283774
+              ],
+              [
+                55.316958023528706,
+                25.097954390385993
+              ],
+              [
+                55.316973506259366,
+                25.09795128577952
+              ],
+              [
+                55.31698897313637,
+                25.097948112561745
+              ],
+              [
+                55.317004423168164,
+                25.097944871635285
+              ],
+              [
+                55.31701985536336,
+                25.097941563000074
+              ],
+              [
+                55.31703526972206,
+                25.09793818575335
+              ],
+              [
+                55.317050666244,
+                25.09793474170057
+              ],
+              [
+                55.317066043937885,
+                25.097931229938958
+              ],
+              [
+                55.31708140280382,
+                25.09792764956573
+              ],
+              [
+                55.317096742841535,
+                25.09792400238637
+              ],
+              [
+                55.31711206405103,
+                25.09792028840091
+              ],
+              [
+                55.31712736444963,
+                25.097916506706362
+              ],
+              [
+                55.31714264502868,
+                25.097912657302892
+              ],
+              [
+                55.317157904796694,
+                25.097908741093107
+              ],
+              [
+                55.31717314375373,
+                25.097904757174263
+              ],
+              [
+                55.31718836090817,
+                25.097900707351748
+              ],
+              [
+                55.3172035572516,
+                25.097896589820202
+              ],
+              [
+                55.317218730801024,
+                25.097892406384897
+              ],
+              [
+                55.31723388254801,
+                25.09788815524045
+              ],
+              [
+                55.31724901150094,
+                25.09788383819226
+              ],
+              [
+                55.317264116668404,
+                25.097879455240207
+              ],
+              [
+                55.31727919904201,
+                25.097875004578945
+              ],
+              [
+                55.31729425762999,
+                25.09787048891658
+              ],
+              [
+                55.317309292432554,
+                25.09786590644763
+              ],
+              [
+                55.3173243024582,
+                25.09786125807477
+              ],
+              [
+                55.317338496557284,
+                25.09785679196508
+              ],
+              [
+                55.31740372356835,
+                25.097715331212324
+              ],
+              [
+                55.317019809660565,
+                25.097568571402228
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-11T20:36:14.345Z"
+      }
+    },
+    {
+      "id": "cmnuspx43000mh2ewoshz019q",
+      "plotNumber": "6457961",
+      "district": "MAJAN",
+      "emirate": "Dubai",
+      "status": "LISTED",
+      "currentValuationAED": 20000000,
+      "areaSqft": 10957.93,
+      "latitude": 25.0920453986206,
+      "longitude": 55.3146542494397,
+      "hasGeometry": true,
+      "createdAt": "2026-04-11T20:37:07.683Z",
+      "affection": {
+        "maxFloors": 5,
+        "maxHeightMeters": 20,
+        "maxHeightCode": "G+4",
+        "plotAreaSqft": 10957.93,
+        "plotAreaSqm": 1018.02,
+        "maxGfaSqft": 27394.15,
+        "maxGfaSqm": 2545,
+        "far": 2.5,
+        "landUseMix": [
+          {
+            "sub": "OFFICES",
+            "areaSqm": 2036,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "RETAIL",
+            "areaSqm": 509,
+            "category": "COMMERCIAL"
+          }
+        ],
+        "buildingLimitGeometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                55.31462295408757,
+                25.092097726431955
+              ],
+              [
+                55.31444014596246,
+                25.092027826925975
+              ],
+              [
+                55.3144224934451,
+                25.092066114257193
+              ],
+              [
+                55.31452358222065,
+                25.092104767852092
+              ],
+              [
+                55.31460529963425,
+                25.09213601468707
+              ],
+              [
+                55.31461412636648,
+                25.09211687146248
+              ],
+              [
+                55.31462295408757,
+                25.092097726431955
+              ]
+            ]
+          ]
+        },
+        "buildingStyle": null,
+        "fetchedAt": "2026-04-12T11:23:53.374Z"
+      }
+    }
+  ],
+  "bug2_plot3260899": {
+    "id": "cmnsi79k0000mq4ew6ws4venh",
+    "plotNumber": "3260899",
+    "district": "JADDAF WATERFRONT",
+    "emirate": "Dubai",
+    "status": "LISTED",
+    "area": 10956.38,
+    "latitude": 25.2272053698044,
+    "longitude": 55.3385401892952,
+    "hasGeometry": true,
+    "affectionPlans": [
+      {
+        "id": "cmnvobx6v0014xcewvwokoeyn",
+        "source": "gis.dda.gov.ae/DIS",
+        "plotNumber": "3260899",
+        "oldNumber": "P1.B011",
+        "projectName": "JADDAF WATERFRONT",
+        "community": "Al Jadaf",
+        "masterDeveloper": "JADDAF WATERFRONT L.L.C",
+        "plotAreaSqm": 1017.88,
+        "plotAreaSqft": 10956.38,
+        "maxGfaSqm": 3716.12,
+        "maxGfaSqft": 39999.98,
+        "maxHeightCode": "G+7",
+        "maxFloors": 8,
+        "maxHeightMeters": 32,
+        "far": 3.65,
+        "setbacks": [
+          {
+            "side": 1,
+            "podium": null,
+            "building": 3
+          },
+          {
+            "side": 2,
+            "podium": null,
+            "building": 0
+          }
+        ],
+        "landUseMix": [
+          {
+            "sub": "RETAIL",
+            "areaSqm": 185.8,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "APARTMENT",
+            "areaSqm": 3530.32,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "sitePlanIssue": "2013-07-03T00:00:00.000Z",
+        "sitePlanExpiry": "2015-07-02T00:00:00.000Z",
+        "notes": "PARKING: FOR APARTMENT, ONE BAY FOR EACH UNIT LESS THAN OR EQUAL TO 150 SQ.M GFA AND TWO BAYS FOR EACH UNIT EXCEEDING 150 SQ.M GFA; FOR RETAIL, ONE BAY FOR EACH 70 SQ.M OF RETAIL NET AREA. NOC FROM DUBAI MUNICIPALITY COASTAL ZONE AND WATERWAYS MANAGEMENT SECTION TO BE OBTAINED. BUILDING ELEVATIONS SHOULD FOLLOW THE ARCHITECTURAL THEME OF JADDAF WATERFRONT. RETAIL IS RESTRICTED ON THE GROUND AND FIRST FLOOR FACING ROADS AND WALKWAYS."
+      },
+      {
+        "id": "cmnsk9z4e003hq4ewu0fbkdye",
+        "source": "gis.dda.gov.ae/DIS",
+        "plotNumber": "3260899",
+        "oldNumber": "P1.B011",
+        "projectName": "JADDAF WATERFRONT",
+        "community": "Al Jadaf",
+        "masterDeveloper": "JADDAF WATERFRONT L.L.C",
+        "plotAreaSqm": 1017.88,
+        "plotAreaSqft": 10956.38,
+        "maxGfaSqm": 3716.12,
+        "maxGfaSqft": 39999.98,
+        "maxHeightCode": "G+7",
+        "maxFloors": 8,
+        "maxHeightMeters": 32,
+        "far": 3.65,
+        "setbacks": [
+          {
+            "side": 1,
+            "podium": null,
+            "building": 3
+          },
+          {
+            "side": 2,
+            "podium": null,
+            "building": 0
+          }
+        ],
+        "landUseMix": [
+          {
+            "sub": "APARTMENT, RETAIL",
+            "areaSqm": null,
+            "category": "COMMERCIAL"
+          },
+          {
+            "sub": "APARTMENT, RETAIL",
+            "areaSqm": null,
+            "category": "RESIDENTIAL"
+          }
+        ],
+        "sitePlanIssue": "2013-07-03T00:00:00.000Z",
+        "sitePlanExpiry": "2015-07-02T00:00:00.000Z",
+        "notes": "PARKING: FOR APARTMENT, ONE BAY FOR EACH UNIT LESS THAN OR EQUAL TO 150 SQ.M GFA AND TWO BAYS FOR EACH UNIT EXCEEDING 150 SQ.M GFA; FOR RETAIL, ONE BAY FOR EACH 70 SQ.M OF RETAIL NET AREA. NOC FROM DUBAI MUNICIPALITY COASTAL ZONE AND WATERWAYS MANAGEMENT SECTION TO BE OBTAINED. BUILDING ELEVATIONS SHOULD FOLLOW THE ARCHITECTURAL THEME OF JADDAF WATERFRONT. RETAIL IS RESTRICTED ON THE GROUND AND FIRST FLOOR FACING ROADS AND WALKWAYS."
+      }
+    ]
+  },
+  "bug6_phase1_placementSummaries": [
+    {
+      "plotNumber": "6817016",
+      "district": "AL BARSHA SOUTH FOURTH",
+      "status": "LISTED",
+      "stored_lat": 25.0535875175772,
+      "stored_lng": 55.2078087794651,
+      "geometry_centroid": {
+        "lng": 55.20775919732425,
+        "lat": 25.053618168838018
+      },
+      "geometry_vertices": 5,
+      "geometry_bbox": [
+        55.207560868760794,
+        25.053433842520857,
+        55.20805668955248,
+        25.053741192636522
+      ],
+      "geometry_type": "Polygon",
+      "geometry_vs_stored_centroid_offset": {
+        "dLng": -0.00004958214084638257,
+        "dLat": 0.00003065126081835956,
+        "metresLng": -4.987963369146087,
+        "metresLat": 3.3900294465105674
+      },
+      "building_limit_centroid": null,
+      "building_limit_vertices": null,
+      "affection": {
+        "maxFloors": 23,
+        "maxHeightMeters": 80,
+        "maxHeightCode": "Unlimited",
+        "plotAreaSqft": 18298.66,
+        "far": 8.52,
+        "buildingStyle": "SIGNATURE"
+      }
+    },
+    {
+      "plotNumber": "6117231",
+      "district": "BU KADRA",
+      "status": "LISTED",
+      "stored_lat": 25.1779587082981,
+      "stored_lng": 55.323991416164,
+      "geometry_centroid": {
+        "lng": 55.32395515333195,
+        "lat": 25.177900417453827
+      },
+      "geometry_vertices": 5,
+      "geometry_bbox": [
+        55.32363047848006,
+        25.17766725407656,
+        55.32435235322384,
+        25.178250158329877
+      ],
+      "geometry_type": "Polygon",
+      "geometry_vs_stored_centroid_offset": {
+        "dLng": -0.00003626283204738456,
+        "dLat": -0.00005829084427233511,
+        "metresLng": -3.648040903966887,
+        "metresLat": -6.446967376520263
+      },
+      "building_limit_centroid": null,
+      "building_limit_vertices": null,
+      "affection": {
+        "maxFloors": 25,
+        "maxHeightMeters": 88,
+        "maxHeightCode": "B+G+3P+21",
+        "plotAreaSqft": 28144.32,
+        "far": 5,
+        "buildingStyle": "SIGNATURE"
+      }
+    },
+    {
+      "plotNumber": "1010469",
+      "district": "DUBAI ISLANDS",
+      "status": "LISTED",
+      "stored_lat": 25.2879297445328,
+      "stored_lng": 55.3005671410371,
+      "geometry_centroid": {
+        "lng": 55.30050885149583,
+        "lat": 25.287972118581838
+      },
+      "geometry_vertices": 5,
+      "geometry_bbox": [
+        55.300275693330754,
+        25.287717744854636,
+        55.30085858773057,
+        25.288141744212115
+      ],
+      "geometry_type": "Polygon",
+      "geometry_vs_stored_centroid_offset": {
+        "dLng": -0.00005828954127196084,
+        "dLat": 0.00004237404903761899,
+        "metresLng": -5.863927851959261,
+        "metresLat": 4.68656982356066
+      },
+      "building_limit_centroid": null,
+      "building_limit_vertices": null,
+      "affection": {
+        "maxFloors": 7,
+        "maxHeightMeters": 31.2,
+        "maxHeightCode": "G+P+6",
+        "plotAreaSqft": 29665.09,
+        "far": 2.5,
+        "buildingStyle": "SIGNATURE"
+      }
+    },
+    {
+      "plotNumber": "6241067",
+      "district": "WARSAN FOURTH",
+      "status": "LISTED",
+      "stored_lat": 25.1434601001651,
+      "stored_lng": 55.3927443432126,
+      "geometry_centroid": {
+        "lng": 55.39275957073213,
+        "lat": 25.143546544675882
+      },
+      "geometry_vertices": 6,
+      "geometry_bbox": [
+        55.39224275327641,
+        25.143077378492894,
+        55.39310448226261,
+        25.143978767229996
+      ],
+      "geometry_type": "Polygon",
+      "geometry_vs_stored_centroid_offset": {
+        "dLng": 0.000015227519533311806,
+        "dLat": 0.00008644451078154702,
+        "metresLng": 1.5318884650511677,
+        "metresLat": 9.5607628924391
+      },
+      "building_limit_centroid": null,
+      "building_limit_vertices": null,
+      "affection": {
+        "maxFloors": 4,
+        "maxHeightMeters": 15,
+        "maxHeightCode": "G+3",
+        "plotAreaSqft": 35442.4,
+        "far": null,
+        "buildingStyle": "SIGNATURE"
+      }
+    }
+  ],
+  "bug1_heightAudit_flagged": [
+    {
+      "plotNumber": "5912323",
+      "district": "AL FURJAN",
+      "status": "LISTED",
+      "emirate": "Dubai",
+      "maxFloors": null,
+      "maxHeightMeters": 60,
+      "maxHeightCode": "UNLIMITED TOWER / PODIUM G+1 (9.5m)",
+      "expectedFromFloors": null,
+      "flag": "NO_FLOORS_ONLY_HEIGHT"
+    },
+    {
+      "plotNumber": "9235849",
+      "district": "AL YALAYIS 3",
+      "status": "LISTED",
+      "emirate": "Dubai",
+      "maxFloors": null,
+      "maxHeightMeters": null,
+      "maxHeightCode": null,
+      "expectedFromFloors": null,
+      "flag": "NO_HEIGHT_NO_FLOORS"
+    },
+    {
+      "plotNumber": "6464982",
+      "district": "DUBAI LAND",
+      "status": "VACANT",
+      "emirate": "Dubai",
+      "maxFloors": null,
+      "maxHeightMeters": null,
+      "maxHeightCode": "SEE NOTES",
+      "expectedFromFloors": null,
+      "flag": "NO_HEIGHT_NO_FLOORS"
+    },
+    {
+      "plotNumber": "5310951",
+      "district": "DUBAI WHOLESALE CITY (NON FREE ZONE)",
+      "status": "VACANT",
+      "emirate": "Dubai",
+      "maxFloors": null,
+      "maxHeightMeters": null,
+      "maxHeightCode": "SEE NOTES",
+      "expectedFromFloors": null,
+      "flag": "NO_HEIGHT_NO_FLOORS"
+    }
+  ],
+  "bug6_phase2_placementAudit_flagged": []
+}
