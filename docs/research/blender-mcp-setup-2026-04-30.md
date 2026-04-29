@@ -349,6 +349,137 @@ Will commit at end of session с message: `research: Blender MCP setup phase 1 c
 
 **Phase 1 setup verified headless** ✅ (addon installed, MCP registered, handshake passed) · **Phase 1 GUI smoke test pending founder** (10-15 min: Blender GUI launch, "Connect to Claude" button click, new Claude session с MCP) · **Phase 2 NOT executed** — requires founder GUI session · **Verdict pending Phase 2.**
 
+> **Update — Phase 1 GUI confirmed + Phase 2.0 minimal proof shipped.** See addendum below.
+
+---
+
+# Addendum — Phase 2.0 minimal proof (2026-04-30)
+
+End-to-end pipeline verified: **Supabase parcel → Blender (via TCP MCP server :9876) → .glb on disk.** Single 30 m raw extrusion, no ZAAHI Signature tiers (full Signature is Phase 2.1).
+
+## Pipeline
+
+Two scripts on `research/blender-mcp-eval`:
+
+1. **`scripts/phase2-find-parcel.ts`** — Prisma `findFirst` over `Parcel`, filtered to `emirate='Dubai'` with non-null `geometry`/`latitude`/`longitude`. Writes `/tmp/parcel.json`. Read-only against Supabase.
+2. **`scripts/phase2-build-blender.py`** — reads `/tmp/parcel.json`, projects WGS84 → local meters (equirectangular around the ring centroid), opens raw TCP socket to `127.0.0.1:9876` and ships a single `execute_code` payload: clear scene → bmesh footprint → `extrude_face_region` + 30 m translate → grey Principled BSDF (looked up by `node.type == "BSDF_PRINCIPLED"` because the host Blender is RU-localized) → `bpy.ops.export_scene.gltf` → `/tmp/test-parcel.glb`.
+
+## Parcel sample
+
+```json
+{
+  "id":         "cmnshzw17000aq4ewb259avhz",
+  "plotNumber": "3830345",
+  "district":   "BARSHA HEIGHTS",
+  "emirate":    "Dubai",
+  "area":       29997.73,
+  "latitude":   25.1008157110681,
+  "longitude":  55.1792527826441,
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+      [55.17941292956471, 25.10104968650523],
+      [55.178849837030874, 25.100849967107887],
+      [55.17901255557779, 25.10046474505229],
+      [55.17957566148226, 25.100664470169693],
+      [55.17941292956471, 25.10104968650523]
+    ]]
+  }
+}
+```
+
+5 raw vertices in the outer ring, 4 unique after dropping the closed-ring duplicate.
+
+## Projection (host-side, equirectangular)
+
+```python
+M_PER_DEG = 111320.0
+lat0_rad  = math.radians(centroid_lat)
+x = (lng - lng0) * M_PER_DEG * math.cos(lat0_rad)
+y = (lat - lat0) * M_PER_DEG
+```
+
+Resulting footprint vertices (relative to centroid, metres):
+
+```
+( +20.18, +32.56)
+( -36.58, +10.32)
+( -20.18, -32.56)
+( +36.58, -10.32)
+```
+
+Diagonal ≈ 65–70 m — consistent with a ~3,000 m² (≈ 30,000 sqft) plot.
+
+## Blender code that worked (key block)
+
+Full version in `scripts/phase2-build-blender.py`; the bmesh + material + export core:
+
+```python
+mesh = bpy.data.meshes.new(f"Parcel_{plot}_mesh")
+obj  = bpy.data.objects.new(f"Parcel_{plot}", mesh)
+bpy.context.collection.objects.link(obj)
+
+bm = bmesh.new()
+verts = [bm.verts.new((x, y, 0.0)) for (x, y) in COORDS]
+bm.verts.ensure_lookup_table()
+face = bm.faces.new(verts)
+bmesh.ops.recalc_face_normals(bm, faces=[face])
+ret = bmesh.ops.extrude_face_region(bm, geom=[face])
+top_verts = [g for g in ret['geom'] if isinstance(g, bmesh.types.BMVert)]
+bmesh.ops.translate(bm, vec=(0.0, 0.0, 30.0), verts=top_verts)
+bm.to_mesh(mesh)
+bm.free()
+
+mat = bpy.data.materials.new("ConcreteGrey")
+mat.use_nodes = True
+bsdf = next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+bsdf.inputs.get("Base Color").default_value = (0.65, 0.65, 0.65, 1.0)
+obj.data.materials.append(mat)
+
+bpy.ops.export_scene.gltf(
+    filepath="/tmp/test-parcel.glb",
+    export_format="GLB",
+    use_selection=True,
+    export_apply=True,
+)
+```
+
+## Results
+
+| Metric | Value |
+|---|---|
+| Plot number | 3830345 (BARSHA HEIGHTS, Dubai) |
+| Footprint area | 29,997.73 sqft (~2,786 m²) |
+| Footprint vertices | 4 (closed-ring duplicate dropped) |
+| Mesh vertices | 8 (4 base + 4 top) |
+| Mesh polygons | 6 (1 base + 1 top + 4 side quads) |
+| Triangles | 12 |
+| Building height | 30 m (raw extrusion, no tiers) |
+| Material | grey Principled BSDF (RGB 0.65 / 0.65 / 0.65) |
+| Output file | `/tmp/test-parcel.glb` |
+| File size | 1,704 bytes |
+| glTF magic | `glTF` (binary v2) — confirmed via `file(1)` |
+
+Server log line from gltf exporter: `Finished glTF 2.0 export in 0.178 s`.
+
+## Viewport screenshot
+
+![Phase 2.0 extruded parcel in Blender — three-quarter view](blender-mcp-phase2-screenshot.png)
+
+## Known limitations / scope notes
+
+- **Single block only.** No podium / body / crown. ZAAHI Signature tiers, setbacks (`computeSetbackM`), and per-land-use colour are Phase 2.1.
+- **Equirectangular projection.** Acceptable for one parcel; for multiple parcels in the same scene we'll need a shared origin (e.g. Web Mercator anchor) so neighbours line up.
+- **No texture.** Material is solid grey; texture path is left for Phase 2.1+.
+- **Default scene cleared with `obj.type == "MESH"` filter only** — Camera and Light kept. Materials with `users == 0` garbage-collected; existing materials on other meshes preserved.
+- **`pnpm tsx` does not auto-load `.env.local`.** Run with `node --env-file=.env.local --import tsx scripts/phase2-find-parcel.ts`. Worth remembering for future research scripts.
+- **Stored emirate is `"Dubai"` (mixed case), not `"DUBAI"`.** Case matters in Prisma `where`. Confirmed via `select distinct(emirate)` probe — values are `"Dubai"` and `"Abu Dhabi"`.
+- **Blender host is RU-localized** — shader nodes named in Russian (`Принципиальный BSDF`). Always look them up by `node.type`, never by English `.name`.
+
+## Verdict
+
+✅ **Phase 2.0 minimal proof passed.** Pipeline is reproducible from scratch by running the two scripts; both emit deterministic output and the final `.glb` opens cleanly. Ready to extend to Phase 2.1 (ZAAHI Signature tiers + per-land-use colour + multi-parcel scene).
+
 ---
 
 ## Sources
