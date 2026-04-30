@@ -4,7 +4,7 @@ import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { recordDealEvent } from "@/lib/blockchain";
 import { validateAction, DealAction, getRole } from "@/lib/deal-flow";
-import { awardCommissions, computePlatformFee, reverseCommissions } from "@/lib/ambassador";
+import { computePlatformFee } from "@/lib/referral";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -146,24 +146,13 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     }
     const updatedRow = (await tx.deal.findUnique({ where: { id } }))!;
 
-    let created = 0;
-    let reversed = 0;
-
-    if (action === "COMPLETE" && updatedRow.platformFeeFils && updatedRow.platformFeeFils > BigInt(0)) {
-      created = await awardCommissions(
-        tx,
-        updatedRow.id,
-        deal.sellerId,
-        deal.buyerId,
-        updatedRow.platformFeeFils,
-      );
-    }
-
-    if (action === "CANCEL" || action === "DISPUTE") {
-      reversed = await reverseCommissions(tx, id);
-    }
-
-    return { updated: updatedRow, commissionsCreated: created, commissionsReversed: reversed };
+    // Commission award/reversal flow paused with the retirement of the
+    // 3-tier Ambassador program (2026-04-30). The new single-tier referral
+    // program is Coming Soon (see /refer) and its commission engine is
+    // blocked on UAE counsel sign-off. Deal.platformFeeFils is still
+    // frozen on COMPLETE so future Phase B rate-out can attribute against
+    // historical fees.
+    return { updated: updatedRow, commissionsCreated: 0, commissionsReversed: 0 };
   });
 
   if (raceAborted) {

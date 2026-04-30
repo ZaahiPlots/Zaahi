@@ -158,12 +158,12 @@ export default function AuthPage() {
         }
       `}</style>
 
-      {/* Ambassador promo banner — fixed top, links to /join */}
+      {/* Referral promo banner — fixed top, links to /refer (Coming Soon) */}
       <div
         role="link"
         tabIndex={0}
-        onClick={() => router.push('/join')}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push('/join'); } }}
+        onClick={() => router.push('/refer')}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push('/refer'); } }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background =
             'linear-gradient(90deg, rgba(200,169,110,0.30) 0%, rgba(200,169,110,0.48) 50%, rgba(200,169,110,0.30) 100%)';
@@ -204,9 +204,9 @@ export default function AuthPage() {
           <path d="M12 2l2.39 7.36H22l-6.19 4.5L18.2 21 12 16.5 5.8 21l2.39-7.14L2 9.36h7.61L12 2z" />
         </svg>
         <span className="zaahi-banner-full">
-          Become a ZAAHI Ambassador — Earn on every land deal
+          РЕФЕРАЛЬНАЯ ПРОГРАММА ZAAHI · Скоро
         </span>
-        <span className="zaahi-banner-short">Become Ambassador</span>
+        <span className="zaahi-banner-short">Реферальная программа</span>
         <span style={{ color: GOLD, fontSize: 16, fontWeight: 600 }} aria-hidden>→</span>
       </div>
 
@@ -418,11 +418,11 @@ export default function AuthPage() {
             >
               New to ZAAHI?{' '}
               <a
-                href="/join"
-                onClick={(e) => { e.preventDefault(); router.push('/join'); }}
+                href="/refer"
+                onClick={(e) => { e.preventDefault(); router.push('/refer'); }}
                 style={{ color: GOLD, textDecoration: 'none', fontWeight: 600 }}
               >
-                Become an Ambassador →
+                Реферальная программа →
               </a>
             </div>
 

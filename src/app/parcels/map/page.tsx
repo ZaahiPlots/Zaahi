@@ -3981,27 +3981,14 @@ function ParcelsMapPageInner() {
               </svg>
             </MiniRailBtn>
             <Link
-              href="/join"
-              title="Become Ambassador"
-              aria-label="Become Ambassador"
+              href="/refer"
+              title="Реферальная программа"
+              aria-label="Реферальная программа"
               style={{ display: "block", textDecoration: "none" }}
               tabIndex={miniOpen ? 0 : -1}
             >
-              <MiniRailBtn title="Become Ambassador" active={false} onClick={() => {}} asSpan>
-                {/* Sparkle / star — paid-tier ambassador entry point */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2l2.39 6.95L22 10l-5.5 4.55L18 22l-6-3.6L6 22l1.5-7.45L2 10l7.61-1.05L12 2z" />
-                </svg>
-              </MiniRailBtn>
-            </Link>
-            <Link
-              href="/ambassador"
-              title="Ambassador Program"
-              aria-label="Ambassador Program"
-              style={{ display: "block", textDecoration: "none" }}
-              tabIndex={miniOpen ? 0 : -1}
-            >
-              <MiniRailBtn title="Ambassador" active={false} onClick={() => {}} asSpan>
+              <MiniRailBtn title="Реферальная программа" active={false} onClick={() => {}} asSpan>
+                {/* Star — entry point to the new single-tier referral program (Coming Soon) */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2" />
                 </svg>

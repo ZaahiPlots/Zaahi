@@ -15,6 +15,19 @@ import type { NextConfig } from "next";
  * implicit per-route tracing do its job keeps each function at the
  * single file it actually needs (≤4 MB).
  */
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  // The legacy 3-tier Ambassador / paid-tier signup pages were retired
+  // 2026-04-30 in favour of a single-tier referral program (Phase A only:
+  // a Coming Soon landing at /refer). Any inbound link to /ambassador,
+  // /ambassador-terms, /join, or /r/<code> permanently redirects to /refer.
+  async redirects() {
+    return [
+      { source: '/ambassador', destination: '/refer', permanent: true },
+      { source: '/ambassador-terms', destination: '/refer', permanent: true },
+      { source: '/join', destination: '/refer', permanent: true },
+      { source: '/r/:code', destination: '/refer', permanent: true },
+    ];
+  },
+};
 
 export default nextConfig;

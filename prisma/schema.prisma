@@ -397,6 +397,19 @@ model ReferralClick {
   @@index([createdAt])
 }
 
+// Coming-Soon waitlist for the new single-tier referral program (Phase A
+// 2026-04-30). Captures opt-in emails from the public /refer landing page.
+// Commission rate / attribution / payout are paused pending UAE counsel —
+// this table only stores email + a salted ip hash for anti-spam.
+model ReferralWaitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  ipHash    String? // SHA256(ip+salt) — rate-limit / anti-spam, not re-identification
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
+}
+
 // ── Phase 1 user-dashboard models ───────────────────────────────────
 // All added 2026-04-16 with USER_DASHBOARDS_RESEARCH.md Phase 1. Additive,
 // never modified after create (immutable audit trail for ParcelView /

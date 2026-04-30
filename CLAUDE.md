@@ -505,84 +505,69 @@ Footprint каждого верхнего яруса получается чер
 - **ПРАВИЛО:** НИКОГДА не удалять функционал при рефакторинге. Оптимизировать — да. Удалять рабочий код — нет.
 - **ПРАВИЛО:** При рефакторинге крупных файлов (>500 строк) — сначала составь список ВСЕХ функций в файле, после рефакторинга проверь что ВСЕ функции сохранены. Это правило существует потому, что на одном из коммитов агент случайно удалил `loadZaahiPlots` (~270 строк) внутри bulk-replace `attachOverlays`, и на проде пропали все участки на карте. Список функций ДО рефакторинга — единственная защита от такой регрессии.
 
-## AMBASSADOR PROGRAM RULES — APPROVED 2026-04-15
+## REFERRAL PROGRAM — PHASE A (Coming Soon · 2026-04-30)
 
-Paid-tier ambassador program for ZAAHI. **Replaces** the prior 30/15/5
-free-referral model (approved 2026-04-14, retired 2026-04-15 — no existing
-ambassadors to migrate). Ambassadors now purchase a lifetime membership tier
-via a one-time USDT TRC-20 payment and earn commissions from their 3-level
-downline whenever a deal closes.
+Single-tier referral program for ZAAHI. **Replaces** the prior 3-tier paid
+Ambassador program (Silver/Gold/Platinum + USDT lifetime membership), which
+was retired 2026-04-30 — no live ambassadors to migrate, all 3-tier UI/API/lib
+deleted. Phase A is **landing page + waitlist only** — commission calculation,
+attribution, and payout flows are paused pending UAE counsel sign-off.
 
-### Tiers & pricing (do NOT change without founder approval)
+### Phase A scope (live in production)
+- **`/refer`** — PUBLIC Coming Soon landing (no auth). RU copy, glassmorphism,
+  GOLD accent, single email field. Submits to `/api/referral-waitlist`.
+- **`/api/referral-waitlist`** — public POST endpoint, listed in `PUBLIC_API`
+  in `src/middleware.ts`. Body: `{ email }`. Returns 201 / 409 (duplicate) /
+  429 (rate-limit: max 3 / hour per ip-hash). Inserts into `ReferralWaitlist`.
+- **`ReferralWaitlist`** Prisma model — `id` (cuid), `email` @unique, `ipHash`
+  (SHA-256(salt+ip), truncated 32 chars), `createdAt`.
+- **Redirects** in `next.config.ts` — `/ambassador`, `/ambassador-terms`,
+  `/join`, `/r/:code` all `308 → /refer`.
 
-| Tier | AED | USDT (approx) | L1 | L2 | L3 | Perks |
-|---|---|---|---|---|---|---|
-| **SILVER**   | 1,000  | 272   | 5%  | 2% | 1% | Platform access, referral link, dashboard |
-| **GOLD** (★) | 5,000  | 1,361 | 10% | 4% | 1% | Silver + priority plots + site-plan PDFs |
-| **PLATINUM** | 15,000 | 4,084 | 15% | 6% | 1% | Gold + founder line + co-branding |
+### Phase B (paused — gated on UAE counsel)
+- Commission rate ratified at 20 % of ZAAHI Service Fee (see
+  `research/ambassador-to-referral/COMMISSION_RATE_ANALYSIS.md`). Constant
+  lives in `src/lib/referral.ts` as `REFERRAL_RATE = 0.20` but is NOT wired.
+- Public copy must NOT mention a specific %, "lifetime", or "every future deal".
+- Attribution mechanics (cookie / signup-time link / cycle detection) are not
+  reintroduced until counsel confirms the legal characterisation as a software
+  customer-acquisition payment, not unlicensed brokerage commission-sharing.
 
-GOLD is the "MOST POPULAR" tier — визуально выделен на `/join`.
+### What stayed in the codebase (dormant)
+- `Deal.platformFeeFils` is still computed via `computePlatformFee()` (now in
+  `src/lib/referral.ts`) and frozen on `DEAL_COMPLETED` so future Phase B
+  attribution can run against historical fees.
+- Prisma models `Commission`, `AmbassadorApplication`, `ReferralClick` and
+  `User.{referralCode,referredById,referredAt,ambassadorActive}` are kept for
+  historical-data preservation. Per founder direction 2026-04-30, **never drop
+  these tables.** Deletion would lose audit history; orphaned rows are harmless.
+- The `/api/deals/[id]` award/reverse hooks are removed (return 0/0) but
+  `eventMeta.platformFeeFils` is still populated.
 
-### Commission base
-Commission base = **ZAAHI service fee = 2% of deal value**
-(replaces the old 0.25% platform fee). Frozen onto `Deal.platformFeeFils` at
-`DEAL_COMPLETED`. The fee is split into seller-half and buyer-half; each half
-walks the referrer chain independently through 3 levels, paid at the level
-rate of the upline ambassador's active tier.
-
-### Payment flow (lifetime membership)
-- **Network:** TRON (TRC-20)
-- **Token:** USDT
-- **Wallet:** `TELiibGkn3sg4EVzGYczzj2kkiAVfVN4j7`
-- One-time purchase → lifetime membership. No recurring fee, no renewals.
-
-### Routes
-- **`/join`** — PUBLIC marketing + registration page (no auth). Tier selection,
-  USDT payment modal (wallet + QR + tx-hash form), submits to
-  `/api/ambassador/register` → `AmbassadorApplication` row `status=PENDING`.
-  Admin verifies the USDT transfer → user activates ambassador mode.
-- **`/ambassador`** — AUTH-GATED dashboard for activated ambassadors
-  (referral code, downline tree, commission earnings). Unchanged from
-  2026-04-14 modulo rate display updates.
-
-### Attribution rules — IMMUTABLE after signup
-- Пользователь может иметь только ОДНОГО прямого referrer (`referredById`).
-- Referral code — 8-символьный уникальный код из `A-Z2-9` без похожих символов (0/O/1/I/L).
-- Код **нельзя менять** после активации (anti-fraud).
-- Referrer **нельзя менять** после signup (immutable relation).
-- Cycle detection: `wouldCreateCycle()` в `src/lib/ambassador.ts` — защита от A→B→A.
-- Cookie `zaahi_ref` (30 дней) ставится на `/r/[code]`, читается на `/api/users/sync` при первой синхронизации.
-- После первого signup cookie удаляется — повторное использование невозможно.
-- **Ambassadors may purchase plots but cannot self-refer** — self-referral branches are skipped in the commission walker.
-
-### Commission lifecycle
-- **PENDING** — начислена на `DEAL_COMPLETED`, ждёт выплаты.
-- **PAID** — админ отметил как выплаченную (bank/ZAH token/USDT).
-- **REVERSED** — сделка позже отменена (`DEAL_CANCELLED`/`DISPUTE_INITIATED`) → clawback.
-
-Commission rows **immutable** — никогда не обновлять `amountFils` / `dealId` / `level` / `ambassadorId` / `basisFils` / `rate` после создания. Только `status`, `payoutMethod`, `payoutRef`, `paidAt`.
-
-### Payout terms
-- **Minimum payout:** 1,000 AED
-- **Payout SLA:** within 30 business days after deal completion
-
-### Skip-inactive policy
-Если L1 ambassador **не активен** (`ambassadorActive=false`), его слот **НЕ занимается** — L2 "поднимается" на L1 позицию. Это поощряет активное участие: неактивные не блокируют downline.
+### What is NOT in the codebase anymore
+- `/ambassador` (dashboard) · `/join` (USDT signup) · `/ambassador-terms` ·
+  `/r/[code]` (cookie-set landing) · `/api/ambassador/*` (5 routes) ·
+  `/api/admin/ambassador-applications/*` (3 routes) ·
+  `/admin/ambassadors/*` (admin UI) · `src/lib/ambassador.ts` ·
+  `src/lib/ambassador-plans.ts`. All deleted in commit retiring the 3-tier
+  program.
 
 ### Source of truth
-- **Константы:** `src/lib/ambassador.ts` — `PLAN_COMMISSION_RATES`, `ZAAHI_SERVICE_FEE_RATE`, `MAX_LEVEL`. Legacy `COMMISSION_RATES` / `PLATFORM_FEE_RATE` экспорты сохранены как GOLD-tier defaults на время миграции dashboard'а; новый код должен использовать `PLAN_COMMISSION_RATES`.
-- **Схема:** Prisma `Commission`, `ReferralClick`, `AmbassadorApplication` модели + `User.referralCode/referredById`.
-- **Расчёт:** `awardCommissions()` вызывается в `PATCH /api/deals/[id]` на action=COMPLETE **внутри того же `$transaction`**, что и обновление Deal.status.
-- **Reversal:** `reverseCommissions()` на action=CANCEL/DISPUTE.
+- **Constants:** `src/lib/referral.ts` — `ZAAHI_SERVICE_FEE_RATE = 0.02`,
+  `REFERRAL_RATE = 0.20` (Phase B placeholder), `computePlatformFee()`.
+- **Schema:** Prisma `ReferralWaitlist` (Phase A) + dormant `Commission` /
+  `AmbassadorApplication` / `ReferralClick` (preserved).
+- **Public API allowlist:** `/api/referral-waitlist` is in `PUBLIC_API` in
+  `src/middleware.ts`. The legacy `/api/ambassador/qr/*` public-read carve-out
+  was removed.
 
 ### Не трогать без founder approval
-- Tier-aware ставки (5/2/1, 10/4/1, 15/6/1).
-- ZAAHI service fee 2%.
-- Tier prices (1k / 5k / 15k AED).
-- USDT TRC-20 wallet address.
-- Глубина 3 уровня (`MAX_LEVEL`).
-- Immutability правила.
-- Skip-inactive policy.
+- Phase A → Phase B promotion (any wiring of `REFERRAL_RATE` to actual
+  commission accrual) is blocked on UAE counsel.
+- Public-facing copy on `/refer` must not state a specific %, "lifetime", or
+  "earn on every future deal".
+- Existing dormant tables (`Commission`, `AmbassadorApplication`,
+  `ReferralClick`) — never drop.
 
 ## FOUNDER CONTACTS
 - **Founder & CEO/CTO:** Zharkyn (Zhan) Ryspayev — `zhanrysbayev@gmail.com` — 17 лет в недвижимости, Full-stack инженер, построил всю платформу ZAAHI
