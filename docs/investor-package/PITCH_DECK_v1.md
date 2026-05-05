@@ -276,9 +276,13 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 ---
 
-## Slide 16 — Use of Funds (AED 1,000,000)
+## Slide 16 — Use of Funds (Year 1 Budget Envelope AED 1.5–1.7 M)
 
 ### **Every dirham accounted for. Agency launch only. Platform funded from agency revenues thereafter.**
+
+**Year 1 budget envelope:** **AED 1.5–1.7 M** total — composed of (a) Rudi's AED 1,000,000 launch capital allocated per the table below, plus (b) AED 500–700 k from founder cash injection and/or first-deal agency revenue reinvested in Months 4–12 (agent hires, marketing scale-up, vehicle financing top-up). **24-month total budget envelope: AED 3.1–4.5 M.**
+
+The line-item table below represents the **AED 1.0 M launch tranche** (Rudi's investment) only; the AED 0.5–0.7 M Y1 envelope expansion funds the post-Phase-2 hires and operational scale-up.
 
 | Category | AED | % | Notes |
 |---|---|---|---|

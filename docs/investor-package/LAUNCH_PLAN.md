@@ -17,7 +17,11 @@
 
 ## Orientation
 
-This Launch Plan operationalises the commitments in the Memorandum of Understanding, Term Sheet, and Executive Summary. The plan is divided into phases across the first 12 months. Each milestone is accountable to a specific Party, has an estimated budget draw from the AED 1,000,000 Rudi investment (or from subsequent agency revenues), and defines a measurable success criterion.
+This Launch Plan operationalises the commitments in the Memorandum of Understanding, Term Sheet, and Executive Summary. The plan is divided into phases across the first 12 months. Each milestone is accountable to a specific Party, has an estimated budget draw from the Year 1 envelope, and defines a measurable success criterion.
+
+**Year 1 budget envelope: AED 1.5–1.7 M.** Composed of (a) Rudi's AED 1,000,000 launch capital and (b) AED 500–700 k from founder cash injection and/or first-deal agency revenue reinvested in Months 4–12. **24-month total budget envelope: AED 3.1–4.5 M.** Phase-by-phase budget draws below sum to the AED 1.0 M Rudi launch tranche; Phase 5 scaling spend (agent + engineer hires, marketing scale-up) is funded from the envelope expansion above the AED 1.0 M base.
+
+**Phase 1 cash burn (pre-LLC, before trade licence): AED 61.5 k/month base · AED 65 k/month ceiling.** Covers legal retainer, founder dry-powder, document preparation, and pre-formation expenditure prior to the Agency starting full-team payroll and office lease.
 
 Key roles:
 
@@ -32,6 +36,8 @@ Key roles:
 ## Phase 1 — Foundation (Sunday → first weeks)
 
 Phase goal: **MOU signed; agency formation documents submitted; UAE counsel engaged; entity registration in progress.**
+
+**Phase 1 monthly cash burn:** **AED 61.5 k/month base · AED 65 k/month ceiling.** Phase 1 spend is dominated by legal retainer (~AED 30 k/mo) + founder dry-powder + counsel-document preparation. The Agency does not yet pay full-team salaries, office lease, or insurance during this window.
 
 ### Day 0 — Sunday 2026-04-19
 

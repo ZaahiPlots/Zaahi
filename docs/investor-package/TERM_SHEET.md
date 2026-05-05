@@ -218,15 +218,17 @@ Dividend Policy in the SHA is transparent, auditable, and legally enforceable. T
 >
 > (c) **annual** audited financial statements within ninety (90) days of each financial year end;
 >
-> (d) **immediate** notification within forty-eight (48) hours of any Material Event, being: any litigation or regulatory action involving the Company in excess of AED 100,000 in dispute value; any financing transaction in excess of AED 500,000; the receipt of any acquisition or strategic-partnership offer; the resignation or termination of either Founder; any material breach of any material contract; any data breach or regulatory penalty; any loss of a material licence or permit;
+> (d) **immediate** notification within forty-eight (48) hours of any Material Event, being: any litigation or regulatory action involving the Company in excess of AED 100,000 in dispute value; any financing transaction in excess of AED 500,000; the receipt of any acquisition or strategic-partnership offer; the resignation or termination of either Founder; any material breach of any material contract; any data breach or regulatory penalty; any loss of a material licence or permit. **The AED 100,000 single-event and AED 500,000 financing thresholds in this paragraph (d) operate not only as Investor-notification triggers but also as the joint Founder authority limits for Company commitments — see paragraph (f) below;**
 >
-> (e) a **rolling Sunset ledger** updated quarterly showing cumulative distributions paid to Rudi (toward the AED 2 M Financial Trigger) and time elapsed since SAFE execution (toward the 5-year Time Trigger).
+> (e) a **rolling Sunset ledger** updated quarterly showing cumulative distributions paid to Rudi (toward the AED 2 M Financial Trigger) and time elapsed since SAFE execution (toward the 5-year Time Trigger);
+>
+> (f) **Founder authority limits.** The Founders (Zhan and Dymo) acting jointly may approve and commit Company resources up to (i) **AED 100,000 in any single event** (single transaction, contract, expenditure, or commitment) and (ii) **AED 500,000 cumulative per calendar month** (any combination of single-event commitments) without prior Board resolution. Single-event commitments above AED 100,000 or cumulative monthly commitments above AED 500,000 require prior Board approval (simple majority per §9). The notification triggers in paragraph (d) operate in addition to, and not in substitution for, these authority limits.
 
 **Plain English.**
-Monthly summary, quarterly financials, annual audited statements, 48-hour material-event notices, plus a Sunset progress tracker.
+Monthly summary, quarterly financials, annual audited statements, 48-hour material-event notices, Sunset progress tracker, and a clear founder authority envelope: Zhan and Dymo together can commit up to AED 100 k on any one item and AED 500 k cumulatively per month without going to the Board.
 
 **Rationale.**
-Four-layer information package plus explicit Sunset visibility.
+Four-layer information package plus explicit Sunset visibility, plus a codified founder spending envelope so day-to-day operations are not Board-bottlenecked while material commitments still get Board attention.
 
 ---
 
