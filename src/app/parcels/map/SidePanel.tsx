@@ -87,6 +87,10 @@ interface ParcelDetail {
   status: string;
   area: number;
   currentValuation: string | null;
+  // JV signal — when true and currentValuation is null, the price block
+  // is replaced with "Price on request — JV terms negotiable" and a gold
+  // "Open to JV" badge appears next to the Land Use section title.
+  openToJV?: boolean;
   latitude: number | null;
   longitude: number | null;
   geometry: GeoJSON.Polygon | null;
@@ -277,15 +281,29 @@ export default function SidePanel({
         )}
       </div>
 
-      {data && (
+      {data && (() => {
+        // JV listings: openToJV=true with no currentValuation → swap the AED
+        // total for a "Price on request — JV terms negotiable" line. The
+        // backing field is owner-set per CLAUDE.md "Цена ТОЛЬКО ВРУЧНУЮ" —
+        // we never fabricate a number on render, just adjust copy.
+        const isJvNoPrice = !!data.openToJV && data.currentValuation == null;
+        return (
         <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
           {/* Price block — total + per-sqft computed for display only */}
           <div style={{ paddingBottom: 10, borderBottom: `1px solid ${LINE}` }}>
             <div style={{ color: SUBTLE, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
-              Total Price
+              {isJvNoPrice ? "Price on Request" : "Total Price"}
             </div>
-            <div style={{ color: GOLD, fontWeight: 800, fontSize: 22, lineHeight: 1.1 }}>
-              {fmtBigAed(aed)}
+            <div
+              style={{
+                color: GOLD,
+                fontWeight: isJvNoPrice ? 700 : 800,
+                fontSize: isJvNoPrice ? 14 : 22,
+                lineHeight: 1.25,
+                letterSpacing: isJvNoPrice ? 0 : -0.2,
+              }}
+            >
+              {isJvNoPrice ? "Price on request — JV terms negotiable" : fmtBigAed(aed)}
             </div>
             {/* Per-sqft rows. Plot is always shown when we have an area;
                 GFA is only shown when DDA gave us a Max GFA. */}
@@ -450,7 +468,42 @@ export default function SidePanel({
 
               {/* Land Use with colored indicator */}
               {plan.landUseMix && plan.landUseMix.length > 0 && (
-                <Section title="Land Use">
+                <Section
+                  title="Land Use"
+                  right={
+                    data.openToJV ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: 0.6,
+                          textTransform: "uppercase",
+                          color: GOLD,
+                          background: "rgba(200, 169, 110, 0.12)",
+                          border: `1px solid rgba(200, 169, 110, 0.45)`,
+                        }}
+                        title="Owner is open to a Joint-Venture partnership instead of a straight cash sale."
+                      >
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: 99,
+                            background: GOLD,
+                            flexShrink: 0,
+                          }}
+                        />
+                        Open to JV
+                      </span>
+                    ) : undefined
+                  }
+                >
                   <ul style={{ display: "flex", flexDirection: "column", gap: 3, margin: 0, padding: 0, listStyle: "none" }}>
                     {plan.landUseMix.map((u, i) => {
                       const color = LANDUSE_COLORS[u.category.toUpperCase().trim()] ?? GOLD;
@@ -642,7 +695,8 @@ export default function SidePanel({
             <p style={{ color: SUBTLE }}>No affection plan loaded for this parcel.</p>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Sticky Start Negotiation CTA — always visible at bottom of panel */}
       {data && signedIn && (
@@ -694,11 +748,30 @@ export default function SidePanel({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  right,
+  children,
+}: {
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <div style={{ color: GOLD, fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>
-        {title}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginBottom: 4,
+        }}
+      >
+        <div style={{ color: GOLD, fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2 }}>
+          {title}
+        </div>
+        {right}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{children}</div>
     </div>

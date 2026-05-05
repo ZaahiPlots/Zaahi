@@ -156,6 +156,7 @@ model Parcel {
   status           ParcelStatus @default(VACANT)
   currentValuation BigInt? // fils
   isTokenized      Boolean      @default(false)
+  openToJV         Boolean      @default(false) // Joint-Venture signal — owner is open to JV partnership terms instead of (or alongside) a cash sale.
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
