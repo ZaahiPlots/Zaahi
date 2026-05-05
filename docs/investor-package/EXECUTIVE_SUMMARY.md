@@ -34,7 +34,7 @@ ZAAHI is built on the **Master Tree v3** — 85 integrated modules across 12 fun
 
 **Zhan Ryspayev — Founder, CEO/CTO.** 17 years real estate; full-stack engineer; RERA-licensed; architect of the ZAAHI platform and Master Tree v3 vision.
 
-**Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed; Partner at Equilibrium Advisory Group.
+**Dymo Tsvyk — Co-founder, Operations Principal.** 18+ years global operations leadership at Stolt-Nielsen and Bahri; in UAE real estate since 2018; RERA-licensed.
 
 **Rudi — Principal Investor, Board Member.** AED 1,000,000 commitment; controlling Agency investor during payback; equal Agency partner after Sunset; 10 % Platform for life; one board seat of three.
 
@@ -121,7 +121,7 @@ Agency Y1 is 12 premium land plot deals (AED 450 k avg commission) + 2 off-plan 
 - **Shareholders**: UAE has no personal income tax and no dividend withholding.
 - **Transfer Pricing**: local file required from Year 1 (related-party transactions exceed AED 3.75 M threshold).
 
-Target combined effective tax burden: **~2–4 %** across the structure. Full detail in the Dividend Policy §3 and §8 Tax Efficiency Design and in the Profit & Loss Statement §12.
+Target combined effective tax burden: **~2–4 %** across the structure. Full detail in the Dividend Policy §3 and §9 Tax Efficiency Design and in the Profit & Loss Statement §12.
 
 ---
 

@@ -190,7 +190,7 @@ All figures in AED thousands unless noted. Consolidated (Agency + Platform, with
 | **Total Operating Expenses** | **1,610** | **4,450** | **10,100** | **24,880** | **53,400** |
 
 **Benchmark callouts.**
-- **S&M as % of revenue Y1 4.2 %** — far below public PropTech median of ~20–30 % (Compass 2024 S&M 7.8 % of revenue; Zillow ~35 %). ZAAHI Y1 is low due to founder-led sales on premium plots (Dymo's Equilibrium Advisory network) and low paid-CAC model. Rises to 13.2 % Y5 as Platform subscription scaling requires dedicated demand-generation spend.
+- **S&M as % of revenue Y1 4.2 %** — far below public PropTech median of ~20–30 % (Compass 2024 S&M 7.8 % of revenue; Zillow ~35 %). ZAAHI Y1 is low due to founder-led sales on premium plots (Dymo's Dubai real-estate network) and low paid-CAC model. Rises to 13.2 % Y5 as Platform subscription scaling requires dedicated demand-generation spend.
 - **R&D as % of revenue Y1 3.6 %** — well below public PropTech median of ~20–40 % (Zillow 2024 R&D ~28 %; Compass 2024 R&D ~14 %). ZAAHI benefits from an existing production platform (6–8 % of the Master Tree architecture already built pre-investment). R&D scales with Master Tree rollout, reaching 9 % by Y5.
 - **G&A as % of revenue Y1 11.6 %** — within PropTech norm (10–15 %) and declining rapidly (11.6 % → 6.0 % by Y5) due to fixed-cost absorption as revenue scales. Y1 G&A includes one-off legal / entity-formation spend (~AED 200 k) and initial TP study (~AED 60 k).
 
@@ -292,7 +292,7 @@ Conservative scenario EBITDA margins hold 45–50 % (partial operating leverage 
 
 ### §4.5 Narrative
 
-The three scenarios bracket investor expectation tightly because the Agency revenue base is anchored on founder-confirmed deal pipeline (Dymo's Equilibrium Advisory network + Zhan's plot-sourcing platform). Conservative = 30th percentile outcome (major macro disruption compresses premium plot transactions), Base = 50th percentile, Aggressive = 80th percentile (multiple large-plot closes + platform subscription velocity). No scenario assumes Dubai RE market collapse, which would require separate scenario modelling (see §10 Sensitivity Analysis).
+The three scenarios bracket investor expectation tightly because the Agency revenue base is anchored on founder-confirmed deal pipeline (Dymo's Dubai real-estate network + Zhan's plot-sourcing platform). Conservative = 30th percentile outcome (major macro disruption compresses premium plot transactions), Base = 50th percentile, Aggressive = 80th percentile (multiple large-plot closes + platform subscription velocity). No scenario assumes Dubai RE market collapse, which would require separate scenario modelling (see §10 Sensitivity Analysis).
 
 ---
 
@@ -569,7 +569,7 @@ Even in the Conservative scenario, Rudi's 10-year MOIC is 220×, well above typi
 **Benchmark observations:**
 - **Rule of 40 Y1 = 59** — exceeds the Series A stage benchmark of 30–40 per SaaS Capital. Y1 base figure uses EBITDA margin only (no growth % comparator yet). Y2 jumps to 183 reflecting operational scale. Average Y2–Y5 = 170, far above PropTech benchmarks.
 - **LTV / CAC (Platform) 6.3× Y1** — above PropTech benchmark median 3–5× (Qubit Capital 2025). Compresses to 1.5× by Y5 as paid-marketing scales; by that stage subscriptions are >500 and Platform is at near-IPO scale.
-- **LTV / CAC (Agency) 44× Y1** — exceptional. Driven by founder-network deal sourcing (Dymo's Equilibrium Advisory Group + Zhan's 17-year real-estate network). Compresses as paid-media scales.
+- **LTV / CAC (Agency) 44× Y1** — exceptional. Driven by founder-network deal sourcing (Dymo's Dubai real-estate network + Zhan's 17-year real-estate network). Compresses as paid-media scales.
 - **Revenue growth 129 % → 111 %** — consistent with mature but still-high-growth SaaS profile per SaaS Capital benchmarks.
 
 ---
@@ -832,7 +832,7 @@ This document is prepared exclusively for the purpose of the ZAAHI investor clos
 - **Sunset** — automatic Agency cap-table rebalance 80/10/10 → 33.34/33.33/33.33 on earlier of AED 2 M cumulative Rudi distribution or 5-year anniversary.
 - **QFZP** — Qualifying Free Zone Person; 0 % Platform CT on qualifying income.
 - **Rule of 40** — sum of revenue growth % + EBITDA margin %; SaaS industry benchmark.
-- **Tier-based subscriptions** — Platform monetization structure: Developer AED 50k/yr, Broker AED 20k/yr, Architect AED 10k/yr, Investor/Buyer AED 5k/yr, Owner AED 3k/yr.
+- **Tier-based subscriptions** — Platform monetisation structure: Developer AED 50k/yr, Broker AED 20k/yr, Architect AED 10k/yr, Investor/Buyer AED 5k/yr, Owner AED 3k/yr.
 - **Referral program (single-tier)** — RERA-compliant commission-based program. Referrers pay no subscription; they earn commission from the 2 % ZAAHI Service Fee on successfully referred deals.
 
 ### §15.3 Source citations
@@ -864,7 +864,7 @@ Key authoritative sources:
 
 This P&L Statement represents a Series-A-due-diligence-grade financial projection for ZAAHI, calibrated to the founder-confirmed realistic revenue model: premium land plots (AED 500M – 2B range) + off-plan floor-level sales for the Agency, and role-based tier subscriptions + RERA-compliant single-tier referral commissions for the Platform. The numbers reconcile across the entire investor package; the 437× base-case 10-year return for Rudi reflects realistic Dubai market capacity, not a hockey-stick assumption. §6 documents the full-lifecycle Platform architecture — 15 base-case revenue streams plus 30 expansion-opportunity streams covering ready property, commercial, rental, hospitality, and partnerships.
 
-The document is **not a guarantee**. It is a best-available-effort projection informed by (a) Dubai RE market macro data as of Q1 2026, (b) production deal pipeline confirmed by Dymo (Equilibrium Advisory Group network) and Zhan (platform-sourced inventory), (c) industry benchmarks from 17 verified sources, and (d) UAE tax framework as enacted.
+The document is **not a guarantee**. It is a best-available-effort projection informed by (a) Dubai RE market macro data as of Q1 2026, (b) production deal pipeline confirmed by Dymo (Dubai real-estate network) and Zhan (platform-sourced inventory), (c) industry benchmarks from 17 verified sources, and (d) UAE tax framework as enacted.
 
 Material questions open for UAE counsel sign-off before first distribution:
 1. Platform QFZP qualifying-income characterisation for role-based subscriptions (especially for UAE-mainland-based subscribers).

@@ -92,7 +92,7 @@ For each agency deal closed and after deduction of direct costs, operating expen
 | **Zhan** | 10 % |
 | **Total** | 100 % |
 
-This ratio is fixed in the Shareholders Agreement Dividend Policy for the lifetime of the Agency and does not change at Sunset. The 70 % inter-company Service Fee payment to the Platform is the platform-financing mechanism and is deductible for UAE Corporate Tax purposes (see the Dividend Policy §3 and §8 for the tax-efficient structure). Distribution is quarterly. The first distribution follows the first closed deal.
+This ratio is fixed in the Shareholders Agreement Dividend Policy for the lifetime of the Agency and does not change at Sunset. The 70 % inter-company Service Fee payment to the Platform is the platform-financing mechanism and is deductible for UAE Corporate Tax purposes (see the Dividend Policy §3 and §9 for the tax-efficient structure). Distribution is quarterly. The first distribution follows the first closed deal.
 
 ---
 

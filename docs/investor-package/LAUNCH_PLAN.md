@@ -83,7 +83,7 @@ Phase goal: **Agency LLC registered; RERA broker licence issued; corporate bank 
 | Virtual office Dubai address (RERA Mainland compliance — LLC operates from Al Jurf physically) | Legal | 15,000 (annual) | LLC incorporation | Dubai registered address confirmed |
 | Office fit-out (1st floor only — desks, chairs, meeting table, AV setup, WiFi, printer) | Dymo | 30,000 | Lease signed | 3–5 workstations + meeting area ready |
 | Videographer already on team — formal onboarding (first month salary during Phase 2) | Dymo | 10,000 | LLC active | Employee active; Emirates ID in process |
-| Employee registration for videographer (visa, Emirates ID, medical insurance, labor card) | Dymo | 30,000 | LLC + bank account | Visa + Emirates ID issued |
+| Employee registration for videographer (visa, Emirates ID, medical insurance, labour card) | Dymo | 30,000 | LLC + bank account | Visa + Emirates ID issued |
 | Vehicle — business operations + client meetings (pre-owned or lease down-payment) | Dymo | 80,000 | LLC active + corporate bank account | Vehicle registered in company name |
 | Camera + video production equipment (Sony A7IV-class, lenses, lighting, drone, editing workstation) | Dymo + Zhan | 40,000 | Videographer onboarded | Equipment delivered; first production content ready |
 | Laptops + computers (founders + videographer) | Dymo | 25,000 | LLC active | 2–3 business laptops ready |

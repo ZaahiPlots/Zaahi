@@ -78,7 +78,7 @@ Once Distributable Net Profit is determined for the quarter, it is split as foll
 | **Zhan** | 10 % |
 | **Total** | 100 % |
 
-This split is fixed for the lifetime of the Agency. Rudi receives 10 % of Agency profits in personal cash distributions. The 70 % Platform flow is a tax-deductible Service Fee (see §8).
+This split is fixed for the lifetime of the Agency. Rudi receives 10 % of Agency profits in personal cash distributions. The 70 % Platform flow is a tax-deductible Service Fee (see §9).
 
 ### 2.3 Worked example — Year 1 full year, AED 7,800,000 Agency gross commission (base case)
 
@@ -265,7 +265,7 @@ When either trigger is met, the Agency cap-table transition executes automatical
 
 The profit-distribution structure is deliberately engineered to minimise UAE tax burden across three layers — Agency, Platform, and Shareholder. Target combined effective tax rate: **~2–4 %** on Agency gross profit flowing through to Platform + personal distributions. SBR not applicable in Year 1 because Agency revenue base AED 7.8 M exceeds the AED 3 M SBR threshold.
 
-### 8.1 Layer 1 — Agency (Dubai Mainland LLC)
+### 9.1 Layer 1 — Agency (Dubai Mainland LLC)
 
 - **UAE Corporate Tax:** 9 % on taxable income above AED 375,000 per annum (introduced 2023 under Federal Decree-Law 47/2022).
 - **Small Business Relief (SBR): not applicable Year 1** — Agency Y1 revenue AED 7.8 M exceeds the AED 3,000,000 SBR threshold per Ministerial Decision 73 of 2023.
@@ -274,20 +274,20 @@ The profit-distribution structure is deliberately engineered to minimise UAE tax
 - **Transfer Pricing local file required from Year 1** — related-party transactions (70 % Service Fee ≈ AED 5.46 M Y1) exceed the AED 3.75 M threshold. Counsel to prepare arm's-length study before first filing.
 - **Net Agency CT burden:** 9 % × retained ~23 % of profit after Service Fee deduction and AED 375 K threshold = **~2.1 % effective Agency CT** on gross Agency profit Y1. Rises to ~3–4 % Y3–Y5.
 
-### 8.2 Layer 2 — Platform (ADGM HoldCo)
+### 9.2 Layer 2 — Platform (ADGM HoldCo)
 
 - **ADGM Qualifying Free Zone Person (QFZP):** targets **0 % CT on qualifying income**, 9 % on non-qualifying. The inter-company Service Fee income from the Agency is expected to qualify if transfer-pricing documentation is properly prepared (arm's-length study required under UAE CT for related-party transactions — a standard counsel deliverable).
 - **Alternative if QFZP status is not achievable or not elected:** standard 9 % CT above AED 375,000.
 - **VAT on inter-company services:** 5 % standard rate between related UAE entities (or zero-rated if specific criteria met). Effectively neutral at the consolidated level.
 - **Net Platform CT burden:** target **0 %** on Service Fee income via QFZP.
 
-### 8.3 Layer 3 — Shareholder (personal)
+### 9.3 Layer 3 — Shareholder (personal)
 
 - **UAE personal income tax:** there is no personal income tax in the UAE. Dividend distributions paid to UAE-resident shareholders are not taxed at the individual level.
 - **UAE withholding tax on dividends:** there is no domestic withholding tax on dividends paid to UAE-resident shareholders.
 - **Cross-border implication:** Rudi's foreign tax residence (France or elsewhere — to be confirmed with Rudi's personal tax advisor) determines any external withholding or foreign tax obligation. UAE has a broad treaty network; specific treatment depends on Rudi's residence country.
 
-### 8.4 Consolidated example — AED 1,000,000 gross Agency profit (Year 1+)
+### 9.4 Consolidated example — AED 1,000,000 gross Agency profit (Year 1+)
 
 Agency subject to standard 9 % CT on retained ~23 % of profit (after Service Fee deduction):
 
@@ -307,7 +307,7 @@ Agency subject to standard 9 % CT on retained ~23 % of profit (after Service Fee
 
 **Summary:** of every AED 1,000,000 gross Agency profit, approximately **AED 965,000 – 980,000** flows to the Platform + shareholders after UAE-level tax. Effective combined UAE tax burden: **~2–4 %**.
 
-### 8.5 Conditions for the ~2–4 % target
+### 9.5 Conditions for the ~2–4 % target
 
 The low effective rate depends on two counsel-confirmed determinations:
 

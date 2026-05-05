@@ -101,7 +101,7 @@
 ### **April 17, 2026: Rudi experienced live demo of zaahi.io. Within 24 hours: verbal commitment. Sunday April 19: this package formalises that partnership.**
 
 - **April 17, 2026** — investor demo. Live product walked through, every claim reconciled with production code.
-- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; corporate structure finalised April 19 with controlling investor position during payback (80 % Agency) and equal partnership thereafter (33.34 % post-Sunset), plus 10 % Platform perpetual. Monetization model finalised: single-tier RERA-compliant referral program + tier-based role subscriptions (Developer AED 50k/yr · Broker AED 20k/yr · Architect AED 10k/yr · Investor/Buyer AED 5k/yr · Land Owner AED 3k/yr).
+- **April 18, 2026** — verbal commitment. AED 1,000,000 investment confirmed; corporate structure finalised April 19 with controlling investor position during payback (80 % Agency) and equal partnership thereafter (33.34 % post-Sunset), plus 10 % Platform perpetual. Monetisation model finalised: single-tier RERA-compliant referral program + tier-based role subscriptions (Developer AED 50k/yr · Broker AED 20k/yr · Architect AED 10k/yr · Investor/Buyer AED 5k/yr · Land Owner AED 3k/yr).
 - **Sunday April 19, 2026** — MOU signed, Al Jurf. Monday April 21: Agency formation documents submitted.
 
 *Visual note: precise three-point timeline. Left: "Apr 17 · Demo delivered" (with zaahi.io screenshot). Middle: "Apr 18 · Commitment secured" (with handshake symbol in gold). Right: "Apr 19 · MOU signed, Al Jurf" (with pen / signature symbol). Thin gold line connecting them.*
@@ -170,11 +170,11 @@ Key points:
 
 - **Cap table** — **Zhan 80 %** (founder controls Platform) · **Dymo 10 %** · **Rudi 10 %** (lifetime upside).
 - **Live today:** 2 % ZAAHI Service Fee on platform-routed deals · RERA-compliant single-tier referral program (commission-based, no subscription).
-- **Year 1 monetization** — tier-based role subscriptions: **Developer AED 50 k/yr · Broker AED 20 k/yr · Architect AED 10 k/yr · Investor/Buyer AED 5 k/yr · Land Owner AED 3 k/yr.** Target Y1 enrolment: 40 subscribers across tiers. Y1 Platform revenue AED 510 k.
+- **Year 1 monetisation** — tier-based role subscriptions: **Developer AED 50 k/yr · Broker AED 20 k/yr · Architect AED 10 k/yr · Investor/Buyer AED 5 k/yr · Land Owner AED 3 k/yr.** Target Y1 enrolment: 40 subscribers across tiers. Y1 Platform revenue AED 510 k.
 - **Year 2 pipeline:** Archibald AI premium access + API usage · data licensing to institutional investors · government document facilitation.
 - **Year 3–5 pipeline:** remainder of the 21 streams — fractional ownership, auction fees, robotics contracts, satellite data, country-data licences, NFT/tokenised marketplace (VARA-dependent).
 - **Year 5 Platform target:** AED 60 M revenue; 500 active subscribers.
-- **Full-lifecycle coverage:** Platform monetization spans land + off-plan + ready property (residential + commercial) + residential/commercial leasing + short-term rentals + partnerships with banks, developers, luxury brands, cities, and governments. Base case focuses on Agency + platform subscriptions; additional segments (15 base case + 30 expansion opportunities = 45 total documented streams) activate as Platform scales.
+- **Full-lifecycle coverage:** Platform monetisation spans land + off-plan + ready property (residential + commercial) + residential/commercial leasing + short-term rentals + partnerships with banks, developers, luxury brands, cities, and governments. Base case focuses on Agency + platform subscriptions; additional segments (15 base case + 30 expansion opportunities = 45 total documented streams) activate as Platform scales.
 - **Platform entity** opens with the first agency deal closure (June – July 2026 target).
 
 *Visual note: cap-table pie chart (Zhan 80 % gold dominant, Dymo + Rudi 10 % each slivers). Fan of 21 revenue-stream cards: top two in solid gold (live), next three half-gold (Year 1), next three outlined (Year 2), remaining thirteen ghost (Year 3–5).*
@@ -271,7 +271,7 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 
 *Visual note: a five-column bar chart showing Year 1 – Year 5 Distributable Net Profit in AED thousands. Rudi's 10 % share highlighted as a thin gold ribbon on top of each bar. Cumulative curve overlaid with AED 2 M Financial Trigger line.*
 
-*Presenter notes: Say: "Year 1 is 12 premium plot deals plus 2 off-plan floors — that's founder-confirmed deal pipeline from Dymo's Equilibrium Advisory network, not aspirational. Your Year 1 distribution is AED 407 k. Sunset Financial Trigger fires mid-Year 3. Your 10-year total return, modelled conservatively, is AED 437 M — 437 times your AED 1 M. The Platform IPO is the largest contributor at Y10."*
+*Presenter notes: Say: "Year 1 is 12 premium plot deals plus 2 off-plan floors — that's founder-confirmed deal pipeline from Dymo's Dubai real-estate network, not aspirational. Your Year 1 distribution is AED 407 k. Sunset Financial Trigger fires mid-Year 3. Your 10-year total return, modelled conservatively, is AED 437 M — 437 times your AED 1 M. The Platform IPO is the largest contributor at Y10."*
 
 ---
 
@@ -291,7 +291,7 @@ Three equal Agency partners post-Sunset; Platform led by Zhan (80 % majority, pe
 | Laptops + computers | 25,000 | 2.5 % | Founders + videographer business laptops |
 | Videographer salary (6 months) | 60,000 | 6 % | AED 10 k/month; first employee; enables in-house production |
 | Founders salaries (Dymo + Zhan, 6 months) | 180,000 | 18 % | Salary Floor per the Zhan Protections and Dymo Protections addenda |
-| Employee registration (visa + Emirates ID + medical + labor card — videographer) | 30,000 | 3 % | Mandatory onboarding package |
+| Employee registration (visa + Emirates ID + medical + labour card — videographer) | 30,000 | 3 % | Mandatory onboarding package |
 | Marketing launch | 80,000 | 8 % | LinkedIn sponsored, Google Ads, Property Finder / Bayut placement, Trakheesi permits |
 | Tech infrastructure (Year 1) | 50,000 | 5 % | Vercel / Supabase / Anthropic retention; domains / SSL / monitoring |
 | Insurance (PI + D&O + Key-person) | 50,000 | 5 % | Mandatory for RE brokers + recommended corporate policies |

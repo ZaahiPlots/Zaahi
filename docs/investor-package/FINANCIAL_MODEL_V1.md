@@ -344,7 +344,7 @@ Conservative / Base / Aggressive side-by-side:
 
 ### Tax Efficiency Analysis (three-layer)
 
-Tracks the effective tax burden under the three-layer design (see the Dividend Policy §8).
+Tracks the effective tax burden under the three-layer design (see the Dividend Policy §9).
 
 | Layer | Year 1 (SBR not applicable) | Year 2+ |
 |---|---|---|

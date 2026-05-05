@@ -113,7 +113,7 @@ This is the core of the deal. Rudi gets controlling Agency during payback (downs
 After costs, taxes, and reserves, Agency profit is split 70 to Platform, 10 each to Rudi, Dymo, Zhan. Every quarter. This ratio is fixed in the SHA and does not change at Sunset — Platform keeps receiving 70 % forever, and Rudi keeps receiving 10 % of Agency profits forever.
 
 **Rationale.**
-Platform-financing mechanism. The fixed ratio is structural — not discretionary — and does not change on Sunset because the purpose (Platform funding) does not change. The 70 % inter-company flow is structured as a Service Fee (deductible at Agency level) to minimise UAE Corporate Tax burden (see the Profit Distribution Mechanics addendum §3 and §8).
+Platform-financing mechanism. The fixed ratio is structural — not discretionary — and does not change on Sunset because the purpose (Platform funding) does not change. The 70 % inter-company flow is structured as a Service Fee (deductible at Agency level) to minimise UAE Corporate Tax burden (see the Profit Distribution Mechanics addendum §3 and §9).
 
 ---
 
@@ -330,7 +330,7 @@ Enforceable, internationally recognised.
 ## 20. Tax Treatment
 
 **Legal language.**
-> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment per Ministerial Decision 229 of 2025, and UAE Transfer Pricing documentation requirements from Year 1 (related-party transactions under the 70 % inter-company Service Fee exceed the AED 3.75 M per-category threshold from Year 1 on the base case). Under base-case projections, Year 1 Agency revenue exceeds the AED 3 M Small Business Relief threshold per Ministerial Decision 73 of 2023, so CT 9 % applies from Year 1 with the 70 % Service Fee deduction reducing effective Agency CT to ~2 % of gross Agency profit. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in the Profit Distribution Mechanics addendum §3 and §8.
+> The tax treatment of this SAFE, the conversion to Preferred Shares, any subsequent distributions, and the inter-company flows between the Agency and the Platform shall be confirmed by UAE tax counsel before the Closing Date. The Parties acknowledge the applicability of UAE Federal Decree-Law 47/2022 (Corporate Tax), Federal Decree-Law 8/2017 (VAT), ADGM-specific Qualifying Free Zone Person treatment per Ministerial Decision 229 of 2025, and UAE Transfer Pricing documentation requirements from Year 1 (related-party transactions under the 70 % inter-company Service Fee exceed the AED 3.75 M per-category threshold from Year 1 on the base case). Under base-case projections, Year 1 Agency revenue exceeds the AED 3 M Small Business Relief threshold per Ministerial Decision 73 of 2023, so CT 9 % applies from Year 1 with the 70 % Service Fee deduction reducing effective Agency CT to ~2 % of gross Agency profit. The Parties shall cooperate in good faith to implement the investment in the most tax-efficient structure — three-layer strategy documented in the Profit Distribution Mechanics addendum §3 and §9.
 
 **Plain English.**
 Tax structuring confirmed by counsel before signing. Year 1 Agency tax treatment: CT 9 % applies (revenue exceeds AED 3 M SBR threshold). Service Fee deduction reduces effective rate to ~2 %. Transfer Pricing local file required from Year 1. Platform QFZP target 0 % on qualifying income. UAE has no personal income tax on shareholder distributions.
@@ -376,7 +376,7 @@ Except for the binding Exclusivity and Confidentiality provisions set out in the
 - **Effective Date.** The date on which the Shareholders Agreement is executed.
 - **Purchase Amount.** AED 1,000,000.
 - **Investor Shares.** The Preferred Shares issued to Rudi on SAFE conversion: 80 % of Agency (pre-Sunset, rebalancing to 33.34 % post-Sunset per §4) and 10 % of Platform at Platform formation.
-- **Founders.** Zhan (Zharkyn Ryspayev) and Dmytro Tsvyk), collectively.
+- **Founders.** Zhan (Zharkyn Ryspayev) and Dymo (Dmytro Tsvyk), collectively.
 - **Sunset / Sunset Trigger.** The automatic Agency cap-table rebalance per §4.
 - **Financial Trigger.** AED 2,000,000 cumulative cash distributions to Rudi (per §4).
 - **Time Trigger.** Fifth anniversary of the Closing Date (per §4).
