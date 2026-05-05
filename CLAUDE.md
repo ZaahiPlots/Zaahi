@@ -590,6 +590,114 @@ Commission rows **immutable** — никогда не обновлять `amount
 - All architectural decisions require founder approval
 - Agent communicates via CLAUDE.md and git commits only
 
+## INVESTOR PACKAGE PDF GENERATION (added 2026-05-05)
+
+Standing patterns for the investor-package surface
+(`docs/investor-package/` source markdown + `docs/viktor-package/`
+PDF outputs). Reference document for full detail:
+`docs/viktor-package/BRANDING_NOTES.md`.
+
+### Toolchain — weasyprint, not pandoc
+
+**weasyprint 68.x in a venv** is the chosen tool. pandoc + xelatex
+ruled out (texlive not installed, sudo overhead). Chromium ruled
+out (not on dev box). Reproduce with:
+
+```bash
+python3 -m venv /tmp/zaahi-pdf-venv
+/tmp/zaahi-pdf-venv/bin/pip install weasyprint markdown pygments
+/tmp/zaahi-pdf-venv/bin/python docs/viktor-package/build_pdfs.py
+```
+
+Renders the full 14-doc set + cover letter + disclosure log
+(29 PDFs total) in ~6 seconds. CSS-driven branding lives inside
+`build_pdfs.py` as a single string constant — Georgia serif body
+11pt, gold #C8A96E accents, A4 0.75in margins, top-right
+disclaimer, bottom-center page counter, named `@page cover` for
+clean cover-page layout. **Do not switch toolchains** without
+strong reason; weasyprint covers every spec requirement directly.
+
+### Structure-note banner pattern (reusable)
+
+When a structural pivot is ratified but final terms are pending,
+**do not rewrite the affected documents.** Insert a reversible
+banner at the top of each affected document instead:
+
+```markdown
+---
+
+> **STRUCTURE NOTE (DATE).** [Description of what is changing.]
+> Final terms ratify [WHEN]. Numbers and mechanics in this
+> document remain directionally accurate; [LABEL / MECHANICS]
+> will be updated in the next revision.
+
+---
+```
+
+Insert immediately after the header metadata block, between two
+`---` rules. Reversibility is the point — strip with grep + a
+single revert when terms ratify. Used 2026-05-05 for the SAFE →
+loan transition pending the Wed 6 May Rudi meeting (commit
+`52da156` on `research/viktor-package-2026-05-05`).
+
+### Cover-letter framework — 6-flag pattern
+
+Cover letters to senior reviewers (CFO, fundraising lead, advisor)
+use a six-point flag pattern:
+
+1. State the open question (one sentence)
+2. Where it lives in the package (specific doc / section pointer)
+3. Why their experience specifically matters (calibrated to
+   reviewer's background — different for CFO vs lawyer vs LP)
+4. What kind of answer would resolve it (concrete)
+5. Open invitation: "where else does your experience tell you
+   this misses something an LP will ask for"
+6. Tone: peer-to-peer, never subordinate. Asking for a review
+   pass, not endorsement.
+
+The open invitation prevents the letter from pre-empting the
+reviewer's most valuable instinct. Reference template:
+`docs/viktor-package/COVER_LETTER_VIKTOR.md`.
+
+### Two-tier output discipline
+
+**internal/** (founder-only, full set, 15 PDFs) and **external/**
+(reviewer-under-NDA, curated subset, 12 PDFs + cover letter)
+follow these conventions:
+
+- Filenames: `NN_FILENAME.pdf`, two-digit prefix for ordering
+- Cover letter prefix `00_` reserves it as the first file
+- Internal-only docs get internal prefix numbers `13_–15_`,
+  external skips them
+- Single render per source file, copied via `shutil` to the
+  second tier — never re-render (doubles compute, risks drift)
+- Disclosure log lives at the package root, outside both folders
+
+Reference layout: `docs/viktor-package/internal/`,
+`docs/viktor-package/external/`.
+
+### Disclosure log
+
+Every external disclosure to a named reviewer under NDA gets a
+sequentially numbered Disclosure Log entry as a standalone PDF at
+`docs/viktor-package/DISCLOSURE_LOG_ENTRY_N.pdf`. Records the
+date, form, disclosing + receiving parties, governing NDA
+version, list of documents disclosed, list withheld, and a
+3-party countersignature block. Acts as evidentiary record only —
+does not amend the underlying NDA.
+
+### When to extend / regenerate
+
+After any of these events, re-run `build_pdfs.py` and update the
+disclosure log:
+
+- Markdown source edited (any of the 14 / 15 docs)
+- Structure-note banner added or removed
+- New document added to the package
+- New external recipient (different reviewer = new disclosure log
+  entry)
+- Branding spec changed (colour, font, layout)
+
 ## Future work / backlog
 
 Отложенные задачи — в `BACKLOG.md`. Не брать без явного решения founder'а.
