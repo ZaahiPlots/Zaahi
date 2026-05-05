@@ -15,6 +15,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## Parties
 
 This Memorandum of Understanding is entered into between:

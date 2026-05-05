@@ -18,6 +18,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## Orientation
 
 The Shareholders Agreement will codify a fixed Dividend Policy splitting Agency net profit in the ratio **70 / 10 / 10 / 10** — 70 % to the Platform Development Fund (ADGM HoldCo), and 10 % each to Rudi, Dymo, and Zhan.

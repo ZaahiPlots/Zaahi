@@ -17,6 +17,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## §1 Executive Summary
 
 ZAAHI's dual-entity structure — Agency (Dubai Mainland LLC, brokerage cash engine) + Platform (ADGM HoldCo, long-horizon technology asset, IPO path) — produces a consolidated P&L that combines the margin profile of a portal / marketplace business with the revenue velocity of a specialty brokerage targeting premium land plots (AED 500M – 2B range) and off-plan floor-level sales. Base-case forward-looking projections for the first five years.

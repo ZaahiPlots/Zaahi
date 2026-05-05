@@ -17,6 +17,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## All projections are BASE CASE. Conservative (−50 %) and Aggressive (+50 %+) scenarios in Tab 6.
 
 The model is built so that every output cell references the Assumptions tab. The scenario toggle in Tab 6 selects Conservative (−50 %), Base, or Aggressive (+50 %+) without rewriting formulas. The Distribution Waterfall in Tab 5 models four Sunset scenarios (Fast Y2, Base mid-Y3, Slow Y4, Time-cap Y5) plus Platform IPO exit scenarios. Tab 8 models the three-layer tax efficiency (Agency 9% CT post-SBR + QFZP Platform + 0 % personal).

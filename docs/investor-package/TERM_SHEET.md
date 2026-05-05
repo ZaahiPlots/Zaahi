@@ -15,6 +15,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## Framing
 
 The terms below implement a **hybrid controlling-to-equal partnership structure** for the Agency and a **founder-controlled Platform**. Rudi acquires **80 % of the Agency** (Dubai Mainland LLC) during an initial payback period and **10 % of the Platform** (ADGM HoldCo, Zhan 80 %, Dymo 10 %) perpetually. His Agency majority automatically converts to a one-third equal partnership on the earlier of (a) AED 2,000,000 cumulative distributions received or (b) 5 years since SAFE execution.

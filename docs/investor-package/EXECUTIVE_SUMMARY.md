@@ -15,6 +15,10 @@
 
 ---
 
+> **STRUCTURE NOTE (5 May 2026).** The instrument referenced herein as "Post-Money SAFE" is under active revision to a loan structure. Final terms ratify at the investor meeting on 6 May 2026. Numbers and mechanics in this document remain directionally accurate; the instrument label and conversion mechanics will be updated in the next revision.
+
+---
+
 ## One hook. One deal. One page.
 
 **UAE real estate is a AED 760 billion annual transaction market fragmented across government systems and hundreds of brokerages. ZAAHI is the operating system that unifies it.** Live today at [zaahi.io](https://www.zaahi.io). Rudi's AED 1,000,000 takes controlling investor position in the Agency (80 %) during the payback period, converts to an equal three-way partnership (33.34 %) on the earlier of 2× cumulative return or 5 years, and grants Rudi 10 % of the Platform for life. The Platform carries the IPO path (**10-year projected total return: AED 437 M on AED 1 M Investment = 437× MOIC, ~80 % IRR**); the Agency is the operational cash engine targeting AED 7.8 M Year 1 revenue on 12 premium land plot + 2 off-plan floor deals.
