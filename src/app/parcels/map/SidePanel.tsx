@@ -91,10 +91,46 @@ interface ParcelDetail {
   // is replaced with "Price on request — JV terms negotiable" and a gold
   // "Open to JV" badge appears next to the Land Use section title.
   openToJV?: boolean;
+  // Optional JSON-encoded JV term sheet. When present (and openToJV is
+  // true) the SidePanel renders an expandable "JV Terms" section with
+  // jvType / gfaSharing / landowner+developer share / commission. Listings
+  // marked openToJV but without a term sheet (e.g. Plot 3261270) leave
+  // this null and the section is not rendered.
+  jvDetails?: string | null;
   latitude: number | null;
   longitude: number | null;
   geometry: GeoJSON.Polygon | null;
   affectionPlans: Plan[];
+}
+
+interface JvTerms {
+  jvType?: string;
+  landCost?: string;
+  gfaSharing?: string;
+  basis?: string;
+  landownerShareSqm?: number;
+  landownerShareSqft?: number;
+  developerShareSqm?: number;
+  developerShareSqft?: number;
+  commissionPct?: number;
+  commissionBasis?: string;
+}
+
+function parseJvTerms(raw: string | null | undefined): JvTerms | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as JvTerms;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function fmtAreaSplit(sqm?: number, sqft?: number): string | null {
+  const parts: string[] = [];
+  if (sqm != null) parts.push(`${sqm.toLocaleString("en-US")} m²`);
+  if (sqft != null) parts.push(`${sqft.toLocaleString("en-US")} ft²`);
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 function aedFromFils(fils: string | null): number | null {
@@ -121,6 +157,7 @@ export default function SidePanel({
   const [loading, setLoading] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [feasOpen, setFeasOpen] = useState(false);
+  const [jvOpen, setJvOpen] = useState(true); // default open — the JV terms are the headline of the listing
   const [offerOpen, setOfferOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -139,6 +176,7 @@ export default function SidePanel({
     setData(null);
     setDocsOpen(false);
     setFeasOpen(false);
+    setJvOpen(true);
     setIsFavorite(false);
     apiFetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
@@ -413,6 +451,88 @@ export default function SidePanel({
               <span>{pdfBusy ? "Generating…" : "Download Site Plan"}</span>
             </button>
           </div>
+
+          {/* JV Terms — only when openToJV is set AND a structured term
+              sheet was attached. Listings flagged openToJV without a sheet
+              (e.g. Plot 3261270) silently skip this section. */}
+          {(() => {
+            const jv = data.openToJV ? parseJvTerms(data.jvDetails) : null;
+            if (!jv) return null;
+            return (
+              <div
+                style={{
+                  background: "rgba(200, 169, 110, 0.06)",
+                  border: "1px solid rgba(200, 169, 110, 0.25)",
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setJvOpen((v) => !v)}
+                  style={{
+                    width: "100%",
+                    background: "transparent",
+                    border: 0,
+                    padding: 0,
+                    color: GOLD,
+                    fontWeight: 700,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 1.2,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    transition: "color 150ms ease",
+                  }}
+                  aria-expanded={jvOpen}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 99,
+                        background: GOLD,
+                        flexShrink: 0,
+                      }}
+                    />
+                    JV Terms
+                  </span>
+                  <span style={{ color: GOLD }}>{jvOpen ? "▾" : "▸"}</span>
+                </button>
+                {jvOpen && (
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Row label="JV Type" v={jv.jvType} />
+                    <Row label="Land Cost" v={jv.landCost} />
+                    <Row label="GFA Sharing" v={jv.gfaSharing} />
+                    <Row label="Basis" v={jv.basis} />
+                    <Row
+                      label="Landowner Share"
+                      v={fmtAreaSplit(jv.landownerShareSqm, jv.landownerShareSqft)}
+                    />
+                    <Row
+                      label="Developer Share"
+                      v={fmtAreaSplit(jv.developerShareSqm, jv.developerShareSqft)}
+                    />
+                    <Row
+                      label="Commission"
+                      v={
+                        jv.commissionPct != null
+                          ? `${jv.commissionPct}%${jv.commissionBasis ? ` of ${jv.commissionBasis}` : ""}`
+                          : null
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {plan ? (
             <>

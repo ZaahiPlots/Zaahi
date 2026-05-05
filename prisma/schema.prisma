@@ -157,6 +157,7 @@ model Parcel {
   currentValuation BigInt? // fils
   isTokenized      Boolean      @default(false)
   openToJV         Boolean      @default(false) // Joint-Venture signal — owner is open to JV partnership terms instead of (or alongside) a cash sale.
+  jvDetails        String? // Optional JSON-encoded JV term sheet (jvType, gfaSharing, landownerShare, developerShare, commissionPct, …). Renders as the "JV Terms" section in SidePanel when openToJV=true.
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
