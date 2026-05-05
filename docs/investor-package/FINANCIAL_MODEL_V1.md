@@ -7,9 +7,10 @@
 **Document:** Financial Model — Excel / Google Sheets Template Structure
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
-**Form:** Markdown specification of tab structure, formulas, and assumptions — to be rendered into Excel / Google Sheets before the Sunday meeting (or Week 1 post-MOU)
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
+**Form:** Markdown specification of tab structure, formulas, and assumptions — to be rendered into Excel / Google Sheets (originally targeted for the 19 April 2026 meeting; refreshed 5 May 2026)
 **Audience:** Rudi; UAE legal and tax counsel; future Series A investors
 **Status:** Template structure — assumptions calibrated by Zhan + Dymo; all computed outputs are formula-driven (no hardcoded result cells)
 **Classification:** CONFIDENTIAL
@@ -389,4 +390,4 @@ Dashboard row: "Year [N] effective tax burden on Rudi distribution: X %. Platfor
 
 ---
 
-*End of Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo before the Sunday 2026-04-19 Al Jurf meeting (or Week 1 post-MOU).*
+*End of Financial Model specification. To be converted to Excel / Google Sheets by Zhan + Dymo (originally targeted before the Sunday, 19 April 2026 Al Jurf meeting; specification refreshed 5 May 2026).*

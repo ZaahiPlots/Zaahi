@@ -7,8 +7,9 @@
 **Document:** Profit & Loss Statement — Forward-looking financial projections, Year 1 to Year 5
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
 **Instrument context:** Post-Money SAFE (YC 2018 standard, adapted to UAE / ADGM law) per the Term Sheet
 **Accounting framework:** IFRS as adopted by the UAE; dual-entity consolidation (Agency + Platform)
 **Status:** DRAFT — subject to UAE counsel review
@@ -876,4 +877,4 @@ Counsel-confirmed positions integrate into the final Shareholders Agreement Divi
 
 ---
 
-*End of Profit & Loss Statement. Submitted for investor review at the Sunday 2026-04-19 Al Jurf meeting, to be followed by UAE tax counsel review during the post-MOU phase.*
+*End of Profit & Loss Statement. Originally submitted for investor review at the Sunday, 19 April 2026 Al Jurf meeting; refreshed 5 May 2026; UAE tax counsel review pending during the post-MOU phase.*

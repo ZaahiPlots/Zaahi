@@ -7,8 +7,9 @@
 **Document:** Executive Summary
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
 **Status:** DRAFT — legal documents subject to UAE counsel review
 **Classification:** CONFIDENTIAL
 
@@ -140,4 +141,4 @@ Target combined effective tax burden: **~2–4 %** across the structure. Full de
 ---
 
 **Contact.** `zhanrysbayev@gmail.com` · `d.tsvyk@gmail.com` · [`zaahi.io`](https://www.zaahi.io)
-**Classification.** CONFIDENTIAL — prepared for Rudi, Sunday 2026-04-19, Al Jurf.
+**Classification.** CONFIDENTIAL — prepared for Rudi. As of 5 May 2026.

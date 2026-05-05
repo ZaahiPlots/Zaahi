@@ -7,8 +7,9 @@
 **Document:** Investor Package Index
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
 **Agency formation documents submitted:** Monday 2026-04-21
 **Status:** DRAFT — all legal documents subject to UAE counsel review before execution
 **Classification:** CONFIDENTIAL
@@ -17,7 +18,7 @@
 
 ## Purpose
 
-This package supports the formal close of Rudi's AED 1,000,000 investment into ZAAHI. Documents are designed for the **Sunday 2026-04-19 meeting in Al Jurf**, the Monday 2026-04-21 agency-documents submission, and the Shareholders Agreement close thereafter.
+This package supports the formal close of Rudi's AED 1,000,000 investment into ZAAHI. Documents were originally drafted for the founders' meeting with the investor on Sunday, 19 April 2026 at Al Jurf, then refreshed for the Monday 2026-04-21 agency-documents submission and the Shareholders Agreement close thereafter.
 
 ZAAHI is an operating company with a live production platform at [zaahi.io](https://www.zaahi.io). The investment formalises a partnership that emerged organically after Rudi experienced the product and technology on April 17, 2026.
 
@@ -64,7 +65,7 @@ Allow ~120 minutes for full package review.
 
 ---
 
-## Sunday 2026-04-19 Al Jurf meeting — agenda
+## Founders' meeting with investor (Sunday, 19 April 2026, Al Jurf) — agenda
 
 Venue: Al Jurf, UAE. Approximate duration: 2 hours.
 
@@ -111,7 +112,7 @@ Sunset trigger (earlier of):
 
 ---
 
-## What Rudi takes home Sunday 2026-04-19
+## What Rudi took home from Sunday, 19 April 2026
 
 A printed and bound physical package in the following order:
 
@@ -128,7 +129,7 @@ A printed and bound physical package in the following order:
 11. **Dymo Protections** — Dymo's protection addendum.
 12. **Q&A Preparation** — anticipated questions, answered.
 
-Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · Sunday 2026-04-19 · Al Jurf" in subtle gold footer.
+Binder cover: navy leather or premium stock, gold-foil ZAAHI wordmark, "CONFIDENTIAL · Prepared for Rudi · As of 5 May 2026" in subtle gold footer.
 
 Also provided:
 - USB-C memory stick with the same content as PDF + Excel model.

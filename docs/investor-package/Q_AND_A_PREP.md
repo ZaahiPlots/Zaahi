@@ -7,8 +7,9 @@
 **Document:** Q&A Preparation — Sunday Meeting
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
 **Status:** Internal preparation — anticipated questions with direct answers
 **Classification:** CONFIDENTIAL
 

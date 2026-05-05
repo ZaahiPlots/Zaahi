@@ -7,7 +7,8 @@
 **Document:** P&L Deep Research — Benchmark + Methodology Source
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-18
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-18
 **Purpose:** Supporting research for `P_AND_L_STATEMENT.md` — public-company benchmarks, UAE tax framework, industry multiples, DD standards
 **Status:** Research source document — retained for traceability; not intended for investor review directly
 

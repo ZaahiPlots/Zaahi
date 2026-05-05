@@ -7,9 +7,10 @@
 **Document:** Pitch Deck (markdown source, 18 slides)
 **Prepared for:** Rodolphe Belin ("Rudi") — Principal Investor
 **Prepared by:** Zharkyn Ryspayev ("Zhan") — Founder, CEO/CTO · Dmytro Tsvyk ("Dymo") — Co-founder, Operations Principal
-**Date:** 2026-04-19
-**Meeting:** Sunday 2026-04-19, Al Jurf
-**Status:** Source for Figma / Keynote rendering before Sunday meeting
+**As of:** 5 May 2026
+**Original drafting date:** 2026-04-19
+**Original founders' meeting with investor:** Sunday, 19 April 2026, Al Jurf
+**Status:** Source for Figma / Keynote rendering — refreshed 5 May 2026
 **Classification:** CONFIDENTIAL
 
 ---
@@ -24,7 +25,7 @@
 
 **The Real Estate OS for UAE**
 
-*[Logo placeholder — ZAAHI wordmark in gold on dark navy ground. Below wordmark: tagline. Bottom-left: `Confidential — Prepared for Rudi · Sunday 2026-04-19 · Al Jurf`. Bottom-right: `zaahi.io`.]*
+*[Logo placeholder — ZAAHI wordmark in gold on dark navy ground. Below wordmark: tagline. Bottom-left: `Confidential — Prepared for Rudi · As of 5 May 2026`. Bottom-right: `zaahi.io`.]*
 
 *Emotional beat: trust and poise. 5 seconds. Pause. Do not read the tagline. Let the product speak — open `zaahi.io` on the screen behind the deck if possible.*
 
@@ -398,7 +399,7 @@ Platform (ADGM HoldCo) raises Series A / B / C and targets IPO Years 5–10. Age
 | **Later** | Shareholders Agreement executed with top-tier counsel; Platform Series A preparation | Legal · Zhan · Dymo |
 | **Sunset trigger (earlier of)** | AED 2 M cumulative to Rudi OR 5th anniversary of SAFE Closing | Automatic |
 
-*Visual note: Gantt-style horizontal bars over a Sunday-2026-04-19-to-Year-5 timeline. Each bar in ZAAHI gold. Today (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line at 2026-04-21 marked "Agency formation documents submitted". A third at June 2026 marked "First deal target — Platform formation". A fourth dotted line at Year 5 marked "Sunset latest trigger".*
+*Visual note: Gantt-style horizontal bars over a 19-April-2026-to-Year-5 timeline. Each bar in ZAAHI gold. MOU day (2026-04-19) marked with a vertical gold line labelled "Al Jurf MOU day". A second gold line at 2026-04-21 marked "Agency formation documents submitted". A third at June 2026 marked "First deal target — Platform formation". A fourth dotted line at Year 5 marked "Sunset latest trigger".*
 
 *Emotional beat: executional certainty. Close the deck by saying: "We are prepared to execute every line on this chart. The MOU is the first. Every subsequent item has a named owner and a dated target."*
 
