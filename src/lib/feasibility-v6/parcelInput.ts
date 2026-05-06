@@ -88,6 +88,67 @@ export function adaptParcelToInput(
   };
 }
 
+// SidePanel adapter — accepts the `data + plan + aed` triple already computed
+// in src/app/parcels/map/SidePanel.tsx, so the v6 calculator can mount inside
+// the Client Component without a fresh Prisma fetch (the SidePanel already has
+// the parcel loaded via /api/parcels/[id]).
+//
+// The SidePanel serializes currentValuation as a string (BigInt → JSON), so
+// the dirham conversion happens upstream and we just take the AED number here.
+
+interface SidePanelDataLike {
+  id: string;
+  plotNumber: string;
+  district: string;
+  emirate: string;
+  area: number;
+}
+
+interface SidePanelPlanLike {
+  community: string | null;
+  projectName: string | null;
+  masterDeveloper: string | null;
+  plotAreaSqft: number | null;
+  far: number | null;
+  maxGfaSqft: number | null;
+  maxFloors: number | null;
+  landUseMix: Array<{ category: string; sub?: string; areaSqm?: number | null }> | null;
+}
+
+export function adaptSidePanelToInput(
+  data: SidePanelDataLike,
+  plan: SidePanelPlanLike | null,
+  plotPriceAed: number,
+): ParcelInput {
+  const plotAreaSqft = plan?.plotAreaSqft ?? data.area ?? 0;
+  const far = plan?.far ?? 2.5;
+  const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
+
+  const mix = plan?.landUseMix ?? [];
+  let landUse = 'RESIDENTIAL';
+  if (mix.length > 1) {
+    landUse = 'MIXED USE';
+  } else if (mix.length === 1 && mix[0]?.category) {
+    landUse = mix[0].category.toUpperCase();
+  }
+
+  return {
+    id: data.id,
+    plotNumber: data.plotNumber,
+    district: data.district,
+    emirate: data.emirate,
+    community: plan?.community ?? null,
+    projectName: plan?.projectName ?? null,
+    masterDeveloper: plan?.masterDeveloper ?? null,
+    landUse,
+    plotAreaSqft,
+    far,
+    gfaSqft,
+    plotPriceAed,
+    maxFloors: plan?.maxFloors ?? null,
+  };
+}
+
 // Map a Land-Use string (from the adapter or a future user override) to the
 // most appropriate v6 engine. Used by Sprint 1 to seed Residential by default
 // when the parcel's land-use is residential. Future sprints expand this map

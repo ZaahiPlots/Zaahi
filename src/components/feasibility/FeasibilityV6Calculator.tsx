@@ -269,13 +269,21 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 export interface FeasibilityV6CalculatorProps {
   parcel: ParcelInput;
   // Optional banner override — preview route uses the RED warning, production
-  // route omits it (or shows a softer informational banner). Default = preview-style.
+  // SidePanel + internal-test full-screen route omit it. Default = preview.
   banner?: 'preview' | 'none';
+  // Layout density. 'sidepanel' (~350 px wide) is the canonical production
+  // mode mounted inside /parcels/map SidePanel post-Sprint-1.5; 'fullscreen'
+  // is the wider two-column layout for the internal-test route + Sprint 7's
+  // viewport-overlay toggle. Default = fullscreen for backward compat with
+  // the preview + internal-test route. Sprint 1.6 will refine the sidepanel
+  // mode with at-a-glance hierarchy (verdict block sticky, panels collapsed).
+  mode?: 'sidepanel' | 'fullscreen';
 }
 
 export default function FeasibilityV6Calculator({
   parcel,
   banner = 'preview',
+  mode = 'fullscreen',
 }: FeasibilityV6CalculatorProps) {
   const [engineId, setEngineId] = useState<EngineId>(defaultEngineFor(parcel.landUse));
   const engine = ENGINES[engineId];
@@ -752,16 +760,26 @@ export default function FeasibilityV6Calculator({
     padding: 20,
   };
 
+  // Outer wrapper styling differs by mode. SidePanel mounts inside its own
+  // container (padding + width already set by parent), so we strip the page-
+  // level chrome (100vh, radial gradient, 24px padding) and let content flow.
+  // Fullscreen mode keeps the gradient + min-height for the standalone page.
+  const outerStyle: React.CSSProperties =
+    mode === 'sidepanel'
+      ? {
+          color: TXT,
+          fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
+        }
+      : {
+          minHeight: '100vh',
+          background: `radial-gradient(circle at 20% 0%, ${NAVY} 0%, #0A1428 60%, #050912 100%)`,
+          padding: fullscreen ? 0 : '24px 24px 64px 24px',
+          color: TXT,
+          fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
+        };
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: `radial-gradient(circle at 20% 0%, ${NAVY} 0%, #0A1428 60%, #050912 100%)`,
-        padding: fullscreen ? 0 : '24px 24px 64px 24px',
-        color: TXT,
-        fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
-      }}
-    >
+    <div style={outerStyle}>
       {/* RED warning banner — preview only. Production renders without it. */}
       {banner === 'preview' && (
         <div
@@ -792,9 +810,14 @@ export default function FeasibilityV6Calculator({
 
       <div
         style={{
-          maxWidth: fullscreen ? '100%' : 1280,
+          maxWidth: mode === 'sidepanel' ? '100%' : fullscreen ? '100%' : 1280,
           margin: '0 auto',
-          padding: fullscreen ? '24px 24px 64px 24px' : '24px 0 0 0',
+          padding:
+            mode === 'sidepanel'
+              ? 0
+              : fullscreen
+                ? '24px 24px 64px 24px'
+                : '24px 0 0 0',
         }}
       >
         {/* Header */}
@@ -854,7 +877,7 @@ export default function FeasibilityV6Calculator({
           style={{
             ...shellStyle,
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: mode === 'sidepanel' ? '1fr' : '1fr 1fr',
             gap: 16,
             marginBottom: 20,
           }}
@@ -893,7 +916,12 @@ export default function FeasibilityV6Calculator({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: fullscreen ? '1fr 1fr' : 'minmax(0, 1fr) minmax(0, 0.95fr)',
+            gridTemplateColumns:
+              mode === 'sidepanel'
+                ? '1fr' // single column on narrow SidePanel; inputs above results
+                : fullscreen
+                  ? '1fr 1fr'
+                  : 'minmax(0, 1fr) minmax(0, 0.95fr)',
             gap: 20,
           }}
         >

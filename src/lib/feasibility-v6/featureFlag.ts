@@ -1,24 +1,29 @@
 // ZAAHI Feasibility v6.0 — feature-flag check.
 //
-// Per docs/specs/feasibility-v6/11_IMPLEMENTATION_PLAN.md §3.5, the v6 route
-// is gated behind a server-evaluated env var. Layer 1 only for Sprint 1 —
-// Layer 2 (per-user metadata override) is deferred.
+// Per docs/specs/feasibility-v6/11_IMPLEMENTATION_PLAN.md §3.5, the v6 UI is
+// gated behind an env var. The flag is read in BOTH a Server Component
+// (production /parcels/[id]/feasibility internal-test route) and a Client
+// Component (the canonical mount inside /parcels/map SidePanel post-Sprint-1.5).
 //
-// Behaviour matrix:
-//   FEASIBILITY_V6_ENABLED = "true"   → enabled (route renders)
-//   FEASIBILITY_V6_ENABLED = anything else (or unset) → disabled (notFound)
+// To work in both runtimes we use the NEXT_PUBLIC_ prefix — Next.js inlines
+// these at build time into the client bundle while the server still reads them
+// directly from process.env. Trade-off: the flag boolean is observable in
+// shipped JS, which is acceptable because:
+//   - Boolean is not a secret. Knowing v6 exists doesn't unlock anything; the
+//     route + SidePanel mount still need a real session and the flag value
+//     to be 'true' at build time.
+//   - Defence-in-depth: the production route still calls notFound() and the
+//     SidePanel still falls back to v5 rendering.
 //
-// Default-disabled. The route stays 404 in production until Sprint 11 cutover
-// flips the Vercel env var to "true". Defence-in-depth: even if the route file
-// ships, the gate keeps it dark.
+// Behaviour matrix (rebuild required when flipping):
+//   NEXT_PUBLIC_FEASIBILITY_V6_ENABLED = "true"  → enabled
+//   anything else / unset                        → disabled
 //
-// This file is server-side only (read by page.tsx in a Server Component).
-// Do NOT import from a Client Component — VERCEL/server env vars are not
-// inlined into the client bundle.
+// Default-disabled. Stays 404 + v5-only in production until Sprint 11 cutover.
 
 export const IS_FEASIBILITY_V6_ENABLED: boolean =
-  process.env.FEASIBILITY_V6_ENABLED === 'true';
+  process.env.NEXT_PUBLIC_FEASIBILITY_V6_ENABLED === 'true';
 
 export function describeFeatureFlagEnv(): string {
-  return `FEASIBILITY_V6_ENABLED=${process.env.FEASIBILITY_V6_ENABLED ?? 'unset'} → IS_FEASIBILITY_V6_ENABLED=${IS_FEASIBILITY_V6_ENABLED}`;
+  return `NEXT_PUBLIC_FEASIBILITY_V6_ENABLED=${process.env.NEXT_PUBLIC_FEASIBILITY_V6_ENABLED ?? 'unset'} → IS_FEASIBILITY_V6_ENABLED=${IS_FEASIBILITY_V6_ENABLED}`;
 }

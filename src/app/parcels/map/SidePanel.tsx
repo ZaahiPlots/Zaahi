@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import FeasibilityCalculator from "./FeasibilityCalculator";
+import FeasibilityV6Calculator from "@/components/feasibility/FeasibilityV6Calculator";
+import { IS_FEASIBILITY_V6_ENABLED } from "@/lib/feasibility-v6/featureFlag";
+import { adaptSidePanelToInput } from "@/lib/feasibility-v6/parcelInput";
 import OfferModal from "./OfferModal";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
@@ -683,26 +686,34 @@ export default function SidePanel({
                 </button>
                 {feasOpen && (
                   <div style={{ marginTop: 8 }}>
-                    <FeasibilityCalculator
-                      plotAreaSqft={data.area}
-                      plotPriceAed={aed ?? 0}
-                      gfaSqft={plan.maxGfaSqft ?? 0}
-                      far={plan.far}
-                      landUseMix={plan.landUseMix}
-                      landUse={
-                        plan.landUseMix && plan.landUseMix.length > 1
-                          ? "MIXED_USE"
-                          : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
-                      }
-                      maxFloors={plan.maxFloors}
-                      community={plan.community}
-                      plotNumber={data.plotNumber}
-                      district={data.district}
-                      projectName={plan.projectName}
-                      masterDeveloper={plan.masterDeveloper}
-                      maxHeightCode={plan.maxHeightCode}
-                      onStartNegotiation={() => setOfferOpen(true)}
-                    />
+                    {IS_FEASIBILITY_V6_ENABLED ? (
+                      <FeasibilityV6Calculator
+                        parcel={adaptSidePanelToInput(data, plan, aed ?? 0)}
+                        banner="none"
+                        mode="sidepanel"
+                      />
+                    ) : (
+                      <FeasibilityCalculator
+                        plotAreaSqft={data.area}
+                        plotPriceAed={aed ?? 0}
+                        gfaSqft={plan.maxGfaSqft ?? 0}
+                        far={plan.far}
+                        landUseMix={plan.landUseMix}
+                        landUse={
+                          plan.landUseMix && plan.landUseMix.length > 1
+                            ? "MIXED_USE"
+                            : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
+                        }
+                        maxFloors={plan.maxFloors}
+                        community={plan.community}
+                        plotNumber={data.plotNumber}
+                        district={data.district}
+                        projectName={plan.projectName}
+                        masterDeveloper={plan.masterDeveloper}
+                        maxHeightCode={plan.maxHeightCode}
+                        onStartNegotiation={() => setOfferOpen(true)}
+                      />
+                    )}
                   </div>
                 )}
               </div>
