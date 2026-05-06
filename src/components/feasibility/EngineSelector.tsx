@@ -6,6 +6,13 @@
 // calculator's effect (so manual overrides are preserved when the user toggles
 // back). Visual tokens: navy glass background, gold-tinted border, system-font
 // inherit. Same dropdown pattern as the existing community filter on /dashboard.
+//
+// Sprint 2-fast (2026-05-06) — all 13 engines unlocked. Engines whose defaults
+// are research-only (not founder-ratified) are grouped under "RESEARCH DEFAULTS"
+// with an italic caption noting the calibration state. Validated engines
+// (Residential, Office at this commit) sit in a "VALIDATED" group at the top.
+// As founder ratifies more engines, flip their `validated:` field to `true`
+// in src/lib/feasibility-v6/engines.ts.
 
 import { ENGINES, ENGINE_ORDER, type EngineId } from '@/lib/feasibility-v6/engines';
 import FieldLabel from './FieldLabel';
@@ -19,16 +26,24 @@ const LINE_HARD = 'rgba(200, 169, 110, 0.30)';
 export interface EngineSelectorProps {
   value: EngineId;
   onChange: (id: EngineId) => void;
-  // Restrict the dropdown to a subset of engines. Used in production
-  // SidePanel mount to ship only the engines that have been founder-validated
-  // (Residential first, expanding sprint by sprint). When omitted, the full
-  // 13-engine catalogue is exposed (preview + internal-test routes).
+  // Restrict the dropdown to a subset of engines. Production now passes
+  // undefined (full 13-engine catalogue with grouped optgroups). Kept for
+  // future emergency fallback to a smaller set if a specific engine breaks.
   availableEngines?: EngineId[];
 }
 
 export default function EngineSelector({ value, onChange, availableEngines }: EngineSelectorProps) {
   const engine = ENGINES[value];
   const ids: EngineId[] = availableEngines ?? ENGINE_ORDER;
+
+  // Split into validated / research-only. Validated group preserves
+  // ENGINE_ORDER for natural reading; research group sorted alphabetically by
+  // label so users can find an asset class predictably.
+  const validatedIds = ids.filter((id) => ENGINES[id].validated);
+  const researchIds = ids
+    .filter((id) => !ENGINES[id].validated)
+    .sort((a, b) => ENGINES[a].label.localeCompare(ENGINES[b].label));
+
   return (
     <div>
       <div
@@ -61,17 +76,44 @@ export default function EngineSelector({ value, onChange, availableEngines }: En
           appearance: 'none',
         }}
       >
-        {ids.map((id) => (
-          <option key={id} value={id} style={{ background: NAVY }}>
-            {ENGINES[id].label}
-          </option>
-        ))}
+        {validatedIds.length > 0 && (
+          <optgroup label="VALIDATED" style={{ background: NAVY, color: GOLD }}>
+            {validatedIds.map((id) => (
+              <option key={id} value={id} style={{ background: NAVY, color: TXT }}>
+                {ENGINES[id].label}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {researchIds.length > 0 && (
+          <optgroup label="RESEARCH DEFAULTS" style={{ background: NAVY, color: GOLD }}>
+            {researchIds.map((id) => (
+              <option key={id} value={id} style={{ background: NAVY, color: TXT }}>
+                {ENGINES[id].label}
+              </option>
+            ))}
+          </optgroup>
+        )}
       </select>
       <div style={{ color: SUBTLE, fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
         {engine.blurb}
         <div style={{ marginTop: 4, color: 'rgba(245,241,232,0.4)', fontSize: 10 }}>
           source: {engine.source}
         </div>
+        {!engine.validated && (
+          <div
+            style={{
+              marginTop: 4,
+              color: 'rgba(245,241,232,0.45)',
+              fontSize: 10,
+              fontStyle: 'italic',
+              lineHeight: 1.4,
+            }}
+          >
+            Defaults from {engine.source.split('·')[0].trim()}. Founder validation
+            in progress — verify against current local quotes for production decisions.
+          </div>
+        )}
       </div>
     </div>
   );

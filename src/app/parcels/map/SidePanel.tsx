@@ -691,11 +691,14 @@ export default function SidePanel({
                         parcel={adaptSidePanelToInput(data, plan, aed ?? 0)}
                         banner="none"
                         mode="sidepanel"
-                        // Production ships only founder-validated engines.
-                        // Sprint 1.6: Residential + Office. Sprint 2 will add
-                        // Retail + Mixed-Use. Subsequent sprints add more.
-                        // Engines not in this list are hidden from the dropdown.
-                        availableEngines={['residential', 'office']}
+                        // Sprint 2-fast (2026-05-06): all 13 engines unlocked.
+                        // Founder accepted "speed > full validation" trade-off.
+                        // EngineSelector splits into VALIDATED (Residential,
+                        // Office) and RESEARCH DEFAULTS optgroups; engines in
+                        // the research group carry an italic disclaimer below
+                        // the source citation. As founder ratifies more
+                        // engines, flip their `validated:` field in
+                        // src/lib/feasibility-v6/engines.ts.
                       />
                     ) : (
                       <FeasibilityCalculator

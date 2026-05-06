@@ -50,6 +50,12 @@ export interface EngineDefaults {
   blurb: string;
   // Whether BtS and BtR pathways apply to this engine
   modes: ('bts' | 'btr')[];
+  // Founder-validated defaults vs research-only. Controls UX grouping in the
+  // engine dropdown ("VALIDATED" group at top, "RESEARCH DEFAULTS" below) and
+  // the italic "Founder validation in progress" caption under the source line.
+  // Flip to true sprint-by-sprint as founder ratifies engine numbers in
+  // 10_FOUNDER_RATIFY_P0.md follow-ups.
+  validated: boolean;
 }
 
 export const ENGINES: Record<EngineId, EngineDefaults> = {
@@ -69,6 +75,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'DLD secondary Q1 2026 · Dubai Hills median',
     blurb: 'Apartment / villa stock for sale or lease. Default seeded from Dubai Hills median.',
     modes: ['bts', 'btr'],
+    validated: true,
+
   },
   office: {
     id: 'office',
@@ -86,6 +94,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'CBRE Q1 2026 Dubai Office MarketView',
     blurb: 'Grade-A and B+ office space. Default mid-grade Business Bay psf.',
     modes: ['bts', 'btr'],
+    validated: true,
+
   },
   retail: {
     id: 'retail',
@@ -103,6 +113,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'JLL Dubai Retail Market H2 2025',
     blurb: 'High-street and community-mall retail. Anchor + line-shop blend.',
     modes: ['bts', 'btr'],
+    validated: false,
+
   },
   hospitality: {
     id: 'hospitality',
@@ -120,6 +132,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'HVS Middle East 2025 · 5★ ADR 1,000–1,400',
     blurb: '5★ branded hotel / branded residences. ADR-driven; revenue model is not psf.',
     modes: ['bts'],
+    validated: false,
+
   },
   industrial: {
     id: 'industrial',
@@ -137,6 +151,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'Cushman & Wakefield UAE Logistics 2025',
     blurb: 'Warehouse, light industrial, last-mile logistics. Long lease tenor.',
     modes: ['bts', 'btr'],
+    validated: false,
+
   },
   healthcare: {
     id: 'healthcare',
@@ -154,6 +170,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'DHA / VPS Healthcare 2025 · AED 3M/bed private',
     blurb: 'Private hospital / specialty clinic. Per-bed economics; placeholder needs founder default Q1.',
     modes: ['bts', 'btr'],
+    validated: false,
+
   },
   educational: {
     id: 'educational',
@@ -171,6 +189,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'KHDA 2025 · AED 400k/student ultra-premium',
     blurb: 'British / IB curriculum schools. Per-student economics; placeholder needs founder default Q2.',
     modes: ['bts', 'btr'],
+    validated: false,
+
   },
   senior: {
     id: 'senior',
@@ -188,6 +208,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'CBRE Senior Living UAE 2025 (preliminary)',
     blurb: 'Assisted-living / independent senior. Nascent UAE class; cost band is wide.',
     modes: ['btr'],
+    validated: false,
+
   },
   datacenter: {
     id: 'datacenter',
@@ -205,6 +227,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'Khazna / Equinix 2025 · AED 33–41M Tier-3/MW',
     blurb: 'Tier-3 colocation. CapEx in AED/MW, not psf. Placeholder needs founder default Q7.',
     modes: ['btr'],
+    validated: false,
+
   },
   mixeduse: {
     id: 'mixeduse',
@@ -222,6 +246,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'Blended residential + retail + office',
     blurb: 'Mixed residential + retail + office tower. Defaults are blended midpoints.',
     modes: ['bts', 'btr'],
+    validated: false,
+
   },
   infrastructure: {
     id: 'infrastructure',
@@ -239,6 +265,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'ICMS 3 / NRM 1 unit-rate library',
     blurb: 'Roads, utilities, district cooling. Modelled on unit-rate basis, not psf.',
     modes: [],
+    validated: false,
+
   },
   offplan: {
     id: 'offplan',
@@ -256,6 +284,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'DLD off-plan Q1 2026 · Dubai Hills',
     blurb: 'Off-plan sales overlay on Residential. ~12% premium over secondary.',
     modes: ['bts'],
+    validated: false,
+
   },
   landhold: {
     id: 'landhold',
@@ -273,6 +303,8 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     source: 'DLD secondary land Q1 2026',
     blurb: 'Speculative land-bank with no construction. CAGR-driven exit.',
     modes: [],
+    validated: false,
+
   },
 };
 
