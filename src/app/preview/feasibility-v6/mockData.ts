@@ -1,32 +1,22 @@
 // ZAAHI Feasibility v6.0 — mock parcel data, in-memory only.
 //
-// No Supabase tables, no API calls. Exists purely so the preview route can
-// render without a real session-aware parcel fetch. Per task constraint:
-// "mock in-memory data" — preview is for UX evaluation, not data validation.
+// Used only by the preview route /preview/feasibility-v6 for parcel-picker UX
+// evaluation. Production /parcels/[id]/feasibility passes a ParcelInput built
+// from a real Prisma fetch via adaptParcelToInput().
 //
-// Five seed plots span the 9 canonical Land Use categories so every engine
-// has a sensible default parcel to load.
+// MockParcel is a type alias for ParcelInput so the same calculator component
+// works for both. Five seed plots span the 9 canonical Land Use categories.
 
-export interface MockParcel {
-  id: string;
-  plotNumber: string;
-  district: string;
-  community: string | null;
-  projectName: string | null;
-  masterDeveloper: string | null;
-  landUse: string;
-  plotAreaSqft: number;
-  far: number;
-  gfaSqft: number;
-  plotPriceAed: number;
-  maxFloors: number | null;
-}
+import type { ParcelInput } from '@/lib/feasibility-v6/parcelInput';
+
+export type MockParcel = ParcelInput;
 
 export const MOCK_PARCELS: MockParcel[] = [
   {
     id: 'mock-001',
     plotNumber: '6457940',
     district: 'Dubai Hills',
+    emirate: 'Dubai',
     community: 'Hills Park',
     projectName: 'Park Villas',
     masterDeveloper: 'Emaar',
@@ -41,6 +31,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     id: 'mock-002',
     plotNumber: '6453221',
     district: 'Business Bay',
+    emirate: 'Dubai',
     community: 'Bay Avenue',
     projectName: 'Bay Tower 12',
     masterDeveloper: 'Damac',
@@ -55,6 +46,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     id: 'mock-003',
     plotNumber: '6862011',
     district: 'JLT',
+    emirate: 'Dubai',
     community: 'Cluster X',
     projectName: 'Mixed-use podium',
     masterDeveloper: 'DMCC',
@@ -69,6 +61,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     id: 'mock-004',
     plotNumber: '5917442',
     district: 'JAFZA',
+    emirate: 'Dubai',
     community: 'Logistics District',
     projectName: 'Warehouse Block 4',
     masterDeveloper: 'JAFZA',
@@ -83,6 +76,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     id: 'mock-005',
     plotNumber: '6854566',
     district: 'Dubai Healthcare City',
+    emirate: 'Dubai',
     community: null,
     projectName: 'Specialty Hospital plot',
     masterDeveloper: 'DHCC',

@@ -1,6 +1,10 @@
 'use client';
 
-// ZAAHI Feasibility Calculator v6.0 — INTERNAL PREVIEW client component.
+// ZAAHI Feasibility Calculator v6.0 — shared client component.
+//
+// Used by both:
+//   - /preview/feasibility-v6      (banner='preview', drives via parcel-picker UI)
+//   - /parcels/[id]/feasibility    (banner='none', drives from real Prisma fetch)
 //
 // Reuses pure formula primitives from src/lib/feasibility.ts (v5 ratified math)
 // and adds v6-specific UX:
@@ -8,7 +12,6 @@
 //   • Live diff badges vs engine defaults (4-tone, per 03_UX_FULLSCREEN_AND_DIFF.md)
 //   • Hover tooltips on top 30 fields (EN-only, per Q3 in 10_FOUNDER_RATIFY_P0.md)
 //   • Fullscreen toggle
-//   • Mock parcel picker (in-memory, see mockData.ts)
 //   • jsPDF export (no weasyprint server endpoint per task constraint)
 //
 // READ-ONLY references:
@@ -38,11 +41,11 @@ import {
   type JvType,
 } from '@/lib/feasibility';
 import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
-import { MOCK_PARCELS, type MockParcel } from './mockData';
-import FieldLabel from '@/components/feasibility/FieldLabel';
-import DiffBadge from '@/components/feasibility/DiffBadge';
-import EngineSelector from '@/components/feasibility/EngineSelector';
-import FullscreenToggle from '@/components/feasibility/FullscreenToggle';
+import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelInput';
+import FieldLabel from './FieldLabel';
+import DiffBadge from './DiffBadge';
+import EngineSelector from './EngineSelector';
+import FullscreenToggle from './FullscreenToggle';
 
 // ── Palette (CLAUDE.md UI STYLE GUIDE) ───────────────────────────────
 const GOLD = '#C8A96E';
@@ -263,14 +266,18 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main calculator component ────────────────────────────────────────
-export default function FeasibilityV6Calculator() {
-  // Selected mock parcel + engine
-  const [parcelId, setParcelId] = useState<string>(MOCK_PARCELS[0].id);
-  const parcel: MockParcel = useMemo(
-    () => MOCK_PARCELS.find((p) => p.id === parcelId) ?? MOCK_PARCELS[0],
-    [parcelId],
-  );
-  const [engineId, setEngineId] = useState<EngineId>('residential');
+export interface FeasibilityV6CalculatorProps {
+  parcel: ParcelInput;
+  // Optional banner override — preview route uses the RED warning, production
+  // route omits it (or shows a softer informational banner). Default = preview-style.
+  banner?: 'preview' | 'none';
+}
+
+export default function FeasibilityV6Calculator({
+  parcel,
+  banner = 'preview',
+}: FeasibilityV6CalculatorProps) {
+  const [engineId, setEngineId] = useState<EngineId>(defaultEngineFor(parcel.landUse));
   const engine = ENGINES[engineId];
 
   // Tab + fullscreen
@@ -755,31 +762,33 @@ export default function FeasibilityV6Calculator() {
         fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
       }}
     >
-      {/* RED warning banner — sticky at top, per spec rgba(230,57,70, 0.95) */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          background: 'rgba(230, 57, 70, 0.95)',
-          color: '#fff',
-          padding: '8px 16px',
-          textAlign: 'center',
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          borderBottom: '1px solid rgba(255,255,255,0.2)',
-        }}
-        role="alert"
-        aria-live="polite"
-      >
-        ⚠️ INTERNAL PREVIEW · v6.0 spec rev-2 · DO NOT SHARE EXTERNALLY · founder-review only
-      </div>
+      {/* RED warning banner — preview only. Production renders without it. */}
+      {banner === 'preview' && (
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: 'rgba(230, 57, 70, 0.95)',
+            color: '#fff',
+            padding: '8px 16px',
+            textAlign: 'center',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderBottom: '1px solid rgba(255,255,255,0.2)',
+          }}
+          role="alert"
+          aria-live="polite"
+        >
+          ⚠️ INTERNAL PREVIEW · v6.0 spec rev-2 · DO NOT SHARE EXTERNALLY · founder-review only
+        </div>
+      )}
 
       <div
         style={{
@@ -811,7 +820,9 @@ export default function FeasibilityV6Calculator() {
               ZAAHI Feasibility v6.0
             </div>
             <div style={{ color: SUBTLE, fontSize: 12, marginTop: 2 }}>
-              Localhost preview · 13 engines · live diff badges · jsPDF export
+              {banner === 'preview'
+                ? 'Localhost preview · 13 engines · live diff badges · jsPDF export'
+                : '13 engines · live diff badges · jsPDF export'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -849,31 +860,22 @@ export default function FeasibilityV6Calculator() {
           }}
         >
           <div>
-            <SectionTitle>Mock parcel</SectionTitle>
-            <select
-              value={parcelId}
-              onChange={(e) => setParcelId(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${LINE_HARD}`,
-                borderRadius: 8,
-                color: TXT,
-                padding: '8px 10px',
-                fontSize: 13,
-                fontFamily: 'inherit',
-                appearance: 'none',
-              }}
-            >
-              {MOCK_PARCELS.map((p) => (
-                <option key={p.id} value={p.id} style={{ background: NAVY }}>
-                  {p.plotNumber} — {p.district} — {p.landUse} — {fmtInt(p.plotAreaSqft)} sqft
-                </option>
-              ))}
-            </select>
-            <div style={{ color: SUBTLE, fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-              {parcel.community && <div>Community: {parcel.community}</div>}
+            <SectionTitle>Parcel</SectionTitle>
+            <div style={{ color: TXT, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
+              Plot {parcel.plotNumber}
+            </div>
+            <div style={{ color: SUBTLE, fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
+              <div>
+                {parcel.district}
+                {parcel.community ? ` · ${parcel.community}` : ''}
+              </div>
               {parcel.projectName && <div>Project: {parcel.projectName}</div>}
+              {parcel.masterDeveloper && <div>Master developer: {parcel.masterDeveloper}</div>}
+              <div>Land use: {parcel.landUse}</div>
+              <div>
+                Plot: {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · GFA{' '}
+                {fmtInt(parcel.gfaSqft)} sqft
+              </div>
               <div>Listed: {fmtAedExact(parcel.plotPriceAed)}</div>
             </div>
           </div>
