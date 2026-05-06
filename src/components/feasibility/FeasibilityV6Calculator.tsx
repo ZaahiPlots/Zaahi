@@ -502,6 +502,23 @@ export default function FeasibilityV6Calculator({
   const [ratePct, setRatePct] = useState<number>(0);
   const [financePeriodMonths, setFinancePeriodMonths] = useState<number>(36);
 
+  // ── Escrow (Sprint 9c) — RERA Law 8/2007 mandatory trust account.
+  // Auto-on when engine is the off-plan modifier (founder Q4=A default).
+  // Off otherwise — user opts in for non-off-plan projects.
+  const [escrowEnabled, setEscrowEnabled] = useState<boolean>(engineId === 'offplan');
+  const [salesAtLaunchPct, setSalesAtLaunchPct] = useState<number>(15);  // founder N6 default
+  const [salesAtHandoverPct, setSalesAtHandoverPct] = useState<number>(80);
+  const [constructionMonths, setConstructionMonths] = useState<number>(18);
+
+  // When engine flips to/from offplan, auto-enable / disable escrow once.
+  const lastEngineForEscrowRef = useRef<EngineId>(engineId);
+  useEffect(() => {
+    if (lastEngineForEscrowRef.current !== engineId) {
+      lastEngineForEscrowRef.current = engineId;
+      setEscrowEnabled(engineId === 'offplan');
+    }
+  }, [engineId]);
+
   // ── BtS revenue (engine-seeded)
   const [salesPsf, setSalesPsf] = useState<number>(engine.salesPsfSfa);
   const [commissionPct, setCommissionPct] = useState<number>(8.5);
@@ -622,8 +639,27 @@ export default function FeasibilityV6Calculator({
     () =>
       computeBtSV6(area, land, construction, finance, btsRevenue, paymentMode, {
         loanAed: financeEnabled ? dLoan : 0,
+        constructionMonths,
+        escrow: {
+          enabled: escrowEnabled,
+          salesAtLaunchPct,
+          salesAtHandoverPct,
+        },
       }),
-    [area, land, construction, finance, btsRevenue, paymentMode, financeEnabled, dLoan],
+    [
+      area,
+      land,
+      construction,
+      finance,
+      btsRevenue,
+      paymentMode,
+      financeEnabled,
+      dLoan,
+      constructionMonths,
+      escrowEnabled,
+      salesAtLaunchPct,
+      salesAtHandoverPct,
+    ],
   );
 
   const btrRental = useMemo(
@@ -1590,6 +1626,122 @@ export default function FeasibilityV6Calculator({
                 </>
               )}
             </Panel>
+
+            {/* Escrow panel — Sprint 9c. Models RERA Law 8/2007 mandatory
+                trust account for off-plan projects. Auto-on for off-plan
+                engine, off otherwise. Reduces peak equity → lifts ROE / IRR. */}
+            {tab === 'bts' && (
+              <Panel
+                title="Escrow (off-plan)"
+                metric={
+                  escrowEnabled && btsResult.escrow
+                    ? `Drawn ${fmtAedExact(btsResult.escrow.totalDrawnFromEscrow)} · Peak equity ${fmtAedExact(btsResult.peakEquityAed)}`
+                    : 'Disabled'
+                }
+                changed={engineId !== 'offplan' && escrowEnabled}
+              >
+                <Row label="Enable escrow" stacked>
+                  <button
+                    type="button"
+                    onClick={() => setEscrowEnabled((b) => !b)}
+                    style={{
+                      padding: '6px 14px',
+                      background: escrowEnabled ? 'rgba(200,169,110,0.2)' : 'transparent',
+                      border: `1px solid ${escrowEnabled ? GOLD : LINE}`,
+                      borderRadius: 6,
+                      color: escrowEnabled ? GOLD : DIM,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                    }}
+                    aria-pressed={escrowEnabled}
+                  >
+                    {escrowEnabled ? 'On' : 'Off'}
+                  </button>
+                </Row>
+                {escrowEnabled && (
+                  <>
+                    <div
+                      style={{
+                        color: SUBTLE,
+                        fontSize: 10,
+                        fontStyle: 'italic',
+                        marginTop: 6,
+                        marginBottom: 8,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Models RERA Law 8/2007 trust account. Buyer payments flow
+                      into escrow; developer draws funds as RERA-engineer-
+                      certified milestones complete. 5% retained 1 year post-
+                      handover (Article 14). Default schedule: foundation 15% /
+                      structure 30% / MEP 50% / finishes 70% / handover 95%.
+                    </div>
+                    <Row label="Construction (months)" stacked>
+                      <NumberInput
+                        value={constructionMonths}
+                        unit="months"
+                        onChange={setConstructionMonths}
+                        fullWidth
+                      />
+                    </Row>
+                    <Row label="Sales at launch" stacked>
+                      <NumberInput
+                        value={salesAtLaunchPct}
+                        unit="%"
+                        onChange={setSalesAtLaunchPct}
+                        fullWidth
+                      />
+                    </Row>
+                    <Row label="Sales at handover" stacked>
+                      <NumberInput
+                        value={salesAtHandoverPct}
+                        unit="%"
+                        onChange={setSalesAtHandoverPct}
+                        fullWidth
+                      />
+                    </Row>
+                    {btsResult.escrow && (
+                      <div
+                        style={{
+                          color: SUBTLE,
+                          fontSize: 11,
+                          marginTop: 8,
+                          padding: '8px 10px',
+                          background: 'rgba(200,169,110,0.06)',
+                          border: `1px solid ${LINE}`,
+                          borderRadius: 6,
+                          lineHeight: 1.5,
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        <div>
+                          Total drawn:{' '}
+                          <span style={{ color: TXT, fontWeight: 700 }}>
+                            {fmtAedExact(btsResult.escrow.totalDrawnFromEscrow)}
+                          </span>
+                        </div>
+                        <div>
+                          Retention released (1y post-handover):{' '}
+                          <span style={{ color: TXT, fontWeight: 700 }}>
+                            {fmtAedExact(btsResult.escrow.totalRetentionReleased)}
+                          </span>
+                        </div>
+                        <div>
+                          Peak equity:{' '}
+                          <span style={{ color: GOLD, fontWeight: 700 }}>
+                            {fmtAedExact(btsResult.peakEquityAed)}
+                          </span>
+                          {' '}(without escrow would equal Total Investment)
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </Panel>
+            )}
 
             {tab === 'bts' && (
               <Panel

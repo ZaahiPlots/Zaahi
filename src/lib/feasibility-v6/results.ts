@@ -39,6 +39,12 @@ import {
   buildJvPartnerCashflows,
   type CashflowEntry,
 } from './irr';
+import {
+  deriveEscrowDrawdown,
+  buildBtSCashflowsWithEscrow,
+  type EscrowDrawdownInputs,
+  type EscrowDrawdownResult,
+} from './escrowDrawdown';
 
 // Default planning assumptions until Sprint 9c surfaces them as user
 // inputs. Typical Dubai mid-rise residential build = 18 months. Office /
@@ -71,6 +77,7 @@ export interface BtSResultV6 extends BtSResult {
   npvAed: number;       // at DEFAULT_NPV_DISCOUNT_RATE
   cashflows: CashflowEntry[]; // for PDF rendering of timeline
   constructionMonths: number;
+  escrow?: EscrowDrawdownResult; // present when escrow is enabled (Sprint 9c)
 }
 
 export function computeBtSV6(
@@ -83,25 +90,53 @@ export function computeBtSV6(
   options?: {
     constructionMonths?: number;
     loanAed?: number;
+    escrow?: Omit<EscrowDrawdownInputs, 'monthsToCompletion' | 'totalConstructionAed' | 'totalRevenueAed'>;
   },
 ): BtSResultV6 {
   const v5 = computeBtS(area, land, construction, finance, revenue, paymentMode);
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
 
-  const cashflows = buildBtSCashflows({
-    landCostAed: land.landCostAed,
-    dldFeeAed: land.dldFeeAed,
-    totalConstructionAed: construction.totalConstructionAed,
-    totalFinanceInterestAed: finance.totalInterestAed,
-    netRevenueAed: revenue.netRevenueAed,
-    constructionMonths,
-    paymentMode,
-    downPaymentAed: land.downPaymentAed,
-    installmentPerMonthAed: land.monthlyInstallmentAed,
-    installmentMonths: paymentMode === 'installments' ? 24 : undefined,
-    loanAed: options?.loanAed,
-  });
+  // Escrow drawdown — Sprint 9c. When enabled (RERA Law 8/2007), buyer
+  // payments flow into a trust account; developer draws down on milestone
+  // completion. This dramatically reduces peak equity for off-plan
+  // projects and lifts IRR-on-equity. When disabled, fall back to
+  // traditional all-equity cashflow.
+  let escrow: EscrowDrawdownResult | undefined;
+  let cashflows: CashflowEntry[];
+
+  if (options?.escrow?.enabled) {
+    escrow = deriveEscrowDrawdown({
+      ...options.escrow,
+      monthsToCompletion: constructionMonths,
+      totalConstructionAed: construction.totalConstructionAed,
+      // Use gross revenue (what buyers pay into escrow), not net.
+      // Reconstruct: gross = netRevenue / (1 - sum-of-deduction-pcts).
+      // Simpler: pull gross from BtSRevenueDerived. Caller passes via
+      // revenue.grossRevenueAed.
+      totalRevenueAed: revenue.grossRevenueAed,
+    });
+    cashflows = buildBtSCashflowsWithEscrow(
+      land.landCostAed,
+      land.dldFeeAed,
+      escrow,
+      revenue.netRevenueAed,
+    );
+  } else {
+    cashflows = buildBtSCashflows({
+      landCostAed: land.landCostAed,
+      dldFeeAed: land.dldFeeAed,
+      totalConstructionAed: construction.totalConstructionAed,
+      totalFinanceInterestAed: finance.totalInterestAed,
+      netRevenueAed: revenue.netRevenueAed,
+      constructionMonths,
+      paymentMode,
+      downPaymentAed: land.downPaymentAed,
+      installmentPerMonthAed: land.monthlyInstallmentAed,
+      installmentMonths: paymentMode === 'installments' ? 24 : undefined,
+      loanAed: options?.loanAed,
+    });
+  }
 
   const peak = peakEquity(cashflows);
   const irrPct = irr(cashflows);
@@ -116,6 +151,7 @@ export function computeBtSV6(
     npvAed,
     cashflows,
     constructionMonths,
+    escrow,
   };
 }
 
