@@ -26,12 +26,9 @@ import {
   deriveConstruction,
   deriveFinance,
   deriveBtSRevenue,
-  computeBtS,
   btsVerdict,
   deriveBtRRental,
-  computeBtR,
   btrVerdict,
-  computeJv,
   fmtAedExact,
   fmtPct,
   fmtInt,
@@ -42,6 +39,7 @@ import {
 } from '@/lib/feasibility';
 import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
 import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelInput';
+import { computeBtSV6, computeBtRV6, computeJvV6 } from '@/lib/feasibility-v6/results';
 import FieldLabel from './FieldLabel';
 import DiffBadge from './DiffBadge';
 import EngineSelector from './EngineSelector';
@@ -621,8 +619,11 @@ export default function FeasibilityV6Calculator({
   );
 
   const btsResult = useMemo(
-    () => computeBtS(area, land, construction, finance, btsRevenue, paymentMode),
-    [area, land, construction, finance, btsRevenue, paymentMode],
+    () =>
+      computeBtSV6(area, land, construction, finance, btsRevenue, paymentMode, {
+        loanAed: financeEnabled ? dLoan : 0,
+      }),
+    [area, land, construction, finance, btsRevenue, paymentMode, financeEnabled, dLoan],
   );
 
   const btrRental = useMemo(
@@ -640,8 +641,11 @@ export default function FeasibilityV6Calculator({
   );
 
   const btrResult = useMemo(
-    () => computeBtR(land, construction, finance, btrRental, dAnn),
-    [land, construction, finance, btrRental, dAnn],
+    () =>
+      computeBtRV6(land, construction, finance, btrRental, dAnn, {
+        loanAed: financeEnabled ? dLoan : 0,
+      }),
+    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan],
   );
 
   const developerCashAuto =
@@ -649,7 +653,7 @@ export default function FeasibilityV6Calculator({
 
   const jv = useMemo(
     () =>
-      computeJv(
+      computeJvV6(
         {
           jvType,
           landownerLandContributionAed: dLoCont,
@@ -1153,6 +1157,24 @@ export default function FeasibilityV6Calculator({
                   </div>
                   <div
                     style={{
+                      color: DIM,
+                      fontSize: 11,
+                      marginTop: 4,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    IRR{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {Number.isFinite(btsResult.irrPct) ? fmtPct(btsResult.irrPct) : '—'}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    ROE{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {btsResult.peakEquityAed > 0 ? fmtPct(btsResult.roePct) : '—'}
+                    </span>
+                  </div>
+                  <div
+                    style={{
                       marginTop: 10,
                       padding: '6px 10px',
                       border: `1px solid ${btsV.color}`,
@@ -1217,6 +1239,24 @@ export default function FeasibilityV6Calculator({
                   </div>
                   <div
                     style={{
+                      color: DIM,
+                      fontSize: 11,
+                      marginTop: 4,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    IRR{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {Number.isFinite(btrResult.irrPct) ? fmtPct(btrResult.irrPct) : '—'}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    ROE{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {btrResult.peakEquityAed > 0 ? fmtPct(btrResult.roePct) : '—'}
+                    </span>
+                  </div>
+                  <div
+                    style={{
                       marginTop: 10,
                       padding: '6px 10px',
                       border: `1px solid ${btrV.color}`,
@@ -1277,6 +1317,29 @@ export default function FeasibilityV6Calculator({
                     Developer{' '}
                     <span style={{ color: TXT }}>
                       {fmtAedExact(jv.developerProfitAed)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 11,
+                      marginTop: 4,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Project IRR{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {Number.isFinite(jv.projectIrrPct) ? fmtPct(jv.projectIrrPct) : '—'}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    LO IRR{' '}
+                    <span style={{ color: TXT }}>
+                      {Number.isFinite(jv.landownerIrrPct) ? fmtPct(jv.landownerIrrPct) : '—'}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    Dev IRR{' '}
+                    <span style={{ color: TXT }}>
+                      {Number.isFinite(jv.developerIrrPct) ? fmtPct(jv.developerIrrPct) : '—'}
                     </span>
                   </div>
                 </>
@@ -1620,6 +1683,16 @@ export default function FeasibilityV6Calculator({
                     label={`- Marketing (${marketingPct}%)`}
                     value={`-${fmtAedExact(btsRevenue.marketingAed)}`}
                   />
+                  {/* Time-Value Returns (Sprint 9a) */}
+                  <ResultRow label="Peak Equity" value={fmtAedExact(btsResult.peakEquityAed)} />
+                  <ResultRow label="ROE (on equity)" value={btsResult.peakEquityAed > 0 ? fmtPct(btsResult.roePct) : '—'} bold />
+                  <ResultRow
+                    label={`IRR (annualised, ${btsResult.constructionMonths}mo)`}
+                    value={Number.isFinite(btsResult.irrPct) ? fmtPct(btsResult.irrPct) : '—'}
+                    bold
+                    gold
+                  />
+                  <ResultRow label="NPV @ 10%" value={fmtAedExact(btsResult.npvAed)} />
                   {paymentMode === 'installments' && (
                     <>
                       <ResultRow label="Down Payment" value={fmtAedExact(land.downPaymentAed)} />
@@ -1645,6 +1718,20 @@ export default function FeasibilityV6Calculator({
                   />
                   <ResultRow label="Net Annual" value={fmtAedExact(btrRental.netAnnualAed)} bold />
                   <ResultRow label="Total 5Y" value={fmtAedExact(btrResult.total5yAed)} bold gold />
+                  {/* Time-Value Returns (Sprint 9a) */}
+                  <ResultRow label="Peak Equity" value={fmtAedExact(btrResult.peakEquityAed)} />
+                  <ResultRow label="ROE (yield-on-equity)" value={btrResult.peakEquityAed > 0 ? fmtPct(btrResult.roePct) : '—'} bold />
+                  <ResultRow
+                    label={`IRR (${btrResult.holdYears}y hold + ${btrResult.constructionMonths}mo build)`}
+                    value={Number.isFinite(btrResult.irrPct) ? fmtPct(btrResult.irrPct) : '—'}
+                    bold
+                    gold
+                  />
+                  <ResultRow
+                    label={`Exit value (cap @ ${btrResult.terminalCapRatePct}%)`}
+                    value={fmtAedExact(btrResult.exitValueAed)}
+                  />
+                  <ResultRow label="NPV @ 10%" value={fmtAedExact(btrResult.npvAed)} />
                 </>
               )}
               {tab === 'jv' && (
@@ -1659,6 +1746,21 @@ export default function FeasibilityV6Calculator({
                     value={`${jv.breakevenJvSharePct.toFixed(1)}%`}
                     bold
                     gold
+                  />
+                  {/* Time-Value Returns (Sprint 9a) */}
+                  <ResultRow
+                    label={`Project IRR (${jv.constructionMonths}mo)`}
+                    value={Number.isFinite(jv.projectIrrPct) ? fmtPct(jv.projectIrrPct) : '—'}
+                    bold
+                    gold
+                  />
+                  <ResultRow
+                    label="Landowner IRR"
+                    value={Number.isFinite(jv.landownerIrrPct) ? fmtPct(jv.landownerIrrPct) : '—'}
+                  />
+                  <ResultRow
+                    label="Developer IRR"
+                    value={Number.isFinite(jv.developerIrrPct) ? fmtPct(jv.developerIrrPct) : '—'}
                   />
                 </>
               )}
