@@ -37,14 +37,12 @@ import {
   type LandPaymentMode,
   type JvType,
 } from '@/lib/feasibility';
-import {
-  ENGINES,
-  ENGINE_ORDER,
-  diffTone,
-  type EngineId,
-} from './engines';
+import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
 import { MOCK_PARCELS, type MockParcel } from './mockData';
-import { getTooltip } from './tooltips';
+import FieldLabel from '@/components/feasibility/FieldLabel';
+import DiffBadge from '@/components/feasibility/DiffBadge';
+import EngineSelector from '@/components/feasibility/EngineSelector';
+import FullscreenToggle from '@/components/feasibility/FullscreenToggle';
 
 // ── Palette (CLAUDE.md UI STYLE GUIDE) ───────────────────────────────
 const GOLD = '#C8A96E';
@@ -67,107 +65,9 @@ function useDebounced<T>(value: T, ms = 300): T {
   return v;
 }
 
-// ── Tooltip wrapper — hover-only, EN-only, top 30 fields ─────────────
-function FieldLabel({
-  label,
-  tooltipKey,
-}: {
-  label: string;
-  tooltipKey?: string;
-}) {
-  const [hover, setHover] = useState(false);
-  const tip = tooltipKey ? getTooltip(tooltipKey) : undefined;
-  return (
-    <span
-      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      <span style={{ color: DIM, fontSize: 11, letterSpacing: 0.3 }}>{label}</span>
-      {tip && (
-        <span
-          aria-hidden="true"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 12,
-            height: 12,
-            borderRadius: '50%',
-            border: `1px solid ${LINE_HARD}`,
-            color: SUBTLE,
-            fontSize: 9,
-            cursor: 'help',
-          }}
-        >
-          i
-        </span>
-      )}
-      {tip && hover && (
-        <span
-          role="tooltip"
-          style={{
-            position: 'absolute',
-            top: '120%',
-            left: 0,
-            zIndex: 30,
-            background: 'rgba(10, 22, 40, 0.96)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            color: TXT,
-            fontSize: 11,
-            padding: '8px 10px',
-            border: `1px solid ${LINE_HARD}`,
-            borderRadius: 8,
-            width: 280,
-            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
-            lineHeight: 1.4,
-            pointerEvents: 'none',
-          }}
-        >
-          {tip}
-        </span>
-      )}
-    </span>
-  );
-}
-
-// ── Diff badge ───────────────────────────────────────────────────────
-function DiffBadge({
-  current,
-  baseline,
-  onReset,
-}: {
-  current: number;
-  baseline: number;
-  onReset?: () => void;
-}) {
-  if (baseline <= 0 || !Number.isFinite(baseline)) return null;
-  const d = diffTone(current, baseline);
-  const sign = d.pct > 0 ? '+' : '';
-  return (
-    <button
-      type="button"
-      onClick={onReset}
-      title={`${d.label} (click to reset)`}
-      style={{
-        background: 'transparent',
-        border: `1px solid ${d.color}`,
-        color: d.color,
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        padding: '1px 6px',
-        borderRadius: 999,
-        cursor: onReset ? 'pointer' : 'default',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      {sign}
-      {d.pct.toFixed(0)}%
-    </button>
-  );
-}
+// FieldLabel + DiffBadge are now standalone components in src/components/feasibility/
+// (extracted in Sprint 0 of v6 implementation). Tooltip lookup is internal to
+// FieldLabel; diffTone live in src/lib/feasibility-v6/diffBadge.ts.
 
 // ── NumberInput (mirrors v5 pattern, glass styling) ──────────────────
 function NumberInput({
@@ -915,26 +815,7 @@ export default function FeasibilityV6Calculator() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => setFullscreen((f) => !f)}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: `1px solid ${LINE_HARD}`,
-                color: GOLD,
-                padding: '8px 14px',
-                borderRadius: 8,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'background 150ms ease, border-color 150ms ease',
-              }}
-              aria-pressed={fullscreen}
-            >
-              {fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            </button>
+            <FullscreenToggle active={fullscreen} onToggle={() => setFullscreen((f) => !f)} />
             <button
               type="button"
               onClick={downloadPDF}
@@ -996,38 +877,7 @@ export default function FeasibilityV6Calculator() {
               <div>Listed: {fmtAedExact(parcel.plotPriceAed)}</div>
             </div>
           </div>
-          <div>
-            <SectionTitle>
-              <FieldLabel label="Engine" tooltipKey="engine" />
-            </SectionTitle>
-            <select
-              value={engineId}
-              onChange={(e) => setEngineId(e.target.value as EngineId)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${LINE_HARD}`,
-                borderRadius: 8,
-                color: TXT,
-                padding: '8px 10px',
-                fontSize: 13,
-                fontFamily: 'inherit',
-                appearance: 'none',
-              }}
-            >
-              {ENGINE_ORDER.map((id) => (
-                <option key={id} value={id} style={{ background: NAVY }}>
-                  {ENGINES[id].label}
-                </option>
-              ))}
-            </select>
-            <div style={{ color: SUBTLE, fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-              {engine.blurb}
-              <div style={{ marginTop: 4, color: 'rgba(245,241,232,0.4)', fontSize: 10 }}>
-                source: {engine.source}
-              </div>
-            </div>
-          </div>
+          <EngineSelector value={engineId} onChange={setEngineId} />
         </div>
 
         {/* Tabs */}
