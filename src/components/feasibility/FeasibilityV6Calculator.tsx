@@ -45,7 +45,10 @@ import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelI
 import FieldLabel from './FieldLabel';
 import DiffBadge from './DiffBadge';
 import EngineSelector from './EngineSelector';
-import FullscreenToggle from './FullscreenToggle';
+// FullscreenToggle stays on disk for future re-introduction but is NOT
+// imported in production. Sprint 7 fullscreen-route work was dropped per
+// founder-corrected plan (2026-05-06). Reintroduce when v6 visual surface
+// includes a viewport-overlay mode that doesn't conflict with SidePanel.
 
 // ── Palette (CLAUDE.md UI STYLE GUIDE) ───────────────────────────────
 const GOLD = '#C8A96E';
@@ -73,18 +76,22 @@ function useDebounced<T>(value: T, ms = 300): T {
 // FieldLabel; diffTone live in src/lib/feasibility-v6/diffBadge.ts.
 
 // ── NumberInput (mirrors v5 pattern, glass styling) ──────────────────
+// `fullWidth` makes the input stretch to its container (used in sidepanel
+// stacked-Row mode so unit suffixes like "AED/sqft" never truncate).
 function NumberInput({
   value,
   onChange,
   unit,
   readonly,
   widthPx,
+  fullWidth,
 }: {
   value: number;
   onChange?: (n: number) => void;
   unit?: string;
   readonly?: boolean;
   widthPx?: number;
+  fullWidth?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   const [raw, setRaw] = useState<string>(fmtInputNumber(value));
@@ -99,7 +106,7 @@ function NumberInput({
   return (
     <div
       style={{
-        display: 'inline-flex',
+        display: fullWidth ? 'flex' : 'inline-flex',
         alignItems: 'center',
         gap: 6,
         padding: '6px 10px',
@@ -107,7 +114,8 @@ function NumberInput({
         border: readonly ? '1px solid transparent' : `1px solid ${LINE}`,
         borderRadius: 8,
         transition: 'border-color 150ms ease, background 150ms ease',
-        minWidth: widthPx ?? 130,
+        width: fullWidth ? '100%' : undefined,
+        minWidth: fullWidth ? undefined : (widthPx ?? 130),
       }}
     >
       <input
@@ -160,17 +168,41 @@ function NumberInput({
 }
 
 // ── Row ──────────────────────────────────────────────────────────────
+// `stacked` mode (sidepanel) places label on top and the input below it,
+// preventing unit truncation in narrow ~350-px containers (founder fix #3).
+// Inline mode (fullscreen) keeps label-left / input-right.
 function Row({
   label,
   tooltipKey,
   badge,
   children,
+  stacked,
 }: {
   label: string;
   tooltipKey?: string;
   badge?: React.ReactNode;
   children: React.ReactNode;
+  stacked?: boolean;
 }) {
+  if (stacked) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          padding: '8px 0',
+          borderBottom: `1px solid ${LINE}`,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <FieldLabel label={label} tooltipKey={tooltipKey} />
+          {badge}
+        </div>
+        <div>{children}</div>
+      </div>
+    );
+  }
   return (
     <div
       style={{
@@ -265,6 +297,113 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Collapsible Panel (sidepanel-mode at-a-glance hierarchy) ─────────
+// Founder fix #5: each panel header shows a primary metric inline so the
+// broker sees BUA / Land Cost / Construction total / Revenue total without
+// expanding. Default closed in sidepanel; default open in fullscreen.
+function Panel({
+  title,
+  metric,
+  defaultOpen,
+  changed,
+  children,
+}: {
+  title: string;
+  metric?: string;
+  defaultOpen?: boolean;
+  // True when user has overridden a default value inside this panel — header
+  // shows a small gold dot next to the chevron. Founder Sprint 1.6 spec.
+  changed?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  return (
+    <div
+      style={{
+        background: 'rgba(10, 22, 40, 0.5)',
+        backdropFilter: 'blur(16px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(150%)',
+        border: `1px solid ${LINE}`,
+        borderRadius: 12,
+        marginBottom: 10,
+        overflow: 'hidden',
+        transition: 'border-color 150ms ease',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '12px 14px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: TXT,
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span
+            style={{
+              color: GOLD,
+              fontFamily: 'Georgia, serif',
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </span>
+          {metric && (
+            <span
+              style={{
+                color: SUBTLE,
+                fontSize: 11,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              · {metric}
+            </span>
+          )}
+          {changed && (
+            <span
+              aria-label="modified"
+              title="You have overridden defaults inside this panel"
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: GOLD,
+                flexShrink: 0,
+              }}
+            />
+          )}
+        </span>
+        <span style={{ color: SUBTLE, fontSize: 11, transition: 'transform 150ms ease', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px 14px', borderTop: `1px solid ${LINE}` }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main calculator component ────────────────────────────────────────
 export interface FeasibilityV6CalculatorProps {
   parcel: ParcelInput;
@@ -272,25 +411,39 @@ export interface FeasibilityV6CalculatorProps {
   // SidePanel + internal-test full-screen route omit it. Default = preview.
   banner?: 'preview' | 'none';
   // Layout density. 'sidepanel' (~350 px wide) is the canonical production
-  // mode mounted inside /parcels/map SidePanel post-Sprint-1.5; 'fullscreen'
-  // is the wider two-column layout for the internal-test route + Sprint 7's
-  // viewport-overlay toggle. Default = fullscreen for backward compat with
-  // the preview + internal-test route. Sprint 1.6 will refine the sidepanel
-  // mode with at-a-glance hierarchy (verdict block sticky, panels collapsed).
+  // mode mounted inside /parcels/map SidePanel; 'fullscreen' is the wider
+  // two-column layout for the internal-test route + preview. Default =
+  // fullscreen for backward compat. Sidepanel mode (Sprint 1.6) renders
+  // sticky verdict block + collapsible panels for at-a-glance readability.
   mode?: 'sidepanel' | 'fullscreen';
+  // Restrict the engine dropdown to a subset of the 13-engine catalogue.
+  // Production ships only founder-validated engines (Residential first,
+  // expanding per sprint). Omit for full catalogue access (preview + internal-test).
+  availableEngines?: EngineId[];
 }
 
 export default function FeasibilityV6Calculator({
   parcel,
   banner = 'preview',
   mode = 'fullscreen',
+  availableEngines,
 }: FeasibilityV6CalculatorProps) {
-  const [engineId, setEngineId] = useState<EngineId>(defaultEngineFor(parcel.landUse));
+  // Clamp initial engine to the allowed list. If the auto-derived engine for
+  // the parcel's land use isn't in availableEngines, fall back to the first
+  // available one (so production never shows a dropdown value not in options).
+  const initialEngine: EngineId = (() => {
+    const auto = defaultEngineFor(parcel.landUse);
+    if (!availableEngines || availableEngines.includes(auto)) return auto;
+    return availableEngines[0] ?? 'residential';
+  })();
+  const [engineId, setEngineId] = useState<EngineId>(initialEngine);
   const engine = ENGINES[engineId];
 
-  // Tab + fullscreen
+  // Tab. (`fullscreen` viewport-overlay state was removed in Sprint 1.6 along
+  // with FullscreenToggle — founder dropped Sprint 7 dedicated-route work in
+  // favour of mounting v6 directly in SidePanel. Reintroduce if a future sprint
+  // builds a true viewport-overlay mode.)
   const [tab, setTab] = useState<Tab>('bts');
-  const [fullscreen, setFullscreen] = useState(false);
 
   // ── Area
   const plotAreaSqft = parcel.plotAreaSqft;
@@ -773,7 +926,7 @@ export default function FeasibilityV6Calculator({
       : {
           minHeight: '100vh',
           background: `radial-gradient(circle at 20% 0%, ${NAVY} 0%, #0A1428 60%, #050912 100%)`,
-          padding: fullscreen ? 0 : '24px 24px 64px 24px',
+          padding: '24px 24px 64px 24px',
           color: TXT,
           fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
         };
@@ -810,46 +963,38 @@ export default function FeasibilityV6Calculator({
 
       <div
         style={{
-          maxWidth: mode === 'sidepanel' ? '100%' : fullscreen ? '100%' : 1280,
+          maxWidth: mode === 'sidepanel' ? '100%' : 1280,
           margin: '0 auto',
-          padding:
-            mode === 'sidepanel'
-              ? 0
-              : fullscreen
-                ? '24px 24px 64px 24px'
-                : '24px 0 0 0',
+          padding: mode === 'sidepanel' ? 0 : '24px 0 0 0',
         }}
       >
-        {/* Header */}
+        {/* Header — simplified per founder Sprint 1.6 directive: just the
+            product name + Export PDF. No version number (Bayut / Property
+            Finder don't show one), no fullscreen toggle (Sprint 7 dropped per
+            corrected plan). Version + generation timestamp moved to PDF footer
+            per Sprint 9 spec. */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 16,
-            marginBottom: 20,
+            marginBottom: mode === 'sidepanel' ? 12 : 20,
           }}
         >
-          <div>
-            <div
-              style={{
-                fontFamily: 'Georgia, serif',
-                fontSize: 26,
-                fontWeight: 700,
-                color: GOLD,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              ZAAHI Feasibility v6.0
-            </div>
-            <div style={{ color: SUBTLE, fontSize: 12, marginTop: 2 }}>
-              {banner === 'preview'
-                ? 'Localhost preview · 13 engines · live diff badges · jsPDF export'
-                : '13 engines · live diff badges · jsPDF export'}
-            </div>
+          <div
+            style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: mode === 'sidepanel' ? 16 : 22,
+              fontWeight: 700,
+              color: GOLD,
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Feasibility Calculator
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <FullscreenToggle active={fullscreen} onToggle={() => setFullscreen((f) => !f)} />
             <button
               type="button"
               onClick={downloadPDF}
@@ -872,38 +1017,65 @@ export default function FeasibilityV6Calculator({
           </div>
         </div>
 
-        {/* Selectors */}
-        <div
-          style={{
-            ...shellStyle,
-            display: 'grid',
-            gridTemplateColumns: mode === 'sidepanel' ? '1fr' : '1fr 1fr',
-            gap: 16,
-            marginBottom: 20,
-          }}
-        >
-          <div>
-            <SectionTitle>Parcel</SectionTitle>
-            <div style={{ color: TXT, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
-              Plot {parcel.plotNumber}
+        {/* Selectors — compact one-liner in sidepanel mode (founder
+            "Plot 3830345 · BARSHA HEIGHTS · MIXED USE" hierarchy);
+            full-card layout in fullscreen mode. */}
+        {mode === 'sidepanel' ? (
+          <div style={{ marginBottom: 12 }}>
+            <div
+              style={{
+                color: TXT,
+                fontSize: 13,
+                fontWeight: 600,
+                fontVariantNumeric: 'tabular-nums',
+                lineHeight: 1.3,
+                marginBottom: 2,
+              }}
+            >
+              Plot {parcel.plotNumber}{' '}
+              <span style={{ color: SUBTLE, fontWeight: 400 }}>
+                · {parcel.district} · {parcel.landUse}
+              </span>
             </div>
-            <div style={{ color: SUBTLE, fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
-              <div>
-                {parcel.district}
-                {parcel.community ? ` · ${parcel.community}` : ''}
-              </div>
-              {parcel.projectName && <div>Project: {parcel.projectName}</div>}
-              {parcel.masterDeveloper && <div>Master developer: {parcel.masterDeveloper}</div>}
-              <div>Land use: {parcel.landUse}</div>
-              <div>
-                Plot: {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · GFA{' '}
-                {fmtInt(parcel.gfaSqft)} sqft
-              </div>
-              <div>Listed: {fmtAedExact(parcel.plotPriceAed)}</div>
+            <div style={{ color: SUBTLE, fontSize: 11, marginBottom: 10 }}>
+              {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · Listed{' '}
+              {fmtAedExact(parcel.plotPriceAed)}
             </div>
+            <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
           </div>
-          <EngineSelector value={engineId} onChange={setEngineId} />
-        </div>
+        ) : (
+          <div
+            style={{
+              ...shellStyle,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 16,
+              marginBottom: 20,
+            }}
+          >
+            <div>
+              <SectionTitle>Parcel</SectionTitle>
+              <div style={{ color: TXT, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
+                Plot {parcel.plotNumber}
+              </div>
+              <div style={{ color: SUBTLE, fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
+                <div>
+                  {parcel.district}
+                  {parcel.community ? ` · ${parcel.community}` : ''}
+                </div>
+                {parcel.projectName && <div>Project: {parcel.projectName}</div>}
+                {parcel.masterDeveloper && <div>Master developer: {parcel.masterDeveloper}</div>}
+                <div>Land use: {parcel.landUse}</div>
+                <div>
+                  Plot: {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · GFA{' '}
+                  {fmtInt(parcel.gfaSqft)} sqft
+                </div>
+                <div>Listed: {fmtAedExact(parcel.plotPriceAed)}</div>
+              </div>
+            </div>
+            <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -912,16 +1084,595 @@ export default function FeasibilityV6Calculator({
           {tabBtn('jv', 'Joint Venture')}
         </div>
 
-        {/* Body — two column on wide screens */}
+        {/* Body — sidepanel mode renders below; fullscreen renders the
+            two-column layout further down. Both branches share the same
+            state, so inputs typed in sidepanel mode survive a mode switch
+            (not exposed in production but useful for the internal-test route). */}
+        {mode === 'sidepanel' && (
+          <>
+            {/* ── Sticky verdict block — at-a-glance "выгодно или нет?".
+                Stays visible while user scrolls input panels. */}
+            <div
+              style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 20,
+                background: 'rgba(10, 22, 40, 0.92)',
+                backdropFilter: 'blur(20px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+                border: `1px solid ${LINE_HARD}`,
+                borderRadius: 14,
+                padding: '14px 16px',
+                marginBottom: 12,
+                boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+              }}
+            >
+              {tab === 'bts' && (
+                <>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 10,
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Net Profit
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Georgia, serif',
+                      fontSize: 26,
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      color: btsResult.netProfitAed >= 0 ? GOLD : '#E63946',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {fmtAedExact(btsResult.netProfitAed)}
+                  </div>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 12,
+                      marginTop: 6,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    ROI{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {fmtPct(btsResult.roiPct)}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    Profit / sqft{' '}
+                    <span style={{ color: TXT }}>
+                      {fmtAedExact(btsResult.profitPerSqftSfa)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: '6px 10px',
+                      border: `1px solid ${btsV.color}`,
+                      borderRadius: 8,
+                      color: btsV.color,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      background: 'rgba(255,255,255,0.02)',
+                    }}
+                    role="status"
+                  >
+                    {btsV.label}
+                  </div>
+                </>
+              )}
+              {tab === 'btr' && (
+                <>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 10,
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Yield
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Georgia, serif',
+                      fontSize: 26,
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      color: btrResult.yieldPct >= 5 ? GOLD : '#E63946',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {fmtPct(btrResult.yieldPct)}
+                  </div>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 12,
+                      marginTop: 6,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Payback{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {btrResult.paybackYears.toFixed(1)} yr
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    Monthly{' '}
+                    <span style={{ color: TXT }}>
+                      {fmtAedExact(btrResult.monthlyCashFlowAed)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: '6px 10px',
+                      border: `1px solid ${btrV.color}`,
+                      borderRadius: 8,
+                      color: btrV.color,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      background: 'rgba(255,255,255,0.02)',
+                    }}
+                    role="status"
+                  >
+                    {btrV.label}
+                  </div>
+                </>
+              )}
+              {tab === 'jv' && (
+                <>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 10,
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Project ROI
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Georgia, serif',
+                      fontSize: 26,
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      color: jv.projectRoiPct >= 0 ? GOLD : '#E63946',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {fmtPct(jv.projectRoiPct)}
+                  </div>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 12,
+                      marginTop: 6,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Landowner{' '}
+                    <span style={{ color: TXT, fontWeight: 700 }}>
+                      {fmtAedExact(jv.landownerProfitAed)}
+                    </span>
+                    <span style={{ color: SUBTLE }}> · </span>
+                    Developer{' '}
+                    <span style={{ color: TXT }}>
+                      {fmtAedExact(jv.developerProfitAed)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ── Collapsible panels — primary metric in header so the
+                broker sees BUA / Land Cost / Construction without expanding. */}
+            <Panel title="Area" metric={`BUA ${fmtInt(area.bua)} sqft · GFA ${fmtInt(area.gfa)} sqft`}>
+              <Row label="Plot Area" tooltipKey="plotArea" stacked>
+                <NumberInput value={plotAreaSqft} unit="sqft" readonly fullWidth />
+              </Row>
+              <Row label="FAR" tooltipKey="far" stacked>
+                <NumberInput value={far} readonly fullWidth />
+              </Row>
+              <Row label="GFA" tooltipKey="gfa" stacked>
+                <NumberInput value={Math.round(area.gfa)} unit="sqft" readonly fullWidth />
+              </Row>
+              <Row
+                label="BUA"
+                tooltipKey="bua"
+                stacked
+                badge={<DiffBadge current={buaRatio} baseline={1.85} onReset={() => setBuaRatio(1.85)} />}
+              >
+                <NumberInput
+                  value={buaManual}
+                  unit="sqft"
+                  fullWidth
+                  onChange={(n) => {
+                    setBuaManual(n);
+                    if (area.gfa > 0) setBuaRatio(Number((n / area.gfa).toFixed(3)));
+                  }}
+                />
+              </Row>
+              <Row label="BUA / GFA" tooltipKey="buaRatio" stacked>
+                <NumberInput
+                  value={Number(buaRatio.toFixed(3))}
+                  fullWidth
+                  onChange={(n) => {
+                    setBuaRatio(n);
+                    setBuaManual(Math.round(area.gfa * n));
+                  }}
+                />
+              </Row>
+              <Row label="Efficiency" tooltipKey="efficiency" stacked>
+                <NumberInput value={efficiencyPct} unit="%" onChange={setEfficiencyPct} fullWidth />
+              </Row>
+              <Row label="SFA" tooltipKey="sfa" stacked>
+                <NumberInput value={Math.round(area.sfa)} unit="sqft" readonly fullWidth />
+              </Row>
+            </Panel>
+
+            <Panel
+              title="Land"
+              metric={`${fmtAedExact(land.landCostAed)} + DLD ${fmtAedExact(land.dldFeeAed)}`}
+              changed={landCostAed !== parcel.plotPriceAed}
+            >
+              <Row label="Land Cost" tooltipKey="landCost" stacked>
+                <NumberInput value={landCostAed} unit="AED" onChange={setLandCostAed} fullWidth />
+              </Row>
+              <Row label="DLD Fee (4%)" tooltipKey="dldFee" stacked>
+                <NumberInput value={Math.round(land.dldFeeAed)} unit="AED" readonly fullWidth />
+              </Row>
+              <Row label="Payment Mode" tooltipKey="paymentMode" stacked>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {(['full', 'installments'] as LandPaymentMode[]).map((m) => (
+                    <button
+                      type="button"
+                      key={m}
+                      onClick={() => setPaymentMode(m)}
+                      style={{
+                        padding: '6px 10px',
+                        background: paymentMode === m ? 'rgba(200,169,110,0.2)' : 'transparent',
+                        border: `1px solid ${paymentMode === m ? GOLD : LINE}`,
+                        borderRadius: 6,
+                        color: paymentMode === m ? GOLD : DIM,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </Row>
+              {paymentMode === 'installments' && (
+                <>
+                  <Row label="Down Payment" tooltipKey="downPayment" stacked>
+                    <NumberInput value={downPaymentPct} unit="%" onChange={setDownPaymentPct} fullWidth />
+                  </Row>
+                  <Row label="# Payments" tooltipKey="numberOfPayments" stacked>
+                    <NumberInput value={numberOfPayments} onChange={setNumberOfPayments} fullWidth />
+                  </Row>
+                  <Row label="Period" tooltipKey="periodMonths" stacked>
+                    <NumberInput value={periodMonths} unit="months" onChange={setPeriodMonths} fullWidth />
+                  </Row>
+                </>
+              )}
+            </Panel>
+
+            <Panel
+              title="Construction"
+              metric={fmtAedExact(construction.totalConstructionAed)}
+              changed={
+                constructionPsf !== engine.constructionPsfBua ||
+                brandPsf !== engine.brandPsfBua ||
+                consultancyPsf !== engine.consultancyPsfBua ||
+                infrastructurePsf !== engine.infrastructurePsfBua ||
+                contingencyPct !== engine.contingencyPct
+              }
+            >
+              <Row
+                label="Construction"
+                tooltipKey="constructionPsf"
+                stacked
+                badge={
+                  <DiffBadge
+                    current={constructionPsf}
+                    baseline={engine.constructionPsfBua}
+                    onReset={resetConstruction}
+                  />
+                }
+              >
+                <NumberInput value={constructionPsf} unit="AED/sqft" onChange={setConstructionPsf} fullWidth />
+              </Row>
+              <Row
+                label="Brand & Coll."
+                tooltipKey="brandPsf"
+                stacked
+                badge={<DiffBadge current={brandPsf} baseline={engine.brandPsfBua} onReset={resetBrand} />}
+              >
+                <NumberInput value={brandPsf} unit="AED/sqft" onChange={setBrandPsf} fullWidth />
+              </Row>
+              <Row
+                label="Consultancy"
+                tooltipKey="consultancyPsf"
+                stacked
+                badge={
+                  <DiffBadge
+                    current={consultancyPsf}
+                    baseline={engine.consultancyPsfBua}
+                    onReset={resetConsultancy}
+                  />
+                }
+              >
+                <NumberInput value={consultancyPsf} unit="AED/sqft" onChange={setConsultancyPsf} fullWidth />
+              </Row>
+              <Row
+                label="Infrastructure"
+                tooltipKey="infrastructurePsf"
+                stacked
+                badge={
+                  <DiffBadge
+                    current={infrastructurePsf}
+                    baseline={engine.infrastructurePsfBua}
+                    onReset={resetInfra}
+                  />
+                }
+              >
+                <NumberInput value={infrastructurePsf} unit="AED/sqft" onChange={setInfrastructurePsf} fullWidth />
+              </Row>
+              <Row label="Contingency" tooltipKey="contingency" stacked>
+                <NumberInput value={contingencyPct} unit="%" onChange={setContingencyPct} fullWidth />
+              </Row>
+            </Panel>
+
+            <Panel
+              title="Finance"
+              metric={
+                financeEnabled
+                  ? `${fmtAedExact(finance.totalInterestAed)} interest`
+                  : 'Disabled'
+              }
+              changed={financeEnabled}
+            >
+              <Row label="Enable finance" tooltipKey="financeEnabled" stacked>
+                <button
+                  type="button"
+                  onClick={() => setFinanceEnabled((b) => !b)}
+                  style={{
+                    padding: '6px 14px',
+                    background: financeEnabled ? 'rgba(200,169,110,0.2)' : 'transparent',
+                    border: `1px solid ${financeEnabled ? GOLD : LINE}`,
+                    borderRadius: 6,
+                    color: financeEnabled ? GOLD : DIM,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                  aria-pressed={financeEnabled}
+                >
+                  {financeEnabled ? 'On' : 'Off'}
+                </button>
+              </Row>
+              {financeEnabled && (
+                <>
+                  <Row label="Loan" tooltipKey="loanAed" stacked>
+                    <NumberInput value={loanAed} unit="AED" onChange={setLoanAed} fullWidth />
+                  </Row>
+                  <Row label="Rate" tooltipKey="ratePct" stacked>
+                    <NumberInput value={ratePct} unit="%" onChange={setRatePct} fullWidth />
+                  </Row>
+                  <Row label="Period" tooltipKey="financePeriodMonths" stacked>
+                    <NumberInput value={financePeriodMonths} unit="months" onChange={setFinancePeriodMonths} fullWidth />
+                  </Row>
+                </>
+              )}
+            </Panel>
+
+            {tab === 'bts' && (
+              <Panel
+                title="Revenue"
+                metric={fmtAedExact(btsResult.netRevenueAed)}
+                changed={salesPsf !== engine.salesPsfSfa}
+              >
+                <Row
+                  label="Sales Price"
+                  tooltipKey="salesPsf"
+                  stacked
+                  badge={<DiffBadge current={salesPsf} baseline={engine.salesPsfSfa} onReset={resetSales} />}
+                >
+                  <NumberInput value={salesPsf} unit="AED/sqft" onChange={setSalesPsf} fullWidth />
+                </Row>
+                <Row label="Commission" tooltipKey="commission" stacked>
+                  <NumberInput value={commissionPct} unit="%" onChange={setCommissionPct} fullWidth />
+                </Row>
+                <Row label="Marketing" tooltipKey="marketing" stacked>
+                  <NumberInput value={marketingPct} unit="%" onChange={setMarketingPct} fullWidth />
+                </Row>
+                <Row label="Dev Services" tooltipKey="devServices" stacked>
+                  <NumberInput value={devServicesPct} unit="%" onChange={setDevServicesPct} fullWidth />
+                </Row>
+              </Panel>
+            )}
+
+            {tab === 'btr' && (
+              <Panel
+                title="Rental"
+                metric={fmtAedExact(btrRental.netAnnualAed)}
+                changed={monthlyRentPsf !== engine.monthlyRentPsfSfa}
+              >
+                <Row
+                  label="Monthly Rent"
+                  tooltipKey="monthlyRent"
+                  stacked
+                  badge={
+                    <DiffBadge
+                      current={monthlyRentPsf}
+                      baseline={engine.monthlyRentPsfSfa}
+                      onReset={resetRent}
+                    />
+                  }
+                >
+                  <NumberInput value={monthlyRentPsf} unit="AED/sqft" onChange={setMonthlyRentPsf} fullWidth />
+                </Row>
+                <Row label="Occupancy" tooltipKey="occupancy" stacked>
+                  <NumberInput value={occupancyPct} unit="%" onChange={setOccupancyPct} fullWidth />
+                </Row>
+                <Row label="Annual Increase" tooltipKey="annualIncrease" stacked>
+                  <NumberInput value={annualIncreasePct} unit="%" onChange={setAnnualIncreasePct} fullWidth />
+                </Row>
+                <Row label="Operating" tooltipKey="operating" stacked>
+                  <NumberInput value={operatingPct} unit="%" onChange={setOperatingPct} fullWidth />
+                </Row>
+              </Panel>
+            )}
+
+            {tab === 'jv' && (
+              <Panel
+                title="JV Structure"
+                metric={`${jvType === 'equity' ? 'Equity' : 'Profit-share'} · ${landownerSharePct.toFixed(0)}% landowner`}
+              >
+                <Row label="JV Type" tooltipKey="jvType" stacked>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {(['equity', 'profit_sharing'] as JvType[]).map((t) => (
+                      <button
+                        type="button"
+                        key={t}
+                        onClick={() => setJvType(t)}
+                        style={{
+                          padding: '6px 10px',
+                          background: jvType === t ? 'rgba(200,169,110,0.2)' : 'transparent',
+                          border: `1px solid ${jvType === t ? GOLD : LINE}`,
+                          borderRadius: 6,
+                          color: jvType === t ? GOLD : DIM,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {t === 'equity' ? 'Equity' : 'Profit'}
+                      </button>
+                    ))}
+                  </div>
+                </Row>
+                <Row label="Land Contribution" tooltipKey="landownerLandContribution" stacked>
+                  <NumberInput
+                    value={landownerLandContribution}
+                    unit="AED"
+                    onChange={setLandownerLandContribution}
+                    fullWidth
+                  />
+                </Row>
+                <Row label="Cash Contribution" stacked>
+                  <NumberInput value={landownerCash} unit="AED" onChange={setLandownerCash} fullWidth />
+                </Row>
+                <Row label="Landowner Share" tooltipKey="landownerSharePct" stacked>
+                  <NumberInput value={landownerSharePct} unit="%" onChange={setLandownerSharePct} fullWidth />
+                </Row>
+              </Panel>
+            )}
+
+            {/* Detail panel — full result breakdown, collapsed by default. */}
+            <Panel
+              title="Detail"
+              metric={
+                tab === 'bts'
+                  ? `Total inv ${fmtAedExact(btsResult.totalInvestmentAed)}`
+                  : tab === 'btr'
+                    ? `Total inv ${fmtAedExact(btrResult.totalInvestmentAed)}`
+                    : `Total inv ${fmtAedExact(jv.totalInvestmentAed)}`
+              }
+            >
+              {tab === 'bts' && (
+                <>
+                  <ResultRow label="Total Investment" value={fmtAedExact(btsResult.totalInvestmentAed)} bold />
+                  <ResultRow label="Net Revenue" value={fmtAedExact(btsResult.netRevenueAed)} />
+                  <ResultRow label="Gross Revenue" value={fmtAedExact(btsRevenue.grossRevenueAed)} />
+                  <ResultRow
+                    label={`- Commission (${commissionPct}%)`}
+                    value={`-${fmtAedExact(btsRevenue.commissionAed)}`}
+                  />
+                  <ResultRow
+                    label={`- Marketing (${marketingPct}%)`}
+                    value={`-${fmtAedExact(btsRevenue.marketingAed)}`}
+                  />
+                  {paymentMode === 'installments' && (
+                    <>
+                      <ResultRow label="Down Payment" value={fmtAedExact(land.downPaymentAed)} />
+                      <ResultRow label="Monthly Installment" value={fmtAedExact(land.monthlyInstallmentAed)} />
+                      <ResultRow label="Initial Capital" value={fmtAedExact(btsResult.initialCapitalAed)} bold />
+                      <ResultRow
+                        label="ROI on Initial"
+                        value={fmtPct(btsResult.roiOnInitialCapitalPct)}
+                        bold
+                        gold
+                      />
+                    </>
+                  )}
+                </>
+              )}
+              {tab === 'btr' && (
+                <>
+                  <ResultRow label="Total Investment" value={fmtAedExact(btrResult.totalInvestmentAed)} bold />
+                  <ResultRow label="Gross Annual" value={fmtAedExact(btrRental.grossAnnualAed)} />
+                  <ResultRow
+                    label={`- Operating (${operatingPct}%)`}
+                    value={`-${fmtAedExact(btrRental.operatingCostAed)}`}
+                  />
+                  <ResultRow label="Net Annual" value={fmtAedExact(btrRental.netAnnualAed)} bold />
+                  <ResultRow label="Total 5Y" value={fmtAedExact(btrResult.total5yAed)} bold gold />
+                </>
+              )}
+              {tab === 'jv' && (
+                <>
+                  <ResultRow label="Total Investment" value={fmtAedExact(jv.totalInvestmentAed)} bold />
+                  <ResultRow label="Total Revenue" value={fmtAedExact(jv.totalRevenueAed)} />
+                  <ResultRow label="Net Profit" value={fmtAedExact(jv.totalProjectProfitAed)} bold />
+                  <ResultRow label="Landowner Profit" value={fmtAedExact(jv.landownerProfitAed)} bold />
+                  <ResultRow label="Developer Profit" value={fmtAedExact(jv.developerProfitAed)} bold />
+                  <ResultRow
+                    label="Breakeven JV Share"
+                    value={`${jv.breakevenJvSharePct.toFixed(1)}%`}
+                    bold
+                    gold
+                  />
+                </>
+              )}
+            </Panel>
+          </>
+        )}
+
+        {/* Body — fullscreen layout (internal-test route + preview mode).
+            Two-column inputs/results grid. Left intact from Sprint 1.5. */}
+        {mode !== 'sidepanel' && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns:
-              mode === 'sidepanel'
-                ? '1fr' // single column on narrow SidePanel; inputs above results
-                : fullscreen
-                  ? '1fr 1fr'
-                  : 'minmax(0, 1fr) minmax(0, 0.95fr)',
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 0.95fr)',
             gap: 20,
           }}
         >
@@ -1324,23 +2075,28 @@ export default function FeasibilityV6Calculator({
             )}
           </div>
         </div>
+        )}
 
-        {/* Footer */}
-        <div
-          style={{
-            color: SUBTLE,
-            fontSize: 10,
-            textAlign: 'center',
-            marginTop: 24,
-            lineHeight: 1.6,
-          }}
-        >
-          Math reused from <code style={{ color: GOLD }}>src/lib/feasibility.ts</code> (v5 ratified). Engine
-          defaults from <code style={{ color: GOLD }}>docs/specs/feasibility-v6/01_LAND_USE_ENGINES.md</code>.
-          <br />
-          Tooltips EN-only · 30 fields · institutional reference in 07_METHODOLOGY.md · Mock parcels are
-          in-memory.
-        </div>
+        {/* Developer footer — fullscreen / preview only. Production
+            SidePanel hides this; PDF footer (Sprint 9) carries the version
+            metadata instead. */}
+        {mode !== 'sidepanel' && (
+          <div
+            style={{
+              color: SUBTLE,
+              fontSize: 10,
+              textAlign: 'center',
+              marginTop: 24,
+              lineHeight: 1.6,
+            }}
+          >
+            Math reused from <code style={{ color: GOLD }}>src/lib/feasibility.ts</code> (v5 ratified). Engine
+            defaults from <code style={{ color: GOLD }}>docs/specs/feasibility-v6/01_LAND_USE_ENGINES.md</code>.
+            <br />
+            Tooltips EN-only · 30 fields · institutional reference in 07_METHODOLOGY.md · Mock parcels are
+            in-memory.
+          </div>
+        )}
       </div>
     </div>
   );

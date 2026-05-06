@@ -19,10 +19,16 @@ const LINE_HARD = 'rgba(200, 169, 110, 0.30)';
 export interface EngineSelectorProps {
   value: EngineId;
   onChange: (id: EngineId) => void;
+  // Restrict the dropdown to a subset of engines. Used in production
+  // SidePanel mount to ship only the engines that have been founder-validated
+  // (Residential first, expanding sprint by sprint). When omitted, the full
+  // 13-engine catalogue is exposed (preview + internal-test routes).
+  availableEngines?: EngineId[];
 }
 
-export default function EngineSelector({ value, onChange }: EngineSelectorProps) {
+export default function EngineSelector({ value, onChange, availableEngines }: EngineSelectorProps) {
   const engine = ENGINES[value];
+  const ids: EngineId[] = availableEngines ?? ENGINE_ORDER;
   return (
     <div>
       <div
@@ -55,7 +61,7 @@ export default function EngineSelector({ value, onChange }: EngineSelectorProps)
           appearance: 'none',
         }}
       >
-        {ENGINE_ORDER.map((id) => (
+        {ids.map((id) => (
           <option key={id} value={id} style={{ background: NAVY }}>
             {ENGINES[id].label}
           </option>
