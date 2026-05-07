@@ -98,14 +98,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     email = { skipped: true, reason: 'requested' };
   } else {
     // Recipient resolution:
-    //   1. body.testEmailTo (caller override, useful for staging tests)
-    //   2. FROM_EMAIL env var (the noreply mailbox; typically deliverable
-    //      to the founder if set up as a forwarder)
-    //   3. fallback constant
+    //   1. body.testEmailTo (caller override, useful for staging
+    //      tests + targeting specific addresses)
+    //   2. fallback to founder Gmail (known deliverable, smoke
+    //      reaches a real human inbox)
     const to =
       (body.testEmailTo && body.testEmailTo.trim()) ||
-      process.env.FROM_EMAIL ||
-      'noreply@zaahi.io';
+      'zhanrysbayev@gmail.com';
     const result: SendEmailResult = await sendEmail({
       to,
       subject: '[ZAAHI smoke] test-notify endpoint check',
