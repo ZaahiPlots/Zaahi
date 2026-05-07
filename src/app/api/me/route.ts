@@ -5,8 +5,7 @@
 // PATCH body fields are all optional. Unknown fields are rejected by Zod
 // so a typo doesn't silently drop data. Sensitive / immutable fields
 // (id, email, role, referralCode, referredById, ambassadorActive) are
-// NOT writable here — `role` changes go through a separate admin flow,
-// ambassador activation through /api/ambassador/activate.
+// NOT writable here — `role` changes go through a separate admin flow.
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
