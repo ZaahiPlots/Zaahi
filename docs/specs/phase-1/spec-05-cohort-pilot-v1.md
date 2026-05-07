@@ -3,12 +3,27 @@
 | | |
 |---|---|
 | **Title** | Cohort Pilot — Public Registration + Multi-Claim Plots + PDPL |
-| **Version** | v1.0 |
+| **Version** | v1.1 |
 | **Date** | 2026-05-07 |
 | **Authors** | Жан (Founder, CEO/CTO), Dymo (Co-founder), Agent (drafting) |
 | **Branch** | `research/cohort-pilot-spec` (this spec) → implementation on `feat/cohort-pilot` |
 | **Status** | DRAFT — pending founder ratify |
 | **Master Tree §** | §01 · §14 · §17 · §18 · §19 · §20 · §31 (future) · §75 · §76 · §85 |
+
+---
+
+## CHANGELOG
+
+- **v1.1** (2026-05-07): Founder ratify of v1.0. Applied 5 corrections
+  (display semantics · ownership-transferred email · ADMIN role
+  disambiguation · smoke endpoint env flag · PlotClaim composite
+  index) + 3 OPEN QUESTIONS resolved (Q14a remove inline signup tab ·
+  Q12.6 single `documents` bucket with `public/private` folder split ·
+  Q5.5 `ownerId` immutable + `verifiedOwnerUserId` source-of-truth).
+  Resolved 3 gaps surfaced during founder review (email-verify ×
+  approval ordering · nickname source of truth · duplicate
+  registration handling).
+- **v1.0** (2026-05-07): Initial draft.
 
 ---
 
@@ -239,7 +254,9 @@ enum UserRole {
   RELATIVE
   REFERRAL
   OTHER
-  ADMIN          // Жан + Dymo only
+  ADMIN          // Жан + Dymo only — system role on `User.role`
+                 // for queue access. NEVER on
+                 // `RegistrationApplication.roleApplied`.
 
   // Deprecated (pre-cohort, kept for existing rows):
   INVESTOR       // pre-cohort; auto-migrate to BUYER on next user touch
@@ -253,19 +270,29 @@ Migration name: `cohort_pilot_user_roles_extension`.
 ```prisma
 model User {
   // ... existing fields ...
-  nickname  String?  @unique  // public-facing handle. Default = email-prefix on first login.
+  nickname  String?  @unique  // public-facing handle. Source-of-truth = Step 1 of /register form (per GAP-2 = Option A).
 
   // NOTE: existing `name` column stays — that's the real name from
   // KYC. Keep visible to admin only. Never expose in public APIs.
 }
 ```
 
-Default-population strategy: on `/api/users/sync` first call for a
-user, if `nickname IS NULL`, set `nickname = email.split('@')[0]` (with
-de-dup suffix `-2`, `-3`, … if collision). Idempotent.
+**Source-of-truth: Step 1 of `/register` form (GAP-2 resolution).**
+Cohort users always pick a nickname explicitly at signup; the form
+unique-checks against `User.nickname` and pending
+`RegistrationApplication.nickname`. The `RegistrationApplication.nickname`
+is then propagated to `User.nickname` when the application is approved
+(`RegistrationApplication.status = 'APPROVED'` step in `/api/admin/registration/[id]/approve`).
 
-Migration adds the column NULLable; backfill happens lazily on next
-auth touch.
+**Defensive fallback** in `/api/users/sync`: if a row reaches that
+endpoint with `nickname IS NULL` AND no matching
+`RegistrationApplication` exists (legacy / autoMigrated edge case),
+auto-derive `nickname = email.split('@')[0]` with de-dup suffix
+`-2`, `-3`, … on collision. This is intentionally narrow scope —
+only catches Жан/Dymo and any pre-cohort users who never went through
+`/register`.
+
+Migration adds the column NULLable; backfill is the seed step in §5.7.
 
 ### 5.3 `RegistrationApplication` model (NEW)
 
@@ -281,7 +308,10 @@ model RegistrationApplication {
   // Application contents (entered at /register)
   email           String    @unique
   nickname        String                   // unique-checked at submit
-  roleApplied     UserRole
+  // NULL only when autoMigrated=true (Жан + Dymo seeded entries).
+  // Cohort applicants must specify one of the 10 cohort roles. ADMIN
+  // is NEVER valid here (ADMIN is a system-only role on User.role).
+  roleApplied     UserRole?
   // KYC docs uploaded to Supabase Storage `registration-docs` bucket.
   // Format: array of { kind, signedUrl, originalName, sizeBytes,
   //                    contentType, uploadedAt }
@@ -357,6 +387,7 @@ model PlotClaim {
   @@index([parcelId])
   @@index([userId])
   @@index([status])
+  @@index([parcelId, roleAtClaim, status])  // CORR-5: TitleDeedVerification tab filter
 }
 
 enum ClaimStatus {
@@ -367,9 +398,11 @@ enum ClaimStatus {
 }
 ```
 
-**Constraints / invariants**:
-- The first claim is created at `Parcel.create` time. `Parcel.ownerId`
-  = first claim's `userId`. Subsequent claims add rows; ownerId stays.
+**Constraints / invariants** (CORR-1 / LOCK-8):
+- `Parcel.ownerId` = **creator** (= first claim's `userId` at creation
+  time). **IMMUTABLE** — never updated even when `verifiedOwnerUserId`
+  later points elsewhere. `ownerId` exists for audit / canonical-id
+  purposes only.
 - `roleAtClaim` may differ from the user's `RegistrationApplication.roleApplied`
   (e.g., a registered BROKER may join a plot as a RELATIVE).
 - Verifiable vs self-declared per Q5 ratification:
@@ -386,6 +419,35 @@ enum ClaimStatus {
 | RELATIVE | `SELF_DECLARED` | none required |
 | REFERRAL | `SELF_DECLARED` | none required |
 | OTHER | `SELF_DECLARED` | none required |
+
+#### 5.4.1 Display semantics — `ownerId` vs `verifiedOwnerUserId` (LOCK-8 / CORR-1)
+
+`Parcel.ownerId` and `Parcel.verifiedOwnerUserId` may diverge after a
+Title Deed verification flow assigns ownership to a non-creator. The
+following display rules are **mandatory** across every surface that
+references plot ownership:
+
+| Surface | What to show | Rationale |
+|---|---|---|
+| URL slug / canonical id | `Parcel.ownerId` (creator) | Stable identifier for routing + audit history. Never changes. |
+| Public "Owner: X" row (parcel detail page · SidePanel · listing card) | `verifiedOwnerUserId.nickname` if set; else **hide the Owner row entirely** (do NOT render "Unverified") | Prevents misrepresentation. Self-declared OWNER claims still show in the claim list with a "Self-declared" pill, but they don't earn a top-level "Owner" label. |
+| `/admin/queue` and admin detail modals | Both `ownerId` (labelled "creator") and `verifiedOwnerUserId` (labelled "verified owner") visible | Admins need full context. |
+| Email body referencing "your plot" | `userId` of the relevant claim recipient | Each user reads about their own claim, not abstract ownership. |
+| `ActivityLog` actor / target fields | Both fields populated when a verification event mutates either | Enables post-hoc reconstruction of who-was-creator vs who-was-verified-owner over time. |
+
+#### 5.4.2 Composite index for Title Deed verification queries (CORR-5)
+
+The TitleDeedVerification tab in `/admin/queue` filters
+`Parcel WHERE verifiedOwnerUserId IS NULL AND any PlotClaim WHERE
+roleAtClaim='OWNER' AND status='PENDING'`. Add a composite index to
+`PlotClaim` to keep this query fast as cohort grows:
+
+```prisma
+@@index([parcelId, roleAtClaim, status])
+```
+
+This is in addition to the existing single-column indexes
+(`@@index([parcelId])`, `@@index([userId])`, `@@index([status])`).
 
 ### 5.5 `Parcel` additions
 
@@ -430,7 +492,10 @@ Single migration: `20260507_cohort_pilot_v1`
    approved user (Жан + Dymo and any others), insert a
    `RegistrationApplication{status:'APPROVED', autoMigrated:true,
    userId:<their.id>, email:<their.email>, nickname:<derived>,
-   roleApplied:'ADMIN', documentsJson:'[]'}`.
+   roleApplied:NULL, documentsJson:'[]'}`. `roleApplied` is NULL
+   because ADMIN is a system-only role on `User.role` and never a
+   valid cohort applicant role (CORR-3). The User's existing
+   `role='ADMIN'` already grants admin queue access.
 8. **Backfill PlotClaim**: for every existing Parcel,
    `INSERT INTO PlotClaim (parcelId, userId, roleAtClaim, priceAed,
    status) SELECT id, ownerId, 'ADMIN', currentValuation, 'VERIFIED'
@@ -517,7 +582,28 @@ Upload happens to **bucket `registration-docs`** (NEW, private). See
 ```
 1. Validate Zod schema (email, phone, nickname, role, referralPath if
    role===REFERRAL, documentsJson)
-2. Dedup check: email + nickname not in use anywhere
+2. Dedup check (per GAP-3 resolution):
+   - **Email** lookup against `User.email` AND
+     `RegistrationApplication.email`. If a row exists:
+     - If the existing application is `PENDING_REVIEW` or `WAITLIST`
+       (any age), block: 4xx `{ code: 'application_already_pending',
+       message: 'An application with this email is already in review.
+       Check your inbox for the verification link, or wait for admin
+       approval (typically 2-3 business days).' }`
+     - If the existing application is `REJECTED`, block: 4xx
+       `{ code: 'application_previously_rejected', message: 'This
+       email was previously rejected. Contact support if you believe
+       this was in error.' }` (rationale: prevent retry-spam after
+       rejection without admin re-engagement; founder can override
+       per-case manually).
+     - If the existing application is `APPROVED`, block: 4xx
+       `{ code: 'already_approved', message: 'You already have an
+       active ZAAHI account. Sign in instead.' }` with link to `/`.
+   - **Nickname** lookup against `User.nickname` AND
+     `RegistrationApplication.nickname` (excluding `WHERE status =
+     'REJECTED'`). If taken, return 4xx `{ code: 'nickname_taken',
+     message: 'That nickname is already taken. Try another.' }`
+     — handled inline at Step 1 (live unique-check on input blur).
 3. Doc requirement check: per-role minimum docs present
 4. Cap check (using §5.3 query):
    const approved = countApprovedForRole(roleApplied)
@@ -548,11 +634,54 @@ Upload happens to **bucket `registration-docs`** (NEW, private). See
 - Email check reminder (verify your email link from Supabase)
 - Link back to homepage
 
-### 6.5 Email verification
+### 6.5 Email verification × admin approval ordering (GAP-1)
 
 User must verify email (Supabase magic link) before login is possible
-even if approved. Two gates: `email_confirmed_at IS NOT NULL` AND
-`user_metadata.approved === true`.
+even if approved. Two gates at login: `email_confirmed_at IS NOT NULL`
+AND `user_metadata.approved === true`.
+
+**GAP-1 resolution: Option A — admin queue is gated on email
+verification.**
+
+Rationale:
+- Cleanest UX: user gets one clear "verify your email" prompt right
+  after `/register` submit; admin only ever sees applications that
+  are actionable.
+- Avoids the dead-end where admin approves but user is locked out
+  ("approved but can't log in" support ticket).
+- Adds one server-side check on the approve handler — minor cost.
+
+Implementation:
+- The `/admin/queue` list query joins each
+  `RegistrationApplication` row with its corresponding Supabase Auth
+  user metadata (via `supabase.auth.admin.getUserById(userId)` cached
+  per page render — cohort scale, max 100 rows, single batch fine).
+- For each row, surface an `emailVerified: boolean` flag. UI:
+  - If `emailVerified === false`: badge "✉ Email not verified" + the
+    [Approve] button is disabled with tooltip "User must verify their
+    email before approval (resend the verification email if needed)".
+  - If `emailVerified === true`: normal [Approve] flow.
+- Server-side guard in `POST /api/admin/registration/[id]/approve`:
+  re-check `email_confirmed_at` on the Supabase Auth user; if NULL,
+  return `409 Conflict { code: 'email_not_verified', message: '...' }`
+  to defend against a stale-UI race.
+- Optional helper button in admin detail modal: "Resend verification
+  email" → calls Supabase Auth admin resend. Useful when the magic
+  link expired (Supabase TTL 24h by default).
+
+Email templates impacted:
+- `registration-received` template includes the explicit verification
+  CTA: "Click the link in your inbox to verify your email. After we
+  receive your verification + complete review, you'll get an
+  activation email."
+
+Edge cases handled:
+- WAITLIST status applications also require email verification before
+  becoming actionable. Same UI / server gate applies if Cohort 2 opens
+  and admin promotes a WAITLIST entry.
+- `autoMigrated=true` rows (Жан + Dymo) skip this gate entirely —
+  they were never asked to verify in this flow because they pre-date
+  cohort. Their existing Supabase Auth status remains.
 
 ---
 
@@ -859,9 +988,20 @@ New / replaced templates:
 | `registration-rejected` | admin reject action | applicant | "Your ZAAHI application — update" |
 | `title-deed-verified` | admin verifies Title Deed PlotClaim | claimant | "Your plot ownership is verified" |
 | `claim-verified` | admin verifies role PlotClaim | claimant | "Your role on plot <N> is verified" |
+| `ownership-transferred-notice` (CORR-2) | Title Deed verified for user X on a plot where `Parcel.ownerId` = different user Y (creator) | user Y (creator) | "Plot \<N\> — ownership verified for another claimant" |
 | `admin-new-application` | every new RegistrationApplication / PlotClaim | Жан + Dymo | "New <role> application from <nickname>" |
 
 All templates parametric: `{ nickname, role, applicationId, queueLink, ... }`.
+
+**`ownership-transferred-notice` body** (CORR-2):
+
+> Plot \<N\> verified to **\<verified-nickname\>** as OWNER. Your
+> \<role-at-claim\> claim remains active and visible on the plot
+> page. This is an informational notice — your account is unaffected.
+
+Triggered server-side at the moment a Title Deed verification action
+sets `Parcel.verifiedOwnerUserId` to a `userId` different from
+`Parcel.ownerId`. Dispatched to the creator (`Parcel.ownerId`) only.
 
 ### 11.4 Telegram messages
 
@@ -878,13 +1018,34 @@ Open queue → https://www.zaahi.io/admin/queue
 
 ### 11.5 Smoke test endpoint
 
-Create `src/app/api/_test-notify/route.ts` (TEMPORARY):
+Create `src/app/api/_test-notify/route.ts`:
 - POST → calls `sendEmail` + `sendTelegram` with test payloads
 - Auth-gated (`getAdminUserId`)
 - Returns `{ email: { ok | skipped | error }, telegram: { ok |
   skipped | error } }`
 
-**Delete this endpoint after smoke**, before cohort launch.
+**Endpoint gated by env flag `ENABLE_TEST_NOTIFY=1`** (CORR-4).
+Default (flag absent) returns `404 Not Found` with no body. Production
+**never sets this flag**. Even if the route file is forgotten in the
+repo after smoke, it remains inert — defence-in-depth against an
+admin-credentialled attacker reaching the endpoint by accident.
+
+```ts
+// src/app/api/_test-notify/route.ts (sketch)
+export async function POST(req: NextRequest) {
+  if (process.env.ENABLE_TEST_NOTIFY !== '1') {
+    return new Response(null, { status: 404 });
+  }
+  const adminId = await getAdminUserId(req);
+  if (!adminId) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+  }
+  // ... call sendEmail + sendTelegram, return JSON ...
+}
+```
+
+**Optional housekeeping**: delete the route file post-smoke. Not
+required — env flag is the primary safety.
 
 ---
 
@@ -1140,6 +1301,7 @@ deploy.
 | R12 | **PlotClaim invariants drift** — multi-claim semantics evolve. | Single Parcel can have multiple claims; only ONE `verifiedOwnerUserId`. Enforced in `/api/admin/title-deed/verify` route logic, not at DB level. |
 | R13 | **Bug found in `/parcels/new` stub redirect** (Q-D.5). Not a current bug, but if cohort needs an "Add Plot" link from a dashboard, redirect target stale. | TODO comment; route the dashboard CTA to `/parcels/map?action=add` explicitly. |
 | R14 | **`SYSTEM_USER_ID` in `seed-dda`** — fixed UUID `00000000-0000-0000-0000-00000000zaah`. If user row missing, route fails. | Verify exists in Supabase Auth + Prisma User; insert if missing as part of Step 4 seed. |
+| R15 | **Verified-owner ≠ creator scenario** (LOCK-8 + CORR-2) — user A creates a Parcel via DDA / non-DDA flow; later admin verifies user B's OWNER PlotClaim, setting `Parcel.verifiedOwnerUserId = B`. User A may be confused that their parcel "lost ownership" without notice. | `ownership-transferred-notice` email dispatched to `Parcel.ownerId` (creator) the moment `verifiedOwnerUserId` is set to a different user. Body explains: their PlotClaim remains active and visible; verification recognises a different participant as owner. ActivityLog records both fields per LOCK-8 row 5. |
 
 ### Bugs discovered (NOT fixed per spec rules):
 
@@ -1168,6 +1330,12 @@ deploy.
 - [ ] Nickname unique-check works
 - [ ] Soft cap enforced: 11+ → status WAITLIST, email shows correct copy
 - [ ] Confirmation page shows expected SLA "2-3 business days"
+- [ ] **Nickname required at Step 1** (GAP-2); duplicates blocked with `nickname_taken` error
+- [ ] **Duplicate-email registration blocked** (GAP-3) with `application_already_pending` / `_previously_rejected` / `already_approved` per existing status
+- [ ] **Approve button disabled** when applicant `email_confirmed_at IS NULL` (GAP-1) — UI badge + server-side guard
+- [ ] "Resend verification email" admin action works
+- [ ] **`ownership-transferred-notice` email** sent to creator when `verifiedOwnerUserId` first set to a different user (CORR-2 / R15)
+- [ ] Public "Owner: X" row shows `verifiedOwnerUserId.nickname` only; hidden entirely when not set (LOCK-8)
 
 ### Notifications
 - [ ] Жан + Dymo receive email on every new application
@@ -1214,36 +1382,66 @@ deploy.
 
 ---
 
-## OPEN QUESTIONS surfaced during writing
+## OPEN QUESTIONS — status
 
-1. **Q14a**: Should the inline signup tab on `/` be removed entirely
-   in favour of a "Register →" CTA that opens `/register`? **Spec
-   recommendation**: YES (homepage tab can't host 3-step KYC). Confirm
-   on Phase C kickoff.
+### v1.0 questions — RESOLVED in v1.1
 
-2. **Q6.1**: `/register` vs `/signup` — spec commits to `/register`
-   per founder Q1 latitude.
+1. **Q14a — RESOLVED** (LOCK-6 ratified by founder). The inline
+   signup tab on `/` is removed entirely. Homepage = Login form +
+   "Register →" CTA + footer. Full 3-step KYC flow lives only at
+   `/register`.
 
-3. **Q11.6**: Resend domain DKIM verification status — past chats
-   indicated in-progress. Confirm complete before Step 1.
+2. **Q6.1 — STANDING** (committed). `/register` (not `/signup`) is the
+   route name. No further ratify needed.
 
-4. **Q12.6**: For `documents` bucket, how to differentiate "public
-   parcel docs" (LISTED parcels) vs "PENDING_VERIFICATION docs"
-   (signed URL only)? Recommendation: separate folder prefix
-   `<userId>/<plotNumber>/public/<kind>...` vs
-   `<userId>/<plotNumber>/private/<kind>...`. RLS policy reads
-   second-from-end folder name.
+3. **Q11.6 — STANDING** (Phase B prerequisite). Resend domain DKIM
+   verification must be complete on `zaahi.io` before Step 1 of
+   Phase C. Founder action item, not a spec ambiguity.
 
-5. **Q5.5**: `verifiedOwnerUserId` may differ from `Parcel.ownerId`
-   (the original creator) — when user A creates a Parcel via DDA but
-   user B later joins as OWNER and gets verified, who owns the Parcel
-   row? **Spec recommendation**: `Parcel.ownerId` stays as creator;
-   `verifiedOwnerUserId` is the source-of-truth for ownership.
-   Display shows "Verified Owner" prominently; the original creator
-   has no special UI status beyond their PlotClaim.
+4. **Q12.6 — RESOLVED** (LOCK-7 ratified by founder). Single
+   `documents` bucket with dual visibility via folder-prefix:
+   `<userId>/<plotNumber>/public/<kind>-<ts>.<ext>` for parcel docs
+   on LISTED parcels (public read OK once approved), and
+   `<userId>/<plotNumber>/private/<kind>-<ts>.<ext>` for everything
+   pre-verification (signed URL only). RLS policy reads the
+   second-from-end folder name. Plus separate `registration-docs`
+   bucket (NEW, always-private) for KYC. **Two buckets total per
+   LOCK-7.**
+
+5. **Q5.5 — RESOLVED** (LOCK-8 ratified by founder). `Parcel.ownerId`
+   = creator, **immutable**. `verifiedOwnerUserId` =
+   source-of-truth for ownership. Display rules per §5.4.1 table
+   (URL slug → ownerId; public Owner row → verifiedOwnerUserId
+   nickname OR hide entirely; admin queue → both; emails → relevant
+   claim's userId; ActivityLog → both fields when relevant).
+   Companion email `ownership-transferred-notice` dispatched to
+   creator when verifiedOwnerUserId is first set to a different user
+   (CORR-2, R15).
+
+### v1.1 founder-review gaps — RESOLVED
+
+6. **GAP-1 (email-verify × admin-approval ordering) — RESOLVED**:
+   **Option A** (admin queue gated on email verification). Approve
+   button disabled with "User has not verified email yet" badge;
+   server-side guard enforces. Optional "Resend verification email"
+   button in detail modal. Full detail in §6.5.
+
+7. **GAP-2 (nickname source-of-truth) — RESOLVED**: **Option A**
+   (required at Step 1 of `/register`, unique-checked at submit).
+   Auto-derive in `/api/users/sync` is a defensive fallback only,
+   scoped narrowly to legacy / autoMigrated users. Full detail in §5.2.
+
+8. **GAP-3 (duplicate registration handling) — RESOLVED**: Block on
+   any existing application with the same email regardless of age.
+   Distinct error codes per status: `application_already_pending`
+   (PENDING_REVIEW / WAITLIST), `application_previously_rejected`
+   (REJECTED — admin can override per-case manually),
+   `already_approved` (APPROVED — direct user to sign-in). Nickname
+   collisions: live unique-check at Step 1 input blur, hard error
+   on submit. Full detail in §6.4 step 2.
 
 ---
 
-**End of spec v1.0.** Ready for founder ratify → Phase B (env var
-prerequisites + branch creation) → Phase C (implementation per §16
+**End of spec v1.1.** Ready for founder Phase B (env var prerequisites
++ branch creation) → Phase C (implementation per §16
 sequencing).
