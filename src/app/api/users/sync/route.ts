@@ -3,7 +3,6 @@ import { UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
-import { resolveReferrer, wouldCreateCycle } from '@/lib/ambassador';
 import { logActivity } from '@/lib/activity';
 
 /**
@@ -97,22 +96,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name required' }, { status: 400 });
   }
 
-  // Check for a referral cookie set by /r/[code]. Referral attribution
-  // happens ONCE at User creation — never on updates. If the user already
-  // exists (returning approval flow), we don't re-link.
   const existing = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, referredById: true },
+    select: { id: true },
   });
-  const refCode = req.cookies.get('zaahi_ref')?.value;
-  let referredById: string | null = null;
-  if (!existing && refCode) {
-    const referrer = await resolveReferrer(prisma, refCode.toUpperCase());
-    if (referrer && referrer.id !== userId) {
-      const cycles = await wouldCreateCycle(prisma, userId, referrer.id);
-      if (!cycles) referredById = referrer.id;
-    }
-  }
 
   const user = await prisma.user.upsert({
     where: { id: userId },
@@ -122,24 +109,13 @@ export async function POST(req: NextRequest) {
       role: role as UserRole,
       name: body.name,
       phone: body.phone ?? null,
-      ...(referredById
-        ? { referredById, referredAt: new Date() }
-        : {}),
     },
     update: { name: body.name, phone: body.phone ?? null, role: role as UserRole },
   });
 
-  // Attribute the click in ReferralClick table (best-effort, non-blocking)
-  if (referredById && refCode) {
-    await prisma.referralClick.create({
-      data: {
-        referralCode: refCode.toUpperCase(),
-        convertedToUserId: userId,
-      },
-    }).catch(() => {});
-  }
-
   // Auto-link any APPROVED ambassador application matching this email.
+  // Dormant in the cohort-pilot era (no new approvals are created), but the
+  // table is preserved per spec-05 §13.4 so legacy rows stay linkable.
   // Must run AFTER upsert so there is always a User row to attach to.
   await linkApprovedApplication(userId, email);
 
@@ -152,10 +128,5 @@ export async function POST(req: NextRequest) {
     payload: { isNewUser: !existing },
   });
 
-  const res = NextResponse.json(user, { status: 201 });
-  // Clear the cookie regardless of outcome so subsequent signups don't reuse it
-  if (refCode) {
-    res.cookies.set('zaahi_ref', '', { maxAge: 0, path: '/' });
-  }
-  return res;
+  return NextResponse.json(user, { status: 201 });
 }
