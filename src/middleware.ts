@@ -16,10 +16,15 @@ import { NextRequest, NextResponse } from 'next/server';
  * - /api/auth      — reserved for future server-side auth callbacks.
  * - /api/notify-admin — anonymous "request access" notification posted from
  *                       the public sign-up form. Body is logged only.
+ * - /api/registration — public cohort-pilot /register flow (spec-05 §6).
+ *                       Anonymous submitters POST applications + check
+ *                       nickname availability. Each handler does its own
+ *                       Zod validation + dedup defenses.
  */
 const PUBLIC_API = [
   '/api/auth',
   '/api/notify-admin',
+  '/api/registration',
 ];
 
 // HEAD is included so browser preflights / link checkers don't 401.
