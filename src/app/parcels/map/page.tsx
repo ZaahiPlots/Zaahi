@@ -15,6 +15,7 @@ import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer"
 import type { BuildingDTO } from "./buildings/types";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
+import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 
@@ -3981,33 +3982,6 @@ function ParcelsMapPageInner() {
               </svg>
             </MiniRailBtn>
             <Link
-              href="/join"
-              title="Become Ambassador"
-              aria-label="Become Ambassador"
-              style={{ display: "block", textDecoration: "none" }}
-              tabIndex={miniOpen ? 0 : -1}
-            >
-              <MiniRailBtn title="Become Ambassador" active={false} onClick={() => {}} asSpan>
-                {/* Sparkle / star — paid-tier ambassador entry point */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2l2.39 6.95L22 10l-5.5 4.55L18 22l-6-3.6L6 22l1.5-7.45L2 10l7.61-1.05L12 2z" />
-                </svg>
-              </MiniRailBtn>
-            </Link>
-            <Link
-              href="/ambassador"
-              title="Ambassador Program"
-              aria-label="Ambassador Program"
-              style={{ display: "block", textDecoration: "none" }}
-              tabIndex={miniOpen ? 0 : -1}
-            >
-              <MiniRailBtn title="Ambassador" active={false} onClick={() => {}} asSpan>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2" />
-                </svg>
-              </MiniRailBtn>
-            </Link>
-            <Link
               href="/dashboard"
               title="Profile / Dashboard"
               aria-label="Profile"
@@ -4138,19 +4112,16 @@ function LayerToggle({
   );
 }
 
-// Visual-only lock badge for Phase 1 — hover shows upgrade copy, click
-// deep-links to /join#gold or /join#platinum. Toggle still works; Phase
-// 3 will disable the checkbox once `useAccess()` lands.
+// Visual-only lock badge for Phase 1 — indicates a tier-gated layer.
+// Non-interactive (the upgrade flow target was the now-removed /join
+// page; cohort-pilot doesn't ship a tier upgrade flow). Toggle still
+// works; Phase 3 will disable the checkbox once `useAccess()` lands.
 function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
-  const href = tier === "PLATINUM" ? "/join#platinum" : "/join#gold";
   const accent = tier === "PLATINUM" ? "#B4E5FF" : GOLD;
   const bgTint = tier === "PLATINUM" ? "rgba(180, 229, 255, 0.1)" : "rgba(200, 169, 110, 0.12)";
-  const bgHover = tier === "PLATINUM" ? "rgba(180, 229, 255, 0.2)" : "rgba(200, 169, 110, 0.25)";
   return (
-    <a
-      href={href}
-      title={`Upgrade to ${tier} to unlock`}
-      onClick={(e) => e.stopPropagation()}
+    <span
+      title={`${tier} tier required`}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -4162,21 +4133,17 @@ function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
         letterSpacing: "0.08em",
         color: accent,
         background: bgTint,
-        textDecoration: "none",
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontWeight: 700,
         flexShrink: 0,
-        transition: "background 150ms ease",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = bgHover; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = bgTint; }}
     >
       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="4" y="11" width="16" height="10" rx="2" />
         <path d="M8 11V7a4 4 0 0 1 8 0v4" />
       </svg>
       {tier}
-    </a>
+    </span>
   );
 }
 
@@ -4691,9 +4658,11 @@ function HeaderBar({
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
         {isAdmin && (
+          // Step 12 audit B-3: Step 2 deleted /admin/ambassadors;
+          // /admin/queue (Step 7) is the cohort-pilot admin destination.
           <a
-            href="/admin/ambassadors"
-            title="Admin — Ambassador applications"
+            href="/admin/queue"
+            title="Admin — Cohort queue"
             aria-label="Admin"
             style={{ ...hdrBtnStyle(c), textDecoration: "none", borderColor: GOLD, background: "rgba(200, 169, 110, 0.12)" }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
@@ -4713,6 +4682,10 @@ function HeaderBar({
         >
           <span style={{ fontSize: 13 }}>👤</span>
         </a>
+        {/* Step 12 — quick-access global sign-out next to Profile.
+            Same component as Dashboard Settings so the confirm dialog
+            and signOut({ scope: 'global' }) logic live in one place. */}
+        <SignOutButton variant="compact" />
       </div>
     </header>
   );

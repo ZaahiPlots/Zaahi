@@ -20,9 +20,11 @@ interface DealData {
   sellerId: string;
   buyerId: string;
   brokerId: string | null;
-  seller: { id: string; name: string };
-  buyer: { id: string; name: string };
-  broker: { id: string; name: string } | null;
+  // Step 11 PDPL: API now returns the public-shape User; chat bubbles
+  // and counterparty headers render `nickname`. Real name is admin-only.
+  seller: { id: string; nickname: string | null };
+  buyer: { id: string; nickname: string | null };
+  broker: { id: string; nickname: string | null } | null;
   offerPriceInFils: string | null;
   agreedPriceInFils: string | null;
   priceInFils: string;
@@ -37,7 +39,7 @@ interface DealData {
   dldReference: string | null;
   rating: number | null;
   createdAt: string;
-  messages: Array<{ id: string; userId: string; content: string; createdAt: string; user: { id: string; name: string } }>;
+  messages: Array<{ id: string; userId: string; content: string; createdAt: string; user: { id: string; nickname: string | null } }>;
   auditEvents: Array<{ id: string; eventType: string; txHash: string | null; createdAt: string; metadata: any }>;
 }
 
@@ -513,7 +515,11 @@ function ChatPanel({ dealId, token, me, initialMessages }: {
           const mine = m.userId === me;
           return (
             <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "85%" }}>
-              {!mine && <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 2 }}>{m.user.name}</div>}
+              {!mine && (
+                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 2 }}>
+                  {m.user.nickname ?? m.userId.slice(0, 8)}
+                </div>
+              )}
               <div style={{
                 padding: "8px 12px", borderRadius: 10,
                 background: mine ? GOLD : "rgba(255,255,255,0.08)",

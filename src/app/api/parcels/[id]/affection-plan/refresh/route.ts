@@ -8,7 +8,9 @@ type Ctx = { params: Promise<{ id: string }> };
 
 // POST /api/parcels/:id/affection-plan/refresh
 // Pull a fresh affection plan from DDA and store a new AffectionPlan row.
-// Only the parcel owner may refresh.
+// Either the immutable creator (ownerId) or the verified owner
+// (verifiedOwnerUserId, post-Title-Deed-verification) may refresh —
+// spec §5.4.1 LOCK-8 / Step 12 audit SF-1.
 export async function POST(req: NextRequest, { params }: Ctx) {
   const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const parcel = await prisma.parcel.findUnique({ where: { id } });
   if (!parcel) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (parcel.ownerId !== userId) {
+  if (parcel.ownerId !== userId && parcel.verifiedOwnerUserId !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 

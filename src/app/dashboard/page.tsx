@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
+import { SignOutButton } from "@/components/SignOutButton";
 
 const GOLD = "#C8A96E";
 const GOLD_TEXT = "#e8d5a8";
@@ -202,25 +203,6 @@ function DashboardInner() {
               </button>
             );
           })}
-          {/* External link to the Ambassador Program dashboard */}
-          <Link
-            href="/ambassador"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "9px 12px",
-              borderLeft: `3px solid transparent`,
-              color: TXT,
-              fontSize: 12,
-              fontWeight: 500,
-              textDecoration: "none",
-              marginTop: 8,
-            }}
-          >
-            <span style={{ fontSize: 14 }}>🌟</span>
-            Ambassador
-          </Link>
         </nav>
 
         <Link
@@ -556,7 +538,7 @@ const ROLE_TIPS: Partial<Record<Role, string>> = {
   DEVELOPER: "Mixed-use plots near Expo City are seeing strong absorption. Project tracking lands in Phase 5.",
   INVESTOR: "Watchlist + ROI projections land in Phase 5. For now, save interesting plots to Favorites.",
   ARCHITECT: "Template library + saved feasibility calculations land in Phase 5.",
-  ADMIN: "Use /admin/ambassadors to manage applications. Platform analytics land in Phase 7.",
+  ADMIN: "Use /admin/queue to review cohort applications, Title Deed verifications, and PlotClaim verifications. Platform analytics land in Phase 7.",
 };
 
 const RECENT_ACTIVITY = [
@@ -1180,7 +1162,7 @@ function Financials() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <H1>Financials</H1>
       <Sub>Commission tracking across all your deals.</Sub>
-      <ComingSoonBanner text="Commission pipeline + payout requests — Phase 3 (BROKER dashboard). Ambassador commissions are live on /ambassador." />
+      <ComingSoonBanner text="Commission pipeline + payout requests — Phase 3 (BROKER dashboard). Cohort-pilot doesn't include commission flow yet." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         <StatCard label="Earned" value="0 AED" icon="💰" accent={GOLD} />
         <StatCard label="Pending" value="0 AED" icon="⏳" />
@@ -1557,6 +1539,16 @@ function Settings() {
       </Card>
 
       <ComingSoonBanner text="Map defaults, language/currency switching live in UI but aren't wired yet — Phase 2. Use Profile → Preferred Language / Currency for the persisted copy (those ARE live)." />
+
+      <Card>
+        <H2>Account</H2>
+        <p style={{ fontSize: 11, color: SUBTLE, margin: "0 0 12px" }}>
+          Signs you out from <strong>every device</strong> currently logged
+          in to this account — desktop, mobile, every open browser.
+          You&rsquo;ll need to sign in again to come back.
+        </p>
+        <SignOutButton variant="full" />
+      </Card>
 
       <Card style={{ borderColor: "rgba(248, 113, 113, 0.35)" }}>
         <H2>Danger Zone</H2>

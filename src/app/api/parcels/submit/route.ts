@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
+import { Prisma, ParcelStatus, UserRole, ClaimStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
+import { claimStatusForRole } from '@/lib/plot-claim';
 
 export const runtime = 'nodejs';
 
@@ -13,12 +14,21 @@ interface PolyFeature {
   properties: Record<string, unknown>;
 }
 
+// Step 11 PDPL fix (P1-1): Path B uploads land in the private
+// `registration-docs` bucket; the client sends a `path` (not a URL).
+// Legacy `url` shape is still accepted to keep any pre-Step-11 dev
+// uploads renderable through the admin verification surface — the
+// `signClaimDocuments` helper from Step 10 normalises both shapes.
 const UploadedDoc = z.object({
   kind: z.enum(['title_deed', 'id_doc', 'rera_contract']),
-  url: z.string().url().max(1024),
+  path: z.string().max(1024).optional(),
+  url: z.string().url().max(1024).optional(),
   name: z.string().max(256),
   size: z.number().int().nonnegative().max(10 * 1024 * 1024).optional(),
   contentType: z.string().max(128).optional(),
+}).refine((d) => !!(d.path || d.url), {
+  message: 'document_must_have_path_or_url',
+  path: ['path'],
 });
 
 const SubmitSchema = z
@@ -197,6 +207,52 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // PlotClaim — spec §8.3 step 4 (Path B). flow=broker → BROKER,
+    // flow=owner → OWNER. Both verifiable roles land in PENDING; admin
+    // queue's PlotClaimVerification tab (Step 10) surfaces them. Step
+    // 11 PDPL: uploads now land in private `registration-docs` so
+    // `path` is the canonical reference; legacy `url` shape (any
+    // pre-Step-11 dev rows) is preserved verbatim and still rendered
+    // by Step 10's `signClaimDocuments` helper.
+    const claimRole: UserRole = flow === 'broker' ? UserRole.BROKER : UserRole.OWNER;
+    const claimStatus: ClaimStatus = claimStatusForRole(claimRole);
+    const claimDocs = (body.documents ?? []).map((d) => ({
+      kind: d.kind,
+      path: d.path ?? null,
+      url: d.url ?? null,
+      originalName: d.name,
+      sizeBytes: d.size ?? null,
+      contentType: d.contentType ?? null,
+      uploadedAt: new Date().toISOString(),
+    }));
+    try {
+      await prisma.plotClaim.create({
+        data: {
+          parcelId: parcel.id,
+          userId: callerId,
+          roleAtClaim: claimRole,
+          priceAed: priceFils, // fils — column name preserved per schema (§5.4)
+          status: claimStatus,
+          documentsJson:
+            claimDocs.length > 0
+              ? (claimDocs as unknown as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
+        },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        // Race-loser; the caller already has a claim on this parcel.
+        // The parcel itself was successfully created/updated, so the
+        // submit flow still returns 200 — the existing claim covers
+        // ownership semantics. Logged for visibility.
+        console.warn('[parcels/submit] plotclaim duplicate (race) — parcel:', parcel.id);
+      } else {
+        // Surface, but don't fail the whole submit — admin can verify
+        // the parcel and add a manual claim if this races at scale.
+        console.error('[parcels/submit] plotclaim insert failed:', e);
+      }
+    }
+
     // Activity: LISTING_CREATED (submit flow — PENDING_REVIEW status).
     void logActivity({
       userId: callerId,
@@ -205,7 +261,7 @@ export async function POST(req: NextRequest) {
       payload: { flow, status: parcel.status, district },
     });
 
-    return NextResponse.json({ id: parcel.id, status: parcel.status });
+    return NextResponse.json({ id: parcel.id, status: parcel.status, claimStatus });
   } catch (e) {
     console.error('[parcels/submit] failed:', e);
     return NextResponse.json({ error: 'submit_failed' }, { status: 500 });

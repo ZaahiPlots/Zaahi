@@ -4,7 +4,6 @@ import { getApprovedUserId } from "@/lib/auth";
 import { serialize } from "@/lib/serialize";
 import { recordDealEvent } from "@/lib/blockchain";
 import { validateAction, DealAction, getRole } from "@/lib/deal-flow";
-import { awardCommissions, computePlatformFee, reverseCommissions } from "@/lib/ambassador";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -16,14 +15,38 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
+  // PDPL §12.5 / Step 11 P1-2: counterparty profile is minimised to
+  // the public shape (id + nickname + role + brand fields). Real name
+  // stays out of the per-deal API response — it's available only to
+  // admins and at formal deal-document signing time. Email + phone
+  // are not exposed; if a future deal-stage UX needs them, route
+  // through an explicit "reveal contact" surface with an audit log.
   const deal = await prisma.deal.findUnique({
     where: { id },
     include: {
       parcel: { include: { affectionPlans: { orderBy: { fetchedAt: "desc" }, take: 1 } } },
-      seller: { select: { id: true, name: true, email: true } },
-      buyer: { select: { id: true, name: true, email: true } },
-      broker: { select: { id: true, name: true, email: true } },
-      messages: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true } } } },
+      seller: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      buyer: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      broker: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      messages: {
+        orderBy: { createdAt: "asc" },
+        include: { user: { select: { id: true, nickname: true } } },
+      },
       auditEvents: { orderBy: { createdAt: "asc" } },
       documents: true,
     },
@@ -112,58 +135,36 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
   const documentHash = typeof body.documentHash === "string" ? body.documentHash : null;
 
-  // On COMPLETE: compute platform fee (0.25% of agreedPrice) and award
-  // ambassador commissions atomically in the same transaction as the
-  // deal status update. On CANCEL/DISPUTE: claw back pending commissions.
+  // On COMPLETE: freeze platform fee (2% of agreedPrice) onto the Deal row
+  // for audit. Commission attribution itself is dormant — TODO: blockchain
+  // attribution — Phase B (per spec-05 §13.3).
   //
   // Concurrency: use updateMany with a status-match predicate (optimistic
   // concurrency control). If two COMPLETE requests race, only the one that
   // transitions `deal.status` from its pre-transaction value wins — the
-  // other sees updated.count === 0 and aborts without double-awarding
-  // commissions.
+  // other sees updated.count === 0 and aborts.
   let raceAborted = false;
-  const { updated, commissionsCreated, commissionsReversed } = await prisma.$transaction(async (tx) => {
-    // Freeze platform fee on the Deal row itself for audit
+  const { updated } = await prisma.$transaction(async (tx) => {
+    // Freeze platform fee on the Deal row itself for audit (2% = 200 / 10000,
+    // integer math to avoid floating-point drift).
     if (action === "COMPLETE") {
       const agreed = data.agreedPriceInFils ?? deal.offerPriceInFils ?? deal.priceInFils;
       if (agreed && agreed > BigInt(0)) {
-        data.platformFeeFils = computePlatformFee(agreed);
+        data.platformFeeFils = (agreed * BigInt(200)) / BigInt(10000);
       }
     }
 
-    // Conditional update: only succeeds if the row is still in the
-    // pre-transaction status. Prevents the second of two concurrent
-    // COMPLETE/CANCEL/DISPUTE requests from re-running commission logic.
     const updateRes = await tx.deal.updateMany({
       where: { id, status: deal.status },
       data,
     });
     if (updateRes.count === 0) {
       raceAborted = true;
-      // Read the current deal (already updated by the winning request)
       const current = await tx.deal.findUnique({ where: { id } });
-      return { updated: current!, commissionsCreated: 0, commissionsReversed: 0 };
+      return { updated: current! };
     }
     const updatedRow = (await tx.deal.findUnique({ where: { id } }))!;
-
-    let created = 0;
-    let reversed = 0;
-
-    if (action === "COMPLETE" && updatedRow.platformFeeFils && updatedRow.platformFeeFils > BigInt(0)) {
-      created = await awardCommissions(
-        tx,
-        updatedRow.id,
-        deal.sellerId,
-        deal.buyerId,
-        updatedRow.platformFeeFils,
-      );
-    }
-
-    if (action === "CANCEL" || action === "DISPUTE") {
-      reversed = await reverseCommissions(tx, id);
-    }
-
-    return { updated: updatedRow, commissionsCreated: created, commissionsReversed: reversed };
+    return { updated: updatedRow };
   });
 
   if (raceAborted) {
@@ -178,8 +179,6 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // Blockchain event + audit log (outside transaction — best-effort).
   // These are append-only and don't need to be atomic with the deal update.
   const { txHash } = await recordDealEvent(id, v.def.eventType, documentHash);
-  if (commissionsCreated > 0) eventMeta.commissionsCreated = commissionsCreated;
-  if (commissionsReversed > 0) eventMeta.commissionsReversed = commissionsReversed;
   if (action === "COMPLETE" && updated.platformFeeFils) {
     eventMeta.platformFeeFils = updated.platformFeeFils.toString();
   }

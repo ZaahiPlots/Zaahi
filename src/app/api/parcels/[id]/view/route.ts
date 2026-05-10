@@ -35,13 +35,15 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   if (!parcelId) return NextResponse.json({ error: "missing_parcel_id" }, { status: 400 });
 
   // Verify parcel exists + OWNER check — owners viewing own plot don't
-  // count. (Keeps analytics honest.)
+  // count. Spec §5.4.1 LOCK-8 / Step 12 audit SF-2: skip self-views
+  // for either the creator (ownerId) or the verified owner
+  // (verifiedOwnerUserId) so analytics aren't inflated by either party.
   const parcel = await prisma.parcel.findUnique({
     where: { id: parcelId },
-    select: { id: true, ownerId: true },
+    select: { id: true, ownerId: true, verifiedOwnerUserId: true },
   });
   if (!parcel) return NextResponse.json({ error: "parcel_not_found" }, { status: 404 });
-  if (parcel.ownerId === userId) {
+  if (parcel.ownerId === userId || parcel.verifiedOwnerUserId === userId) {
     return NextResponse.json({ recorded: false, reason: "self" });
   }
 

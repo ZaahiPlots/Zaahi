@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
+import { Prisma, ParcelStatus, UserRole, ClaimStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit } from '@/lib/dda';
 import { getApprovedUserId } from '@/lib/auth';
+import { claimStatusForRole } from '@/lib/plot-claim';
 
 export const runtime = 'nodejs';
 
@@ -74,7 +75,9 @@ export async function POST(req: NextRequest) {
     /* optional */
   }
 
-  // 4. System owner
+  // 4. System owner — kept as the immutable Parcel.ownerId per LOCK-8 /
+  // CORR-1. Cohort users (Жан, Dymo, future approved applicants) will
+  // attach to the parcel via PlotClaim, never by overwriting ownerId.
   await prisma.user.upsert({
     where: { id: SYSTEM_USER_ID },
     create: {
@@ -85,6 +88,43 @@ export async function POST(req: NextRequest) {
     },
     update: {},
   });
+
+  // 4b. Path A pre-flight (spec §8.2 step 5). If the calling cohort user
+  // already has a non-REJECTED PlotClaim on this plot, return 409 so
+  // the modal switches to Path C (multi-claim view). The DB-level
+  // unique constraint on (parcelId, userId) catches the race; this is
+  // the friendly-message version. We deliberately do NOT 409 for any
+  // *other* claim (system ADMIN backfill, other users) — those are
+  // valid multi-claim scenarios that the probe would normally route
+  // through Path C; if a caller bypasses the probe and lands here on
+  // an already-claimed plot, we want them to be able to add their own
+  // claim alongside, not to be blocked by an unrelated row.
+  if (callerId !== SYSTEM_USER_ID) {
+    const existingParcel = await prisma.parcel.findFirst({
+      where: { plotNumber },
+      select: { id: true },
+    });
+    if (existingParcel) {
+      const callerExistingClaim = await prisma.plotClaim.findFirst({
+        where: {
+          parcelId: existingParcel.id,
+          userId: callerId,
+          status: { not: ClaimStatus.REJECTED },
+        },
+        select: { id: true, status: true, roleAtClaim: true },
+      });
+      if (callerExistingClaim) {
+        return NextResponse.json(
+          {
+            error: 'plot_already_claimed',
+            parcelId: existingParcel.id,
+            claim: callerExistingClaim,
+          },
+          { status: 409 },
+        );
+      }
+    }
+  }
 
   const areaSqft =
     plan?.plotAreaSqft ??
@@ -156,11 +196,57 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // 7. PlotClaim — spec §8.2 step 4 (NEW). Path A always creates a
+  // claim for the caller, distinct from the system ADMIN backfill
+  // row that exists on legacy parcels. Verifiable roles land in
+  // PENDING; non-verifiable in SELF_DECLARED; admin (system inventory
+  // path) lands in VERIFIED so script-driven seeding stays a no-op.
+  // The DB unique on (parcelId, userId) makes this idempotent — we
+  // catch P2002 and treat it as success on retry.
+  let callerRole: UserRole = UserRole.OTHER;
+  try {
+    const callerUser = await prisma.user.findUnique({
+      where: { id: callerId },
+      select: { role: true },
+    });
+    if (callerUser?.role) callerRole = callerUser.role;
+  } catch {
+    /* fall back to OTHER */
+  }
+
+  const claimStatus = claimStatusForRole(callerRole);
+  try {
+    await prisma.plotClaim.create({
+      data: {
+        parcelId: parcel.id,
+        userId: callerId,
+        roleAtClaim: callerRole,
+        priceAed: priceFils, // fils — column name preserved per schema (§5.4)
+        status: claimStatus,
+      },
+    });
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === 'P2002'
+    ) {
+      // Race-loser; the caller already has a claim on this parcel.
+      // Treat as success — the parcel state we created is still valid.
+    } else {
+      // Don't fail the whole request — the parcel is created. Surface
+      // a warning header so the client can choose to retry the claim
+      // separately via /api/parcels/[id]/claim.
+      const msg = e instanceof Error ? e.message : 'unknown';
+      console.error('[parcels/seed-dda] plotclaim insert failed:', msg);
+    }
+  }
+
   return NextResponse.json({
     id: parcel.id,
     plotNumber,
     district,
     longitude: cLng,
     latitude: cLat,
+    claimStatus,
   });
 }

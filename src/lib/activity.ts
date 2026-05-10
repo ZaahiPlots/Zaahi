@@ -17,9 +17,17 @@
 //
 // Kinds currently written:
 //   USER_LOGIN        — successful sign-in (via /api/users/sync)
-//   PLOT_VIEW         — user opened a parcel detail or SidePanel
-//   FAVORITE_ADDED    — user saved a parcel to their shortlist
-//   LISTING_CREATED   — user added a new parcel (direct or submit flow)
+//   PLOT_VIEW          — user opened a parcel detail or SidePanel
+//   FAVORITE_ADDED     — user saved a parcel to their shortlist
+//   LISTING_CREATED    — user added a new parcel (direct or submit flow)
+//   PLOT_CLAIM_CREATED — user added a multi-claim PlotClaim row (Step 9)
+//   OWNER_VERIFIED     — admin set Parcel.verifiedOwnerUserId via Title
+//                        Deed verification (Step 10). Logged on the
+//                        verified owner's userId.
+//   CLAIM_VERIFIED     — admin verified a non-OWNER PlotClaim (Step 10).
+//                        Logged on the claimant's userId.
+//   CLAIM_REJECTED     — admin rejected a PlotClaim with reason.
+//                        Logged on the claimant's userId.
 
 import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
@@ -28,7 +36,11 @@ export type ActivityKind =
   | "USER_LOGIN"
   | "PLOT_VIEW"
   | "FAVORITE_ADDED"
-  | "LISTING_CREATED";
+  | "LISTING_CREATED"
+  | "PLOT_CLAIM_CREATED"
+  | "OWNER_VERIFIED"
+  | "CLAIM_VERIFIED"
+  | "CLAIM_REJECTED";
 
 export interface LogActivityArgs {
   userId: string;

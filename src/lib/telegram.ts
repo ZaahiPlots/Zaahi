@@ -107,3 +107,46 @@ export async function sendTelegramMessage(
     return { ok: false, error: msg };
   }
 }
+
+export interface AdminFanoutResult {
+  chatId: string;
+  ok: boolean;
+  messageId?: number;
+  skipped?: boolean;
+  error?: string;
+}
+
+/**
+ * Multi-recipient broadcast to all admin chats (per spec §11.2).
+ *
+ * Reads the comma-separated `TELEGRAM_ADMIN_CHAT_IDS` env first; falls
+ * back to the singular `TELEGRAM_ADMIN_CHAT_ID` for backwards-compat.
+ * Returns one result per chatId. Empty list when neither env is set.
+ *
+ * Each chat dispatches independently — one failing recipient doesn't
+ * stop the others. Never throws.
+ */
+export async function sendTelegramToAdmins(
+  args: Omit<SendTelegramArgs, "chatId">,
+): Promise<AdminFanoutResult[]> {
+  const plural = process.env.TELEGRAM_ADMIN_CHAT_IDS;
+  const singular = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  const chatIds = (plural ?? singular ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (chatIds.length === 0) return [];
+  return Promise.all(
+    chatIds.map(async (chatId): Promise<AdminFanoutResult> => {
+      const r = await sendTelegramMessage({ ...args, chatId });
+      if ("ok" in r && r.ok) return { chatId, ok: true, messageId: r.messageId };
+      if ("skipped" in r && r.skipped)
+        return { chatId, ok: false, skipped: true, error: "token missing" };
+      return {
+        chatId,
+        ok: false,
+        error: "error" in r ? r.error : "unknown",
+      };
+    }),
+  );
+}
