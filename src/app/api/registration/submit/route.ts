@@ -254,6 +254,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   if (createUserErr || !createdUser?.user) {
     console.error("[register/submit] createUser failed:", createUserErr?.message);
+    // Map Supabase "user already exists" to a friendlier 409 so users
+    // get an actionable message instead of a generic retry prompt.
+    // The local Prisma dedup at step 2 only sees rows we wrote ourselves;
+    // a Supabase Auth user can exist without any matching Prisma row
+    // (e.g. orphan from a half-finished earlier signup, or a smoke-test
+    // attempt on a preview deployment that shares the same Supabase
+    // project). Surface that clearly so support can clean it up.
+    const errCode = (createUserErr as { code?: string } | null | undefined)?.code;
+    const errMsg = createUserErr?.message ?? "";
+    const looksLikeEmailExists =
+      errCode === "email_exists" ||
+      errCode === "user_already_exists" ||
+      /already\s*(been\s*)?registered/i.test(errMsg) ||
+      /user.*already.*exists/i.test(errMsg);
+    if (looksLikeEmailExists) {
+      return jsonError(
+        409,
+        "email_already_registered",
+        "This email is already registered with ZAAHI. If you've registered before, sign in instead. If you've never registered or believe this is in error, email support@zaahi.io and we'll resolve it.",
+      );
+    }
     return jsonError(
       500,
       "auth_signup_failed",
