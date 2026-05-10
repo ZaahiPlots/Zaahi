@@ -254,6 +254,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   if (createUserErr || !createdUser?.user) {
     console.error("[register/submit] createUser failed:", createUserErr?.message);
+    // Temp diagnostic (2026-05-11) — capture the runtime key shape so we
+    // can prove whether the rotation reached the function. Prefix + length
+    // only; the full secret is never logged. Remove after the incident.
+    const _diag = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    console.error(
+      `[register/submit] env-diag: SUPABASE_SERVICE_ROLE_KEY prefix=${_diag?.slice(0, 6)} len=${_diag?.length ?? 0} VERCEL_ENV=${process.env.VERCEL_ENV} VERCEL_GIT_COMMIT_SHA=${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)}`,
+    );
     // Map Supabase "user already exists" to a friendlier 409 so users
     // get an actionable message instead of a generic retry prompt.
     // The local Prisma dedup at step 2 only sees rows we wrote ourselves;
