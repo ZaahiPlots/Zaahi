@@ -15,6 +15,10 @@ import { CapCounter } from "./CapCounter";
 import { Tabs, type TabKey } from "./Tabs";
 import { ApplicationList } from "./ApplicationList";
 import { ApplicationDetail } from "./ApplicationDetail";
+import { TitleDeedList } from "./TitleDeedList";
+import { TitleDeedDetail } from "./TitleDeedDetail";
+import { PlotClaimList } from "./PlotClaimList";
+import { PlotClaimDetail } from "./PlotClaimDetail";
 import {
   GOLD,
   TEXT,
@@ -24,7 +28,11 @@ import {
   ghostBtn,
 } from "./styles";
 import { ROLE_LABELS, COHORT_APPLICANT_ROLES } from "@/lib/registration-validation";
-import type { ListResponse } from "./types";
+import type {
+  ListResponse,
+  TitleDeedListResponse,
+  PlotClaimListResponse,
+} from "./types";
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "all", label: "All" },
@@ -50,22 +58,31 @@ export default function AdminQueuePage() {
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [data, setData] = useState<ListResponse | null>(null);
+  const [titleDeedData, setTitleDeedData] = useState<TitleDeedListResponse | null>(null);
+  const [plotClaimData, setPlotClaimData] = useState<PlotClaimListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openParcelId, setOpenParcelId] = useState<string | null>(null);
+  const [openClaimId, setOpenClaimId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Tab pills now include live counts for the verification queues —
+  // fetched whenever the page refreshes so admins see "(3)" after a
+  // new claim arrives or "—" once the queue is clear.
   const tabs = useMemo(() => {
-    const arr = TABS.map((t) => ({ ...t }));
-    arr.push(
+    const verificationCounts: Partial<Record<TabKey, number>> = {
+      title_deed: titleDeedData?.total,
+      plot_claim: plotClaimData?.total,
+    };
+    return [
+      ...TABS.map((t) => ({ ...t })),
       ...VERIFICATION_TABS.map((t) => ({
         ...t,
-        disabled: true,
-        disabledReason: "Available after Step 10 (parcel-verification flow).",
+        count: verificationCounts[t.key],
       })),
-    );
-    return arr;
-  }, []);
+    ];
+  }, [titleDeedData, plotClaimData]);
 
   // Fetch list whenever inputs change
   useEffect(() => {
@@ -73,13 +90,51 @@ export default function AdminQueuePage() {
     (async () => {
       setLoading(true);
       setError(null);
-      const params = new URLSearchParams();
-      const status = TAB_TO_STATUS[tab];
-      if (status) params.set("status", status);
-      if (roleFilter) params.set("role", roleFilter);
-      if (q.trim()) params.set("q", q.trim());
-      params.set("limit", "50");
       try {
+        if (tab === "title_deed") {
+          const params = new URLSearchParams();
+          if (q.trim()) params.set("q", q.trim());
+          params.set("limit", "50");
+          const res = await apiFetch(`/api/admin/title-deeds?${params.toString()}`);
+          if (!res.ok) {
+            setError(`Failed to load (${res.status})`);
+            setTitleDeedData(null);
+            setLoading(false);
+            return;
+          }
+          const json = (await res.json()) as TitleDeedListResponse;
+          if (!cancelled) {
+            setTitleDeedData(json);
+            setLoading(false);
+          }
+          return;
+        }
+        if (tab === "plot_claim") {
+          const params = new URLSearchParams();
+          if (q.trim()) params.set("q", q.trim());
+          if (roleFilter) params.set("role", roleFilter);
+          params.set("limit", "50");
+          const res = await apiFetch(`/api/admin/plot-claims?${params.toString()}`);
+          if (!res.ok) {
+            setError(`Failed to load (${res.status})`);
+            setPlotClaimData(null);
+            setLoading(false);
+            return;
+          }
+          const json = (await res.json()) as PlotClaimListResponse;
+          if (!cancelled) {
+            setPlotClaimData(json);
+            setLoading(false);
+          }
+          return;
+        }
+        // Registration tabs (existing flow)
+        const params = new URLSearchParams();
+        const status = TAB_TO_STATUS[tab];
+        if (status) params.set("status", status);
+        if (roleFilter) params.set("role", roleFilter);
+        if (q.trim()) params.set("q", q.trim());
+        params.set("limit", "50");
         const res = await apiFetch(`/api/admin/registration?${params.toString()}`);
         if (!res.ok) {
           setError(`Failed to load (${res.status})`);
@@ -104,8 +159,32 @@ export default function AdminQueuePage() {
     };
   }, [tab, q, roleFilter, refreshKey]);
 
-  // Special handling for "title_deed" / "plot_claim" tabs (Step 10)
-  const isVerificationTab = tab === "title_deed" || tab === "plot_claim";
+  // Background pull of verification counts so the tab pills stay
+  // accurate while the admin is on a registration tab.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [tdRes, pcRes] = await Promise.all([
+          apiFetch("/api/admin/title-deeds?limit=1"),
+          apiFetch("/api/admin/plot-claims?limit=1"),
+        ]);
+        if (tdRes.ok) {
+          const j = (await tdRes.json()) as TitleDeedListResponse;
+          if (!cancelled) setTitleDeedData((prev) => (prev ? { ...prev, total: j.total } : j));
+        }
+        if (pcRes.ok) {
+          const j = (await pcRes.json()) as PlotClaimListResponse;
+          if (!cancelled) setPlotClaimData((prev) => (prev ? { ...prev, total: j.total } : j));
+        }
+      } catch {
+        /* tab pill counts are non-critical */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   return (
     <div
@@ -166,18 +245,23 @@ export default function AdminQueuePage() {
           onChange={(e) => setQ(e.target.value)}
           style={{ ...inputStyle, maxWidth: 280 }}
         />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          style={{ ...inputStyle, maxWidth: 220 }}
-        >
-          <option value="">All roles</option>
-          {COHORT_APPLICANT_ROLES.map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABELS[r].split(" — ")[0]}
-            </option>
-          ))}
-        </select>
+        {tab !== "title_deed" && (
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            style={{ ...inputStyle, maxWidth: 220 }}
+          >
+            <option value="">All roles</option>
+            {(tab === "plot_claim"
+              ? (["BROKER", "DEVELOPER", "ARCHITECT", "POA"] as const)
+              : COHORT_APPLICANT_ROLES
+            ).map((r) => (
+              <option key={r} value={r}>
+                {tab === "plot_claim" ? r : ROLE_LABELS[r as keyof typeof ROLE_LABELS].split(" — ")[0]}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="button"
           onClick={() => setRefreshKey((k) => k + 1)}
@@ -185,58 +269,80 @@ export default function AdminQueuePage() {
         >
           ↻ Refresh
         </button>
-        {data && (
-          <span style={{ fontSize: 11, color: TEXT_DIM, marginLeft: "auto" }}>
-            {data.total} total · showing {data.items.length}
-          </span>
-        )}
+        {(() => {
+          const stats =
+            tab === "title_deed"
+              ? titleDeedData
+                ? { total: titleDeedData.total, shown: titleDeedData.items.length }
+                : null
+              : tab === "plot_claim"
+                ? plotClaimData
+                  ? { total: plotClaimData.total, shown: plotClaimData.items.length }
+                  : null
+                : data
+                  ? { total: data.total, shown: data.items.length }
+                  : null;
+          return stats ? (
+            <span style={{ fontSize: 11, color: TEXT_DIM, marginLeft: "auto" }}>
+              {stats.total} total · showing {stats.shown}
+            </span>
+          ) : null;
+        })()}
       </div>
 
-      {isVerificationTab ? (
+      {error && (
         <div
           style={{
-            padding: "32px 16px",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px dashed rgba(255,255,255,0.12)",
-            borderRadius: 12,
-            textAlign: "center",
-            color: TEXT_DIM,
-            fontSize: 13,
-            lineHeight: 1.6,
+            padding: "12px 14px",
+            background: "rgba(230,57,70,0.08)",
+            border: "1px solid rgba(230,57,70,0.3)",
+            borderRadius: 8,
+            fontSize: 12,
+            color: "#ff8a92",
+            marginBottom: 12,
           }}
         >
-          {tab === "title_deed" ? "Title Deed verification" : "Plot Claim verification"}{" "}
-          tab will be wired up in Step 10. Spec §7.5 + §10.
+          {error}
         </div>
+      )}
+      {tab === "title_deed" ? (
+        <TitleDeedList
+          items={titleDeedData?.items ?? []}
+          loading={loading}
+          onOpen={setOpenParcelId}
+        />
+      ) : tab === "plot_claim" ? (
+        <PlotClaimList
+          items={plotClaimData?.items ?? []}
+          loading={loading}
+          onOpen={setOpenClaimId}
+        />
       ) : (
-        <>
-          {error && (
-            <div
-              style={{
-                padding: "12px 14px",
-                background: "rgba(230,57,70,0.08)",
-                border: "1px solid rgba(230,57,70,0.3)",
-                borderRadius: 8,
-                fontSize: 12,
-                color: "#ff8a92",
-                marginBottom: 12,
-              }}
-            >
-              {error}
-            </div>
-          )}
-          <ApplicationList
-            items={data?.items ?? []}
-            loading={loading}
-            onOpen={setOpenId}
-          />
-        </>
+        <ApplicationList
+          items={data?.items ?? []}
+          loading={loading}
+          onOpen={setOpenId}
+        />
       )}
 
       {openId && (
         <ApplicationDetail
           applicationId={openId}
           onClose={() => setOpenId(null)}
+          onChanged={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
+      {openParcelId && (
+        <TitleDeedDetail
+          parcelId={openParcelId}
+          onClose={() => setOpenParcelId(null)}
+          onChanged={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
+      {openClaimId && (
+        <PlotClaimDetail
+          claimId={openClaimId}
+          onClose={() => setOpenClaimId(null)}
           onChanged={() => setRefreshKey((k) => k + 1)}
         />
       )}
