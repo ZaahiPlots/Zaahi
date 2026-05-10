@@ -245,97 +245,80 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Spec §6.4 step 5. Generate a temp password the user never sees;
   // they verify email, then on admin approval use the recovery link
   // (Step 7) to set their own password.
+  //
+  // INCIDENT 2026-05-11 — admin.auth.admin.createUser via supabase-js
+  // v2.102.1 returns `AuthApiError code=unexpected_failure status=500`
+  // on Vercel's Node runtime even though the same key + URL + payload
+  // succeed via raw HTTP (confirmed by an in-route parity probe). The
+  // failure does not happen from local Node or non-Vercel runtimes,
+  // so it's a library/runtime interaction. The workaround calls the
+  // /auth/v1/admin/users endpoint directly via fetch. Same shape,
+  // same auth, but bypasses whatever supabase-js does that the Auth
+  // service rejects on Vercel's outbound. The rest of the route
+  // continues to use supabase-js for storage operations (which are
+  // not affected). When supabase-js is upgraded / patched and the
+  // upstream fix lands, this block can revert to the original
+  // admin.auth.admin.createUser call.
   const tempPassword = `tmp-${crypto.randomUUID()}-${crypto.randomUUID()}`;
-  const { data: createdUser, error: createUserErr } = await admin.auth.admin.createUser({
-    email,
-    password: tempPassword,
-    email_confirm: false,
-    user_metadata: { approved: false, nickname, role },
-  });
-  if (createUserErr || !createdUser?.user) {
-    console.error("[register/submit] createUser failed:", createUserErr?.message);
-    // Temp diagnostic (2026-05-11) — capture runtime context. Prefix
-    // + length only; the full secret is never logged. Remove after
-    // the incident. Also dumps the full error object (status, code,
-    // cause) since "Internal Server Error" alone is opaque.
-    const _diag = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    console.error(
-      `[register/submit] env-diag: SERVICE_KEY prefix=${_diag?.slice(0, 6)} len=${_diag?.length ?? 0} URL=${process.env.NEXT_PUBLIC_SUPABASE_URL} VERCEL_ENV=${process.env.VERCEL_ENV} SHA=${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)}`,
-    );
-    if (createUserErr) {
-      const errAsAny = createUserErr as unknown as Record<string, unknown>;
+  const authBaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  let userId: string;
+  try {
+    const createRes = await fetch(`${authBaseUrl}/auth/v1/admin/users`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        authorization: `Bearer ${serviceKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password: tempPassword,
+        email_confirm: false,
+        user_metadata: { approved: false, nickname, role },
+      }),
+    });
+    if (!createRes.ok) {
+      const bodyText = await createRes.text();
+      let bodyJson: { code?: string; msg?: string; message?: string; error?: string; error_code?: string } = {};
+      try { bodyJson = JSON.parse(bodyText); } catch { /* not JSON */ }
       console.error(
-        `[register/submit] err-diag: name=${errAsAny.name} status=${errAsAny.status} code=${errAsAny.code} cause=${JSON.stringify(errAsAny.cause)}`,
+        `[register/submit] createUser failed: status=${createRes.status} body=${bodyText.slice(0, 220)}`,
       );
-      // Native-fetch parity probe: if supabase-js fails but native
-      // fetch with the same key against the same URL succeeds, the
-      // bug is library-level (UA / headers). If both fail with the
-      // same body, the bug is request-level (key / project state).
-      try {
-        const probeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users`;
-        const probeKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-        const probeEmail = `__diag_${Date.now()}_${Math.random().toString(36).slice(2, 8)}@zaahi-test.io`;
-        const probeRes = await fetch(probeUrl, {
-          method: "POST",
-          headers: {
-            apikey: probeKey,
-            authorization: `Bearer ${probeKey}`,
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            email: probeEmail,
-            password: `Tmp-${Date.now()}!A`,
-            email_confirm: false,
-          }),
-        });
-        const probeBody = await probeRes.text();
-        console.error(
-          `[register/submit] native-fetch parity: status=${probeRes.status} body=${probeBody.slice(0, 220)}`,
+
+      // Preserve the L2a behaviour — orphaned auth user → 409.
+      const errCode = bodyJson.code ?? bodyJson.error_code;
+      const errMsg = `${bodyJson.message ?? bodyJson.msg ?? bodyJson.error ?? ""} ${bodyText}`;
+      const looksLikeEmailExists =
+        createRes.status === 422 &&
+        (errCode === "email_exists" ||
+          errCode === "user_already_exists" ||
+          /already\s*(been\s*)?registered/i.test(errMsg) ||
+          /user.*already.*exists/i.test(errMsg));
+      if (looksLikeEmailExists) {
+        return jsonError(
+          409,
+          "email_already_registered",
+          "This email is already registered with ZAAHI. If you've registered before, sign in instead. If you've never registered or believe this is in error, email support@zaahi.io and we'll resolve it.",
         );
-        // Best-effort cleanup if the parity user was actually created.
-        if (probeRes.status >= 200 && probeRes.status < 300) {
-          try {
-            const created = JSON.parse(probeBody) as { id?: string };
-            if (created.id) {
-              await fetch(`${probeUrl}/${created.id}`, {
-                method: "DELETE",
-                headers: { apikey: probeKey, authorization: `Bearer ${probeKey}` },
-              });
-            }
-          } catch {/* ignore cleanup errors */}
-        }
-      } catch (probeErr) {
-        console.error("[register/submit] native-fetch parity threw:", (probeErr as Error)?.message);
       }
-    }
-    // Map Supabase "user already exists" to a friendlier 409 so users
-    // get an actionable message instead of a generic retry prompt.
-    // The local Prisma dedup at step 2 only sees rows we wrote ourselves;
-    // a Supabase Auth user can exist without any matching Prisma row
-    // (e.g. orphan from a half-finished earlier signup, or a smoke-test
-    // attempt on a preview deployment that shares the same Supabase
-    // project). Surface that clearly so support can clean it up.
-    const errCode = (createUserErr as { code?: string } | null | undefined)?.code;
-    const errMsg = createUserErr?.message ?? "";
-    const looksLikeEmailExists =
-      errCode === "email_exists" ||
-      errCode === "user_already_exists" ||
-      /already\s*(been\s*)?registered/i.test(errMsg) ||
-      /user.*already.*exists/i.test(errMsg);
-    if (looksLikeEmailExists) {
       return jsonError(
-        409,
-        "email_already_registered",
-        "This email is already registered with ZAAHI. If you've registered before, sign in instead. If you've never registered or believe this is in error, email support@zaahi.io and we'll resolve it.",
+        500,
+        "auth_signup_failed",
+        "Could not create your account. Please retry — if it keeps failing, contact support.",
       );
     }
-    return jsonError(
-      500,
-      "auth_signup_failed",
-      "Could not create your account. Please retry — if it keeps failing, contact support.",
-    );
+    const createdUser = (await createRes.json()) as { id?: string; email?: string };
+    if (!createdUser.id) {
+      console.error("[register/submit] createUser response missing id:", createdUser);
+      return jsonError(500, "auth_signup_failed", "Could not create your account. Please retry.");
+    }
+    userId = createdUser.id;
+  } catch (e) {
+    console.error("[register/submit] createUser threw:", e);
+    return jsonError(500, "auth_signup_failed", "Could not create your account. Please retry.");
   }
-  const userId = createdUser.user.id;
 
   // ── Helper: rollback hooks ────────────────────────────────────────
   // Best-effort cleanup if a later step fails. Logged loudly when fail
