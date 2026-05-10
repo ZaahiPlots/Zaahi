@@ -17,9 +17,10 @@
 //
 // Kinds currently written:
 //   USER_LOGIN        — successful sign-in (via /api/users/sync)
-//   PLOT_VIEW         — user opened a parcel detail or SidePanel
-//   FAVORITE_ADDED    — user saved a parcel to their shortlist
-//   LISTING_CREATED   — user added a new parcel (direct or submit flow)
+//   PLOT_VIEW          — user opened a parcel detail or SidePanel
+//   FAVORITE_ADDED     — user saved a parcel to their shortlist
+//   LISTING_CREATED    — user added a new parcel (direct or submit flow)
+//   PLOT_CLAIM_CREATED — user added a multi-claim PlotClaim row (Step 9)
 
 import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
@@ -28,7 +29,8 @@ export type ActivityKind =
   | "USER_LOGIN"
   | "PLOT_VIEW"
   | "FAVORITE_ADDED"
-  | "LISTING_CREATED";
+  | "LISTING_CREATED"
+  | "PLOT_CLAIM_CREATED";
 
 export interface LogActivityArgs {
   userId: string;

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
+import { Prisma, ParcelStatus, UserRole, ClaimStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
+import { claimStatusForRole } from '@/lib/plot-claim';
 
 export const runtime = 'nodejs';
 
@@ -197,6 +198,50 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // PlotClaim — spec §8.3 step 4 (Path B, NEW). flow=broker → BROKER,
+    // flow=owner → OWNER. Both verifiable roles land in PENDING; admin
+    // queue's PlotClaimVerification tab (Step 10) surfaces them. Submit
+    // flow uploads supporting docs to the public 'documents' bucket
+    // today; Step 11 PDPL audit will migrate these to private signed
+    // URLs in registration-docs alongside Path C uploads.
+    const claimRole: UserRole = flow === 'broker' ? UserRole.BROKER : UserRole.OWNER;
+    const claimStatus: ClaimStatus = claimStatusForRole(claimRole);
+    const claimDocs = (body.documents ?? []).map((d) => ({
+      kind: d.kind,
+      url: d.url,
+      originalName: d.name,
+      sizeBytes: d.size ?? null,
+      contentType: d.contentType ?? null,
+      uploadedAt: new Date().toISOString(),
+    }));
+    try {
+      await prisma.plotClaim.create({
+        data: {
+          parcelId: parcel.id,
+          userId: callerId,
+          roleAtClaim: claimRole,
+          priceAed: priceFils, // fils — column name preserved per schema (§5.4)
+          status: claimStatus,
+          documentsJson:
+            claimDocs.length > 0
+              ? (claimDocs as unknown as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
+        },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        // Race-loser; the caller already has a claim on this parcel.
+        // The parcel itself was successfully created/updated, so the
+        // submit flow still returns 200 — the existing claim covers
+        // ownership semantics. Logged for visibility.
+        console.warn('[parcels/submit] plotclaim duplicate (race) — parcel:', parcel.id);
+      } else {
+        // Surface, but don't fail the whole submit — admin can verify
+        // the parcel and add a manual claim if this races at scale.
+        console.error('[parcels/submit] plotclaim insert failed:', e);
+      }
+    }
+
     // Activity: LISTING_CREATED (submit flow — PENDING_REVIEW status).
     void logActivity({
       userId: callerId,
@@ -205,7 +250,7 @@ export async function POST(req: NextRequest) {
       payload: { flow, status: parcel.status, district },
     });
 
-    return NextResponse.json({ id: parcel.id, status: parcel.status });
+    return NextResponse.json({ id: parcel.id, status: parcel.status, claimStatus });
   } catch (e) {
     console.error('[parcels/submit] failed:', e);
     return NextResponse.json({ error: 'submit_failed' }, { status: 500 });

@@ -1,18 +1,43 @@
 "use client";
 /**
- * "List Your Property" — two-flow listing wizard.
+ * "List Your Property" — multi-claim Add Plot wizard.
  *
- * Step 0: pick role (Broker | Owner)
- * Broker → 1 step (RERA + plot + price)
- * Owner  → 4 steps (Title Deed → Identity → Price → Submit)
+ * Step 9 (spec-05 §8) wired three paths into the same modal:
  *
- * Submissions land in /api/parcels/submit with status PENDING_REVIEW;
- * the public map only shows LISTED / VERIFIED parcels so unverified
- * submissions stay hidden until an admin approves.
+ *   1. Plot entry — user types a plot number + clicks Continue.
+ *      Modal probes /api/parcels/by-plot-number/[n] (sub-100 ms,
+ *      Q3 disambiguator from docs/audits/add-plot-cohort-audit.md).
+ *
+ *   2a. Probe says "doesn't exist" → role picker (Broker / Owner) →
+ *       existing Path B submit flow. Plot number is pre-seeded so the
+ *       user doesn't re-type it. Server creates Parcel + PlotClaim
+ *       in a single round-trip.
+ *
+ *   2b. Probe says "exists" → Path C multi-claim view. Lists existing
+ *       claimants (filtered for non-ADMIN per LOCK-8) with their role +
+ *       price + status pill. Below, an "Add your claim" form: role
+ *       select, price, role-specific doc upload, submit. Hidden if the
+ *       caller already has a claim (one-claim-per-user invariant).
+ *
+ * Submissions land in /api/parcels/submit (Path B) or
+ * /api/parcels/[id]/claim (Path C). Both endpoints write a PlotClaim
+ * row at the right status (PENDING for verifiable roles, SELF_DECLARED
+ * for the rest); the admin queue's PlotClaimVerification tab (Step 10)
+ * surfaces the PENDING ones.
  */
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import {
+  PLOT_CLAIM_DOC_REQUIREMENTS,
+  CLAIM_DOC_KIND_LABELS,
+  CLAIM_DOC_KIND_HINTS,
+  CLAIM_MAX_FILE_BYTES,
+  CLAIM_ALLOWED_MIME,
+  type ClaimDocKind,
+} from "@/lib/plot-claim-doc-requirements";
+import { isVerifiableRole, claimDisplayLabel } from "@/lib/plot-claim";
+import type { UserRole, ClaimStatus } from "@prisma/client";
 
 const DOCUMENTS_BUCKET = "documents";
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB hard cap — keeps S3 bill + modal UX sane
@@ -75,6 +100,22 @@ const SUBTLE = "rgba(255,255,255,0.55)";
 const LINE = "rgba(200, 169, 110, 0.15)";
 
 type Role = "broker" | "owner" | null;
+type Phase = "entry" | "pickRole" | "broker" | "owner" | "pathC";
+
+interface ProbeResponse {
+  exists: boolean;
+  parcel?: {
+    id: string;
+    plotNumber: string;
+    emirate: string;
+    district: string;
+    projectName: string;
+    hasVerifiedOwner: boolean;
+    claimsCount: number;
+  };
+  callerHasClaim?: boolean;
+  callerClaim?: { id: string; role: UserRole; status: ClaimStatus } | null;
+}
 
 const LAND_USES = [
   "Residential",
@@ -107,7 +148,22 @@ export default function AddPlotModal({
   onClose: () => void;
   onSubmitted: (id: string) => void;
 }) {
-  const [role, setRole] = useState<Role>(null);
+  const [phase, setPhase] = useState<Phase>("entry");
+  const [seedPlotNumber, setSeedPlotNumber] = useState<string>("");
+  const [probe, setProbe] = useState<ProbeResponse | null>(null);
+
+  // Subtitle reflects the current phase so the user knows where they are.
+  const subtitle = useMemo(() => {
+    if (phase === "entry") return "Enter your plot number";
+    if (phase === "pickRole") return "Plot is new · choose how you're listing";
+    if (phase === "broker") return "Broker · RERA contract";
+    if (phase === "owner") return "Owner · Title Deed";
+    if (phase === "pathC")
+      return probe?.parcel
+        ? `Plot ${probe.parcel.plotNumber} · ${probe.parcel.district}`
+        : "Multi-claim view";
+    return "";
+  }, [phase, probe]);
 
   return (
     <div
@@ -127,8 +183,8 @@ export default function AddPlotModal({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 480,
-          maxHeight: "80vh",
+          width: 520,
+          maxHeight: "85vh",
           background: "rgba(10, 22, 40, 0.5)",
           backdropFilter: "blur(24px) saturate(150%)",
           WebkitBackdropFilter: "blur(24px) saturate(150%)",
@@ -154,9 +210,9 @@ export default function AddPlotModal({
             <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>
               List Your Property
             </div>
-            {role && (
+            {subtitle && (
               <div style={{ fontSize: 10, color: SUBTLE, marginTop: 2, textTransform: "uppercase", letterSpacing: 1 }}>
-                {role === "broker" ? "Broker · RERA contract" : "Owner · Title Deed"}
+                {subtitle}
               </div>
             )}
           </div>
@@ -170,19 +226,138 @@ export default function AddPlotModal({
         </div>
 
         <div style={{ padding: 18, overflowY: "auto", flex: 1 }}>
-          {role === null && <RolePicker onPick={setRole} />}
-          {role === "broker" && <BrokerFlow onBack={() => setRole(null)} onSubmitted={onSubmitted} />}
-          {role === "owner" && <OwnerFlow onBack={() => setRole(null)} onSubmitted={onSubmitted} />}
+          {phase === "entry" && (
+            <PlotEntryStep
+              onProbed={(plot, resp) => {
+                setSeedPlotNumber(plot);
+                setProbe(resp);
+                setPhase(resp.exists ? "pathC" : "pickRole");
+              }}
+            />
+          )}
+          {phase === "pickRole" && (
+            <RolePicker
+              onPick={(r) => setPhase(r === "broker" ? "broker" : "owner")}
+              onBack={() => setPhase("entry")}
+              plotNumber={seedPlotNumber}
+            />
+          )}
+          {phase === "broker" && (
+            <BrokerFlow
+              onBack={() => setPhase("pickRole")}
+              onSubmitted={onSubmitted}
+              initialPlotNumber={seedPlotNumber}
+            />
+          )}
+          {phase === "owner" && (
+            <OwnerFlow
+              onBack={() => setPhase("pickRole")}
+              onSubmitted={onSubmitted}
+            />
+          )}
+          {phase === "pathC" && probe?.parcel && (
+            <MultiClaimView
+              parcel={probe.parcel}
+              callerHasClaim={!!probe.callerHasClaim}
+              callerClaim={probe.callerClaim ?? null}
+              onBack={() => setPhase("entry")}
+              onSubmitted={onSubmitted}
+            />
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ───────── Step 0: role picker ─────────
-function RolePicker({ onPick }: { onPick: (r: Role) => void }) {
+// ───────── Step 1 (NEW): plot-number entry + existence probe ─────────
+function PlotEntryStep({
+  onProbed,
+}: {
+  onProbed: (plotNumber: string, response: ProbeResponse) => void;
+}) {
+  const [plotNumber, setPlotNumber] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function probe() {
+    setErr(null);
+    const trimmed = plotNumber.trim();
+    if (!trimmed) return setErr("Plot number required");
+    if (!/^\d{5,10}$/.test(trimmed)) return setErr("Plot number must be 5–10 digits");
+    setBusy(true);
+    try {
+      const r = await apiFetch(`/api/parcels/by-plot-number/${trimmed}`);
+      const data = (await r.json()) as ProbeResponse | { error: string };
+      if (!r.ok) {
+        setErr((data as { error: string }).error ?? "Failed");
+        setBusy(false);
+        return;
+      }
+      onProbed(trimmed, data as ProbeResponse);
+    } catch {
+      setErr("Network error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <p style={{ fontSize: 12, color: SUBTLE, margin: 0, lineHeight: 1.55 }}>
+        Type the DLD plot number for the property you want to list. We&apos;ll
+        check whether it&apos;s already in ZAAHI and route you to the right
+        flow — fresh listing or join an existing one.
+      </p>
+      <Field label="Plot Number*">
+        <input
+          autoFocus
+          value={plotNumber}
+          onChange={(e) => setPlotNumber(e.target.value.replace(/[^\d]/g, ""))}
+          placeholder="e.g. 6457940"
+          inputMode="numeric"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void probe();
+          }}
+          style={input()}
+        />
+      </Field>
+      {err && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {err}</div>}
+      <PrimaryBtn onClick={probe} busy={busy}>
+        Continue
+      </PrimaryBtn>
+    </div>
+  );
+}
+
+// ───────── Step 2 (was Step 0): role picker ─────────
+function RolePicker({
+  onPick,
+  onBack,
+  plotNumber,
+}: {
+  onPick: (r: Exclude<Role, null>) => void;
+  onBack: () => void;
+  plotNumber: string;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <BackLink onClick={onBack} label="← Change plot number" />
+      {plotNumber && (
+        <div
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: `1px solid ${LINE}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 11,
+            color: SUBTLE,
+          }}
+        >
+          Plot <span style={{ color: GOLD, fontWeight: 600 }}>{plotNumber}</span> isn&apos;t in
+          ZAAHI yet. We&apos;ll create it after you submit.
+        </div>
+      )}
       <p style={{ fontSize: 12, color: SUBTLE, margin: 0, textAlign: "center" }}>
         Who is listing the property?
       </p>
@@ -243,10 +418,10 @@ function RoleCard({
 
 // ───────── Broker flow ─────────
 function BrokerFlow({
-  onBack, onSubmitted,
-}: { onBack: () => void; onSubmitted: (id: string) => void }) {
+  onBack, onSubmitted, initialPlotNumber = "",
+}: { onBack: () => void; onSubmitted: (id: string) => void; initialPlotNumber?: string }) {
   const [reraPermit, setReraPermit] = useState("");
-  const [plotNumber, setPlotNumber] = useState("");
+  const [plotNumber, setPlotNumber] = useState(initialPlotNumber);
   const [askingPrice, setAskingPrice] = useState("");
   const [landUse, setLandUse] = useState("Residential");
   const [contractFile, setContractFile] = useState<File | null>(null);
@@ -324,7 +499,7 @@ function BrokerFlow({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <BackLink onClick={onBack} />
+      <BackLink onClick={onBack} label="← Choose role" />
       <Field label="RERA Permit / Form A Number*">
         <input value={reraPermit} onChange={(e) => setReraPermit(e.target.value)} style={input()} />
       </Field>
@@ -487,7 +662,7 @@ function OwnerFlow({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <BackLink onClick={onBack} />
+      <BackLink onClick={onBack} label="← Choose role" />
       <StepIndicator step={step} total={4} />
 
       {step === 1 && (
@@ -776,7 +951,7 @@ function SecondaryBtn({ onClick, children }: { onClick: () => void; children: Re
   );
 }
 
-function BackLink({ onClick }: { onClick: () => void }) {
+function BackLink({ onClick, label = "← Back" }: { onClick: () => void; label?: string }) {
   return (
     <button
       onClick={onClick}
@@ -790,7 +965,7 @@ function BackLink({ onClick }: { onClick: () => void }) {
         padding: 0,
       }}
     >
-      ← Choose role
+      {label}
     </button>
   );
 }
@@ -804,6 +979,432 @@ function SuccessCard({
       <div style={{ fontWeight: 700, fontSize: 15, color: GOLD, textAlign: "center" }}>{title}</div>
       <div style={{ fontSize: 12, color: SUBTLE, textAlign: "center", maxWidth: 320, lineHeight: 1.5 }}>{message}</div>
       <SecondaryBtn onClick={onBack}>List another property</SecondaryBtn>
+    </div>
+  );
+}
+
+// ───────── Path C: multi-claim view ─────────
+
+// All cohort-applicant roles (spec §5.1) — the dropdown options for the
+// "Add your claim" form. ADMIN / INVESTOR are excluded; ADMIN is system,
+// INVESTOR is deprecated (auto-migrates to BUYER on next user touch).
+const CLAIM_ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
+  { value: "OWNER", label: "Owner" },
+  { value: "BROKER", label: "Broker" },
+  { value: "DEVELOPER", label: "Developer" },
+  { value: "BUYER", label: "Buyer" },
+  { value: "ARCHITECT", label: "Architect" },
+  { value: "POA", label: "Power of Attorney" },
+  { value: "INTERMEDIARY", label: "Intermediary" },
+  { value: "RELATIVE", label: "Relative" },
+  { value: "REFERRAL", label: "Referral" },
+  { value: "OTHER", label: "Other" },
+];
+
+interface MultiClaimViewParcel {
+  id: string;
+  plotNumber: string;
+  emirate: string;
+  district: string;
+  projectName: string;
+  hasVerifiedOwner: boolean;
+  claimsCount: number;
+}
+
+interface ExistingClaim {
+  id: string;
+  role: UserRole;
+  priceAed: string; // BigInt serialised
+  status: ClaimStatus;
+  verifiedAt: string | null;
+  createdAt: string;
+  isVerifiedOwner: boolean;
+  isCaller: boolean;
+  user: { nickname: string | null; role: string };
+}
+
+function MultiClaimView({
+  parcel,
+  callerHasClaim,
+  callerClaim,
+  onBack,
+  onSubmitted,
+}: {
+  parcel: MultiClaimViewParcel;
+  callerHasClaim: boolean;
+  callerClaim: { id: string; role: UserRole; status: ClaimStatus } | null;
+  onBack: () => void;
+  onSubmitted: (id: string) => void;
+}) {
+  const [claims, setClaims] = useState<ExistingClaim[] | null>(null);
+  const [listErr, setListErr] = useState<string | null>(null);
+
+  // Fetch the public claim list once per parcel.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch(`/api/parcels/${parcel.id}/claims`);
+        const data = await r.json();
+        if (cancelled) return;
+        if (!r.ok) {
+          setListErr(data.error ?? "Failed to load claims");
+          return;
+        }
+        setClaims(data.claims ?? []);
+      } catch {
+        if (!cancelled) setListErr("Network error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [parcel.id]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <BackLink onClick={onBack} label="← Change plot number" />
+
+      {/* Plot summary */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          border: `1px solid ${LINE}`,
+          borderRadius: 8,
+          padding: 12,
+        }}
+      >
+        <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+          Plot {parcel.plotNumber}
+        </div>
+        <div style={{ fontSize: 12, color: TXT, marginTop: 2 }}>
+          {parcel.projectName}
+          {parcel.district && parcel.district !== parcel.projectName ? ` · ${parcel.district}` : ""}
+        </div>
+        <div style={{ fontSize: 10, color: SUBTLE, marginTop: 4 }}>
+          This plot is already in ZAAHI. Existing claims are shown below — you can join with your own role.
+        </div>
+      </div>
+
+      {/* Existing claims list */}
+      <div>
+        <div
+          style={{
+            fontSize: 10,
+            color: SUBTLE,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 8,
+          }}
+        >
+          Existing claims {claims ? `(${claims.length})` : ""}
+        </div>
+        {listErr && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {listErr}</div>}
+        {!claims && !listErr && (
+          <div style={{ fontSize: 11, color: SUBTLE }}>Loading…</div>
+        )}
+        {claims && claims.length === 0 && !listErr && (
+          <div
+            style={{
+              fontSize: 11,
+              color: SUBTLE,
+              padding: "10px 12px",
+              border: `1px dashed ${LINE}`,
+              borderRadius: 8,
+            }}
+          >
+            No public claims yet. Be the first to register your role on this plot.
+          </div>
+        )}
+        {claims && claims.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {claims.map((c) => (
+              <ClaimRow key={c.id} claim={c} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add-claim form OR "you already have a claim" notice */}
+      <div style={{ height: 1, background: LINE, margin: "4px 0" }} />
+      {callerHasClaim ? (
+        <div
+          style={{
+            background: "rgba(45, 106, 79, 0.15)",
+            border: "1px solid rgba(45, 106, 79, 0.4)",
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 12,
+            color: TXT,
+            lineHeight: 1.55,
+          }}
+        >
+          You already have a claim on this plot
+          {callerClaim
+            ? ` — ${formatRoleLabel(callerClaim.role)} · ${claimDisplayLabel(callerClaim.status)}`
+            : ""}
+          . One user can claim each plot once.
+        </div>
+      ) : (
+        <AddClaimForm parcel={parcel} onSubmitted={onSubmitted} />
+      )}
+    </div>
+  );
+}
+
+function ClaimRow({ claim }: { claim: ExistingClaim }) {
+  const priceNum = Number(claim.priceAed) / 100; // fils → AED
+  return (
+    <div
+      style={{
+        background: claim.isCaller ? "rgba(200,169,110,0.10)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${claim.isCaller ? "rgba(200,169,110,0.35)" : LINE}`,
+        borderRadius: 8,
+        padding: "10px 12px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div style={{ fontSize: 12, color: TXT, fontWeight: 600 }}>
+          {claim.user.nickname ?? "—"}
+          {claim.isCaller && (
+            <span style={{ color: GOLD, fontWeight: 500, fontSize: 10, marginLeft: 6 }}>· you</span>
+          )}
+        </div>
+        <ClaimStatusPill status={claim.status} isVerifiedOwner={claim.isVerifiedOwner} />
+      </div>
+      <div style={{ fontSize: 11, color: SUBTLE, display: "flex", justifyContent: "space-between" }}>
+        <span>{formatRoleLabel(claim.role)}</span>
+        <span>
+          AED {Number.isFinite(priceNum) && priceNum > 0 ? priceNum.toLocaleString("en-US") : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ClaimStatusPill({
+  status,
+  isVerifiedOwner,
+}: {
+  status: ClaimStatus;
+  isVerifiedOwner: boolean;
+}) {
+  // Verified-owner claims get a stronger badge per spec §5.4.1 LOCK-8.
+  let bg = "rgba(255,255,255,0.06)";
+  let bd = LINE;
+  let fg = SUBTLE;
+  let label: string = claimDisplayLabel(status);
+  if (status === "VERIFIED") {
+    bg = "rgba(45, 106, 79, 0.18)";
+    bd = "rgba(45, 106, 79, 0.45)";
+    fg = "#7ABF99";
+    label = isVerifiedOwner ? "Verified owner" : "Verified";
+  } else if (status === "PENDING") {
+    bg = "rgba(230, 126, 34, 0.18)";
+    bd = "rgba(230, 126, 34, 0.45)";
+    fg = "#E8A86A";
+    label = "Pending verification";
+  } else if (status === "SELF_DECLARED") {
+    bg = "rgba(255,255,255,0.04)";
+    bd = LINE;
+    fg = SUBTLE;
+    label = "Self-declared";
+  }
+  return (
+    <span
+      title={status === "SELF_DECLARED" ? "Self-declared, not verified" : undefined}
+      style={{
+        background: bg,
+        border: `1px solid ${bd}`,
+        color: fg,
+        borderRadius: 999,
+        padding: "2px 8px",
+        fontSize: 9,
+        fontWeight: 600,
+        letterSpacing: 0.5,
+        textTransform: "uppercase",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function formatRoleLabel(role: UserRole | string): string {
+  const found = CLAIM_ROLE_OPTIONS.find((o) => o.value === role);
+  return found ? found.label : String(role);
+}
+
+function AddClaimForm({
+  parcel,
+  onSubmitted,
+}: {
+  parcel: MultiClaimViewParcel;
+  onSubmitted: (id: string) => void;
+}) {
+  const [role, setRole] = useState<UserRole>("OWNER");
+  const [askingPrice, setAskingPrice] = useState("");
+  // Map of doc-kind -> file. One file per kind keeps the UI compact;
+  // server accepts multiple per kind via "file_<kind>_<index>" naming.
+  const [docs, setDocs] = useState<Partial<Record<ClaimDocKind, File>>>({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<{ claimId: string; status: ClaimStatus } | null>(null);
+
+  const requirement = PLOT_CLAIM_DOC_REQUIREMENTS[role];
+  const verifiable = isVerifiableRole(role);
+
+  function handleDocChange(kind: ClaimDocKind, file: File | null) {
+    setDocs((prev) => {
+      const next = { ...prev };
+      if (file) next[kind] = file;
+      else delete next[kind];
+      return next;
+    });
+  }
+
+  async function submit() {
+    setErr(null);
+    const price = Number(askingPrice) || 0;
+    if (price <= 0) return setErr("Stated price required");
+
+    if (requirement.required && requirement.kinds.length > 0) {
+      const missing = requirement.kinds.filter((k) => !docs[k]);
+      if (missing.length > 0) {
+        return setErr(
+          `Missing required document${missing.length > 1 ? "s" : ""}: ${missing
+            .map((k) => CLAIM_DOC_KIND_LABELS[k])
+            .join(", ")}`,
+        );
+      }
+    }
+
+    // File-side validation — mirrors server checks for fast feedback.
+    for (const f of Object.values(docs)) {
+      if (!f) continue;
+      if (f.size > CLAIM_MAX_FILE_BYTES) {
+        return setErr(`${f.name} exceeds 10 MB`);
+      }
+      if (!CLAIM_ALLOWED_MIME.has(f.type)) {
+        return setErr(`${f.name}: only PDF, JPG, PNG, WEBP allowed`);
+      }
+    }
+
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.set("data", JSON.stringify({ role, priceAed: price }));
+      let i = 0;
+      for (const [kind, file] of Object.entries(docs)) {
+        if (file) {
+          fd.append(`file_${kind}_${i}`, file);
+          i++;
+        }
+      }
+      const r = await apiFetch(`/api/parcels/${parcel.id}/claim`, {
+        method: "POST",
+        body: fd,
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data.message ?? data.error ?? "Failed");
+        setBusy(false);
+        return;
+      }
+      setDone({ claimId: data.claimId, status: data.status });
+      onSubmitted(parcel.id);
+    } catch {
+      setErr("Network error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div
+        style={{
+          background: "rgba(45, 106, 79, 0.15)",
+          border: "1px solid rgba(45, 106, 79, 0.45)",
+          borderRadius: 8,
+          padding: 14,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: 14, color: "#7ABF99" }}>
+          Claim submitted
+        </div>
+        <div style={{ fontSize: 11, color: SUBTLE, lineHeight: 1.55 }}>
+          {done.status === "PENDING"
+            ? "An admin will verify your claim. We&apos;ll email you when it&apos;s reviewed — typically within 2–3 business days."
+            : done.status === "SELF_DECLARED"
+              ? "Your claim is now visible on the plot as self-declared. Verifiable roles (Owner, Broker, Developer, Architect, POA) can also be admin-verified by uploading documents."
+              : "Done."}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: SUBTLE,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+        }}
+      >
+        Add your claim
+      </div>
+      <Field label="Your role for this plot*">
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as UserRole)}
+          style={input()}
+        >
+          {CLAIM_ROLE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value} style={{ background: "#0a1628", color: TXT }}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <PriceFields price={askingPrice} setPrice={setAskingPrice} />
+      {requirement.required && requirement.kinds.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {requirement.kinds.map((k) => (
+            <Field key={k} label={`${CLAIM_DOC_KIND_LABELS[k]}*`}>
+              <DropZone
+                accept="application/pdf,image/*"
+                onFile={(f) => handleDocChange(k, f)}
+                label={docs[k]?.name ?? CLAIM_DOC_KIND_HINTS[k]}
+              />
+            </Field>
+          ))}
+        </div>
+      )}
+      <div
+        style={{
+          fontSize: 10,
+          color: SUBTLE,
+          padding: "6px 0",
+          lineHeight: 1.55,
+        }}
+      >
+        {verifiable
+          ? "Verifiable role — admins will review your documents and confirm your claim."
+          : "This role is self-declared and will be displayed with a “Self-declared, not verified” pill."}
+      </div>
+      {err && <div style={{ fontSize: 11, color: "#EF4444" }}>✕ {err}</div>}
+      <PrimaryBtn onClick={submit} busy={busy}>
+        Add claim
+      </PrimaryBtn>
     </div>
   );
 }
