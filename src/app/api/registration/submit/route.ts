@@ -267,6 +267,46 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       console.error(
         `[register/submit] err-diag: name=${errAsAny.name} status=${errAsAny.status} code=${errAsAny.code} cause=${JSON.stringify(errAsAny.cause)}`,
       );
+      // Native-fetch parity probe: if supabase-js fails but native
+      // fetch with the same key against the same URL succeeds, the
+      // bug is library-level (UA / headers). If both fail with the
+      // same body, the bug is request-level (key / project state).
+      try {
+        const probeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users`;
+        const probeKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+        const probeEmail = `__diag_${Date.now()}_${Math.random().toString(36).slice(2, 8)}@zaahi-test.io`;
+        const probeRes = await fetch(probeUrl, {
+          method: "POST",
+          headers: {
+            apikey: probeKey,
+            authorization: `Bearer ${probeKey}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            email: probeEmail,
+            password: `Tmp-${Date.now()}!A`,
+            email_confirm: false,
+          }),
+        });
+        const probeBody = await probeRes.text();
+        console.error(
+          `[register/submit] native-fetch parity: status=${probeRes.status} body=${probeBody.slice(0, 220)}`,
+        );
+        // Best-effort cleanup if the parity user was actually created.
+        if (probeRes.status >= 200 && probeRes.status < 300) {
+          try {
+            const created = JSON.parse(probeBody) as { id?: string };
+            if (created.id) {
+              await fetch(`${probeUrl}/${created.id}`, {
+                method: "DELETE",
+                headers: { apikey: probeKey, authorization: `Bearer ${probeKey}` },
+              });
+            }
+          } catch {/* ignore cleanup errors */}
+        }
+      } catch (probeErr) {
+        console.error("[register/submit] native-fetch parity threw:", (probeErr as Error)?.message);
+      }
     }
     // Map Supabase "user already exists" to a friendlier 409 so users
     // get an actionable message instead of a generic retry prompt.
