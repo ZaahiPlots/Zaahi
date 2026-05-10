@@ -10,6 +10,7 @@
 // detail modal (ApplicationDetail).
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api-fetch";
 import { CapCounter } from "./CapCounter";
 import { Tabs, type TabKey } from "./Tabs";
@@ -53,8 +54,28 @@ const TAB_TO_STATUS: Partial<Record<TabKey, string>> = {
   rejected: "REJECTED",
 };
 
+// Step 12 audit SF-3 — admin emails sent by Step 9 link to
+// /admin/queue?tab=plotclaim. Map both that email-template slug and
+// the canonical TabKey strings to the right initial tab.
+const URL_TAB_TO_KEY: Record<string, TabKey> = {
+  plotclaim: "plot_claim",
+  plot_claim: "plot_claim",
+  titledeed: "title_deed",
+  title_deed: "title_deed",
+  pending: "pending",
+  waitlist: "waitlist",
+  approved: "approved",
+  rejected: "rejected",
+  all: "all",
+};
+
 export default function AdminQueuePage() {
-  const [tab, setTab] = useState<TabKey>("pending");
+  const searchParams = useSearchParams();
+  const initialTab = (() => {
+    const raw = searchParams.get("tab")?.toLowerCase().trim() ?? "";
+    return URL_TAB_TO_KEY[raw] ?? "pending";
+  })();
+  const [tab, setTab] = useState<TabKey>(initialTab);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [data, setData] = useState<ListResponse | null>(null);

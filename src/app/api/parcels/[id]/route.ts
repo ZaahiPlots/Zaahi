@@ -53,9 +53,19 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const existing = await prisma.parcel.findUnique({ where: { id }, select: { ownerId: true } });
+  // Step 12 audit B-1 / SF-1: spec §5.4.1 LOCK-8 — ownerId is the
+  // immutable creator; verifiedOwnerUserId is the current verified
+  // owner. Either has legitimate reason to mutate the parcel (creator
+  // for canonical metadata; verified owner for price/status/listing
+  // lifecycle). Without this dual gate, the verified owner of any of
+  // the 118 system-seeded parcels would be locked out of their own
+  // listing once Step 10 verifies their Title Deed.
+  const existing = await prisma.parcel.findUnique({
+    where: { id },
+    select: { ownerId: true, verifiedOwnerUserId: true },
+  });
   if (!existing) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (existing.ownerId !== userId) {
+  if (existing.ownerId !== userId && existing.verifiedOwnerUserId !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -95,10 +105,16 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
   const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
+  // CLAUDE.md "NEVER delete parcels — ever" — this handler is kept
+  // defensively intact. Same LOCK-8 gating as PATCH so the rule is
+  // consistent if a future surface ever invokes DELETE.
   const { id } = await params;
-  const existing = await prisma.parcel.findUnique({ where: { id }, select: { ownerId: true } });
+  const existing = await prisma.parcel.findUnique({
+    where: { id },
+    select: { ownerId: true, verifiedOwnerUserId: true },
+  });
   if (!existing) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (existing.ownerId !== userId) {
+  if (existing.ownerId !== userId && existing.verifiedOwnerUserId !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 

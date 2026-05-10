@@ -4658,9 +4658,11 @@ function HeaderBar({
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
         </button>
         {isAdmin && (
+          // Step 12 audit B-3: Step 2 deleted /admin/ambassadors;
+          // /admin/queue (Step 7) is the cohort-pilot admin destination.
           <a
-            href="/admin/ambassadors"
-            title="Admin — Ambassador applications"
+            href="/admin/queue"
+            title="Admin — Cohort queue"
             aria-label="Admin"
             style={{ ...hdrBtnStyle(c), textDecoration: "none", borderColor: GOLD, background: "rgba(200, 169, 110, 0.12)" }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}

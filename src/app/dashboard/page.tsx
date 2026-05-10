@@ -538,7 +538,7 @@ const ROLE_TIPS: Partial<Record<Role, string>> = {
   DEVELOPER: "Mixed-use plots near Expo City are seeing strong absorption. Project tracking lands in Phase 5.",
   INVESTOR: "Watchlist + ROI projections land in Phase 5. For now, save interesting plots to Favorites.",
   ARCHITECT: "Template library + saved feasibility calculations land in Phase 5.",
-  ADMIN: "Use /admin/ambassadors to manage applications. Platform analytics land in Phase 7.",
+  ADMIN: "Use /admin/queue to review cohort applications, Title Deed verifications, and PlotClaim verifications. Platform analytics land in Phase 7.",
 };
 
 const RECENT_ACTIVITY = [
@@ -1162,7 +1162,7 @@ function Financials() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <H1>Financials</H1>
       <Sub>Commission tracking across all your deals.</Sub>
-      <ComingSoonBanner text="Commission pipeline + payout requests — Phase 3 (BROKER dashboard). Ambassador commissions are live on /ambassador." />
+      <ComingSoonBanner text="Commission pipeline + payout requests — Phase 3 (BROKER dashboard). Cohort-pilot doesn't include commission flow yet." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         <StatCard label="Earned" value="0 AED" icon="💰" accent={GOLD} />
         <StatCard label="Pending" value="0 AED" icon="⏳" />

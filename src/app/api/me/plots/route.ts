@@ -29,8 +29,17 @@ export async function GET(req: NextRequest) {
   const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  // Step 12 audit B-2: spec §5.4.1 LOCK-8 — surface plots where the
+  // caller is either the immutable creator (ownerId) or the verified
+  // owner. Without this OR, verified owners of the 118 system-seeded
+  // parcels would see an empty dashboard "My Properties" section.
   const plots = await prisma.parcel.findMany({
-    where: { ownerId: userId },
+    where: {
+      OR: [
+        { ownerId: userId },
+        { verifiedOwnerUserId: userId },
+      ],
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, plotNumber: true, emirate: true, district: true,
