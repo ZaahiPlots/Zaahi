@@ -15,6 +15,7 @@ import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer"
 import type { BuildingDTO } from "./buildings/types";
 import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
+import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 
@@ -4679,6 +4680,10 @@ function HeaderBar({
         >
           <span style={{ fontSize: 13 }}>👤</span>
         </a>
+        {/* Step 12 — quick-access global sign-out next to Profile.
+            Same component as Dashboard Settings so the confirm dialog
+            and signOut({ scope: 'global' }) logic live in one place. */}
+        <SignOutButton variant="compact" />
       </div>
     </header>
   );

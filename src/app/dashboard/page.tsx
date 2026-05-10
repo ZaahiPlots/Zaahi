@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
+import { SignOutButton } from "@/components/SignOutButton";
 
 const GOLD = "#C8A96E";
 const GOLD_TEXT = "#e8d5a8";
@@ -1538,6 +1539,16 @@ function Settings() {
       </Card>
 
       <ComingSoonBanner text="Map defaults, language/currency switching live in UI but aren't wired yet — Phase 2. Use Profile → Preferred Language / Currency for the persisted copy (those ARE live)." />
+
+      <Card>
+        <H2>Account</H2>
+        <p style={{ fontSize: 11, color: SUBTLE, margin: "0 0 12px" }}>
+          Signs you out from <strong>every device</strong> currently logged
+          in to this account — desktop, mobile, every open browser.
+          You&rsquo;ll need to sign in again to come back.
+        </p>
+        <SignOutButton variant="full" />
+      </Card>
 
       <Card style={{ borderColor: "rgba(248, 113, 113, 0.35)" }}>
         <H2>Danger Zone</H2>
