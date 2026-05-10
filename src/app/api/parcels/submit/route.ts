@@ -14,12 +14,21 @@ interface PolyFeature {
   properties: Record<string, unknown>;
 }
 
+// Step 11 PDPL fix (P1-1): Path B uploads land in the private
+// `registration-docs` bucket; the client sends a `path` (not a URL).
+// Legacy `url` shape is still accepted to keep any pre-Step-11 dev
+// uploads renderable through the admin verification surface — the
+// `signClaimDocuments` helper from Step 10 normalises both shapes.
 const UploadedDoc = z.object({
   kind: z.enum(['title_deed', 'id_doc', 'rera_contract']),
-  url: z.string().url().max(1024),
+  path: z.string().max(1024).optional(),
+  url: z.string().url().max(1024).optional(),
   name: z.string().max(256),
   size: z.number().int().nonnegative().max(10 * 1024 * 1024).optional(),
   contentType: z.string().max(128).optional(),
+}).refine((d) => !!(d.path || d.url), {
+  message: 'document_must_have_path_or_url',
+  path: ['path'],
 });
 
 const SubmitSchema = z
@@ -198,17 +207,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // PlotClaim — spec §8.3 step 4 (Path B, NEW). flow=broker → BROKER,
+    // PlotClaim — spec §8.3 step 4 (Path B). flow=broker → BROKER,
     // flow=owner → OWNER. Both verifiable roles land in PENDING; admin
-    // queue's PlotClaimVerification tab (Step 10) surfaces them. Submit
-    // flow uploads supporting docs to the public 'documents' bucket
-    // today; Step 11 PDPL audit will migrate these to private signed
-    // URLs in registration-docs alongside Path C uploads.
+    // queue's PlotClaimVerification tab (Step 10) surfaces them. Step
+    // 11 PDPL: uploads now land in private `registration-docs` so
+    // `path` is the canonical reference; legacy `url` shape (any
+    // pre-Step-11 dev rows) is preserved verbatim and still rendered
+    // by Step 10's `signClaimDocuments` helper.
     const claimRole: UserRole = flow === 'broker' ? UserRole.BROKER : UserRole.OWNER;
     const claimStatus: ClaimStatus = claimStatusForRole(claimRole);
     const claimDocs = (body.documents ?? []).map((d) => ({
       kind: d.kind,
-      url: d.url,
+      path: d.path ?? null,
+      url: d.url ?? null,
       originalName: d.name,
       sizeBytes: d.size ?? null,
       contentType: d.contentType ?? null,

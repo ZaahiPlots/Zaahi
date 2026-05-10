@@ -33,7 +33,10 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const messages = await prisma.dealMessage.findMany({
     where,
     orderBy: { createdAt: "asc" },
-    include: { user: { select: { id: true, name: true } } },
+    // PDPL §12.5 / Step 11 P1-3: chat-bubble identity is a rendering
+    // label — nickname is sufficient + matches every other public
+    // surface. Real name is admin-only context.
+    include: { user: { select: { id: true, nickname: true } } },
     take: 200,
   });
   return NextResponse.json(serialize(messages));
@@ -64,7 +67,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       content,
       fileUrl: typeof body.fileUrl === "string" ? body.fileUrl : null,
     },
-    include: { user: { select: { id: true, name: true } } },
+    // PDPL §12.5 / Step 11 P1-3: chat-bubble identity is a rendering
+    // label — nickname is sufficient + matches every other public
+    // surface. Real name is admin-only context.
+    include: { user: { select: { id: true, nickname: true } } },
   });
   return NextResponse.json(serialize(msg));
 }

@@ -39,7 +39,14 @@ import {
 import { isVerifiableRole, claimDisplayLabel } from "@/lib/plot-claim";
 import type { UserRole, ClaimStatus } from "@prisma/client";
 
-const DOCUMENTS_BUCKET = "documents";
+// Step 11 PDPL fix (P1-1): Path B uploads now write to the private
+// `registration-docs` bucket instead of the public `documents` bucket.
+// Title Deeds + RERA contracts are KYC-grade documents and per spec
+// §12.1 they must live behind 7-day signed URLs (admin verification
+// surface signs them on demand). The user-visible Broker / Owner
+// flow is byte-identical to Step 9 — only this helper's destination
+// + return shape change.
+const REGISTRATION_DOCS_BUCKET = "registration-docs";
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB hard cap — keeps S3 bill + modal UX sane
 const ALLOWED_CT = new Set([
   "application/pdf",
@@ -51,18 +58,20 @@ const ALLOWED_CT = new Set([
 
 interface UploadedDoc {
   kind: "title_deed" | "id_doc" | "rera_contract";
-  url: string;
+  // PDPL §12.3 — clients send the storage *path*; the server signs
+  // 7-day URLs at admin-verification time (see `signClaimDocuments`).
+  path: string;
   name: string;
   size: number;
   contentType: string;
 }
 
 /**
- * Upload a document to Supabase Storage (`documents` bucket). Path:
- * `<userId>/<plotNumber>/<kind>-<timestamp>.<ext>`. Returns the public
- * URL + metadata. Best-effort — surfaces a user-readable error message
- * on failure (bucket missing, network, size limit) so the caller can
- * decide whether to proceed without the document or block submission.
+ * Upload a document to Supabase Storage (`registration-docs` bucket,
+ * private). Path: `<userId>/<plotNumber>/<kind>-<timestamp>.<ext>`.
+ * Returns the storage path + metadata; the server stores the path on
+ * the PlotClaim row and signs URLs on demand for admin review.
+ * Best-effort — surfaces a user-readable error message on failure.
  */
 async function uploadDoc(
   file: File,
@@ -75,19 +84,21 @@ async function uploadDoc(
     throw new Error(`${file.name}: only PDF, JPG, PNG allowed`);
   }
   const ext = file.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
+  // Bucket RLS INSERT policy:
+  //   auth.uid()::text = (storage.foldername(name))[1]
+  // First folder MUST be the caller's userId — this layout matches.
   const path = `${userId}/${plotNumber}/${kind}-${Date.now()}.${ext}`;
   const { error } = await supabaseBrowser.storage
-    .from(DOCUMENTS_BUCKET)
+    .from(REGISTRATION_DOCS_BUCKET)
     .upload(path, file, {
       cacheControl: "3600",
       upsert: false,
       contentType: file.type || undefined,
     });
   if (error) throw new Error(`upload failed: ${error.message}`);
-  const { data } = supabaseBrowser.storage.from(DOCUMENTS_BUCKET).getPublicUrl(path);
   return {
     kind,
-    url: data.publicUrl,
+    path,
     name: file.name,
     size: file.size,
     contentType: file.type || "application/octet-stream",

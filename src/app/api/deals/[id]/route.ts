@@ -15,14 +15,38 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
+  // PDPL §12.5 / Step 11 P1-2: counterparty profile is minimised to
+  // the public shape (id + nickname + role + brand fields). Real name
+  // stays out of the per-deal API response — it's available only to
+  // admins and at formal deal-document signing time. Email + phone
+  // are not exposed; if a future deal-stage UX needs them, route
+  // through an explicit "reveal contact" surface with an audit log.
   const deal = await prisma.deal.findUnique({
     where: { id },
     include: {
       parcel: { include: { affectionPlans: { orderBy: { fetchedAt: "desc" }, take: 1 } } },
-      seller: { select: { id: true, name: true, email: true } },
-      buyer: { select: { id: true, name: true, email: true } },
-      broker: { select: { id: true, name: true, email: true } },
-      messages: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true } } } },
+      seller: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      buyer: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      broker: {
+        select: {
+          id: true, nickname: true, role: true,
+          avatarUrl: true, companyName: true, reraLicense: true,
+        },
+      },
+      messages: {
+        orderBy: { createdAt: "asc" },
+        include: { user: { select: { id: true, nickname: true } } },
+      },
       auditEvents: { orderBy: { createdAt: "asc" } },
       documents: true,
     },

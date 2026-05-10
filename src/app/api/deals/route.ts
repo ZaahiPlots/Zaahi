@@ -52,10 +52,18 @@ export async function POST(req: NextRequest) {
 
   const parcel = await prisma.parcel.findUnique({
     where: { id: parcelId },
-    select: { id: true, ownerId: true, status: true },
+    select: { id: true, ownerId: true, verifiedOwnerUserId: true, status: true },
   });
   if (!parcel) return NextResponse.json({ error: "parcel_not_found" }, { status: 404 });
-  if (parcel.ownerId === userId) {
+
+  // Spec §5.4.1 LOCK-8 / Step 8 audit Q1 — the seller on a Deal must
+  // be the verified owner if one exists; falls back to the immutable
+  // creator only when verifiedOwnerUserId is NULL. The "cannot offer
+  // on own parcel" guard checks BOTH ids — neither the creator nor
+  // the verified owner should be able to bid on their own plot, even
+  // when the two are different users.
+  const sellerId = parcel.verifiedOwnerUserId ?? parcel.ownerId;
+  if (parcel.ownerId === userId || parcel.verifiedOwnerUserId === userId) {
     return NextResponse.json({ error: "cannot_offer_on_own_parcel" }, { status: 400 });
   }
 
@@ -70,7 +78,7 @@ export async function POST(req: NextRequest) {
   const deal = await prisma.deal.create({
     data: {
       parcelId,
-      sellerId: parcel.ownerId,
+      sellerId,
       buyerId: userId,
       status: "INITIAL",
       priceInFils: offerFils,
