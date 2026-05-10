@@ -254,13 +254,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   if (createUserErr || !createdUser?.user) {
     console.error("[register/submit] createUser failed:", createUserErr?.message);
-    // Temp diagnostic (2026-05-11) — capture the runtime key shape so we
-    // can prove whether the rotation reached the function. Prefix + length
-    // only; the full secret is never logged. Remove after the incident.
+    // Temp diagnostic (2026-05-11) — capture runtime context. Prefix
+    // + length only; the full secret is never logged. Remove after
+    // the incident. Also dumps the full error object (status, code,
+    // cause) since "Internal Server Error" alone is opaque.
     const _diag = process.env.SUPABASE_SERVICE_ROLE_KEY;
     console.error(
-      `[register/submit] env-diag: SUPABASE_SERVICE_ROLE_KEY prefix=${_diag?.slice(0, 6)} len=${_diag?.length ?? 0} VERCEL_ENV=${process.env.VERCEL_ENV} VERCEL_GIT_COMMIT_SHA=${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)}`,
+      `[register/submit] env-diag: SERVICE_KEY prefix=${_diag?.slice(0, 6)} len=${_diag?.length ?? 0} URL=${process.env.NEXT_PUBLIC_SUPABASE_URL} VERCEL_ENV=${process.env.VERCEL_ENV} SHA=${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)}`,
     );
+    if (createUserErr) {
+      const errAsAny = createUserErr as unknown as Record<string, unknown>;
+      console.error(
+        `[register/submit] err-diag: name=${errAsAny.name} status=${errAsAny.status} code=${errAsAny.code} cause=${JSON.stringify(errAsAny.cause)}`,
+      );
+    }
     // Map Supabase "user already exists" to a friendlier 409 so users
     // get an actionable message instead of a generic retry prompt.
     // The local Prisma dedup at step 2 only sees rows we wrote ourselves;
