@@ -679,6 +679,13 @@ model PlotClaim {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Spec §8.4 step 3 invariant — one user = one claim per plot. Audit
+  // (docs/audits/add-plot-cohort-audit.md Q4) flagged the missing DB-level
+  // guard; Step 9 ships the constraint alongside POST /api/parcels/[id]/claim
+  // so simultaneous double-submits surface as a clean 409 instead of two
+  // racing rows. The 118 backfilled rows are unique by construction
+  // (one per parcel × the system user).
+  @@unique([parcelId, userId])
   @@index([parcelId])
   @@index([userId])
   @@index([status])
