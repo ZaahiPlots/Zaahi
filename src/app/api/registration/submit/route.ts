@@ -259,7 +259,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // not affected). When supabase-js is upgraded / patched and the
   // upstream fix lands, this block can revert to the original
   // admin.auth.admin.createUser call.
-  const tempPassword = `tmp-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+  // Temp password the user never sees — they reset it on first sign-in
+  // via the recovery link (Step 7). MUST be ≤ 72 chars: Supabase Auth /
+  // GoTrue enforces bcrypt's 72-byte limit and returns a generic 500
+  // unexpected_failure (NOT a structured "password_too_long" error)
+  // when the input exceeds that limit. The previous shape
+  // `tmp-${uuid}-${uuid}` was 77 chars and silently broke every
+  // /register submit on production for ~10 hours of the 2026-05-10
+  // /11 cohort go-live incident. A single UUID (36 chars) carries
+  // 122 bits of entropy — vastly sufficient for a value the user
+  // never sees.
+  const tempPassword = `tmp-${crypto.randomUUID()}`;
   const authBaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
