@@ -902,6 +902,9 @@ type LayersState = {
   uaeDistricts: boolean;
   ddaLandPlots: boolean; adLandPlots: boolean; omanLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
+  // Amenities — data.dubai point overlays (off by default per spec).
+  evChargers: boolean;
+  metroStations: boolean; tramStations: boolean; marineStations: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1462,6 +1465,11 @@ function ParcelsMapPageInner() {
     adLandPlots: false,
     omanLandPlots: false,
     plotLabels: false,
+    // Amenities — data.dubai point overlays.
+    evChargers: false,
+    metroStations: false,
+    tramStations: false,
+    marineStations: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
     // No idle pre-fetch, no auto-load on map init.
