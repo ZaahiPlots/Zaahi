@@ -1233,7 +1233,8 @@ type LayerCategory =
   | "dda-admin"       // DDA projects, free zones, 99K plots layer
   | "dda-districts"   // individual DDA community layers (206 items)
   | "masterplans"     // 8 master plan KMLs
-  | "landplots";      // country-scale PMTiles parcel grids (AD, Oman)
+  | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
+  | "amenities";      // data.dubai point overlays (EV / transit stations)
 type LayerLockTier = "GOLD" | "PLATINUM";
 
 type LayerMeta = {
@@ -1247,7 +1248,7 @@ const LAYER_COUNTRY_ORDER: LayerCountry[] = [
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities",
 ];
 
 const COUNTRY_LABELS: Record<LayerCountry, string> = {
@@ -1264,6 +1265,7 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "masterplans": "Master Plans",
   "dda-districts": "DDA Districts",
   "landplots": "Land Plots",
+  "amenities": "Amenities",
 };
 
 // Build-once map: layer-key → metadata. Keys not in this map are treated
@@ -1280,6 +1282,11 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     ddaProjects: { country: "dubai", category: "dda-admin" },
     ddaFreeZones: { country: "dubai", category: "dda-admin" },
     ddaLandPlots: { country: "dubai", category: "dda-admin", tier: "GOLD" },
+    // ── Dubai — amenities (data.dubai point overlays, public open data) ──
+    evChargers: { country: "dubai", category: "amenities" },
+    metroStations: { country: "dubai", category: "amenities" },
+    tramStations: { country: "dubai", category: "amenities" },
+    marineStations: { country: "dubai", category: "amenities" },
     // ── Dubai — master plans (all locked GOLD per mockup) ──
     islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
     meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
