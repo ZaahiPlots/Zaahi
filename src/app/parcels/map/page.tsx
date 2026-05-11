@@ -1727,11 +1727,11 @@ function ParcelsMapPageInner() {
   //  was previously on.
   // ─────────────────────────────────────────────────────────────────────
   type LayerKind = "base" | "masterplan" | "dda" | "point";
-  // Point overlays (kind === "point") render as MapLibre `circle` layers
-  // and do not have a stroke/fill polygon. lineId is optional so the
-  // existing kind === "base" | "masterplan" | "dda" branches continue
-  // to require lineId, while point layers carry circleId + circlePaint
-  // instead.
+  // Point overlays (kind === "point") can render either as a MapLibre
+  // `circle` layer (carry circleId + circlePaint) or as a `symbol` layer
+  // backed by an SDF icon (carry symbolId + symbolLayout + symbolPaint).
+  // The two are mutually exclusive per LayerDef; loadLayer picks the
+  // branch based on which fields are populated.
   type LayerDef = {
     key: keyof LayersState;
     kind: LayerKind;
@@ -1741,9 +1741,12 @@ function ParcelsMapPageInner() {
     fillId?: string;
     lineId?: string;
     circleId?: string;
+    symbolId?: string;
     fillPaint?: maplibregl.FillLayerSpecification["paint"];
     linePaint?: maplibregl.LineLayerSpecification["paint"];
     circlePaint?: maplibregl.CircleLayerSpecification["paint"];
+    symbolLayout?: maplibregl.SymbolLayerSpecification["layout"];
+    symbolPaint?: maplibregl.SymbolLayerSpecification["paint"];
     promoteId?: string;
     hoverLabel?: string; // for master plan name popup
     pointPopupFields?: string[]; // for point hover/click popups
@@ -2161,6 +2164,22 @@ function ParcelsMapPageInner() {
           map.on("click", def.circleId, h.pointClick(def.label, fields));
         }
       }
+      if (def.kind === "point" && def.symbolId && def.symbolLayout && !map.getLayer(def.symbolId)) {
+        map.addLayer({
+          id: def.symbolId,
+          type: "symbol",
+          source: def.srcId,
+          layout: { ...def.symbolLayout, visibility: "none" }, // toggled on by setLayerVisibility
+          paint: def.symbolPaint,
+        });
+        const h = hoverHandlersRef.current;
+        const fields = def.pointPopupFields ?? [];
+        if (h.pointHover && h.pointLeave && h.pointClick) {
+          map.on("mousemove", def.symbolId, h.pointHover(def.label, fields));
+          map.on("mouseleave", def.symbolId, h.pointLeave);
+          map.on("click", def.symbolId, h.pointClick(def.label, fields));
+        }
+      }
       if (def.kind === "dda" && def.lineId) {
         const labelId = ddaLabelId(def.srcId);
         if (!map.getLayer(labelId)) {
@@ -2227,6 +2246,9 @@ function ParcelsMapPageInner() {
     }
     if (def.circleId && map.getLayer(def.circleId)) {
       map.setLayoutProperty(def.circleId, "visibility", v);
+    }
+    if (def.symbolId && map.getLayer(def.symbolId)) {
+      map.setLayoutProperty(def.symbolId, "visibility", v);
     }
     if (def.kind === "dda") {
       const labelId = ddaLabelId(def.srcId);
