@@ -2742,6 +2742,40 @@ function ParcelsMapPageInner() {
   }
 
 
+  // Amenity icons — SDF-rendered symbol images for the 4 point overlays.
+  // setStyle() wipes the image registry along with sources/layers, so this
+  // is called both on initial map load AND inside the theme-swap styledata
+  // handler, before attachOverlays runs the symbol-layer addLayer calls.
+  // Idempotent: skips images already registered.
+  const AMENITY_ICONS = [
+    { id: "amenity-ev-charger",     url: "/icons/amenities/ev-charger.svg" },
+    { id: "amenity-metro-station",  url: "/icons/amenities/metro.svg" },
+    { id: "amenity-tram-station",   url: "/icons/amenities/tram.svg" },
+    { id: "amenity-marine-station", url: "/icons/amenities/marine-station.svg" },
+  ] as const;
+
+  async function loadAmenityIcons(map: MLMap): Promise<void> {
+    await Promise.all(
+      AMENITY_ICONS.map(({ id, url }) => {
+        if (map.hasImage(id)) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          const img = new Image(64, 64);
+          img.onload = () => {
+            if (!map.hasImage(id)) {
+              map.addImage(id, img, { sdf: true, pixelRatio: 2 });
+            }
+            resolve();
+          };
+          img.onerror = () => {
+            console.warn(`[amenity-icon] failed to load ${url}`);
+            resolve();
+          };
+          img.src = url;
+        });
+      }),
+    );
+  }
+
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
   async function attachOverlays(map: MLMap) {
@@ -2918,6 +2952,7 @@ function ParcelsMapPageInner() {
         pointHover, pointLeave, pointClick,
       };
 
+      await loadAmenityIcons(map);
       await attachOverlays(map);
 
       // ── ZAAHI Plots — real listings from /api/parcels/map.
@@ -3186,6 +3221,7 @@ function ParcelsMapPageInner() {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
       map.keyboard.enable();
+      await loadAmenityIcons(map);
       await attachOverlays(map);
       // ZAAHI plots also need to be re-attached after a basemap swap
       // (maplibre's source registry was wiped). The loader is idempotent
