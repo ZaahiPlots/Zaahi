@@ -108,6 +108,15 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
 const METRO_LINE = "metro-line";
+// Amenities — data.dubai point overlays (circle layers, no fill/line).
+const EV_CHARGERS_SRC = "ev-chargers";
+const EV_CHARGERS_CIRCLE = "ev-chargers-circle";
+const METRO_STATIONS_SRC = "metro-stations";
+const METRO_STATIONS_CIRCLE = "metro-stations-circle";
+const TRAM_STATIONS_SRC = "tram-stations";
+const TRAM_STATIONS_CIRCLE = "tram-stations-circle";
+const MARINE_STATIONS_SRC = "marine-stations";
+const MARINE_STATIONS_CIRCLE = "marine-stations-circle";
 const SAUDI_GOV_SRC = "saudi-governorates";
 const SAUDI_GOV_LINE = "saudi-governorates-line";
 const SAUDI_GOV_FILL = "saudi-governorates-fill";
@@ -1967,6 +1976,97 @@ function ParcelsMapPageInner() {
       { key: "residential12", kind: "masterplan", label: "Residential District",    url: "/api/layers/masterplans/residential-12", srcId: RES12_SRC,   lineId: RES12_LINE,   linePaint: masterPlanPaint, hoverLabel: "Residential District Phase I & II" },
       { key: "d11",          kind: "masterplan", label: "D11 — Parcel L/D",         url: "/api/layers/masterplans/d11-parcel-ld",  srcId: D11_SRC,     lineId: D11_LINE,     linePaint: masterPlanPaint, hoverLabel: "D11 — Parcel L/D master plan" },
       { key: "nadAlHammer",  kind: "masterplan", label: "Nad Al Hammer",            url: "/api/layers/masterplans/nad-al-hammer",  srcId: NAD_AL_HAMMER_SRC, lineId: NAD_AL_HAMMER_LINE, linePaint: masterPlanPaint, hoverLabel: "Nad Al Hammer master plan" },
+      // ── Amenities (data.dubai point overlays — kind: "point") ──
+      // EV Chargers (DEWA): teal palette colour, no per-feature paint.
+      {
+        key: "evChargers",
+        kind: "point",
+        label: "EV Chargers",
+        url: "/api/layers/amenities/ev-chargers",
+        srcId: EV_CHARGERS_SRC,
+        circleId: EV_CHARGERS_CIRCLE,
+        circlePaint: {
+          "circle-color": "#1B4965",         // palette TEAL
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFFFFF",
+          "circle-stroke-width": 1.2,
+          "circle-stroke-opacity": 0.85,
+          "circle-opacity": 0.92,
+        },
+        pointPopupFields: [
+          "location_name", "location_address",
+          "totalnbofconnectors", "connectortype",
+        ],
+      },
+      // Metro Stations: colour driven by line_name (matches existing
+      // Metro Lines layer painting at /api/layers/metro).
+      {
+        key: "metroStations",
+        kind: "point",
+        label: "Metro Stations",
+        url: "/api/layers/amenities/metro-stations",
+        srcId: METRO_STATIONS_SRC,
+        circleId: METRO_STATIONS_CIRCLE,
+        circlePaint: {
+          "circle-color": [
+            "match", ["get", "line_name"],
+            "Red Metro line",   "#E74C3C",
+            "Green Metro line", "#27AE60",
+            /* default — Route 2020 + future expansions */ "#9B59B6",
+          ],
+          "circle-radius": 5,
+          "circle-stroke-color": "#FFFFFF",
+          "circle-stroke-width": 1.5,
+          "circle-stroke-opacity": 0.95,
+          "circle-opacity": 0.95,
+        },
+        pointPopupFields: [
+          "location_name_english", "line_name",
+          "station_opening_date", "zone_id",
+        ],
+      },
+      // Tram Stations: amber palette colour (closest to Dubai Tram livery).
+      {
+        key: "tramStations",
+        kind: "point",
+        label: "Tram Stations",
+        url: "/api/layers/amenities/tram-stations",
+        srcId: TRAM_STATIONS_SRC,
+        circleId: TRAM_STATIONS_CIRCLE,
+        circlePaint: {
+          "circle-color": "#E67E22",         // palette AMBER
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFFFFF",
+          "circle-stroke-width": 1.2,
+          "circle-stroke-opacity": 0.9,
+          "circle-opacity": 0.95,
+        },
+        pointPopupFields: [
+          "location_name_english", "line_name",
+          "station_opening_date", "zone_id",
+        ],
+      },
+      // Marine Stations: deeper teal-navy, visually distinct from EV.
+      {
+        key: "marineStations",
+        kind: "point",
+        label: "Marine Stations",
+        url: "/api/layers/amenities/marine-stations",
+        srcId: MARINE_STATIONS_SRC,
+        circleId: MARINE_STATIONS_CIRCLE,
+        circlePaint: {
+          "circle-color": "#1A4D7A",
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFFFFF",
+          "circle-stroke-width": 1.2,
+          "circle-stroke-opacity": 0.9,
+          "circle-opacity": 0.95,
+        },
+        pointPopupFields: [
+          "station_name", "route_name",
+          "valid_from", "valid_until",
+        ],
+      },
     ];
     // ── DDA districts (lazy) ──
     for (const d of DDA_LAYERS) {
