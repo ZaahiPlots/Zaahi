@@ -22,3 +22,10 @@ data/master-plans/kadastr/
 dist/
 __pycache__/
 .vercel
+
+# Research-only data dumps (data.dubai exports; large, regenerable from the portal)
+docs/research/data-dubai/*.json
+docs/research/data-dubai/*.json.gz
+docs/research/data-dubai/*.geojson
+docs/research/data-dubai/*.csv
+!docs/research/data-dubai/index.md

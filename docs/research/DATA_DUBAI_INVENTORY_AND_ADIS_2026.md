@@ -1,14 +1,25 @@
-# Utility connection data for UAE land developers + ADIS 2026 playbook
+# data.dubai inventory + ADIS 2026 playbook
 
 **Audience:** ZAAHI founders (Zhan + Dymo)
 **Use-by date:** 12 May 2026 EOD — Dymo travels to Abu Dhabi on 13 May
 **Branch:** `research/dewa-utility-layers` (do not push)
-**Status:** Research only. No code touched. No canonical files modified.
+**Status:** Research only. No `src/` code touched (Phase D was scoped
+to a pilot map layer; **see §7 — pilot was deliberately skipped**, not
+silently abandoned). No canonical files modified.
 
-Optimised for *decision-ready* over *exhaustive*. Each claim cites a URL.
-Where the public web doesn't answer a question, the line reads
+Optimised for *decision-ready* over *exhaustive*. Each claim cites a
+URL. Where the public web doesn't answer a question, the line reads
 **"unknown — verify on-site at ADIS"** so the founder can prioritise
 that conversation in the booth queue.
+
+**Second-pass update (11 May 2026):** founder now has full download
+access to the `data.dubai` portal (~700+ datasets across DLD / DEWA /
+RTA / DM / DSC / KHDA / DHA / DTCM / Dubai Police). This document
+is the **broader portal-wide inventory** plus the ADIS playbook from
+the first pass. §2 (DEWA-only) is expanded to the full portal; §4
+(build path) has new L1 candidates; a new §7 captures the Phase D
+pilot-layer decision. Sections 1, 3, 5, and 6 remain unchanged from
+the first pass unless explicitly flagged.
 
 ---
 
@@ -118,68 +129,235 @@ can see before they make an offer.
 
 ---
 
-## 2. Dubai — DEWA data inventory
+## 2. data.dubai — portal-wide inventory
 
-### 2.1 The platform transition
+### 2.1 Platform transition
 
-Dubai's open-data home is moving from **Dubai Pulse**
+Dubai's open-data home moved from **Dubai Pulse**
 ([dubaipulse.gov.ae](https://www.dubaipulse.gov.ae/)) to
-**Data.Dubai** ([data.dubai.ae](https://www.digitaldubai.ae/apps-services/dubaipulse)).
-Old `dubaipulse.gov.ae/data/...` URLs currently HTTP-redirect (301)
+**Data.Dubai** ([digitaldubai.ae/data.dubai](https://www.digitaldubai.ae/apps-services/details/data.dubai)).
+Legacy `dubaipulse.gov.ae/data/…` URLs currently HTTP-redirect (301)
 to `https://data.dubai/`. The Open Data Portal sub-section of
-Data.Dubai is the successor catalogue
-([Digital Dubai, "Data.Dubai Platform"](https://www.digitaldubai.ae/apps-services/dubaipulse)).
+Data.Dubai is the successor catalogue and groups everything by issuer
+(DLD, DEWA, RTA, DM, DSC, KHDA, DHA, DTCM, Dubai Police, plus several
+smaller authorities).
 
-Practical implication for ZAAHI: **plan integration against Data.Dubai,
-not Dubai Pulse legacy URLs.** The auth flow (OAuth2 client-credentials)
-appears to have been preserved verbatim from Dubai Pulse, but the
-catalogue routing has changed and the dataset slugs in the legacy
-documentation may not round-trip.
+The OAuth2 client-credentials flow appears preserved verbatim from
+Dubai Pulse. See §2.6 below for the verified auth handshake.
 
-### 2.2 Open datasets — what's actually exposed
+### 2.2 Local files (Phase A) — what was downloaded + verified
 
-| Dataset slug | What it is | Schema highlights | Useful for ZAAHI? |
+The founder downloaded 8 files from data.dubai to `~/Загрузки/`
+(Russian Downloads dir). All 4 of the `.json` files turned out to be
+**gzip-compressed despite the extension** — they decompressed cleanly
+with `zcat`. Decompressed copies live in
+`docs/research/data-dubai/` (gitignored — total 244 MB; see
+`index.md` in that directory for the per-file metadata).
+
+| File | Issuer | Rows | Geo signal | Quality |
+|---|---|---:|---|---|
+| `dewa_ev_green_charger` | DEWA | **335** | **lat/lng** | ✓ clean |
+| `dewa_annual_statistics` | DEWA | 972 | none | ✓ clean |
+| `dewa_water_supply_points` | DEWA | **5** | **none** | ⚠ not what we thought |
+| `dewa_peak_water_production` | DEWA | 1 | none | ✓ clean (single macro row) |
+| `dld_transactions_full` (gz) | DLD | **1,697,783** | `area_id` + `area_name_en` | ✓ clean (2.66 GB decompressed) |
+| `dld_transactions_recent` | DLD | 6,886 | `AREA_EN` | ✓ clean |
+| `dld_lands` (× 2) | DLD | 254,041 / 127,727 | `AREA_EN` + `ZONE_EN` | ✓ clean; second is a subset |
+
+**Correction to first pass:** §2.2 of the prior version of this doc
+claimed `dewa_water_supply_points-open` was "geocoded points of
+water-supply infrastructure." It is not. Inspection of the actual
+download shows **5 rows** representing **water-tanker fuelling
+distribution points** (Jebel Ali Industrial, Port Jebel Ali, Creek
+Jetty, Port Rashid, Hatta) with text addresses and **no latitude /
+longitude fields**. Useful for tanker logistics, not for plot-level
+utility overlays. Demoting from HIGH to LOW.
+
+**Quiet wins:**
+- `dewa_ev_green_charger` is **directly map-ready** — 335 features,
+  all with valid Dubai-bounded coordinates and connector-type
+  metadata.
+- `dld_transactions_full` is the **single most valuable file**
+  in the whole inventory: 1.7 M historical transactions back to
+  2015, with `area_name_en`, `actual_worth` (AED), `meter_sale_price`
+  (AED/sqm), `instance_date`, `nearest_metro/mall/landmark`, and 40
+  more columns. This is a comparable-sales engine in a CSV.
+
+### 2.3 Portal-wide inventory (Phase B) — sortable by relevance
+
+Scored against the criteria from the task brief: **HIGH = geocoded
+AND relates to land value AND not already covered by existing
+ZAAHI PMTiles** (556 k plots + Land-Use 9-cat are already done).
+Listed below in priority order; full table is sortable by the
+ZAAHI-relevance column.
+
+#### Issuer: **DLD** (Dubai Land Department)
+
+| Dataset slug (Dubai Pulse) | Geo? | Relevance | One-line rationale |
 |---|---|---|---|
-| `dewa_water_supply_points-open` | Geocoded points of water-supply infrastructure (CSV) | latitude / longitude, point type | **High** — direct overlay |
-| `dewa_electricity_new_connection-open` | Historical electricity connection applications | Date, district, Required Load, NOC status, cost (anonymised) | **High** — rate of connection × district as activity signal |
-| `dewa_water_new_connection-open` | Historical water connection applications | Date, district, Required Water Demand, NOC status | **High** — same as above for water |
-| `dewa_annual_statistics-open` | Yearly DEWA aggregates | Generation, consumption, customer counts | **Medium** — context only, not parcel-level |
-| `dewa_gross_power_generation_mwh-open` | Monthly generation totals (MWh) | Time series | **Low** — macro indicator only |
-| `dewa_customers_master_data-open-api` | Aggregated customer-base metadata | Bucketed by category | **Low** for ZAAHI's plot product |
-| `dewa_ev_green_charger-open` | EV charger locations | lat / lng, charger type | **Medium** — could surface as a complementary layer ("nearest EV charger") |
+| `dld_transactions-open` | `area_id`, no lat/lng | **HIGH** | Comparable sales by area; the #1 file already on disk |
+| `dld_land_registry-open-api` | `AREA_EN` | **HIGH** | Land registrations w/ area + zone — already on disk |
+| `dld_real_estate_projects` | unknown — verify | **HIGH** | If geocoded, links to existing plots |
+| `dld_valuations` / appraisal indices | aggregate | MED | Time-series anchor for §4.2 estimator |
+| `dld_rent_index` | community | MED | Yield calc input |
+| `dld_brokers` / `dld_developers` | name only | LOW | Already covered by ZAAHI internal data |
 
-Sources for slug names: [Dubai Pulse search index](https://www.dubaipulse.gov.ae/),
-verified via the listing of dataset pages still indexed by search
-engines as of May 2026.
+#### Issuer: **DEWA** (Dubai Electricity & Water)
 
-**License + update frequency + last-update date:** Dubai Pulse
-historically published per-dataset under the **UAE Open Data Policy**,
-which permits redistribution with attribution. **Update frequency
-and last-update date are per-dataset metadata, currently
-unverifiable because of the platform migration — verify directly in
-Data.Dubai's portal UI before integrating each one.** This is a
-~1-hour task once the founder has time and a Data.Dubai login; not
-blocking summit attendance.
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `dewa_ev_green_charger-open` | **lat/lng** | **HIGH** | 335 geocoded chargers; already on disk |
+| `dewa_electricity_new_connection-open` | district | **HIGH** | Activity heat-map by district — not downloaded |
+| `dewa_water_new_connection-open` | district | **HIGH** | Same for water — not downloaded |
+| `dewa_annual_statistics-open` | none | MED | Macro context; already on disk |
+| `dewa_water_supply_points-open` | none | LOW | 5-row tanker fuelling list (corrected) |
+| `dewa_peak_water_production` | none | LOW | Single macro stat |
+| `dewa_customers_master_data` | none | LOW | Aggregate buckets |
+| `dewa_gross_power_generation_mwh` | none | LOW | Macro time-series |
 
-### 2.3 What is closed (not openly published)
+#### Issuer: **RTA** (Roads & Transport)
 
-Confirmed *not* in the open catalogue:
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `rta_metro_lines-open` | **line geometry** | **HIGH** | Metro lines as map layer — proximity = price premium |
+| `rta_metro_stations` | **lat/lng** | **HIGH** | 50+ stations geocoded; "10-min walk to metro" computable |
+| `rta_bus_routes-open` | **line geometry** | HIGH | Same logic as metro, broader coverage |
+| `rta_parking_zones` | polygon | MED | Parking-fee zones map to ground-floor retail value |
+| `rta_metro_ridership-open` | by station | MED | Demand indicator, not geo |
+| `rta_public_transport_trips_by_type_month` | none | LOW | Macro |
+| `rta_traffic_accidents` (if open) | lat/lng | MED | Safety overlay; check license — verify on portal |
 
-- **132/11 kV substation locations + nameplate capacities.** DEWA
-  publishes substation counts and aggregate MVA in the annual report,
-  not geocoded per-asset detail.
-- **HV / MV / LV cable network topology.** Not in any open layer.
-  Master developers see this through bespoke NDAs.
-- **Real-time spare capacity per substation.** Not exposed even
-  on request — DEWA's Builder Services portal returns spare-capacity
-  signals as part of the *connection NOC response*, not as a
-  pre-application query.
+#### Issuer: **Dubai Municipality (DM)**
 
-### 2.4 Auth flow (Dubai Pulse → Data.Dubai)
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `dm_public_parks` | **lat/lng** + polygon | **HIGH** | Amenity overlay; "park within 500 m" |
+| `dm_parks_coordinates` | **lat/lng** | **HIGH** | Same — alt slug |
+| `dm_heritage_places` | **lat/lng** | MED | Tourism overlay; relevant for hotel/F&B plots |
+| `dm_building_permits` | site / district | MED | Construction activity signal |
+| `dm_zoning` | polygon (if exposed) | **HIGH if geocoded** | Already covered by our 9-cat Land Use — verify whether portal version differs |
+| `dm_community_services` | varies | MED | Cluster of amenity sub-datasets — inspect on download |
 
-1. **Request API access** for the dataset slugs you need. End users
-   receive an **API Key** and **API Secret** in separate emails when
-   the grant is approved.
+#### Issuer: **DSC** (Dubai Statistics Center)
+
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `dsc_population_by_community-open` | **community FK** | **HIGH** | Joinable to plots via community; density → price model input |
+| DSC GeoStat (web tool) | interactive map | MED | Underlying community boundaries may be downloadable |
+| `dsc_gdp_quarterly-open` | none | LOW | Macro |
+| `dsc_household_expenditure_survey_income` | community / type | MED | Income proxy by area |
+
+#### Issuer: **KHDA** (Knowledge & Human Development Authority — education)
+
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `khda_private_schools_in_dubai-open` | **lat/lng** (verify) | **HIGH** | "Top schools within X km" → family-buyer feature |
+| `khda_higher_education_institutions_in_free_zones-open` | **lat/lng** (verify) | MED | Niche audience (corporate housing) |
+| KHDA ratings ("Outstanding", "Good", etc.) | per school | **HIGH** | Combined with location → premium-quartile schools overlay |
+
+#### Issuer: **DHA** (Dubai Health Authority)
+
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| DHA hospitals / clinics | **lat/lng** (verify) | **HIGH** | Amenity overlay; "hospital within 10 min" |
+| DHA EMRAM hospital scores | per hospital | LOW | Reputation data, not geo by itself |
+
+#### Issuer: **DTCM / DET** (Tourism)
+
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `dtcm_visitors_count_by_nationality-open` | none | LOW | Macro tourism |
+| Hotels (public POI) | **lat/lng** | MED | Hospitality-plot context |
+| `dct_classified_hotels` | per hotel | MED | Tier × location for hotel-plot feasibility |
+
+#### Issuer: **Dubai Police**
+
+| Dataset slug | Geo? | Relevance | Rationale |
+|---|---|---|---|
+| `police_traffic_accidents` | lat/lng | MED | Safety overlay |
+| `police_crime_statistics` | district | LOW | Generally district-level summary |
+
+### 2.4 Top-10 HIGH datasets, ranked
+
+Ranking by combined (impact × ease-of-integration). The top 5
+already have files on disk; the next 5 need to be downloaded.
+
+| Rank | Dataset | On disk? | Why it's high |
+|---:|---|---|---|
+| 1 | `dld_transactions-open` (1.7 M rows) | ✓ | Comparable sales engine; immediate price benchmarking by area + property type |
+| 2 | `dewa_ev_green_charger-open` (335 rows) | ✓ | Map-ready GeoJSON; first visible new layer |
+| 3 | `dld_land_registry-open` (254 k rows) | ✓ | Land-level metadata; pairs with our 556k plots |
+| 4 | `rta_metro_stations` | — | 50+ geocoded stations; proximity premium feature |
+| 5 | `rta_metro_lines-open` | — | Line geometry; "10-min walk to metro" overlay |
+| 6 | `rta_bus_routes-open` | — | Same logic, broader coverage |
+| 7 | `dm_public_parks` | — | Amenity overlay; family-buyer differentiator |
+| 8 | `khda_private_schools_in_dubai-open` | — | School-rating + location = single most-asked-about amenity |
+| 9 | `dsc_population_by_community-open` | — | Density / demographics by community; input to estimator |
+| 10 | `dewa_electricity_new_connection-open` | — | District-level connection activity (development heat) |
+
+### 2.5 Download queue (Phase C) — checklist for founder
+
+Direct downloads for the HIGH-relevance datasets not yet on disk.
+Browse data.dubai by issuer or use the legacy Dubai Pulse URLs
+(both currently work; legacy URLs 301-redirect to the new portal).
+
+- [ ] **RTA — Metro stations**
+      ([dubaipulse.gov.ae/data/rta-rail](https://www.dubaipulse.gov.ae/organisation/rta/service/rta-rail))
+      — pick the `rta_metro_stations` resource. Should be CSV or
+      GeoJSON with station name + lat/lng + line color.
+- [ ] **RTA — Metro lines**
+      ([dubaipulse.gov.ae/data/rta-rail/rta_metro_lines-open](https://www.dubaipulse.gov.ae/data/rta-rail/rta_metro_lines-open))
+      — line geometry per route (Red / Green / Route 2020).
+- [ ] **RTA — Bus routes**
+      ([dubaipulse.gov.ae/data/rta-bus/rta_bus_routes-open](https://www.dubaipulse.gov.ae/data/rta-bus/rta_bus_routes-open))
+      — line geometry per route. File is likely large; download and
+      simplify before serving.
+- [ ] **DM — Public parks**
+      ([dm.gov.ae open data portal](https://www.dm.gov.ae/open-data2/))
+      — verify whether published as point + polygon or just point.
+- [ ] **KHDA — Private schools in Dubai**
+      ([dubaipulse.gov.ae/data/khda-schools/khda_private_schools_in_dubai-open-api](https://www.dubaipulse.gov.ae/data/khda-schools/khda_private_schools_in_dubai-open-api))
+      — capture lat/lng + curriculum + rating + capacity.
+- [ ] **DSC — Population by community**
+      ([dubaipulse.gov.ae/data/dsc-statistics/dsc_population_by_community-open](https://www.dubaipulse.gov.ae/data/dsc-statistics/dsc_population_by_community-open))
+      — community-keyed; pair with a Dubai community boundary layer.
+- [ ] **DEWA — Electricity new connection**
+      ([dubaipulse.gov.ae/data/dewa-new-connections/dewa_electricity_new_connection-open](https://www.dubaipulse.gov.ae/data/dewa-new-connections/dewa_electricity_new_connection-open))
+- [ ] **DEWA — Water new connection** (same `dewa-new-connections` folder)
+- [ ] **DHA — Hospitals + clinics**
+      ([dha.gov.ae/en/open-data](https://dha.gov.ae/en/open-data))
+      — verify lat/lng presence; clinics list may be public-private split.
+- [ ] **DTCM — Classified hotels**
+      ([dubaipulse.gov.ae](https://www.dubaipulse.gov.ae/organisation/dtcm/service/dtcm-general))
+      — pick the classified-hotels dataset; lat/lng per property.
+- [ ] **Dubai Police — Traffic accidents** (if open + lat/lng)
+      ([dubaipulse.gov.ae](https://www.dubaipulse.gov.ae/) — search "police")
+      — license check before ingest.
+
+When the next batch is dropped in `~/Загрузки/`, decompress with
+`zcat` (DEWA files) or use directly (DLD CSV). Same parser
+pattern as in Phase A.
+
+### 2.6 Closed data (not openly published) — same as Phase A
+
+Unchanged from first pass:
+
+- 132/11 kV substation locations + nameplate capacities
+- HV / MV / LV cable network topology
+- Real-time spare capacity per substation
+
+Plus newly noted:
+
+- **Cadastral parcel polygons in machine-readable form.** The DLD
+  publishes the *attributes* of every land row (254 k rows in
+  `dld_lands`) but not the boundary geometry — that comes from
+  the DDA / DM source we already have via PMTiles.
+
+### 2.7 Auth flow (Dubai Pulse → Data.Dubai)
+
+1. **Request API access** for the dataset slugs you need. End
+   users receive an **API Key** and **API Secret** in separate
+   emails when the grant is approved.
 2. **Mint OAuth token** with a single POST:
    ```
    POST https://api.dubaipulse.gov.ae/oauth/client_credential/accesstoken
@@ -190,21 +368,29 @@ Confirmed *not* in the open catalogue:
    {access_token}` on every subsequent dataset call.
 4. **Tokens expire after ~30 minutes.** Cache + refresh on miss.
 
-Source: [Dubai Pulse API documentation, accessed via search index
-May 2026](https://www.dubaipulse.gov.ae/). The Data.Dubai successor
-appears to use the same flow; **verify against Data.Dubai's
-developer portal once the founder confirms account access** — see
-§6 follow-up actions.
+Source: [Dubai Pulse API documentation](https://www.dubaipulse.gov.ae/).
+Data.Dubai successor appears to use the same flow; verify against
+Data.Dubai's developer portal once the founder confirms account
+access.
 
-### 2.5 Value-for-ZAAHI rating summary
+For the immediate post-summit work, **batch CSV / JSON downloads
+through the browser are sufficient** — the API only matters once
+we want to refresh data automatically (Level 1 / Level 2 of §4).
 
-| Dataset | Value | Effort to integrate |
-|---|---|---|
-| `dewa_water_supply_points-open` | **High** | Low (single CSV → GeoJSON conversion) |
-| `dewa_electricity_new_connection-open` | **High** | Low (aggregate by district, surface as activity heat-map) |
-| `dewa_water_new_connection-open` | **High** | Low (same shape as electricity) |
-| `dewa_annual_statistics-open` | Medium | Low (already widely known; useful for the trust/credibility marquee) |
-| All others | Low | — |
+### 2.8 Format quirks worth knowing before ingest
+
+- DEWA `.json` files downloaded from data.dubai are **gzip-compressed
+  despite the file extension**. Either rename to `.json.gz` on save
+  or decompress on ingest. Verified on all 4 DEWA files in
+  `~/Загрузки/`.
+- DLD CSVs use a **UTF-8 BOM** (`﻿`) on the first header cell. CSV
+  parser must strip it or the first column name becomes `﻿` +
+  field name. Affects: `lands`, `transactions-recent`.
+- Multilingual columns: DLD JSON has paired `_ar` / `_en` columns
+  for every label-style field. Pick `_en` on ingest unless serving
+  Arabic UI.
+- The big DLD transactions JSON is **2.66 GB decompressed** — never
+  load as one blob; stream + aggregate.
 
 ---
 
@@ -321,41 +507,92 @@ plots even without per-substation geocoding.
 
 ## 4. What ZAAHI can build (3 levels, ranked by feasibility)
 
-### 4.1 Level 1 — Open-data overlay (2–3 weeks, no partner needed)
+### 4.1 Level 1 — Open-data overlays (revised — multiple candidates)
 
-**Scope:**
+The first pass of this doc treated Level 1 as a DEWA-only overlay
+exercise. With the broader portal inventory in §2 above, Level 1
+is now a **portfolio of 3–4 candidate map layers**, each with its
+own effort + impact profile. Ship them in this order; each one
+ships in 1–2 weeks of focused work.
 
-- Pull `dewa_water_supply_points-open` from Data.Dubai → GeoJSON
-  layer in MapLibre on `/parcels/map`. Render as a togglable layer
-  under "Utilities → Water supply points (DEWA)".
-- Aggregate `dewa_electricity_new_connection-open` and
-  `dewa_water_new_connection-open` by district. Render district-level
-  *connection activity* (count per month per district) as a heat-map
-  overlay. Use it to support a "this neighbourhood is connecting fast"
-  signal in plot detail.
-- For Abu Dhabi, render whatever 1Map / Bayanat exposes publicly
-  without paid access (likely cadastral and road network — not
-  utility-specific). **Set expectation honestly: Dubai Level 1 lands
-  with concrete data; AD Level 1 will be visibly thinner until §4.3
-  unlocks.**
+**L1.a — EV chargers (lowest-risk, highest-visibility first ship)**
 
-**Where in the platform:** new layer group on `/parcels/map` under
-the existing Layers panel (parallel to "ZAAHI Plots" and "DDA
-districts"). The layer toggles are already a designed surface —
-this is a pure data add, not a new screen.
+- Data: `dewa_ev_green_charger` (335 features, lat/lng) — **already
+  on disk** as a clean GeoJSON in `docs/research/data-dubai/`.
+- Effort: 1–2 weeks once integrated into the existing complex
+  Layers menu (see §7 below for why the in-this-session pilot was
+  deliberately skipped).
+- Surface: new "Amenities" layer category in the Layers panel,
+  parallel to the existing DDA / masterplans / landplots categories.
+  Visible only when "Amenities → EV chargers" is toggled on.
+- Risk: low. Pure overlay. Doesn't touch ZAAHI Signature 3D buildings
+  or fill-extrusion-opacity.
 
-**Master Tree mapping suggestion (NOT YET RATIFIED — flag for founder
-review):** Block **D — Technology**, subsection **AI / digital twin
-overlays**. Specifically D-3 if numbered subsections exist. Could
-arguably also live under Block **E — Analytics**, "market intel"
-sub-bucket. *Founder picks; both have defensible logic.*
+**L1.b — Comparable-sales heatmap by area (highest impact)**
 
-**Risks:**
-- Data.Dubai migration. Slug names may have changed. Build a
-  one-week buffer for slug confirmation.
-- Per-dataset license attribution requirements. Trivial to honour
-  (small "Data: DEWA via Data.Dubai" footer in the panel) but must
-  not be forgotten.
+- Data: `dld_transactions_full` (1.7 M rows) — **already on disk**.
+- Effort: 2–3 weeks. Streaming-aggregate into a Prisma summary
+  table (`SalesByArea`: area_name_en × month × property_type ×
+  property_sub_type → count, median actual_worth, median
+  meter_sale_price). Serve aggregates via a new `/api/sales-by-area`
+  route. Render as a choropleth fill over a Dubai community polygon
+  layer.
+- Surface: new "Market" tab in `/parcels/[id]` side panel showing
+  *"Average $/sqm in this area over the last 12 months: X. Last
+  comparable sale: Y. Median sale value: Z."* — plus the heatmap
+  on the map page.
+- Risk: medium. The DLD transactions data is published openly but
+  the **DLD Open Data Licence** terms should be re-confirmed before
+  exposing aggregates in production. Free for derivative use with
+  attribution is the *expected* answer; verify.
+
+**L1.c — Transit-proximity overlay**
+
+- Data: `rta_metro_stations` + `rta_metro_lines-open` +
+  `rta_bus_routes-open` — **not yet on disk** (see §2.5
+  download queue).
+- Effort: 2 weeks once data is on disk. Pre-compute "nearest metro
+  station" + "minutes walk to metro" per plot, store on
+  `Parcel.transitMetadata` (additive non-indexed Json column, fits
+  Phase 1 dashboards conventions).
+- Surface: badge on `/parcels/[id]` ("Metro: 480 m to Discovery
+  Gardens, 6 min walk") + an optional toggle to render metro
+  lines as map layer.
+- Risk: low. Metro / bus geometry is widely re-distributed
+  open data.
+
+**L1.d — Education + amenity overlays**
+
+- Data: `khda_private_schools_in_dubai-open`,
+  `dm_public_parks`, `dha_hospitals`, `dtcm_classified_hotels`
+  — **none on disk yet** (§2.5).
+- Effort: 2–3 weeks for all four as one category.
+- Surface: "Amenities" panel on `/parcels/[id]` showing "3 schools,
+  1 hospital, 2 parks within 1 km."
+
+**Where in the platform:** all four sub-levels add to the existing
+Layers panel on `/parcels/map`, plus per-plot badges in the
+`/parcels/[id]` side panel. **The integration pattern is the same
+as the existing DDA project / masterplan layers — same Layers
+panel, same on/off state machine, same MapLibre source +
+layer per source.**
+
+**Master Tree mapping suggestion (NOT YET RATIFIED):** Block
+**D — Technology**, *digital-twin overlays* sub-bucket for the map
+layers (L1.a / L1.c portion of L1.d). Block **E — Analytics**,
+*market intel* sub-bucket for L1.b's comparable-sales engine.
+*Founder picks per sub-level; defensible either way.*
+
+**Risks (consolidated):**
+- Data.Dubai migration. Slug names may have shifted; confirm on
+  download.
+- DLD open-data licence terms for re-publishing aggregates —
+  verify before L1.b reaches production.
+- File-size: DLD full transactions is 2.66 GB decompressed; ingest
+  must stream, not load. Aggregation into a Prisma rollup table
+  takes the live query down to milliseconds.
+- License attribution requirement (DEWA / DLD / RTA / DM / etc.)
+  — trivial to honour with a footer per layer; do not forget.
 
 ### 4.2 Level 2 — Per-parcel utility estimator (4–6 weeks, internal logic)
 
@@ -737,6 +974,124 @@ If none of those happen and the summit is "good meetings, no
 commitments," **proceed as recommended in §6.1**: Level 1 in
 2-3 weeks, Level 2 in 4-6, Level 3 as a slow-burn relationship
 track managed by Dymo through ambassador-style touch points.
+
+---
+
+## 7. Phase D — pilot layer decision: SKIP
+
+The Phase D brief allowed a 1–2 hour opportunistic build of one
+working MapLibre layer from an on-disk geocoded dataset.
+
+### 7.1 Candidate evaluation
+
+The natural candidate was **`dewa_ev_green_charger`**:
+
+- 335 features, all with valid Dubai-bounded lat/lng (verified).
+- Schema rich enough to be useful (connector type + count + name +
+  address per charger).
+- Already on disk, no portal round-trip.
+- GeoJSON would weigh in at ~114 KB — small enough to ship as a
+  static asset.
+
+The data side took ~10 minutes: a Python script reads the
+decompressed JSON, validates each lat/lng falls within
+`54.0 < lng < 56.5` and `24.0 < lat < 26.5`, and emits a clean
+FeatureCollection. 335/335 rows passed validation. The output
+`dewa_ev_chargers.geojson` is staged in
+`docs/research/data-dubai/` (gitignored).
+
+### 7.2 Why the build was skipped
+
+The remaining 100+ minutes would have been needed for the
+**Layers menu integration** that the task explicitly required:
+
+> "Layer must integrate via Layers menu (§44), respect ALL CLAUDE.md
+> rules"
+
+A read of `src/app/parcels/map/page.tsx` showed that adding a
+properly-categorised toggle is not a 1-hour task:
+
+| Surface to touch | Lines required |
+|---|---|
+| `LayersState` type (one new boolean) | 1 |
+| `LAYER_REGISTRY` entry + category + tier | ~10 |
+| Default-off `LayersState` initial value | 1 |
+| `LAYER_CATEGORIES` + display label | ~6 |
+| `setLayerVisibility` handler — currently assumes PMTiles vector tiles, **not GeoJSON URL sources**; needs a new branch in the handler or a sibling helper | ~30–50 |
+| Add labels for the layers panel | ~5 |
+| Position the new "Amenities" category in the Layers panel's existing per-country / per-category grouping | ~15 |
+| Visual regression check against existing 64+ layer toggles | manual, ~30 min |
+
+The line count is small but the integration surface — **a
+GeoJSON-URL source path that doesn't currently exist in
+`setLayerVisibility`** — is the time sink. Getting it wrong risks
+breaking one of the 64+ existing layer toggles or the ZAAHI
+Signature 3D rendering path (Steps 8 + LOCK rules forbid touching
+`fill-extrusion-opacity` and the 3D building stack).
+
+Realistic estimate after reading the page: **3–4 hours of careful
+work**, not 1–2. The task brief said "honest skip > fake build,"
+so I skipped.
+
+### 7.3 What was built anyway (no `src/` impact)
+
+- **GeoJSON ready to drop in:**
+  `docs/research/data-dubai/dewa_ev_chargers.geojson` — 113 KB,
+  335 features, validated Dubai bounds. Ready for the production
+  integration pass.
+- **`docs/research/data-dubai/index.md`** — per-file metadata for
+  every file in that directory, with schema + row counts + quality
+  notes. Acts as the runbook for the next pass.
+- **`.gitignore` entries** added so the large data dumps stay out
+  of git but the index does not.
+
+No file under `src/`, `prisma/`, `supabase/`, `public/`, or
+`data/layers/` was touched in this session. Confirmed via
+`git status` — only `docs/research/` and `.gitignore` changed.
+
+### 7.4 What would unblock a clean 2-hour pilot build
+
+Two paths, in priority order:
+
+1. **Refactor `setLayerVisibility` to support GeoJSON-URL sources.**
+   Extend the `LayerDef` discriminated union to add a
+   `{ kind: "geojson-url"; url: string }` source variant alongside
+   the existing PMTiles-vector variant. Then any future
+   open-data overlay (EV chargers, parks, schools, hospitals) is a
+   pure data-add. **Effort: 4–6 hours of refactor + tests.**
+   After this lands, each new overlay is 30–60 minutes.
+
+2. **Side-channel route under `/parcels/map`** — a tiny
+   `OverlayLayer` component that the page can compose without
+   touching the LAYER_REGISTRY machinery. Faster to add (~2 hours
+   total for the first one + the component) but produces a parallel
+   second toggle UI, which contradicts §44.
+
+**Recommend path 1** — invest the refactor once, ship the next
+five layers cheaply. Path 2 only makes sense if there's a single
+overlay to land and no plan to add more.
+
+### 7.5 If founder wants to ship Phase D as a code commit anyway
+
+The cleanest minimal version:
+
+- Branch off `main`, name `feat/dewa-ev-chargers-layer`
+- Add `LayerDef` variant for `geojson-url` (~50 line refactor)
+- Add the new layer with `kind: "geojson-url"`, `url:
+  "/research-data/dewa_ev_chargers.geojson"`, `category:
+  "amenities"`, `tier: null` (open, all users)
+- Move the GeoJSON from `docs/research/data-dubai/` to
+  `public/research-data/` so it's served by Next.js
+- New toggle label: "EV Chargers (DEWA, 335)"
+- Visual style: `circle-radius` 5 px, `circle-color` electric-blue
+  (`#4A90D9` from the existing Land Use palette for Commercial — or
+  pick a new accent within the ZAAHI palette)
+- Manual smoke: open `/parcels/map`, toggle the new layer, confirm
+  335 dots render across Dubai, confirm none of the 64+ other
+  toggles regressed, confirm 3D buildings still render.
+
+That's ~4 hours of focused work. Not now; documented for whoever
+picks it up.
 
 ---
 
