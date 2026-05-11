@@ -4047,6 +4047,16 @@ function ParcelsMapPageInner() {
           border-top-color: rgba(200, 169, 110, 0.4) !important;
           border-bottom-color: rgba(200, 169, 110, 0.4) !important;
         }
+        .zaahi-popup .maplibregl-popup-close-button {
+          color: ${GOLD} !important;
+          font-size: 18px !important;
+          padding: 2px 6px !important;
+          opacity: 0.7;
+          transition: opacity 150ms ease, color 150ms ease;
+        }
+        .zaahi-popup .maplibregl-popup-close-button:hover {
+          opacity: 1;
+        }
       `}</style>
       {zaahiHover && (
         <div
