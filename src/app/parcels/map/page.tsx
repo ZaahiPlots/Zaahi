@@ -2099,7 +2099,19 @@ function ParcelsMapPageInner() {
     ddaPlotHover: (() => void) | null;
     masterPlanLeave: (() => void) | null;
     masterPlanHover: ((label: string) => (e: maplibregl.MapMouseEvent) => void) | null;
-  }>({ ddaPlotHover: null, masterPlanLeave: null, masterPlanHover: null });
+    // Amenity-point hover/click factory: builds a mousemove handler
+    // bound to a layer's label + popup field list.
+    pointHover: (
+      (label: string, fields: string[]) => (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => void
+    ) | null;
+    pointLeave: (() => void) | null;
+    pointClick: (
+      (label: string, fields: string[]) => (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => void
+    ) | null;
+  }>({
+    ddaPlotHover: null, masterPlanLeave: null, masterPlanHover: null,
+    pointHover: null, pointLeave: null, pointClick: null,
+  });
 
   async function loadLayer(map: MLMap, def: LayerDef): Promise<boolean> {
     if (loadedLayersRef.current.has(def.key)) return true;
@@ -2141,6 +2153,13 @@ function ParcelsMapPageInner() {
           paint: def.circlePaint,
           layout: { visibility: "none" }, // toggled on by setLayerVisibility
         });
+        const h = hoverHandlersRef.current;
+        const fields = def.pointPopupFields ?? [];
+        if (h.pointHover && h.pointLeave && h.pointClick) {
+          map.on("mousemove", def.circleId, h.pointHover(def.label, fields));
+          map.on("mouseleave", def.circleId, h.pointLeave);
+          map.on("click", def.circleId, h.pointClick(def.label, fields));
+        }
       }
       if (def.kind === "dda" && def.lineId) {
         const labelId = ddaLabelId(def.srcId);
@@ -2834,7 +2853,70 @@ function ParcelsMapPageInner() {
             )
             .addTo(map);
         };
-      hoverHandlersRef.current = { ddaPlotHover, masterPlanLeave, masterPlanHover };
+
+      // Generic amenity-point hover/click. Builds a small card with
+      // header (layer label) + bold first field as title + remaining
+      // fields as label/value rows. Click drops a pinned popup with a
+      // close button; hover uses the shared closeButton=false popup.
+      const renderPointCard = (label: string, fields: string[], props: Record<string, unknown>) => {
+        const titleField = fields[0];
+        const titleValue = String(props[titleField] ?? "—");
+        const rows = fields
+          .slice(1)
+          .filter((k) => props[k] != null && String(props[k]).trim() !== "")
+          .map(
+            (k) =>
+              `<div style="display:flex;justify-content:space-between;gap:8px;font-size:10px;line-height:1.3;margin-top:2px">
+                 <span style="opacity:0.6;text-transform:capitalize">${k.replace(/_/g, " ")}</span>
+                 <span style="color:#1A1A2E;font-weight:500;text-align:right;max-width:180px">${String(props[k])}</span>
+               </div>`,
+          )
+          .join("");
+        return `
+          <div style="min-width:200px;max-width:280px">
+            <div style="font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:#C8A96E;opacity:0.85">${label}</div>
+            <div style="font-family:Georgia,serif;font-weight:700;font-size:13px;color:#1A1A2E;margin-top:2px;line-height:1.2">${titleValue}</div>
+            ${rows}
+          </div>`;
+      };
+      const pointHover = (label: string, fields: string[]) =>
+        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          map.getCanvas().style.cursor = "pointer";
+          popup
+            .setLngLat(e.lngLat)
+            .setHTML(renderPointCard(label, fields, (f.properties ?? {}) as Record<string, unknown>))
+            .addTo(map);
+        };
+      const pointLeave = () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      };
+      // Click uses a separate pinned popup so the user can read the
+      // address / connector list without holding cursor steady. Tracked
+      // on a closure-scoped ref so re-clicking another point swaps it.
+      let pinnedPopup: maplibregl.Popup | null = null;
+      const pointClick = (label: string, fields: string[]) =>
+        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f || !f.geometry || f.geometry.type !== "Point") return;
+          if (pinnedPopup) pinnedPopup.remove();
+          pinnedPopup = new maplibregl.Popup({
+            closeButton: true,
+            closeOnClick: true,
+            offset: 10,
+            className: "zaahi-popup",
+          })
+            .setLngLat(f.geometry.coordinates as [number, number])
+            .setHTML(renderPointCard(label, fields, (f.properties ?? {}) as Record<string, unknown>))
+            .addTo(map);
+        };
+
+      hoverHandlersRef.current = {
+        ddaPlotHover, masterPlanLeave, masterPlanHover,
+        pointHover, pointLeave, pointClick,
+      };
 
       await attachOverlays(map);
 
