@@ -406,23 +406,59 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     console.warn("[register/submit] generateLink threw:", e);
   }
 
-  // ── 8. Insert RegistrationApplication ─────────────────────────────
+  // ── 8. Insert User (placeholder) + RegistrationApplication (atomic) ─
+  // RegistrationApplication.userId is an FK → User.id. The Supabase
+  // Auth user was just created (userId = createdUser.id), but our
+  // Prisma User table has nothing yet. The previous code wrote
+  // RegistrationApplication with userId set and relied on the User
+  // row appearing later via /api/users/sync — but the FK is checked
+  // synchronously on insert, so this always failed with
+  // RegistrationApplication_userId_fkey violation. (Latent since
+  // Step 6; first surfaced today after the password-length fix
+  // unblocked createUser.)
+  //
+  // Fix: upsert a placeholder User row in the same transaction as
+  // the application insert. The placeholder uses email-local-part
+  // for `name` — admin queue's approve action writes the real name
+  // (from the uploaded ID doc) over it on approval. Schema-level
+  // semantics: User.role / nickname match application from day one;
+  // .name is the only field that mutates at approve time. This
+  // aligns the route with the approve flow (which already assumes
+  // row.userId is set) and with /api/users/sync (which is idempotent
+  // and now becomes a no-op for cohort applicants).
   let applicationId: string;
   try {
-    const created = await prisma.registrationApplication.create({
-      data: {
-        userId,
-        email,
-        nickname,
-        roleApplied: role,
-        documentsJson: docsForJson as unknown as Prisma.InputJsonValue,
-        referralPath: (body.referralPath ?? undefined) as Prisma.InputJsonValue | undefined,
-        status,
-        autoMigrated: false,
-      },
-      select: { id: true },
+    const placeholderName = email.split("@")[0].slice(0, 50) || "Applicant";
+    const { applicationId: id } = await prisma.$transaction(async (tx) => {
+      await tx.user.upsert({
+        where: { id: userId },
+        create: {
+          id: userId,
+          email,
+          role,
+          name: placeholderName,
+          nickname,
+        },
+        update: {
+          // no-op if a previous failed submit left a stale row
+        },
+      });
+      const created = await tx.registrationApplication.create({
+        data: {
+          userId,
+          email,
+          nickname,
+          roleApplied: role,
+          documentsJson: docsForJson as unknown as Prisma.InputJsonValue,
+          referralPath: (body.referralPath ?? undefined) as Prisma.InputJsonValue | undefined,
+          status,
+          autoMigrated: false,
+        },
+        select: { id: true },
+      });
+      return { applicationId: created.id };
     });
-    applicationId = created.id;
+    applicationId = id;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[register/submit] application insert failed:", msg);
