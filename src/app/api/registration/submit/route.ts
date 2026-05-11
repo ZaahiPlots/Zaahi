@@ -286,6 +286,36 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       console.error(
         `[register/submit] createUser failed: status=${createRes.status} body=${bodyText.slice(0, 220)}`,
       );
+      // INCIDENT-DIAG 2026-05-11 — fire an in-route probe with
+      // email_confirm:true (skips SMTP-send) to isolate whether the
+      // failure is in the email-send path or somewhere else.
+      try {
+        const probeUrl = `${authBaseUrl}/auth/v1/admin/users`;
+        const probeEmail = `__probe_${Date.now()}@zaahi-test.io`;
+        const probeRes = await fetch(probeUrl, {
+          method: "POST",
+          headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}`, "content-type": "application/json" },
+          body: JSON.stringify({
+            email: probeEmail,
+            password: `Probe-${Date.now()}!A`,
+            email_confirm: true,
+          }),
+        });
+        const probeBody = await probeRes.text();
+        console.error(
+          `[register/submit] probe email_confirm:true → status=${probeRes.status} body=${probeBody.slice(0, 180)}`,
+        );
+        if (probeRes.ok) {
+          try {
+            const u = JSON.parse(probeBody) as { id?: string };
+            if (u.id) {
+              await fetch(`${probeUrl}/${u.id}`, { method: "DELETE", headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` } });
+            }
+          } catch { /* ignore */ }
+        }
+      } catch (probeErr) {
+        console.error("[register/submit] email_confirm:true probe threw:", (probeErr as Error)?.message);
+      }
 
       // Preserve the L2a behaviour — orphaned auth user → 409.
       const errCode = bodyJson.code ?? bodyJson.error_code;
