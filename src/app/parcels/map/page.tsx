@@ -108,6 +108,15 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
 const METRO_LINE = "metro-line";
+// Amenities — data.dubai point overlays (icon symbol layers).
+const EV_CHARGERS_SRC = "ev-chargers";
+const EV_CHARGERS_SYMBOL = "ev-chargers-symbol";
+const METRO_STATIONS_SRC = "metro-stations";
+const METRO_STATIONS_SYMBOL = "metro-stations-symbol";
+const TRAM_STATIONS_SRC = "tram-stations";
+const TRAM_STATIONS_SYMBOL = "tram-stations-symbol";
+const MARINE_STATIONS_SRC = "marine-stations";
+const MARINE_STATIONS_SYMBOL = "marine-stations-symbol";
 const SAUDI_GOV_SRC = "saudi-governorates";
 const SAUDI_GOV_LINE = "saudi-governorates-line";
 const SAUDI_GOV_FILL = "saudi-governorates-fill";
@@ -902,6 +911,9 @@ type LayersState = {
   uaeDistricts: boolean;
   ddaLandPlots: boolean; adLandPlots: boolean; omanLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
+  // Amenities — data.dubai point overlays (off by default per spec).
+  evChargers: boolean;
+  metroStations: boolean; tramStations: boolean; marineStations: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1230,7 +1242,8 @@ type LayerCategory =
   | "dda-admin"       // DDA projects, free zones, 99K plots layer
   | "dda-districts"   // individual DDA community layers (206 items)
   | "masterplans"     // 8 master plan KMLs
-  | "landplots";      // country-scale PMTiles parcel grids (AD, Oman)
+  | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
+  | "amenities";      // data.dubai point overlays (EV / transit stations)
 type LayerLockTier = "GOLD" | "PLATINUM";
 
 type LayerMeta = {
@@ -1244,7 +1257,7 @@ const LAYER_COUNTRY_ORDER: LayerCountry[] = [
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities",
 ];
 
 const COUNTRY_LABELS: Record<LayerCountry, string> = {
@@ -1261,6 +1274,7 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "masterplans": "Master Plans",
   "dda-districts": "DDA Districts",
   "landplots": "Land Plots",
+  "amenities": "Amenities",
 };
 
 // Build-once map: layer-key → metadata. Keys not in this map are treated
@@ -1277,6 +1291,11 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     ddaProjects: { country: "dubai", category: "dda-admin" },
     ddaFreeZones: { country: "dubai", category: "dda-admin" },
     ddaLandPlots: { country: "dubai", category: "dda-admin", tier: "GOLD" },
+    // ── Dubai — amenities (data.dubai point overlays, public open data) ──
+    evChargers: { country: "dubai", category: "amenities" },
+    metroStations: { country: "dubai", category: "amenities" },
+    tramStations: { country: "dubai", category: "amenities" },
+    marineStations: { country: "dubai", category: "amenities" },
     // ── Dubai — master plans (all locked GOLD per mockup) ──
     islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
     meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
@@ -1462,6 +1481,11 @@ function ParcelsMapPageInner() {
     adLandPlots: false,
     omanLandPlots: false,
     plotLabels: false,
+    // Amenities — data.dubai point overlays.
+    evChargers: false,
+    metroStations: false,
+    tramStations: false,
+    marineStations: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
     // No idle pre-fetch, no auto-load on map init.
@@ -1702,7 +1726,11 @@ function ParcelsMapPageInner() {
   //  attachOverlays clears the loaded set and re-loads everything that
   //  was previously on.
   // ─────────────────────────────────────────────────────────────────────
-  type LayerKind = "base" | "masterplan" | "dda";
+  type LayerKind = "base" | "masterplan" | "dda" | "point";
+  // Point overlays (kind === "point") render as MapLibre `symbol` layers
+  // backed by SDF icons (see loadAmenityIcons + public/icons/amenities/).
+  // The icon image is tinted via paint.icon-color so a single SVG can
+  // serve multiple per-feature colours (e.g. Metro per-line).
   type LayerDef = {
     key: keyof LayersState;
     kind: LayerKind;
@@ -1710,11 +1738,15 @@ function ParcelsMapPageInner() {
     url: string;
     srcId: string;
     fillId?: string;
-    lineId: string;
+    lineId?: string;
+    symbolId?: string;
     fillPaint?: maplibregl.FillLayerSpecification["paint"];
-    linePaint: maplibregl.LineLayerSpecification["paint"];
+    linePaint?: maplibregl.LineLayerSpecification["paint"];
+    symbolLayout?: maplibregl.SymbolLayerSpecification["layout"];
+    symbolPaint?: maplibregl.SymbolLayerSpecification["paint"];
     promoteId?: string;
     hoverLabel?: string; // for master plan name popup
+    pointPopupFields?: string[]; // for point hover/click popups
   };
 
   const masterPlanPaint: maplibregl.LineLayerSpecification["paint"] = {
@@ -1944,6 +1976,113 @@ function ParcelsMapPageInner() {
       { key: "residential12", kind: "masterplan", label: "Residential District",    url: "/api/layers/masterplans/residential-12", srcId: RES12_SRC,   lineId: RES12_LINE,   linePaint: masterPlanPaint, hoverLabel: "Residential District Phase I & II" },
       { key: "d11",          kind: "masterplan", label: "D11 — Parcel L/D",         url: "/api/layers/masterplans/d11-parcel-ld",  srcId: D11_SRC,     lineId: D11_LINE,     linePaint: masterPlanPaint, hoverLabel: "D11 — Parcel L/D master plan" },
       { key: "nadAlHammer",  kind: "masterplan", label: "Nad Al Hammer",            url: "/api/layers/masterplans/nad-al-hammer",  srcId: NAD_AL_HAMMER_SRC, lineId: NAD_AL_HAMMER_LINE, linePaint: masterPlanPaint, hoverLabel: "Nad Al Hammer master plan" },
+      // ── Amenities (data.dubai point overlays — kind: "point") ──
+      // EV Chargers (DEWA): teal palette colour, lightning bolt glyph.
+      {
+        key: "evChargers",
+        kind: "point",
+        label: "EV Chargers",
+        url: "/api/layers/amenities/ev-chargers",
+        srcId: EV_CHARGERS_SRC,
+        symbolId: EV_CHARGERS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-ev-charger",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
+          "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#1B4965",           // palette TEAL (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
+        },
+        pointPopupFields: [
+          "location_name", "location_address",
+          "totalnbofconnectors", "connectortype",
+        ],
+      },
+      // Metro Stations: colour driven by line_name (matches existing
+      // Metro Lines layer painting at /api/layers/metro).
+      {
+        key: "metroStations",
+        kind: "point",
+        label: "Metro Stations",
+        url: "/api/layers/amenities/metro-stations",
+        srcId: METRO_STATIONS_SRC,
+        symbolId: METRO_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-metro-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
+          "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": [
+            "match", ["get", "line_name"],
+            "Red Metro line",   "#E74C3C",
+            "Green Metro line", "#27AE60",
+            /* default — Route 2020 + future expansions */ "#9B59B6",
+          ],
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.5,
+        },
+        pointPopupFields: [
+          "location_name_english", "line_name",
+          "station_opening_date", "zone_id",
+        ],
+      },
+      // Tram Stations: amber palette colour (closest to Dubai Tram livery).
+      {
+        key: "tramStations",
+        kind: "point",
+        label: "Tram Stations",
+        url: "/api/layers/amenities/tram-stations",
+        srcId: TRAM_STATIONS_SRC,
+        symbolId: TRAM_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-tram-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
+          "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#E67E22",           // palette AMBER (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
+        },
+        pointPopupFields: [
+          "location_name_english", "line_name",
+          "station_opening_date", "zone_id",
+        ],
+      },
+      // Marine Stations: deeper teal-navy, visually distinct from EV.
+      {
+        key: "marineStations",
+        kind: "point",
+        label: "Marine Stations",
+        url: "/api/layers/amenities/marine-stations",
+        srcId: MARINE_STATIONS_SRC,
+        symbolId: MARINE_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-marine-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
+          "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#1A4D7A",           // deep navy-teal (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
+        },
+        pointPopupFields: [
+          "station_name", "route_name",
+          "valid_from", "valid_until",
+        ],
+      },
     ];
     // ── DDA districts (lazy) ──
     for (const d of DDA_LAYERS) {
@@ -1976,7 +2115,19 @@ function ParcelsMapPageInner() {
     ddaPlotHover: (() => void) | null;
     masterPlanLeave: (() => void) | null;
     masterPlanHover: ((label: string) => (e: maplibregl.MapMouseEvent) => void) | null;
-  }>({ ddaPlotHover: null, masterPlanLeave: null, masterPlanHover: null });
+    // Amenity-point hover/click factory: builds a mousemove handler
+    // bound to a layer's label + popup field list.
+    pointHover: (
+      (label: string, fields: string[]) => (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => void
+    ) | null;
+    pointLeave: (() => void) | null;
+    pointClick: (
+      (label: string, fields: string[]) => (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => void
+    ) | null;
+  }>({
+    ddaPlotHover: null, masterPlanLeave: null, masterPlanHover: null,
+    pointHover: null, pointLeave: null, pointClick: null,
+  });
 
   async function loadLayer(map: MLMap, def: LayerDef): Promise<boolean> {
     if (loadedLayersRef.current.has(def.key)) return true;
@@ -1999,7 +2150,7 @@ function ParcelsMapPageInner() {
       if (def.fillPaint && def.fillId && !map.getLayer(def.fillId)) {
         map.addLayer({ id: def.fillId, type: "fill", source: def.srcId, paint: def.fillPaint });
       }
-      if (!map.getLayer(def.lineId)) {
+      if (def.lineId && def.linePaint && !map.getLayer(def.lineId)) {
         map.addLayer({
           id: def.lineId,
           type: "line",
@@ -2010,7 +2161,23 @@ function ParcelsMapPageInner() {
             : {}),
         });
       }
-      if (def.kind === "dda") {
+      if (def.kind === "point" && def.symbolId && def.symbolLayout && !map.getLayer(def.symbolId)) {
+        map.addLayer({
+          id: def.symbolId,
+          type: "symbol",
+          source: def.srcId,
+          layout: { ...def.symbolLayout, visibility: "none" }, // toggled on by setLayerVisibility
+          paint: def.symbolPaint,
+        });
+        const h = hoverHandlersRef.current;
+        const fields = def.pointPopupFields ?? [];
+        if (h.pointHover && h.pointLeave && h.pointClick) {
+          map.on("mousemove", def.symbolId, h.pointHover(def.label, fields));
+          map.on("mouseleave", def.symbolId, h.pointLeave);
+          map.on("click", def.symbolId, h.pointClick(def.label, fields));
+        }
+      }
+      if (def.kind === "dda" && def.lineId) {
         const labelId = ddaLabelId(def.srcId);
         if (!map.getLayer(labelId)) {
           const isDark = themeRef.current === "dark";
@@ -2045,7 +2212,7 @@ function ParcelsMapPageInner() {
           map.on("mouseleave", def.lineId, h.masterPlanLeave);
         }
       }
-      if (def.kind === "masterplan" && def.hoverLabel) {
+      if (def.kind === "masterplan" && def.hoverLabel && def.lineId) {
         const h = hoverHandlersRef.current;
         if (h.masterPlanHover && h.masterPlanLeave) {
           map.on("mousemove", def.lineId, h.masterPlanHover(def.hoverLabel));
@@ -2071,8 +2238,11 @@ function ParcelsMapPageInner() {
     if (def.fillId && map.getLayer(def.fillId)) {
       map.setLayoutProperty(def.fillId, "visibility", v);
     }
-    if (map.getLayer(def.lineId)) {
+    if (def.lineId && map.getLayer(def.lineId)) {
       map.setLayoutProperty(def.lineId, "visibility", v);
+    }
+    if (def.symbolId && map.getLayer(def.symbolId)) {
+      map.setLayoutProperty(def.symbolId, "visibility", v);
     }
     if (def.kind === "dda") {
       const labelId = ddaLabelId(def.srcId);
@@ -2588,6 +2758,40 @@ function ParcelsMapPageInner() {
   }
 
 
+  // Amenity icons — SDF-rendered symbol images for the 4 point overlays.
+  // setStyle() wipes the image registry along with sources/layers, so this
+  // is called both on initial map load AND inside the theme-swap styledata
+  // handler, before attachOverlays runs the symbol-layer addLayer calls.
+  // Idempotent: skips images already registered.
+  const AMENITY_ICONS = [
+    { id: "amenity-ev-charger",     url: "/icons/amenities/ev-charger.svg" },
+    { id: "amenity-metro-station",  url: "/icons/amenities/metro.svg" },
+    { id: "amenity-tram-station",   url: "/icons/amenities/tram.svg" },
+    { id: "amenity-marine-station", url: "/icons/amenities/marine-station.svg" },
+  ] as const;
+
+  async function loadAmenityIcons(map: MLMap): Promise<void> {
+    await Promise.all(
+      AMENITY_ICONS.map(({ id, url }) => {
+        if (map.hasImage(id)) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          const img = new Image(64, 64);
+          img.onload = () => {
+            if (!map.hasImage(id)) {
+              map.addImage(id, img, { sdf: true, pixelRatio: 2 });
+            }
+            resolve();
+          };
+          img.onerror = () => {
+            console.warn(`[amenity-icon] failed to load ${url}`);
+            resolve();
+          };
+          img.src = url;
+        });
+      }),
+    );
+  }
+
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
   async function attachOverlays(map: MLMap) {
@@ -2699,8 +2903,72 @@ function ParcelsMapPageInner() {
             )
             .addTo(map);
         };
-      hoverHandlersRef.current = { ddaPlotHover, masterPlanLeave, masterPlanHover };
 
+      // Generic amenity-point hover/click. Builds a small card with
+      // header (layer label) + bold first field as title + remaining
+      // fields as label/value rows. Click drops a pinned popup with a
+      // close button; hover uses the shared closeButton=false popup.
+      const renderPointCard = (label: string, fields: string[], props: Record<string, unknown>) => {
+        const titleField = fields[0];
+        const titleValue = String(props[titleField] ?? "—");
+        const rows = fields
+          .slice(1)
+          .filter((k) => props[k] != null && String(props[k]).trim() !== "")
+          .map(
+            (k) =>
+              `<div style="display:flex;justify-content:space-between;gap:8px;font-size:10px;line-height:1.3;margin-top:2px">
+                 <span style="opacity:0.6;text-transform:capitalize">${k.replace(/_/g, " ")}</span>
+                 <span style="color:#1A1A2E;font-weight:500;text-align:right;max-width:180px">${String(props[k])}</span>
+               </div>`,
+          )
+          .join("");
+        return `
+          <div style="min-width:200px;max-width:280px">
+            <div style="font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:#C8A96E;opacity:0.85">${label}</div>
+            <div style="font-family:Georgia,serif;font-weight:700;font-size:13px;color:#1A1A2E;margin-top:2px;line-height:1.2">${titleValue}</div>
+            ${rows}
+          </div>`;
+      };
+      const pointHover = (label: string, fields: string[]) =>
+        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          map.getCanvas().style.cursor = "pointer";
+          popup
+            .setLngLat(e.lngLat)
+            .setHTML(renderPointCard(label, fields, (f.properties ?? {}) as Record<string, unknown>))
+            .addTo(map);
+        };
+      const pointLeave = () => {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      };
+      // Click uses a separate pinned popup so the user can read the
+      // address / connector list without holding cursor steady. Tracked
+      // on a closure-scoped ref so re-clicking another point swaps it.
+      let pinnedPopup: maplibregl.Popup | null = null;
+      const pointClick = (label: string, fields: string[]) =>
+        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f || !f.geometry || f.geometry.type !== "Point") return;
+          if (pinnedPopup) pinnedPopup.remove();
+          pinnedPopup = new maplibregl.Popup({
+            closeButton: true,
+            closeOnClick: true,
+            offset: 10,
+            className: "zaahi-popup",
+          })
+            .setLngLat(f.geometry.coordinates as [number, number])
+            .setHTML(renderPointCard(label, fields, (f.properties ?? {}) as Record<string, unknown>))
+            .addTo(map);
+        };
+
+      hoverHandlersRef.current = {
+        ddaPlotHover, masterPlanLeave, masterPlanHover,
+        pointHover, pointLeave, pointClick,
+      };
+
+      await loadAmenityIcons(map);
       await attachOverlays(map);
 
       // ── ZAAHI Plots — real listings from /api/parcels/map.
@@ -2969,6 +3237,7 @@ function ParcelsMapPageInner() {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
       map.keyboard.enable();
+      await loadAmenityIcons(map);
       await attachOverlays(map);
       // ZAAHI plots also need to be re-attached after a basemap swap
       // (maplibre's source registry was wiped). The loader is idempotent
@@ -3777,6 +4046,16 @@ function ParcelsMapPageInner() {
         .zaahi-popup .maplibregl-popup-tip {
           border-top-color: rgba(200, 169, 110, 0.4) !important;
           border-bottom-color: rgba(200, 169, 110, 0.4) !important;
+        }
+        .zaahi-popup .maplibregl-popup-close-button {
+          color: ${GOLD} !important;
+          font-size: 18px !important;
+          padding: 2px 6px !important;
+          opacity: 0.7;
+          transition: opacity 150ms ease, color 150ms ease;
+        }
+        .zaahi-popup .maplibregl-popup-close-button:hover {
+          opacity: 1;
         }
       `}</style>
       {zaahiHover && (
