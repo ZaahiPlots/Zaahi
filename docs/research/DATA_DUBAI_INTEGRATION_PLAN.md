@@ -759,50 +759,62 @@ threshold; if zero land, Wave 3 stays Wave 2 + polish.
 
 ---
 
-## 4. Phase 4 — Missing-from-dump: top-5 next downloads
+## 4. Phase 4 — Missing-from-dump: priority next downloads
 
 Looking at what the 33 files don't cover, the founder's next
-batch should prioritise:
+acquisition batch should prioritise the items below. Each one
+carries an **acquisition channel** — three routes:
 
-1. **Metro / tram / bus line geometry (RTA).** We have stations
-   with lat/lng (55 metro + 11 tram + 59 marine = 125 points)
-   but `metro_lines.json` is just line names. Need the LineString
-   geometry to draw the Red/Green/Route 2020 lines on the map.
-   Look for `rta_metro_lines-open` *with geometry export*.
-2. **DM zoning + community boundaries shapefile.** We use
-   `area_name_en` everywhere but have no canonical polygon
-   geometry for area boundaries beyond our DDA community layer.
-   If `data.dubai` exposes Dubai Municipality zoning polygons,
-   that's the missing piece for the `SalesByArea` choropleth.
-3. **Parcel-to-buildings mapping table.** `building_id ↔
-   parcel_id` lookup — the single hardest gap in the current
-   dump. Either a DLD-published cross-reference table or a
-   per-building parcel-id attribute. **ASK DLD AT ADIS.**
-4. **DSC population by community.** `dsc_population_by_community-open`
-   gives demographic density per community — feeds Feasibility's
-   demand model and unlocks "demographic context" parcel
-   detail panels.
-5. **KHDA private-schools + DHA hospitals (geocoded).** Amenity
-   layer for buyer-facing surfaces: "3 schools, 2 hospitals
-   within 1 km." Family-buyer differentiator. Both should be
-   on data.dubai by issuer.
+- **PORTAL** — search the catalogue at `data.dubai.ae`; if the
+  slug exists, download direct. Confirm the exact slug on the
+  portal (slugs cited here are the founder's best-guess naming
+  convention from the 33 files already obtained — not verified
+  URLs).
+- **ISSUER** — not in `data.dubai` catalogue (or not at the
+  resolution we need); request from the issuer's own portal
+  (RTA / DSC / KHDA / DHA / DTCM) — most have open-data sections
+  parallel to data.dubai.
+- **ADIS-ASK** — face-to-face request at the issuer's stand
+  during ADIS 2026 (13-15 May); these are typically registry-
+  internal cross-reference tables that aren't published in any
+  open-data catalogue, and need a relationship before release.
 
-**Secondary (Wave 2-3 timing):**
+### Primary (Wave 1 unblockers)
 
-6. **DEWA `electricity_new_connection-open` + `water_new_connection-open`**
-   (still missing from the disk dump) — district-level
-   connection-activity heat for the Feasibility utility-load tab.
-7. **DTCM classified hotels** — geocoded hotel locations for
-   hospitality-feasibility plots.
-8. **A `lkp_usages` table** for the `building_usages.usage_id`
-   FK — without this we can't map numeric usage codes to
-   human-readable labels on the building floor data.
-9. **An `lkp_areas` table** (or a community-polygon GeoJSON keyed
-   on `area_id`) — to disambiguate `area_id` integers when joining.
-10. **DLD-published owner anonymisation key** — the dump
-    correctly strips `owner_id`; if a derivative join is ever
-    needed (post-cohort PDPL with explicit consent), this is
-    the next ask.
+| # | Dataset | Why needed | Channel | Slug / where to look |
+|---|---|---|---|---|
+| 1 | **Metro / tram line geometry (LineString)** | We have 55 metro + 11 tram + 59 marine stations as points, but `metro_lines.json` is metadata-only (2 rows, no geometry). Required to draw Red / Green / Route 2020 lines on the map alongside the station overlays from §2.6. Wave 1. | PORTAL → ISSUER fallback | Try `rta_metro_lines-open` on data.dubai; if metadata-only there too, request the GIS export from RTA's open-data portal directly |
+| 2 | **DM community / zoning polygon shapefile** | `transactions` / `land_registry` / `valuation` all key on `area_name_en`. We need the matching polygon geometry to render the `SalesByArea` choropleth (§2.2). Our existing DDA community PMTiles layer may cover this — needs a 20-minute name-string match check first. If gaps, request from Dubai Municipality. | PORTAL → ISSUER fallback | Try `dm_community_boundaries-open` / `dubai_zoning_areas` on data.dubai; fallback to DM's GIS portal |
+| 3 | **Parcel → buildings cross-reference** | `building_id ↔ parcel_id` mapping — the single hardest gap in the dump. `building_floor_level_information` has 1.05 M floor records but no link back to our 556 k parcels. Required for Wave 2's Feasibility v6 realised-usage upgrade. | **ADIS-ASK** | DLD does not publish this in any open-data slug. Ask at DLD's ADIS stand whether the registry has a parcel-buildings join table that can be shared under a partnership MoU. Fallback: build via spatial overlay (slow) |
+| 4 | **DSC population by community** | Demographic density per community for Feasibility's demand model + parcel-page "demographic context" surface. Joins on the same `area_name_en` as transactions. | PORTAL → ISSUER fallback | Try `dsc_population_by_community-open` on data.dubai; fallback to Dubai Statistics Center (dsc.gov.ae) |
+| 5 | **KHDA schools + DHA hospitals (geocoded)** | Amenity overlay for parcel-detail "X schools / Y hospitals within 1 km" — family-buyer differentiator. KHDA publishes the school registry but the lat/lng version is sometimes locked. DHA hospitals follow the same pattern. | ISSUER | KHDA open-data portal for schools (`khda_private_schools`); DHA open-data portal for hospitals (`dha_hospitals`). Cross-check whether either ships on data.dubai with geometry |
+
+### Secondary (Wave 2-3 timing)
+
+| # | Dataset | Why needed | Channel | Slug / where to look |
+|---|---|---|---|---|
+| 6 | **DEWA electricity + water new-connection counts** | District-level connection-activity heat for the Feasibility utility-load tab. Identified in the prior inventory pass; still absent from the 33-file dump. | PORTAL | `electricity_new_connection-open` + `water_new_connection-open` on data.dubai |
+| 7 | **DTCM classified hotels (geocoded)** | Hospitality-feasibility plot context: nearest hotel cluster, room-supply density. Niche but unlocks the hotel-development persona. | ISSUER | DTCM open-data section (dtcm.gov.ae); search slug `dtcm_classified_hotels` on data.dubai too |
+| 8 | **`lkp_usages` lookup table** | The dump ships `building_usages.usage_id` (integer FK) but no lookup table to map IDs → human-readable usage labels. Until this lands, the building_usages file is unusable for any user-facing surface. | **ADIS-ASK** | Not catalogued on data.dubai; this is the matching fixture to `lkp_transaction_groups` / `lkp_transaction_procedures` (which are shipped). Ask DLD to release |
+| 9 | **`lkp_areas` lookup (or area-id keyed polygons)** | Same problem as #8 but for `area_id`. We use `area_name_en` as the join key today, but a numeric-id lookup (or better, an `area_id` keyed polygon GeoJSON) removes a fragile string match. | **ADIS-ASK** + PORTAL retry | Not in dump; ask DLD or check whether DM zoning polygons (#2) carry an area_id attribute |
+| 10 | **DLD owner anonymisation / consent-join key** | The dump correctly strips `owner_id` for PDPL. If we ever build owner-side surfaces (e.g. "all plots owned by user X" via consent), this is the join fixture. Not a Wave 1-3 need but flagged for completeness. | **ADIS-ASK** | DLD registry-internal; partnership MoU required |
+
+### Notes on this list
+
+- **Items 1, 2, 4, 6** are routine portal searches; can be done
+  remote post-ADIS without face-time.
+- **Items 3, 8, 9, 10** all need DLD relationship. Bundle them
+  into one ADIS conversation rather than scattering asks.
+- **Items 5, 7** are issuer-portal jobs; budget 1 hour total
+  to navigate the four sub-portals (KHDA, DHA, DTCM, RTA).
+- **No URLs are cited as verified** — every slug above is the
+  founder's best guess from the 33-file naming convention. The
+  founder will need to confirm each slug on data.dubai's actual
+  catalogue search before downloading. This is honest gap-flagging,
+  not fabrication: the catalogue's URL scheme changes more often
+  than the dataset slugs do, and citing a URL we haven't tested
+  would risk sending the founder to a 404 during a time-pressured
+  pre-ADIS prep.
 
 ---
 
