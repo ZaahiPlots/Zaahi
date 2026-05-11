@@ -2133,6 +2133,15 @@ function ParcelsMapPageInner() {
             : {}),
         });
       }
+      if (def.kind === "point" && def.circleId && def.circlePaint && !map.getLayer(def.circleId)) {
+        map.addLayer({
+          id: def.circleId,
+          type: "circle",
+          source: def.srcId,
+          paint: def.circlePaint,
+          layout: { visibility: "none" }, // toggled on by setLayerVisibility
+        });
+      }
       if (def.kind === "dda" && def.lineId) {
         const labelId = ddaLabelId(def.srcId);
         if (!map.getLayer(labelId)) {
@@ -2196,6 +2205,9 @@ function ParcelsMapPageInner() {
     }
     if (def.lineId && map.getLayer(def.lineId)) {
       map.setLayoutProperty(def.lineId, "visibility", v);
+    }
+    if (def.circleId && map.getLayer(def.circleId)) {
+      map.setLayoutProperty(def.circleId, "visibility", v);
     }
     if (def.kind === "dda") {
       const labelId = ddaLabelId(def.srcId);
