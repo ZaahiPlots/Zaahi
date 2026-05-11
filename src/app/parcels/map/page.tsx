@@ -108,15 +108,15 @@ const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
 const METRO_LINE = "metro-line";
-// Amenities — data.dubai point overlays (circle layers, no fill/line).
+// Amenities — data.dubai point overlays (icon symbol layers).
 const EV_CHARGERS_SRC = "ev-chargers";
-const EV_CHARGERS_CIRCLE = "ev-chargers-circle";
+const EV_CHARGERS_SYMBOL = "ev-chargers-symbol";
 const METRO_STATIONS_SRC = "metro-stations";
-const METRO_STATIONS_CIRCLE = "metro-stations-circle";
+const METRO_STATIONS_SYMBOL = "metro-stations-symbol";
 const TRAM_STATIONS_SRC = "tram-stations";
-const TRAM_STATIONS_CIRCLE = "tram-stations-circle";
+const TRAM_STATIONS_SYMBOL = "tram-stations-symbol";
 const MARINE_STATIONS_SRC = "marine-stations";
-const MARINE_STATIONS_CIRCLE = "marine-stations-circle";
+const MARINE_STATIONS_SYMBOL = "marine-stations-symbol";
 const SAUDI_GOV_SRC = "saudi-governorates";
 const SAUDI_GOV_LINE = "saudi-governorates-line";
 const SAUDI_GOV_FILL = "saudi-governorates-fill";
@@ -1727,11 +1727,10 @@ function ParcelsMapPageInner() {
   //  was previously on.
   // ─────────────────────────────────────────────────────────────────────
   type LayerKind = "base" | "masterplan" | "dda" | "point";
-  // Point overlays (kind === "point") can render either as a MapLibre
-  // `circle` layer (carry circleId + circlePaint) or as a `symbol` layer
-  // backed by an SDF icon (carry symbolId + symbolLayout + symbolPaint).
-  // The two are mutually exclusive per LayerDef; loadLayer picks the
-  // branch based on which fields are populated.
+  // Point overlays (kind === "point") render as MapLibre `symbol` layers
+  // backed by SDF icons (see loadAmenityIcons + public/icons/amenities/).
+  // The icon image is tinted via paint.icon-color so a single SVG can
+  // serve multiple per-feature colours (e.g. Metro per-line).
   type LayerDef = {
     key: keyof LayersState;
     kind: LayerKind;
@@ -1740,11 +1739,9 @@ function ParcelsMapPageInner() {
     srcId: string;
     fillId?: string;
     lineId?: string;
-    circleId?: string;
     symbolId?: string;
     fillPaint?: maplibregl.FillLayerSpecification["paint"];
     linePaint?: maplibregl.LineLayerSpecification["paint"];
-    circlePaint?: maplibregl.CircleLayerSpecification["paint"];
     symbolLayout?: maplibregl.SymbolLayerSpecification["layout"];
     symbolPaint?: maplibregl.SymbolLayerSpecification["paint"];
     promoteId?: string;
@@ -1980,21 +1977,25 @@ function ParcelsMapPageInner() {
       { key: "d11",          kind: "masterplan", label: "D11 — Parcel L/D",         url: "/api/layers/masterplans/d11-parcel-ld",  srcId: D11_SRC,     lineId: D11_LINE,     linePaint: masterPlanPaint, hoverLabel: "D11 — Parcel L/D master plan" },
       { key: "nadAlHammer",  kind: "masterplan", label: "Nad Al Hammer",            url: "/api/layers/masterplans/nad-al-hammer",  srcId: NAD_AL_HAMMER_SRC, lineId: NAD_AL_HAMMER_LINE, linePaint: masterPlanPaint, hoverLabel: "Nad Al Hammer master plan" },
       // ── Amenities (data.dubai point overlays — kind: "point") ──
-      // EV Chargers (DEWA): teal palette colour, no per-feature paint.
+      // EV Chargers (DEWA): teal palette colour, lightning bolt glyph.
       {
         key: "evChargers",
         kind: "point",
         label: "EV Chargers",
         url: "/api/layers/amenities/ev-chargers",
         srcId: EV_CHARGERS_SRC,
-        circleId: EV_CHARGERS_CIRCLE,
-        circlePaint: {
-          "circle-color": "#1B4965",         // palette TEAL
-          "circle-radius": 4,
-          "circle-stroke-color": "#FFFFFF",
-          "circle-stroke-width": 1.2,
-          "circle-stroke-opacity": 0.85,
-          "circle-opacity": 0.92,
+        symbolId: EV_CHARGERS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-ev-charger",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
+          "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#1B4965",           // palette TEAL (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
         },
         pointPopupFields: [
           "location_name", "location_address",
@@ -2009,19 +2010,23 @@ function ParcelsMapPageInner() {
         label: "Metro Stations",
         url: "/api/layers/amenities/metro-stations",
         srcId: METRO_STATIONS_SRC,
-        circleId: METRO_STATIONS_CIRCLE,
-        circlePaint: {
-          "circle-color": [
+        symbolId: METRO_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-metro-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
+          "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": [
             "match", ["get", "line_name"],
             "Red Metro line",   "#E74C3C",
             "Green Metro line", "#27AE60",
             /* default — Route 2020 + future expansions */ "#9B59B6",
           ],
-          "circle-radius": 5,
-          "circle-stroke-color": "#FFFFFF",
-          "circle-stroke-width": 1.5,
-          "circle-stroke-opacity": 0.95,
-          "circle-opacity": 0.95,
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.5,
         },
         pointPopupFields: [
           "location_name_english", "line_name",
@@ -2035,14 +2040,18 @@ function ParcelsMapPageInner() {
         label: "Tram Stations",
         url: "/api/layers/amenities/tram-stations",
         srcId: TRAM_STATIONS_SRC,
-        circleId: TRAM_STATIONS_CIRCLE,
-        circlePaint: {
-          "circle-color": "#E67E22",         // palette AMBER
-          "circle-radius": 4,
-          "circle-stroke-color": "#FFFFFF",
-          "circle-stroke-width": 1.2,
-          "circle-stroke-opacity": 0.9,
-          "circle-opacity": 0.95,
+        symbolId: TRAM_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-tram-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
+          "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#E67E22",           // palette AMBER (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
         },
         pointPopupFields: [
           "location_name_english", "line_name",
@@ -2056,14 +2065,18 @@ function ParcelsMapPageInner() {
         label: "Marine Stations",
         url: "/api/layers/amenities/marine-stations",
         srcId: MARINE_STATIONS_SRC,
-        circleId: MARINE_STATIONS_CIRCLE,
-        circlePaint: {
-          "circle-color": "#1A4D7A",
-          "circle-radius": 4,
-          "circle-stroke-color": "#FFFFFF",
-          "circle-stroke-width": 1.2,
-          "circle-stroke-opacity": 0.9,
-          "circle-opacity": 0.95,
+        symbolId: MARINE_STATIONS_SYMBOL,
+        symbolLayout: {
+          "icon-image": "amenity-marine-station",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
+          "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
+          "icon-anchor": "center",
+        },
+        symbolPaint: {
+          "icon-color": "#1A4D7A",           // deep navy-teal (unchanged)
+          "icon-opacity": 0.95,
+          "icon-halo-color": "#FFFFFF",
+          "icon-halo-width": 1.2,
         },
         pointPopupFields: [
           "station_name", "route_name",
@@ -2148,22 +2161,6 @@ function ParcelsMapPageInner() {
             : {}),
         });
       }
-      if (def.kind === "point" && def.circleId && def.circlePaint && !map.getLayer(def.circleId)) {
-        map.addLayer({
-          id: def.circleId,
-          type: "circle",
-          source: def.srcId,
-          paint: def.circlePaint,
-          layout: { visibility: "none" }, // toggled on by setLayerVisibility
-        });
-        const h = hoverHandlersRef.current;
-        const fields = def.pointPopupFields ?? [];
-        if (h.pointHover && h.pointLeave && h.pointClick) {
-          map.on("mousemove", def.circleId, h.pointHover(def.label, fields));
-          map.on("mouseleave", def.circleId, h.pointLeave);
-          map.on("click", def.circleId, h.pointClick(def.label, fields));
-        }
-      }
       if (def.kind === "point" && def.symbolId && def.symbolLayout && !map.getLayer(def.symbolId)) {
         map.addLayer({
           id: def.symbolId,
@@ -2243,9 +2240,6 @@ function ParcelsMapPageInner() {
     }
     if (def.lineId && map.getLayer(def.lineId)) {
       map.setLayoutProperty(def.lineId, "visibility", v);
-    }
-    if (def.circleId && map.getLayer(def.circleId)) {
-      map.setLayoutProperty(def.circleId, "visibility", v);
     }
     if (def.symbolId && map.getLayer(def.symbolId)) {
       map.setLayoutProperty(def.symbolId, "visibility", v);
