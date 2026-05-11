@@ -1702,7 +1702,12 @@ function ParcelsMapPageInner() {
   //  attachOverlays clears the loaded set and re-loads everything that
   //  was previously on.
   // ─────────────────────────────────────────────────────────────────────
-  type LayerKind = "base" | "masterplan" | "dda";
+  type LayerKind = "base" | "masterplan" | "dda" | "point";
+  // Point overlays (kind === "point") render as MapLibre `circle` layers
+  // and do not have a stroke/fill polygon. lineId is optional so the
+  // existing kind === "base" | "masterplan" | "dda" branches continue
+  // to require lineId, while point layers carry circleId + circlePaint
+  // instead.
   type LayerDef = {
     key: keyof LayersState;
     kind: LayerKind;
@@ -1710,11 +1715,14 @@ function ParcelsMapPageInner() {
     url: string;
     srcId: string;
     fillId?: string;
-    lineId: string;
+    lineId?: string;
+    circleId?: string;
     fillPaint?: maplibregl.FillLayerSpecification["paint"];
-    linePaint: maplibregl.LineLayerSpecification["paint"];
+    linePaint?: maplibregl.LineLayerSpecification["paint"];
+    circlePaint?: maplibregl.CircleLayerSpecification["paint"];
     promoteId?: string;
     hoverLabel?: string; // for master plan name popup
+    pointPopupFields?: string[]; // for point hover/click popups
   };
 
   const masterPlanPaint: maplibregl.LineLayerSpecification["paint"] = {
@@ -1999,7 +2007,7 @@ function ParcelsMapPageInner() {
       if (def.fillPaint && def.fillId && !map.getLayer(def.fillId)) {
         map.addLayer({ id: def.fillId, type: "fill", source: def.srcId, paint: def.fillPaint });
       }
-      if (!map.getLayer(def.lineId)) {
+      if (def.lineId && def.linePaint && !map.getLayer(def.lineId)) {
         map.addLayer({
           id: def.lineId,
           type: "line",
@@ -2010,7 +2018,7 @@ function ParcelsMapPageInner() {
             : {}),
         });
       }
-      if (def.kind === "dda") {
+      if (def.kind === "dda" && def.lineId) {
         const labelId = ddaLabelId(def.srcId);
         if (!map.getLayer(labelId)) {
           const isDark = themeRef.current === "dark";
@@ -2045,7 +2053,7 @@ function ParcelsMapPageInner() {
           map.on("mouseleave", def.lineId, h.masterPlanLeave);
         }
       }
-      if (def.kind === "masterplan" && def.hoverLabel) {
+      if (def.kind === "masterplan" && def.hoverLabel && def.lineId) {
         const h = hoverHandlersRef.current;
         if (h.masterPlanHover && h.masterPlanLeave) {
           map.on("mousemove", def.lineId, h.masterPlanHover(def.hoverLabel));
@@ -2071,7 +2079,7 @@ function ParcelsMapPageInner() {
     if (def.fillId && map.getLayer(def.fillId)) {
       map.setLayoutProperty(def.fillId, "visibility", v);
     }
-    if (map.getLayer(def.lineId)) {
+    if (def.lineId && map.getLayer(def.lineId)) {
       map.setLayoutProperty(def.lineId, "visibility", v);
     }
     if (def.kind === "dda") {
