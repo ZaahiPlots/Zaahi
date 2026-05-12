@@ -29,3 +29,24 @@
 **Приоритет:** после Phase 1 User Dashboards + Abu Dhabi migration. Не брать раньше.
 
 **Context added:** 2026-04-16
+
+---
+
+## `scripts/update-tiles.sh` — stale AD paths
+
+**Задача:** обновить пути в `update-tiles.sh` чтобы соответствовали текущему output `prepare-tiles.ts` (split по municipality).
+
+**Что не так:**
+- Script Step 4 строит `public/tiles/ad-land.pmtiles` из `data/tiles/ad-plots.geojson.nl` (singular).
+- `prepare-tiles.ts` давно пишет split: `ad-plots-adm.geojson.nl` + `ad-plots-other.geojson.nl`.
+- Runtime в `src/app/parcels/map/page.tsx` (lines 2982-2983) ожидает `ad-land-adm.pmtiles` + `ad-land-other.pmtiles`.
+- Поэтому `./scripts/update-tiles.sh` как есть НЕ обновляет реально задеплоенные AD PMTiles. Step 5 commit message также ссылается на несуществующий `data/tiles/ad-plots.geojson.nl` (wc -l fails silently).
+
+**Что починить:**
+- Заменить один `tippecanoe -o ad-land.pmtiles ... ad-plots.geojson.nl` на ДВА вызова (ADM + Other) с правильными парами вход/выход.
+- Обновить commit-message expansion: `wc -l < data/tiles/ad-plots-adm.geojson.nl` + `... -other.geojson.nl`.
+- (Опционально) добавить Oman tippecanoe step — сейчас отсутствует в Step 4.
+
+**Приоритет:** non-urgent, post-summit. Сегодня AD heights пересобраны вручную с правильными путями.
+
+**Context added:** 2026-05-13
