@@ -57,3 +57,25 @@
 **Приоритет:** non-urgent, post-summit. Сегодня AD heights пересобраны вручную с правильными путями и magic-check.
 
 **Context added:** 2026-05-13
+
+---
+
+## ZAAHI Signature landmark coverage check — Reem / Maryah / Saadiyat towers
+
+**Задача:** убедиться что реальные high-rise landmarks в AD островах входят в 114-plot ZAAHI Signature curated set, либо запланировать добавление.
+
+**Context:** AD heights fix (commit 77f7b6b, shipped 2026-05-13) корректно даёт mid-rise heights (~30m default commercial) для plots на Saadiyat / Reem / Maryah / Yas / Jubail islands, потому что AD ArcGIS не отдаёт `DevCode_FAR`/`MaxGFA` для этих new-development zones. Это означает: реальные landmark towers рендерятся под-tall во встроенных PMTiles. Решение по архитектуре — landmarks покрываются отдельно через ZAAHI Signature 114 curated plots в `loadZaahiPlots`.
+
+**Что проверить:**
+- **Al Reem Island:** Sun Tower (74 floors ≈ 263m), Sky Tower (74 floors ≈ 252m), Gate Towers (66 floors), Marina Sunset / Marina Bay (~280-310m в комплексе). Включены ли в 114 ZAAHI plots?
+- **Al Maryah Island:** Burj Mohammed Bin Rashid (88 floors / 381m), Sky Tower Al Maryah, The Galleria, Cleveland Clinic Abu Dhabi (~120m).
+- **Saadiyat Island:** Louvre Abu Dhabi (~40m), Guggenheim AD (planned), Manarat Al Saadiyat. Most low-mid rise (cultural district), not towers.
+- **Yas Island:** Yas Marina Hotel (~50m, signature curved form), Ferrari World, Yas Mall — landmarks but mostly mid-rise.
+
+**Если landmark отсутствует:** добавить как ZAAHI Signature plot через стандартный процесс (см. CLAUDE.md "Правила добавления участков"). Зданий ~10-15, по 1 за раз с подтверждением founder.
+
+**Если landmark уже есть в 114 plots:** verify рендерится корректно с правильной геометрией footprint + height (через ZAAHI_BUILDINGS_3D layer с opacity=1, separate от PMTiles AD layer).
+
+**Приоритет:** post-summit. Не блокер для AD summit demo — сегодня визуально AD area выглядит реалистично.
+
+**Context added:** 2026-05-13
