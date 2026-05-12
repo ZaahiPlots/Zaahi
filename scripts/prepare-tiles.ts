@@ -299,20 +299,12 @@ function processAdDir(
 
       let height = 0;
       if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT") {
-        // PRIMARY: GFA-derived per-plot (mirrors Dubai fallback). Works on ADM
-        // mainland where DevCode_MaxGFA + CALCULATEDAREA are populated (~82%).
-        if (maxGfa > 0 && areaSqm > 0) {
+        const heightM = parseFloat(maxHeightStr);
+        height = !isNaN(heightM) && heightM > 0 && heightM < 500 ? heightM : 0;
+        if (height <= 0 && maxGfa > 0 && areaSqm > 0) {
           height = Math.ceil(maxGfa / (areaSqm * 0.6)) * 3.5;
         }
-        // FALLBACK: land-use defaults (shared helper). Catches Saadiyat / Reem /
-        // Al Ain / Western Region where DevCode_MaxGFA is missing.
         if (height <= 0) height = defaultHeight(landUse);
-        // CEILING: MAXALLOWABLEHEIGHTS is the regulatory zoning cap, not the
-        // target. Clamp unrealistically tall GFA-derived heights to it.
-        const maxAllowableM = parseFloat(maxHeightStr);
-        if (!isNaN(maxAllowableM) && maxAllowableM > 0 && maxAllowableM < 500 && height > maxAllowableM) {
-          height = maxAllowableM;
-        }
         if (height > 300) height = 300;
       }
 
