@@ -12,6 +12,9 @@
 //               • brokerNotes
 //               • nextFollowUpAt
 //               • ownerContact.notes (other ownerContact fields preserved)
+//               • conflictedFields (third-party userIds + values — see G8
+//                 in diagnostic-day12.md §6.3; recipient still sees the
+//                 boolean conflictsWithOthers, just not who/what)
 //               • activity[] (kept empty — recipients see only their own SHARED row)
 //             PLUS:
 //               • sharedBy: { id, nickname }
@@ -64,7 +67,7 @@ export interface VaultEntryFull {
 export interface VaultEntryRecipientView
   extends Omit<
     VaultEntryFull,
-    "brokerNotes" | "nextFollowUpAt" | "ownerContact"
+    "brokerNotes" | "nextFollowUpAt" | "ownerContact" | "conflictedFields"
   > {
   ownerContact: Record<string, unknown> | null; // notes field stripped
   sharedBy: { id: string; nickname: string | null };
@@ -134,7 +137,12 @@ export function serializeVaultEntryForRecipient(
     promotedAt: full.promotedAt,
     promotedParcelId: full.promotedParcelId,
     conflictsWithOthers: full.conflictsWithOthers,
-    conflictedFields: full.conflictedFields,
+    // conflictedFields INTENTIONALLY OMITTED for recipients — it carries
+    // { userId, value } tuples for every participant on the plot, which
+    // would expose third-party userIds + prices to a share recipient who
+    // never authorised that visibility (diagnostic-day12.md §6.3 G8).
+    // Recipient still sees the boolean conflictsWithOthers so the banner
+    // renders; only the comparison data is gated.
     createdAt: full.createdAt,
     updatedAt: full.updatedAt,
     sharedBy,
