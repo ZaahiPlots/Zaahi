@@ -8,6 +8,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { AddPlotWizard } from "@/app/parcels/map/AddPlotWizard";
+import { useEscapeClose } from "@/app/parcels/map/useEscapeClose";
 import { VaultListItem } from "./VaultListItem";
 import { ConflictsTab } from "./ConflictsTab";
 import { EmptyState } from "./EmptyState";
@@ -35,12 +37,26 @@ export function VaultListView({ selfUserId }: Props) {
   const [stageFilter, setStageFilter] = useState<VaultStage | "">("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  // Bumped on every wizard success so OwnedList re-fetches without us
+  // needing an imperative ref handle.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showWizard, setShowWizard] = useState(false);
 
   // Debounce search input — typing shouldn't fire a request per keystroke.
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 280);
     return () => clearTimeout(t);
   }, [search]);
+
+  function openWizard() {
+    setShowWizard(true);
+  }
+
+  function handleWizardSuccess() {
+    setShowWizard(false);
+    setTab("mine");
+    setRefreshKey((k) => k + 1);
+  }
 
   return (
     <div style={containerStyle}>
@@ -51,6 +67,9 @@ export function VaultListView({ selfUserId }: Props) {
             Personal plot tracker. Private to you unless you choose to share.
           </p>
         </div>
+        <button onClick={openWizard} style={addButtonStyle} aria-label="Add a plot to your vault">
+          + Add to vault
+        </button>
       </div>
 
       <div style={tabsRowStyle}>
@@ -106,12 +125,62 @@ export function VaultListView({ selfUserId }: Props) {
             stageFilter={stageFilter}
             search={debouncedSearch}
             selfUserId={selfUserId}
+            refreshKey={refreshKey}
+            onAddClick={openWizard}
           />
         )}
         {tab === "shared" && <SharedList search={debouncedSearch} />}
         {tab === "conflicts" && (
           <ConflictsTab selfUserId={selfUserId} onPriceSaved={() => {}} />
         )}
+      </div>
+
+      {showWizard && (
+        <AddPlotWizardModal
+          onCreated={handleWizardSuccess}
+          onCancel={() => setShowWizard(false)}
+          onExistingFound={handleWizardSuccess}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Add Plot Wizard modal wrapper ──
+//
+// AddPlotWizard renders its 3-step body without a backdrop — this wrapper
+// adds the dialog chrome (glassmorphism backdrop, centered card, Esc close).
+
+function AddPlotWizardModal({
+  onCreated,
+  onCancel,
+  onExistingFound,
+}: {
+  onCreated: (entryId: string) => void;
+  onCancel: () => void;
+  onExistingFound: (existingId: string) => void;
+}) {
+  useEscapeClose(onCancel);
+  return (
+    <div onClick={onCancel} style={modalBackdropStyle}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={modalPanelStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Add a plot to your vault"
+      >
+        <div style={modalHeaderStyle}>
+          <div style={modalTinyLabelStyle}>Add a plot to your vault</div>
+          <button onClick={onCancel} style={modalCloseButtonStyle} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <AddPlotWizard
+          onCreated={onCreated}
+          onCancel={onCancel}
+          onExistingFound={onExistingFound}
+        />
       </div>
     </div>
   );
@@ -123,10 +192,14 @@ function OwnedList({
   stageFilter,
   search,
   selfUserId,
+  refreshKey,
+  onAddClick,
 }: {
   stageFilter: VaultStage | "";
   search: string;
   selfUserId: string;
+  refreshKey: number;
+  onAddClick: () => void;
 }) {
   const [items, setItems] = useState<VaultEntrySummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -167,10 +240,10 @@ function OwnedList({
     [stageFilter, search],
   );
 
-  // Reload on filter/search change.
+  // Reload on filter/search change AND when refreshKey bumps (wizard success).
   useEffect(() => {
     void load(null, true);
-  }, [load]);
+  }, [load, refreshKey]);
 
   function handlePriceSaved(id: string, newPriceFils: string | null) {
     setItems((prev) =>
@@ -188,7 +261,7 @@ function OwnedList({
   }
   if (items.length === 0) {
     if (stageFilter || search) return <EmptyState kind="filtered-empty" />;
-    return <EmptyState kind="no-entries" />;
+    return <EmptyState kind="no-entries" onAddClick={onAddClick} />;
   }
 
   return (
@@ -287,6 +360,87 @@ const containerStyle: React.CSSProperties = {
 
 const headerStyle: React.CSSProperties = {
   marginBottom: 18,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-end",
+  gap: 16,
+};
+
+const addButtonStyle: React.CSSProperties = {
+  background: "rgba(200, 169, 110, 0.15)",
+  border: `1px solid ${GOLD}`,
+  color: GOLD,
+  borderRadius: 8,
+  padding: "10px 18px",
+  fontSize: 12,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  whiteSpace: "nowrap",
+  transition: "background 150ms ease, border-color 150ms ease",
+};
+
+const modalBackdropStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0, 0, 0, 0.6)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 50,
+  padding: 20,
+};
+
+const modalPanelStyle: React.CSSProperties = {
+  background: "rgba(10, 22, 40, 0.92)",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 14,
+  padding: 22,
+  maxWidth: 760,
+  width: "100%",
+  maxHeight: "90vh",
+  overflowY: "auto",
+  color: TEXT_PRIMARY,
+  fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+  boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
+};
+
+const modalHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 16,
+  paddingBottom: 12,
+  borderBottom: `1px solid ${BORDER}`,
+};
+
+const modalTinyLabelStyle: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color: GOLD,
+  opacity: 0.8,
+};
+
+const modalCloseButtonStyle: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.04)",
+  border: `1px solid ${BORDER}`,
+  color: TEXT_DIM,
+  borderRadius: 6,
+  width: 30,
+  height: 30,
+  fontSize: 18,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
 };
 
 const titleStyle: React.CSSProperties = {
