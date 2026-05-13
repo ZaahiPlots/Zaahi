@@ -79,6 +79,14 @@
   --gold-bg-active: rgba(200, 169, 110, 0.25);
 }
 
+/* Reserve the vertical scrollbar's gutter permanently so that pages
+ * which cross the viewport height (dashboard, plot detail, admin, legal,
+ * etc.) don't toggle the scrollbar on/off and trigger a Windows reflow
+ * loop visible as page-wide jitter. macOS overlay scrollbars unaffected. */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Reusable utility classes — opt-in, don't replace inline styles unless
  * the callsite is already using className. */
 .zaahi-glass {
