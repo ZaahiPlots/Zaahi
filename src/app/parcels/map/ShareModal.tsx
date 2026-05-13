@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useEscapeClose } from "./useEscapeClose";
 
 const GOLD = "#C8A96E";
 const BG_DEEP = "rgba(10, 22, 40, 0.92)";
@@ -35,6 +36,7 @@ export function ShareModal({ entryId, entryLabel, onClose, onShared }: Props) {
   const [expiry, setExpiry] = useState<ExpiryChoice>("never");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEscapeClose(onClose, !submitting);
 
   async function handleShare() {
     if (!recipientValue.trim()) {

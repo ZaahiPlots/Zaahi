@@ -22,6 +22,7 @@ import { ConflictDetailModal } from "./ConflictDetailModal";
 import { ShareModal } from "./ShareModal";
 import { PromoteToPublicModal } from "./PromoteToPublicModal";
 import { ImportFromShareButton } from "./ImportFromShareButton";
+import { useEscapeClose } from "./useEscapeClose";
 
 const GOLD = "#C8A96E";
 const BG_GLASS = "rgba(10, 22, 40, 0.78)";
@@ -106,6 +107,12 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  // Esc closes the panel — but only when no inner modal is open
+  // (otherwise the modal's own escape handler should win).
+  useEscapeClose(
+    onClose,
+    !showConflictModal && !showShareModal && !showPromoteModal,
+  );
 
   useEffect(() => {
     let cancelled = false;

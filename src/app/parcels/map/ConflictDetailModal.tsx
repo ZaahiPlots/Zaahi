@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useEscapeClose } from "./useEscapeClose";
 
 const GOLD = "#C8A96E";
 const BG_DEEP = "rgba(10, 22, 40, 0.92)";
@@ -46,6 +47,7 @@ export function ConflictDetailModal({ emirate, district, plotNumber, onClose }: 
   const [data, setData] = useState<ConflictDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  useEscapeClose(onClose);
 
   useEffect(() => {
     let cancelled = false;
