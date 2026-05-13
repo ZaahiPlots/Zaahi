@@ -19,6 +19,9 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { ConflictBanner } from "./ConflictBanner";
 import { ConflictDetailModal } from "./ConflictDetailModal";
+import { ShareModal } from "./ShareModal";
+import { PromoteToPublicModal } from "./PromoteToPublicModal";
+import { ImportFromShareButton } from "./ImportFromShareButton";
 
 const GOLD = "#C8A96E";
 const BG_GLASS = "rgba(10, 22, 40, 0.78)";
@@ -78,6 +81,7 @@ interface RecipientView {
   conflictsWithOthers: boolean;
   sharedBy: { id: string; nickname: string | null };
   permission: string;
+  shareId: string;
 }
 
 type EntryView = OwnerView | RecipientView;
@@ -93,6 +97,8 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,22 +250,29 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
               </Section>
             )}
 
-            {/* Action buttons — wiring lands on Day 10. */}
+            {/* Action buttons (Day 10 — wired to real modals). */}
             <div style={actionRowStyle}>
               {view.access === "owner" && !view.promotedAt && (
                 <>
-                  <button style={primaryButtonStyle} onClick={() => alert("Share modal lands on Day 10.")}>
+                  <button style={primaryButtonStyle} onClick={() => setShowShareModal(true)}>
                     Share
                   </button>
-                  <button style={secondaryButtonStyle} onClick={() => alert("Promote modal lands on Day 10.")}>
+                  <button style={secondaryButtonStyle} onClick={() => setShowPromoteModal(true)}>
                     Promote to public
                   </button>
                 </>
               )}
               {view.access === "share" && (
-                <button style={primaryButtonStyle} onClick={() => alert("Import lands on Day 10.")}>
-                  Add to my vault
-                </button>
+                <ImportFromShareButton
+                  shareId={view.shareId}
+                  onImported={() => {
+                    // Recipient's vault now has a row for this plot —
+                    // close the side panel so they can navigate to /vault
+                    // and find it. Parent state-clearing handler keeps
+                    // the map clean.
+                    onClose();
+                  }}
+                />
               )}
             </div>
           </div>
@@ -272,6 +285,33 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
           district={view.district}
           plotNumber={view.plotNumber}
           onClose={() => setShowConflictModal(false)}
+        />
+      )}
+
+      {showShareModal && view && view.access === "owner" && (
+        <ShareModal
+          entryId={view.id}
+          entryLabel={`${view.plotNumber} · ${view.district}`}
+          onClose={() => setShowShareModal(false)}
+          onShared={() => {
+            // No-op for MVP — Day 12 polish may refresh side-panel
+            // share count. Toast notification handled inside the modal.
+          }}
+        />
+      )}
+
+      {showPromoteModal && view && view.access === "owner" && (
+        <PromoteToPublicModal
+          entryId={view.id}
+          entryLabel={`${view.plotNumber} · ${view.district}`}
+          initialAskingAed={askingAed}
+          onClose={() => setShowPromoteModal(false)}
+          onPromoted={() => {
+            // Side panel will show "Promoted to public listing" badge on
+            // re-fetch; for now just close — parent click handler can
+            // refresh the map's vault layer if needed.
+            onClose();
+          }}
         />
       )}
     </>

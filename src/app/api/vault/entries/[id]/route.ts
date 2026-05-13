@@ -137,5 +137,8 @@ export async function GET(
   return NextResponse.json({
     ...view,
     access: "share",
+    // shareId surfaced so the client's "Add to my vault" button can POST
+    // to /api/vault/shared-with-me/[shareId]/import without an extra lookup.
+    shareId: share.id,
   });
 }
