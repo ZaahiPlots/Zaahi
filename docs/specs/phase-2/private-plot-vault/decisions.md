@@ -1,6 +1,8 @@
 # Private Plot Vault — Founder Decisions
 
-Five decisions only founder can make. Each has my recommendation + trade-offs. Implementation planning is blocked on these.
+**Revised 2026-05-13** — 5 original decisions + 4 new (D6–D9) added after founder gap-review on upload flow / verification / conflict detection / attribution.
+
+5 + 4 = **9 decisions** only founder can make. Each has my recommendation + trade-offs. Implementation planning is blocked on these.
 
 ---
 
@@ -112,12 +114,78 @@ Three reasonable answers:
 
 ---
 
+## D6. Affection Plan parsing — Claude vision, manual fallback, or both?
+
+Founder spec mandates that non-DDA plots require an uploaded Affection Plan PDF, parsed for coordinates. Three approaches:
+
+| | A: Claude vision only (recommended for MVP) | B: Manual entry only | C: Both — Claude vision first, manual fallback |
+|---|---|---|---|
+| Engineering effort (MVP) | ~5 days (sibling of existing `parse-title-deed`) | ~2 days | ~7 days |
+| User experience | Magic-on-paste; auto-fills; brokers edit before confirm | Tedious — type coords manually | Best of both, broker only types if parse fails |
+| Failure mode | Bad parse → user edits manually inline | None | Bad parse → manual fallback path |
+| Cost runtime | ~$0.02–0.05 per parse | $0 | ~$0.02–0.05 unless fallback |
+| Accuracy risk | Medium (vision LLM hallucinations on unusual layouts) | Zero (user enters) | Bounded — user fixes errors |
+
+**Recommendation: A for MVP** + add manual fallback in Phase 2.2 (becomes option C). Reason: the LLM hits the "daily tool" promise (one PDF upload, plot appears); manual entry feels like Excel-with-extra-steps. Risk mitigated by confidence score + editable review form (§13.4 of spec).
+
+**Founder picks: ☐ A (Claude vision MVP)  ☐ B (manual only)  ☐ C (both from MVP)**
+
+---
+
+## D7. Conflict detection scope — lite or full in MVP?
+
+| | A: Lite (banner only) — recommended MVP | B: Full (DISPUTED status + admin resolution) |
+|---|---|---|
+| MVP effort | ~2 days | ~5–7 days |
+| User-facing UI | Banner + redacted comparison modal | Banner + comparison + admin-resolved DISPUTED workflow |
+| Admin involvement | None automatic | Admin moderates conflicts |
+| Promote-to-Public impact | None — banner is informational | Blocks promote until resolution if DISPUTED |
+| Market intelligence value | Per-plot only | Aggregate dashboard (top conflicted districts, price-spread stats) |
+
+**Recommendation: A for MVP.** Reason: the full DISPUTED state has design questions (who resolves? what does "resolved" mean? does admin pick a winner or just unblock both?) that need cohort feedback to answer correctly. Lite version delivers the value (broker sees they're not alone on this plot) without committing to a half-baked resolution flow. Phase 2.2 ships full conflict resolution with proper design input.
+
+**Founder picks: ☐ A (Lite — MVP)  ☐ B (Full from MVP)**
+
+---
+
+## D8. Verification name-match auto-pass threshold
+
+For the owner flow, the server runs Levenshtein-normalized fuzzy match between `User.name` and the Title-Deed-extracted name. Above the threshold → auto-pass (admin sees high-confidence badge, still has final call). Below → admin manual review.
+
+| Threshold | Effect |
+|---|---|
+| 0.95 (strict) | Few auto-passes; almost everyone goes through admin review. Slows verification. Misses cases like "Mohammed" vs "Mohamed". |
+| **0.92 (recommended)** | Catches transliteration variants; admin still reviews unusual cases. Balanced. |
+| 0.88 (loose) | More auto-passes; risk of legitimate non-matches slipping through. |
+| 0.80 (very loose) | Pretty much everything auto-passes; admin only sees clear mismatches. Fraud risk. |
+
+**Recommendation: 0.92.** Tunable post-MVP if false-positive rate proves too high. Admin override always available either way.
+
+**Founder picks: ☐ 0.95  ☐ 0.92 (recommended)  ☐ 0.88  ☐ Other**
+
+---
+
+## D9. Verification docs storage — new bucket or reuse?
+
+| | A: New bucket `vault-verification-docs` (recommended) | B: Reuse existing `registration-docs` |
+|---|---|---|
+| PDPL isolation | Strong — vault docs separated from cohort onboarding docs | Mixed |
+| Lifecycle | Vault verification has different retention rules (kept for plot lifecycle, not 1-year cohort window) | Forced into shared retention policy |
+| Admin permission model | Same admin role check; just different bucket name | Same |
+| Setup effort | One new bucket creation in Supabase dashboard + 1 helper file | Zero — reuse `storage-signed-url.ts` |
+
+**Recommendation: A.** PDPL cleanliness + lifecycle separation. Setup cost is trivial (one-time bucket create). Mirrors how cohort-pilot kept `registration-docs` separate from any earlier doc storage.
+
+**Founder picks: ☐ A (new bucket — recommended)  ☐ B (reuse registration-docs)**
+
+---
+
 ## After founder decides
 
-Each decision unblocks part of the implementation plan. Once all 5 are picked:
+Each decision unblocks part of the implementation plan. Once all 9 are picked:
 
-1. I write `implementation-plan.md` in this same folder — concrete schema diff (Prisma syntax ready to drop into `prisma/schema.prisma`), `prisma migrate dev --name vault_mvp` ready, route signatures, component-level task list.
-2. Estimate firms up (currently 10–14 days for the recommended MVP — would tighten to a day-by-day plan).
-3. Founder approves the implementation plan, then engineering proceeds Phase 2.1.
+1. **implementation-plan.md (already written, this branch)** locks in firmly.
+2. Estimate firms from 17–21 days into a day-by-day commitment.
+3. Founder approves the implementation plan, then engineering proceeds Phase 2.1 on a `feat/vault-mvp` branch.
 
 No code touches main until the implementation plan is approved.

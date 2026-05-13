@@ -1,72 +1,68 @@
-# Private Plot Vault — Implementation Plan (Phase 2.1 MVP)
+# Private Plot Vault — Implementation Plan (Phase 2.1 MVP+)
 
-**Status:** Draft 2026-05-13. Gated on `spec.md` + `decisions.md` (all founder picks marked APPROVED).
-**Scope:** Phase 2.1 — 10–14 days, Recommended MVP. Phases 2.2/2.3/2.4 out of scope here.
+**Status:** Draft 2026-05-13. **Revised 2026-05-13** to integrate founder additions (Affection-plan ingress, verification gates, conflict detection, attribution, price history).
+**Scope:** Phase 2.1 — **17–21 days**, MVP+. Phases 2.2/2.3/2.4 out of scope.
 
 Approved decisions baked in:
-- **D1** Option A — separate `VaultEntry` model, Parcel untouched.
-- **D2** Three-tier with SHARED implicit (derived from `VaultShare` rows; DB stores only PRIVATE / PUBLIC indirectly via promote).
-- **D3** Account-required only — recipient must be an approved cohort user.
-- **D4** Freemium with AI features as paid — MVP is free; pricing surfaces in 2.3.
-- **D5** Recommended MVP — list view + map layer + share view-only + promote.
-- **D-bonus** Sharer gets broker share on Vault→Deal — `Deal.brokerId = VaultEntry.ownerId` default.
+- **D1** Option A — separate `VaultEntry` model
+- **D2** Three-tier with SHARED implicit
+- **D3** Account-required only
+- **D4** Freemium with AI features as paid
+- **D5** Recommended MVP+ — list view + map layer + share view-only + promote-with-verification + affection-plan ingress + conflict-lite + attribution + price history
+- **D-bonus** Sharer gets broker share on Vault→Deal
+
+New decisions (D6–D9 in decisions.md, **pending founder pick**):
+- **D6** Affection Plan parsing strategy — Claude vision (recommended), manual fallback (Phase 2.2), or both
+- **D7** Conflict detection scope — lite (banner only, recommended for MVP) or full (DISPUTED status)
+- **D8** Verification name-match auto-pass threshold — recommended 0.92
+- **D9** Verification doc storage bucket — recommended new `vault-verification-docs` bucket separate from `registration-docs`
 
 ---
 
 ## 1. Prisma schema diff — paste-ready
 
-Drop these blocks into `prisma/schema.prisma`. Order: enums above models; new models at the bottom; existing `User` and `Parcel` get back-relations added.
-
-### 1.1 New enums (place near the existing `RegistrationStatus` enum, around line 645)
+### 1.1 New enums (near line 645 of schema.prisma)
 
 ```prisma
-// ── PRIVATE PLOT VAULT — Phase 2.1 MVP (spec docs/specs/phase-2/private-plot-vault) ─
+// ── PRIVATE PLOT VAULT — Phase 2.1 MVP+ (spec docs/specs/phase-2/private-plot-vault) ─
 
-// Stage of a broker's private pipeline entry. Single linear progression
-// for MVP — kanban view + automation come in Phase 2.2.
 enum VaultStage {
   LEAD              // just added; haven't engaged owner yet
   CONTACTED         // spoken with owner, no commitment
   NEGOTIATING       // back-and-forth on price/terms
   AGREEMENT_SIGNED  // NDA / authorisation to market
   PROMOTED          // moved to Public Listings (still tracked here)
-  LOST              // abandoned, owner went elsewhere, etc.
-  CLOSED            // converted to a Deal (kept for history)
+  LOST              // abandoned, owner went elsewhere
+  CLOSED            // converted to Deal (kept for history)
 }
 
-// Permission a share grants to its recipient. MVP supports VIEW only;
-// FEASIBILITY and OFFER come in Phase 2.2.
 enum VaultSharePermission {
   VIEW
-  FEASIBILITY  // declared now to avoid an enum-add migration later
-  OFFER
+  FEASIBILITY  // declared now; Phase 2.2 ships behaviour
+  OFFER        // declared now; Phase 2.2 ships behaviour
+}
+
+enum VaultVerificationStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
 }
 ```
 
-### 1.2 New models (place at end of `schema.prisma`)
+### 1.2 New models (end of schema.prisma)
 
 ```prisma
-// Broker's / developer's private pipeline entry for a single plot.
-// Plot identity (emirate, district, plotNumber) refers to a real plot
-// in the world, not necessarily a `Parcel` row — most entries describe
-// plots that have no public listing.
-//
-// `publicParcelId` is set when the plot is ALSO publicly listed (by
-// anyone, including the vault owner via Promote-to-Public). Linking
-// is informational; the public listing has independent lifecycle.
-//
-// `ownerContact` carries PII (phone, email, name, role). MVP stores
-// unencrypted; Phase 2.2 will encrypt at rest. Always served via the
-// vault routes which gate on ownerId / active share.
-//
-// `@@unique([ownerId, emirate, district, plotNumber])` enforces the
-// invariant that a single user has at most one Vault entry per plot.
-// Multiple users CAN have their own entries for the same plot — that's
-// the explicit win of the separate-table model (decision D1).
 model VaultEntry {
   id              String      @id @default(cuid())
   ownerId         String
   owner           User        @relation("VaultEntryOwner", fields: [ownerId], references: [id])
+
+  // Attribution (§16)
+  addedByUserId       String?
+  addedBy             User?       @relation("VaultEntryAddedBy", fields: [addedByUserId], references: [id])
+  importedFromShareId String?
+  provenanceChain     Json?
 
   // Plot identity
   emirate         String
@@ -75,83 +71,102 @@ model VaultEntry {
   publicParcelId  String?
   publicParcel    Parcel?     @relation("VaultEntryPublicParcel", fields: [publicParcelId], references: [id])
 
-  // Snapshot of plot facts (denormalised — survives even when no DDA
-  // scrape exists for this plot; broker can override DDA values).
-  area            Float?
-  latitude        Float?
-  longitude       Float?
-  geometry        Json?
-  landUse         String?
+  // Snapshot
+  area         Float?
+  latitude     Float?
+  longitude    Float?
+  geometry     Json?
+  landUse      String?
 
-  // Broker's own data (never derived from DDA)
-  askingPriceFils BigInt?
-  ownerContact    Json?       // { name, phone, email, role, notes } — PII
-  brokerNotes     String?     @db.Text
-  stage           VaultStage  @default(LEAD)
-  source          String?     // "cold-call" | "referral" | "dda-scrape" | "off-plan" | …
-  nextFollowUpAt  DateTime?
+  // Affection-plan source (§13)
+  affectionPlanSource           String?
+  affectionPlanData             Json?
+  affectionPlanDocPath          String?
+  affectionPlanParseConfidence  Float?
 
-  // Promote-to-Public bookkeeping
-  promotedAt        DateTime?
-  promotedParcelId  String?   // FK lifted out as relation for the Parcel side; nullable string here
-  // (not a Prisma relation field — the promoted parcel is referenced via
-  //  publicParcel above; promotedParcelId is the historical record even
-  //  if publicParcel is later linked to a different row.)
+  // Broker's data
+  askingPriceFils  BigInt?
+  ownerContact     Json?
+  brokerNotes      String?     @db.Text
+  stage            VaultStage  @default(LEAD)
+  source           String?
+  nextFollowUpAt   DateTime?
 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  // Verification (§14)
+  verificationStatus       VaultVerificationStatus @default(NONE)
+  verificationFlow         String?
+  verificationDocsJson     Json?
+  identityMatchScore       Float?
+  verificationSubmittedAt  DateTime?
+  verifiedById             String?
+  verifiedAt               DateTime?
+  verificationRejection    String?
 
-  shares          VaultShare[]
-  activity        VaultActivity[]
+  // Promote
+  promotedAt       DateTime?
+  promotedParcelId String?
+
+  // Conflict detection (§15)
+  conflictsWithOthers Boolean   @default(false)
+  conflictedFields    Json?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  shares       VaultShare[]
+  activity     VaultActivity[]
+  priceHistory VaultPriceHistory[]
 
   @@unique([ownerId, emirate, district, plotNumber])
   @@index([ownerId])
   @@index([stage])
   @@index([publicParcelId])
-  @@index([nextFollowUpAt])  // for the daily-digest "follow up today" query
+  @@index([nextFollowUpAt])
+  @@index([emirate, district, plotNumber])   // drives conflict detection
+  @@index([verificationStatus])
 }
 
-// Per-recipient access grant on a single VaultEntry. MVP grants VIEW
-// only; permission enum has FEASIBILITY and OFFER declared so Phase 2.2
-// can ship without an enum migration.
-//
-// `@@unique([vaultEntryId, recipientUserId])` enforces one-grant-per-user;
-// re-sharing updates the existing row (revokedAt cleared, expiresAt
-// extended) rather than inserting a duplicate.
 model VaultShare {
   id              String                @id @default(cuid())
   vaultEntryId    String
   vaultEntry      VaultEntry            @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
-  ownerId         String                // denormalised from vaultEntry.ownerId for filter performance
+  ownerId         String
   recipientUserId String
   recipient       User                  @relation("VaultShareRecipient", fields: [recipientUserId], references: [id])
-
   permission      VaultSharePermission  @default(VIEW)
-  expiresAt       DateTime?             // NULL = never
+  expiresAt       DateTime?
   revokedAt       DateTime?
   revokedReason   String?
-
   createdAt       DateTime              @default(now())
-  lastViewedAt    DateTime?             // updated on every GET by recipient
+  lastViewedAt    DateTime?
 
   @@unique([vaultEntryId, recipientUserId])
   @@index([recipientUserId, revokedAt])
   @@index([ownerId])
 }
 
-// Append-only audit log for a VaultEntry. Drives the activity feed in
-// the side panel and the daily digest email (Phase 2.2). Never pruned —
-// activity row size is bounded by `payload` Json which we cap at 4 KB
-// at write time in lib/vault-activity.ts.
 model VaultActivity {
   id            String      @id @default(cuid())
   vaultEntryId  String
   vaultEntry    VaultEntry  @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
-  actorUserId   String?     // NULL for system events (e.g., share auto-revoked on user rejection)
+  actorUserId   String?
   actor         User?       @relation("VaultActivityActor", fields: [actorUserId], references: [id])
-  kind          String      // see lib/vault-activity.ts for the closed enum of allowed values
+  kind          String      // closed enum in src/lib/vault-activity.ts
   payload       Json?
   createdAt     DateTime    @default(now())
+
+  @@index([vaultEntryId, createdAt])
+}
+
+model VaultPriceHistory {
+  id           String      @id @default(cuid())
+  vaultEntryId String
+  vaultEntry   VaultEntry  @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
+  priceFils    BigInt
+  setByUserId  String
+  source       String      // "manual" | "import" | "promote-sync"
+  note         String?
+  createdAt    DateTime    @default(now())
 
   @@index([vaultEntryId, createdAt])
 }
@@ -159,74 +174,87 @@ model VaultActivity {
 
 ### 1.3 Existing-model relation additions
 
-These are additive — three lines on `User`, one on `Parcel`. Place them inside the existing relation block of each model.
-
-**`User`** (after the Cohort Pilot relations around line 158):
+`User` (after Cohort Pilot relations, around line 158):
 
 ```prisma
   // Private Plot Vault v2.1 relations
   vaultEntriesOwned     VaultEntry[]    @relation("VaultEntryOwner")
+  vaultEntriesAddedBy   VaultEntry[]    @relation("VaultEntryAddedBy")     // NEW (attribution)
   vaultSharesReceived   VaultShare[]    @relation("VaultShareRecipient")
   vaultActivityAuthored VaultActivity[] @relation("VaultActivityActor")
 ```
 
-**`Parcel`** (after the Cohort Pilot relations around line 201):
+`Parcel` (after Cohort Pilot relations, around line 201):
 
 ```prisma
-  // Private Plot Vault v2.1 — entries that reference this public parcel
+  // Private Plot Vault v2.1
   vaultEntryLinks       VaultEntry[]    @relation("VaultEntryPublicParcel")
 ```
 
-### 1.4 Touch surface summary
+### 1.4 Touch surface
 
-- 2 new enums
-- 3 new models
-- 4 new back-relation lines
+- 3 new enums (was 2)
+- 4 new models (was 3)
+- 9 new fields on VaultEntry vs the original spec
+- 5 new back-relation lines on User + 1 on Parcel
 - 0 changes to any existing field
-- 0 changes to any existing `@@unique` or `@@index`
-- **`Parcel` table is structurally untouched** — guarantees Public Listings keep working without retest.
+- 0 changes to any existing index
+- **Parcel table structurally untouched**
 
 ---
 
-## 2. Migration SQL preview (what `prisma migrate dev --name vault_mvp` will generate)
+## 2. Migration SQL preview (what `prisma migrate dev --name vault_mvp_plus` will generate)
 
 ```sql
--- CreateEnum
-CREATE TYPE "VaultStage" AS ENUM (
-  'LEAD', 'CONTACTED', 'NEGOTIATING', 'AGREEMENT_SIGNED',
-  'PROMOTED', 'LOST', 'CLOSED'
-);
+-- Enums
+CREATE TYPE "VaultStage" AS ENUM ('LEAD','CONTACTED','NEGOTIATING','AGREEMENT_SIGNED','PROMOTED','LOST','CLOSED');
+CREATE TYPE "VaultSharePermission" AS ENUM ('VIEW','FEASIBILITY','OFFER');
+CREATE TYPE "VaultVerificationStatus" AS ENUM ('NONE','PENDING','VERIFIED','REJECTED');
 
--- CreateEnum
-CREATE TYPE "VaultSharePermission" AS ENUM ('VIEW', 'FEASIBILITY', 'OFFER');
-
--- CreateTable VaultEntry
+-- VaultEntry
 CREATE TABLE "VaultEntry" (
-    "id"               TEXT NOT NULL,
-    "ownerId"          TEXT NOT NULL,
-    "emirate"          TEXT NOT NULL,
-    "district"         TEXT NOT NULL,
-    "plotNumber"       TEXT NOT NULL,
-    "publicParcelId"   TEXT,
-    "area"             DOUBLE PRECISION,
-    "latitude"         DOUBLE PRECISION,
-    "longitude"        DOUBLE PRECISION,
-    "geometry"         JSONB,
-    "landUse"          TEXT,
-    "askingPriceFils"  BIGINT,
-    "ownerContact"     JSONB,
-    "brokerNotes"      TEXT,
-    "stage"            "VaultStage" NOT NULL DEFAULT 'LEAD',
-    "source"           TEXT,
-    "nextFollowUpAt"   TIMESTAMP(3),
-    "promotedAt"       TIMESTAMP(3),
-    "promotedParcelId" TEXT,
-    "createdAt"        TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt"        TIMESTAMP(3) NOT NULL,
+    "id"                            TEXT NOT NULL,
+    "ownerId"                       TEXT NOT NULL,
+    "addedByUserId"                 TEXT,
+    "importedFromShareId"           TEXT,
+    "provenanceChain"               JSONB,
+    "emirate"                       TEXT NOT NULL,
+    "district"                      TEXT NOT NULL,
+    "plotNumber"                    TEXT NOT NULL,
+    "publicParcelId"                TEXT,
+    "area"                          DOUBLE PRECISION,
+    "latitude"                      DOUBLE PRECISION,
+    "longitude"                     DOUBLE PRECISION,
+    "geometry"                      JSONB,
+    "landUse"                       TEXT,
+    "affectionPlanSource"           TEXT,
+    "affectionPlanData"             JSONB,
+    "affectionPlanDocPath"          TEXT,
+    "affectionPlanParseConfidence"  DOUBLE PRECISION,
+    "askingPriceFils"               BIGINT,
+    "ownerContact"                  JSONB,
+    "brokerNotes"                   TEXT,
+    "stage"                         "VaultStage" NOT NULL DEFAULT 'LEAD',
+    "source"                        TEXT,
+    "nextFollowUpAt"                TIMESTAMP(3),
+    "verificationStatus"            "VaultVerificationStatus" NOT NULL DEFAULT 'NONE',
+    "verificationFlow"              TEXT,
+    "verificationDocsJson"          JSONB,
+    "identityMatchScore"            DOUBLE PRECISION,
+    "verificationSubmittedAt"       TIMESTAMP(3),
+    "verifiedById"                  TEXT,
+    "verifiedAt"                    TIMESTAMP(3),
+    "verificationRejection"         TEXT,
+    "promotedAt"                    TIMESTAMP(3),
+    "promotedParcelId"              TEXT,
+    "conflictsWithOthers"           BOOLEAN NOT NULL DEFAULT false,
+    "conflictedFields"              JSONB,
+    "createdAt"                     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"                     TIMESTAMP(3) NOT NULL,
     CONSTRAINT "VaultEntry_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable VaultShare
+-- VaultShare, VaultActivity, VaultPriceHistory — DDL similar shape
 CREATE TABLE "VaultShare" (
     "id"              TEXT NOT NULL,
     "vaultEntryId"    TEXT NOT NULL,
@@ -241,7 +269,6 @@ CREATE TABLE "VaultShare" (
     CONSTRAINT "VaultShare_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable VaultActivity
 CREATE TABLE "VaultActivity" (
     "id"           TEXT NOT NULL,
     "vaultEntryId" TEXT NOT NULL,
@@ -252,6 +279,17 @@ CREATE TABLE "VaultActivity" (
     CONSTRAINT "VaultActivity_pkey" PRIMARY KEY ("id")
 );
 
+CREATE TABLE "VaultPriceHistory" (
+    "id"           TEXT NOT NULL,
+    "vaultEntryId" TEXT NOT NULL,
+    "priceFils"    BIGINT NOT NULL,
+    "setByUserId"  TEXT NOT NULL,
+    "source"       TEXT NOT NULL,
+    "note"         TEXT,
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "VaultPriceHistory_pkey" PRIMARY KEY ("id")
+);
+
 -- Indexes
 CREATE UNIQUE INDEX "VaultEntry_ownerId_emirate_district_plotNumber_key"
   ON "VaultEntry"("ownerId", "emirate", "district", "plotNumber");
@@ -259,230 +297,203 @@ CREATE INDEX "VaultEntry_ownerId_idx"          ON "VaultEntry"("ownerId");
 CREATE INDEX "VaultEntry_stage_idx"            ON "VaultEntry"("stage");
 CREATE INDEX "VaultEntry_publicParcelId_idx"   ON "VaultEntry"("publicParcelId");
 CREATE INDEX "VaultEntry_nextFollowUpAt_idx"   ON "VaultEntry"("nextFollowUpAt");
+CREATE INDEX "VaultEntry_plot_lookup_idx"      ON "VaultEntry"("emirate", "district", "plotNumber");
+CREATE INDEX "VaultEntry_verificationStatus_idx" ON "VaultEntry"("verificationStatus");
 
 CREATE UNIQUE INDEX "VaultShare_vaultEntryId_recipientUserId_key"
   ON "VaultShare"("vaultEntryId", "recipientUserId");
 CREATE INDEX "VaultShare_recipientUserId_revokedAt_idx"
   ON "VaultShare"("recipientUserId", "revokedAt");
-CREATE INDEX "VaultShare_ownerId_idx"          ON "VaultShare"("ownerId");
+CREATE INDEX "VaultShare_ownerId_idx" ON "VaultShare"("ownerId");
 
 CREATE INDEX "VaultActivity_vaultEntryId_createdAt_idx"
   ON "VaultActivity"("vaultEntryId", "createdAt");
 
--- Foreign keys
-ALTER TABLE "VaultEntry"   ADD CONSTRAINT "VaultEntry_ownerId_fkey"        FOREIGN KEY ("ownerId")        REFERENCES "User"("id")       ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "VaultEntry"   ADD CONSTRAINT "VaultEntry_publicParcelId_fkey" FOREIGN KEY ("publicParcelId") REFERENCES "Parcel"("id")     ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "VaultShare"   ADD CONSTRAINT "VaultShare_vaultEntryId_fkey"   FOREIGN KEY ("vaultEntryId")   REFERENCES "VaultEntry"("id") ON DELETE CASCADE  ON UPDATE CASCADE;
-ALTER TABLE "VaultShare"   ADD CONSTRAINT "VaultShare_recipientUserId_fkey" FOREIGN KEY ("recipientUserId") REFERENCES "User"("id")    ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "VaultActivity" ADD CONSTRAINT "VaultActivity_vaultEntryId_fkey" FOREIGN KEY ("vaultEntryId")  REFERENCES "VaultEntry"("id") ON DELETE CASCADE  ON UPDATE CASCADE;
-ALTER TABLE "VaultActivity" ADD CONSTRAINT "VaultActivity_actorUserId_fkey" FOREIGN KEY ("actorUserId")   REFERENCES "User"("id")       ON DELETE SET NULL ON UPDATE CASCADE;
+CREATE INDEX "VaultPriceHistory_vaultEntryId_createdAt_idx"
+  ON "VaultPriceHistory"("vaultEntryId", "createdAt");
+
+-- Foreign keys (omitted for brevity — same pattern as original spec)
+-- All FK cascades: VaultShare/Activity/PriceHistory on VaultEntry CASCADE;
+-- VaultEntry.ownerId / addedByUserId on User RESTRICT/SET NULL appropriately.
 ```
 
-**Notes for whoever runs it:**
-
-- **`prisma migrate deploy` only** in production (per CLAUDE.md prohibition on `db push`).
-- No backfill, no data movement. New tables start empty.
-- Reversible: `DROP TABLE` + `DROP TYPE` in inverse order. Down-migration is trivial.
-- Estimated execution time on production Supabase: <2 seconds (no data scan, just DDL).
+**Notes:**
+- `prisma migrate deploy` only in production
+- No backfill, no data movement
+- Estimated execution time on production Supabase: <3 seconds
+- Reversible (DROP order: tables → enums)
 
 ---
 
-## 3. Route signatures — TypeScript / Zod
+## 3. Route signatures
 
-All routes follow the existing `getApprovedUserId` + Zod-validation + Prisma pattern from `src/app/api/parcels/submit/route.ts`. Files placed under `src/app/api/me/vault/` and `src/app/api/vault/`.
+### 3.1 Core vault routes (preserved from original — see original implementation-plan.md §3.1–3.3 for full Zod schemas)
 
-### 3.1 Owner-scoped routes (`/api/me/vault/*`)
+13 routes from original spec unchanged. The `VaultEntryCreate` Zod schema gets new optional fields:
 
 ```ts
-// src/app/api/me/vault/entries/route.ts
-//
-// GET /api/me/vault/entries
-//   ?stage=LEAD|CONTACTED|…  (optional, repeatable for "in" filter)
-//   ?search=<plot number or district substring>
-//   ?cursor=<cuid>           (pagination)
-//   ?limit=<1..100, default 50>
-//
-// → 200 { items: VaultEntrySummary[], nextCursor: string | null, total: number }
-// → 401 unauthorized
-
-type VaultEntrySummary = {
-  id: string;
-  plotNumber: string;
-  emirate: string;
-  district: string;
-  stage: VaultStage;
-  askingPriceFils: string | null;     // BigInt → string for JSON
-  source: string | null;
-  nextFollowUpAt: string | null;       // ISO
-  shareCount: number;                  // count of active (not-revoked, not-expired) shares
-  createdAt: string;
-  updatedAt: string;
-};
-
-// POST /api/me/vault/entries
-// body: VaultEntryCreate (Zod schema below)
-// → 201 { id, ...VaultEntrySummary }
-// → 400 validation_failed
-// → 409 duplicate ({ existingId }) when the unique constraint fires
-
 const VaultEntryCreate = z.object({
-  emirate: z.enum(["DUBAI", "ABU_DHABI", "SHARJAH", "AJMAN", "UAQ", "RAK", "FUJAIRAH"]),
+  // existing identity + broker fields …
+  emirate, district, plotNumber, askingPriceFils, landUse, source, stage,
+  ownerContact, brokerNotes, nextFollowUpAt, area, latitude, longitude, geometry,
+
+  // NEW — Affection-plan ingress
+  affectionPlanSource: z.enum(["dda", "uploaded"]).optional(),
+  affectionPlanData: z.object({
+    plotAreaSqm: z.number().optional(),
+    maxGfaSqm: z.number().optional(),
+    maxFloors: z.number().int().optional(),
+    maxHeightMeters: z.number().optional(),
+    far: z.number().optional(),
+    setbacks: z.array(z.object({ side: z.string(), building: z.number().optional(), podium: z.number().optional() })).optional(),
+    landUseMix: z.array(z.object({ category: z.string(), areaSqm: z.number() })).optional(),
+    buildingLimitGeometry: z.unknown().optional(),
+  }).optional(),
+  affectionPlanDocPath: z.string().max(1024).optional(),
+  affectionPlanParseConfidence: z.number().min(0).max(1).optional(),
+
+  // NEW — attribution (server fills if not provided)
+  importedFromShareId: z.string().cuid().optional(),
+});
+```
+
+### 3.2 NEW — Affection-plan ingress routes
+
+```ts
+// src/app/api/me/vault/plot-lookup/route.ts
+// POST { emirate, district, plotNumber }
+// → 200 { source: "dda" | "not_found", existing: VaultEntrySummary | null }
+//   - "dda" means we have DDA scrape data for this plot; client gets
+//     the geometry + affectionPlanData precomputed
+//   - "existing" is set when the CALLER already has a vault entry for
+//     this plot (lets the wizard short-circuit to edit-mode)
+//   - 401 unauthorized
+
+const PlotLookupSchema = z.object({
+  emirate: z.enum(["DUBAI","ABU_DHABI","SHARJAH","AJMAN","UAQ","RAK","FUJAIRAH"]),
   district: z.string().trim().min(1).max(120),
   plotNumber: z.string().trim().regex(/^\d{5,10}$/),
-  askingPriceFils: z.string().regex(/^\d{1,16}$/).optional(),    // BigInt as string
-  landUse: z.string().trim().max(64).optional(),
-  source: z.string().trim().max(40).optional(),
-  stage: z.nativeEnum(VaultStage).default("LEAD"),
-  ownerContact: z.object({
-    name: z.string().trim().max(120).optional(),
-    phone: z.string().trim().regex(/^\+?[0-9\s-]{7,20}$/).optional(),
-    email: z.string().email().optional(),
-    role: z.string().trim().max(40).optional(),
-    notes: z.string().max(2000).optional(),
-  }).optional(),
-  brokerNotes: z.string().max(8000).optional(),
-  nextFollowUpAt: z.string().datetime().optional(),
-  area: z.number().positive().max(1e9).optional(),
-  latitude: z.number().min(22).max(27).optional(),
-  longitude: z.number().min(51).max(57).optional(),
-  geometry: z.unknown().optional(),  // GeoJSON polygon — validated downstream
 });
 ```
 
 ```ts
-// src/app/api/me/vault/entries/[id]/route.ts
+// src/app/api/me/vault/parse-affection-plan/route.ts
+// POST { pdfPath: string }
+// → 200 { parsed: AffectionPlanShape, confidence: number, warnings: string[] }
+// → 400 { error: "wrong_document_type" | "parse_failed" | "unreadable_pdf",
+//          reason?: string }
+// → 401 unauthorized
+// → 429 rate_limit_exceeded (10/user/hour)
 //
-// GET    /api/me/vault/entries/[id]    → 200 VaultEntryFull | 404
-// PATCH  /api/me/vault/entries/[id]    body: VaultEntryUpdate → 200 VaultEntryFull
-// DELETE /api/me/vault/entries/[id]    → 204
+// Internals:
+//   1. Verify caller owns pdfPath (must start with userId/)
+//   2. Sign read URL (5 min TTL) via vault-affection-plans bucket helper
+//   3. Call Claude vision API with AFFECTION_PLAN_SYSTEM prompt
+//   4. Validate parsed output (required fields, geometry sanity, UAE bounds)
+//   5. Return parsed + confidence (LLM self-rated)
 
-type VaultEntryFull = VaultEntrySummary & {
-  publicParcelId: string | null;
-  promotedAt: string | null;
-  ownerContact: { name?, phone?, email?, role?, notes? } | null;
-  brokerNotes: string | null;
-  area: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  geometry: GeoJSON.Polygon | null;
-  landUse: string | null;
-  shares: VaultShareSummary[];
-  activity: VaultActivitySummary[];        // last 20 entries
-};
-
-const VaultEntryUpdate = VaultEntryCreate.partial().omit({ emirate: true, district: true, plotNumber: true });
-// identity fields are immutable post-creation (use DELETE + re-create if wrong)
-```
-
-```ts
-// src/app/api/me/vault/map/route.ts
-//
-// GET /api/me/vault/map  → 200 { features: GeoJSON.Feature[] }
-//
-// Compact GeoJSON for the MapLibre source `vault-mine-buildings`. One
-// Feature per VaultEntry that has a usable polygon OR (lat, lng) — the
-// latter renders as a flat marker per CLAUDE.md "non-DDA placeholder" rule.
-```
-
-```ts
-// src/app/api/me/vault/entries/[id]/promote/route.ts
-//
-// POST /api/me/vault/entries/[id]/promote
-// body: { confirmDuplicates?: boolean }  // pass true to link to existing Parcel
-//                                        // when one already exists for this plot
-// → 200 { vaultEntry: VaultEntryFull, parcelId: string, created: boolean }
-// → 409 { error: "public_listing_exists", existingParcelId } when confirmDuplicates !== true
-// → 400 already_promoted
-```
-
-```ts
-// src/app/api/me/vault/entries/[id]/shares/route.ts
-//
-// POST /api/me/vault/entries/[id]/shares
-// body: VaultShareCreate
-// → 201 VaultShareSummary
-// → 400 cannot_share_with_self
-// → 404 recipient_not_found
-// → 409 already_shared (returns existing share row)
-
-const VaultShareCreate = z.object({
-  recipientLookup: z.union([
-    z.object({ email: z.string().email() }),
-    z.object({ nickname: z.string().trim().min(1).max(64) }),
-    z.object({ userId: z.string().cuid() }),
-  ]),
-  permission: z.enum(["VIEW"]).default("VIEW"),     // MVP: VIEW only at the API layer
-  expiresAt: z.string().datetime().optional(),       // NULL/omit = never
+const ParseAffectionPlanSchema = z.object({
+  pdfPath: z.string().min(1).max(1024).regex(/^[a-zA-Z0-9._\-\/]+$/),
 });
 
-// GET /api/me/vault/entries/[id]/shares
-// → 200 { items: VaultShareSummary[] }
-
-// POST /api/me/vault/shares/[id]/revoke
-// body: { reason?: string }
-// → 200 { revokedAt }
-```
-
-### 3.2 Recipient-scoped routes (`/api/vault/shared-with-me/*`)
-
-```ts
-// src/app/api/vault/shared-with-me/route.ts
-//
-// GET /api/vault/shared-with-me  ?stage&search&cursor&limit
-// → 200 { items: VaultEntryShareSummary[], nextCursor, total }
-
-type VaultEntryShareSummary = Omit<VaultEntrySummary, "shareCount"> & {
-  sharedBy: { id: string; nickname: string };
-  sharedAt: string;                   // share.createdAt
-  permission: VaultSharePermission;
-  expiresAt: string | null;
+// AffectionPlanShape — matches the JSON we then store on VaultEntry.affectionPlanData
+type AffectionPlanShape = {
+  plotAreaSqm: number;
+  maxGfaSqm?: number;
+  maxFloors?: number;
+  maxHeightMeters?: number;
+  far?: number;
+  setbacks?: Array<{ side: string; building?: number; podium?: number }>;
+  landUseMix?: Array<{ category: string; areaSqm: number }>;
+  buildingLimitGeometry?: GeoJSON.Polygon;
 };
-
-// GET /api/vault/shared-with-me/map  → 200 { features: GeoJSON.Feature[] }
-// Same shape as /api/me/vault/map; feeds the `vault-shared-buildings` source.
 ```
 
-### 3.3 Polymorphic entry GET (works for owner OR active-share recipient)
+### 3.3 NEW — Verification gate routes
 
 ```ts
-// src/app/api/vault/entries/[id]/route.ts
+// src/app/api/me/vault/entries/[id]/verification/route.ts
 //
-// GET /api/vault/entries/[id]  → 200 (one of two shapes)
+// POST { flow: "broker" | "owner", docs: UploadedDoc[] }
+// → 201 { status: "PENDING", submittedAt: ISO }
+// → 400 already_pending | invalid_flow | missing_required_doc
+// → 404 entry not found / not owned by caller
+// → 409 already_verified
 //
-//   if caller is owner:
-//     return VaultEntryFull (everything)
+// Broker flow requires kind in ["contract", "id"]; owner requires
+// kind in ["title_deed", "id"].
 //
-//   if caller is active share recipient (revokedAt IS NULL,
-//                                        expiresAt > now() OR NULL):
-//     return VaultEntryFull MINUS:
-//       - brokerNotes
-//       - nextFollowUpAt
-//       - ownerContact.notes
-//       - activity[] (recipients only see {kind: "shared_with_you"})
-//     PLUS:
-//       - sharedBy: { id, nickname }
-//       - permission
-//       - viewedAt (the recipient's lastViewedAt — sets on first GET)
+// For owner flow: server immediately runs parse-title-deed on the
+// uploaded deed, extracts ownerName, computes Levenshtein vs
+// User.name → stores identityMatchScore on the VaultEntry.
 //
-//   else: 404 (NOT 403 — same pattern as Deal Room handlers)
-```
+// GET → 200 { status, submittedAt, docs: [{ kind, name, signedUrl }] }
+//
+// DELETE → 200 { status: "NONE" }
+// → 409 cannot_withdraw_verified
 
-### 3.4 Modified existing route
+const VerificationDoc = z.object({
+  kind: z.enum(["contract", "title_deed", "id"]),
+  path: z.string().regex(/^[a-zA-Z0-9._\-\/]+$/),
+  name: z.string().max(256),
+  size: z.number().int().nonnegative().max(10 * 1024 * 1024),
+  contentType: z.string().max(128),
+});
+
+const VerificationSubmitSchema = z.object({
+  flow: z.enum(["broker", "owner"]),
+  docs: z.array(VerificationDoc).min(2).max(5),
+});
+```
 
 ```ts
-// src/app/api/parcels/submit/route.ts — extend the SubmitSchema:
-//
-//   target: z.enum(["public", "vault"]).default("public")
-//
-// When target === "vault", the handler:
-//   - skips the Parcel create + PlotClaim create code path
-//   - instead does prisma.vaultEntry.create({...})
-//   - returns { vaultEntryId } instead of { parcelId, claimId }
-//
-// All other fields stay the same — no double-coding the upload form.
+// src/app/api/admin/vault-verification/queue/route.ts
+// GET ?status=PENDING&cursor&limit
+// → 200 { items: AdminVerificationSummary[], total }
+// Admin role check.
+
+// src/app/api/admin/vault-verification/[id]/approve/route.ts
+// POST → 200 { verifiedAt }
+// → 404 not found
+// → 409 not in PENDING state
+
+// src/app/api/admin/vault-verification/[id]/reject/route.ts
+// POST { reason: string }
+// → 200 { rejectedAt, reason }
 ```
 
-No middleware changes. No `/api/layers/*` changes. No changes to existing routes other than the one above.
+### 3.4 NEW — Conflict detection routes
+
+```ts
+// src/app/api/me/vault/conflicts/route.ts
+// GET ?cursor&limit
+// → 200 { items: VaultEntrySummary[] }   // caller's entries currently in conflict
+
+// src/app/api/me/vault/conflicts/[plotNumber]/route.ts
+// GET ?emirate&district
+// → 200 {
+//     plotNumber, emirate, district,
+//     entries: Array<{
+//       addedByNickname: string,         // OTHER users' nicknames
+//       priceFils: string | null,
+//       area: number | null,
+//       landUse: string | null,
+//       maxFloors: number | null,
+//       createdAt: string,
+//     }>
+//   }
+// → 403 if caller has no entry for this plot (prevents fishing)
+//
+// Server-side enforces: NEVER include brokerNotes, ownerContact,
+// nextFollowUpAt of other users' entries. Only public-facing
+// facts + addedBy nickname.
+```
+
+### 3.5 Modified existing routes
+
+- `/api/parcels/submit` — same `target` field addition as original spec
+- `/api/me/vault/entries` PATCH — emits `VaultPriceHistory` row on `askingPriceFils` change, triggers conflict recompute
+- `/api/me/vault/entries/[id]/promote` — gated on `verificationStatus === "VERIFIED"` (returns 403 with `error: "verification_required"` otherwise)
 
 ---
 
@@ -492,234 +503,226 @@ New files under `src/app/`:
 
 ```
 src/app/vault/
-  page.tsx                          — /vault list page (Day 9)
+  page.tsx                          — /vault list page
   VaultListView.tsx                 — table + filter UI
-  VaultListItem.tsx                 — single row
+  VaultListItem.tsx                 — single row (with inline price edit)
+  PriceEditCell.tsx                 — NEW (inline edit + history dropdown)
+  AttributionBadge.tsx              — NEW (rendering for §16.1)
+  ConflictsTab.tsx                  — NEW (Conflicts tab pane)
   EmptyState.tsx                    — first-visit prompt
 
 src/app/parcels/map/
-  VaultSidePanelAdapter.tsx         — wraps SidePanel for VaultEntry data (Day 7)
-  ShareModal.tsx                    — share dialog (Day 10)
-  PromoteToPublicModal.tsx          — promote confirmation (Day 11)
-```
+  AddPlotWizard/                    — NEW: 5-step wizard (replaces simple AddPlotModal additions)
+    Step1PlotNumber.tsx             — plot lookup + DDA branch / Affection Plan branch
+    Step1AffectionPlanUploader.tsx  — PDF upload + parse review form
+    Step2Target.tsx                 — Public / Vault picker
+    Step3Details.tsx                — broker data
+    Step4Verification.tsx           — Title Deed / Contract upload
+    Step5Confirm.tsx                — preview + submit
+  VaultSidePanelAdapter.tsx         — wraps SidePanel for VaultEntry data
+  ShareModal.tsx                    — share dialog
+  PromoteToPublicModal.tsx          — verification-gated promote confirmation
+  ConflictBanner.tsx                — NEW (§6.6 banner)
+  ConflictDetailModal.tsx           — NEW (§6.6 modal)
+  VerificationModal.tsx             — NEW (§14 doc upload + status)
 
-Modified files:
-
-```
-src/app/parcels/map/page.tsx
-  + import installVaultLayer
-  + state: vaultMineOpen, vaultSharedOpen
-  + layer registry entries: VAULT_MINE_3D, VAULT_SHARED_3D
-  + load helpers (mirror loadZaahiPlots structure)
-  + new tab in the layers panel
-
-src/app/parcels/map/AddPlotModal.tsx
-  + new Step 0: target picker (Public Listing / Private Vault)
-  + on submit, route to /api/me/vault/entries or /api/parcels/submit
+src/app/admin/queue/
+  VaultVerificationTab.tsx          — NEW (admin tab for verifications)
 ```
 
 New library files under `src/lib/`:
 
 ```
-src/lib/vault-activity.ts           — typed wrapper for VaultActivity writes
-                                       (closed enum of `kind` values, payload size cap)
-src/lib/vault-share.ts              — share creation, revocation, recipient lookup
-src/lib/vault-permission.ts         — gate helper: getVaultEntryAccess(userId, entryId)
+src/lib/vault-activity.ts           — closed enum of `kind` values + payload caps
+src/lib/vault-share.ts              — share create / revoke / recipient lookup
+src/lib/vault-permission.ts         — getVaultEntryAccess(userId, entryId)
                                        returns "owner" | "share" | "none"
-src/lib/vault-serialize.ts          — BigInt → string + PII redaction by viewer role
+src/lib/vault-serialize.ts          — BigInt → string + PII redaction
+src/lib/vault-conflict.ts           — NEW: recomputeConflictsForPlot + tolerances
+src/lib/vault-affection-plan.ts     — NEW: Claude-vision parse wrapper
+                                            + validation (UAE bounds, geometry)
+src/lib/vault-verification.ts       — NEW: doc storage helpers + name-match
+                                            (Levenshtein normalised)
+src/lib/vault-price-history.ts      — NEW: write price-history row + activity event
 ```
 
-Existing helpers reused unchanged: `getApprovedUserId`, `prisma`, `supabase`, `serialize`.
+Existing helpers reused unchanged: `getApprovedUserId`, `prisma`, `supabase`, `serialize`, `parse-title-deed` (called inline from vault-verification for owner flow).
 
 ---
 
 ## 5. Day-by-day breakdown
 
-One engineer focused, 8h day, including coffee. **12 working days, with a 2-day buffer to land at 14.**
+**21 working days** at 8h, one engineer focused. Buffer is the spread between 17 and 21 — slips up to 4 days absorbed without re-planning.
 
-### Day 1 — Schema + migration
+### Days 1–2 — Schema, migration, lib foundations
 
-- Add the 2 enums + 3 models + 4 back-relations to `prisma/schema.prisma`.
-- Run `npx prisma migrate dev --name vault_mvp` against dev DB.
-- Verify in Prisma Studio: tables exist, FKs correct, indexes present.
-- Smoke test: insert one row in each table via `prisma db seed`-style script.
-- **Deliverable:** schema merged on a `feat/vault-mvp` branch; migration committed.
-- **Risk gate:** if schema review surfaces issues, fix here before any code.
+**Day 1.** Add the 3 enums + 4 models + 6 back-relations to `prisma/schema.prisma`. Run `prisma migrate dev --name vault_mvp_plus` against dev DB. Verify in Prisma Studio. Smoke seed test rows. **Deliverable:** schema merged on `feat/vault-mvp` branch.
 
-### Day 2 — Backend foundation: entries CRUD
+**Day 2.** Build the 4 NEW lib modules: `vault-activity.ts` (closed kind enum), `vault-conflict.ts` (recompute logic + tolerances), `vault-affection-plan.ts` (Claude prompt + validation skeleton), `vault-verification.ts` (storage helpers + Levenshtein). Plus `vault-share.ts`, `vault-permission.ts`, `vault-serialize.ts`, `vault-price-history.ts` (from original plan).
 
-- `src/lib/vault-activity.ts` — `writeActivity(entryId, kind, payload?, actorUserId?)`. Closed enum of kinds.
-- `src/lib/vault-serialize.ts` — BigInt and Date handling, redaction map.
-- `src/app/api/me/vault/entries/route.ts` — GET (list + filter + paginate) and POST (create).
-- `src/app/api/me/vault/entries/[id]/route.ts` — GET, PATCH, DELETE.
-- Zod schemas live next to handlers; no separate validators dir.
-- Unit smoke tests via `curl` against `pnpm dev`.
+### Day 3 — Core entries CRUD
 
-### Day 3 — Backend continued: map + sharing setup
+`/api/me/vault/entries` GET + POST + `/api/me/vault/entries/[id]` GET + PATCH + DELETE. PATCH triggers `recomputeConflictsForPlot` if any conflict-relevant field changed, writes `VaultPriceHistory` on price change. Zod schemas inline.
 
-- `src/app/api/me/vault/map/route.ts` — GeoJSON serialization. Includes only entries with usable geometry OR (lat,lng) pair. Caps response at 5000 features (returns 200 with a paginated cursor — but MVP returns all because we don't expect >5000 entries per user in cohort).
-- `src/lib/vault-permission.ts` — the access helper.
-- `src/lib/vault-share.ts` — recipient lookup (by email / nickname / userId), share create / revoke functions.
-- `src/app/api/me/vault/entries/[id]/shares/route.ts` — POST (create), GET (list).
-- `src/app/api/me/vault/shares/[id]/revoke/route.ts` — POST.
+### Day 4 — Map + sharing API
 
-### Day 4 — Backend: shared-with-me + polymorphic GET
+`/api/me/vault/map`, share routes (`/shares` POST/GET, `/shares/[id]/revoke` POST). `/api/vault/shared-with-me` + map.
 
-- `src/app/api/vault/shared-with-me/route.ts` — list view for recipients.
-- `src/app/api/vault/shared-with-me/map/route.ts` — GeoJSON for shared layer.
-- `src/app/api/vault/entries/[id]/route.ts` — polymorphic GET (owner OR active share recipient). PII redaction logic. Updates `share.lastViewedAt` on every recipient GET.
-- Server-side test plan: 8 e2e-ish scenarios (owner / non-owner / active-share / revoked / expired / not-found / cohort-rejected / self-share).
+### Day 5 — Polymorphic GET + conflict routes
 
-### Day 5 — Backend: promote + activity surface
+`/api/vault/entries/[id]` polymorphic (owner full / share-recipient redacted). `/api/me/vault/conflicts` + `/conflicts/[plotNumber]` (server-enforced PII redaction).
 
-- `src/app/api/me/vault/entries/[id]/promote/route.ts` — orchestrates the Parcel create (reuses the existing `/api/parcels/submit` logic via internal import — same Zod validation, status PENDING_REVIEW). Sets `vaultEntry.promotedAt` + `promotedParcelId` + `stage = PROMOTED`. Writes activity row.
-- Activity surfaces: PATCH on stage emits `stage_changed` activity. Share create emits `shared`. Share revoke emits `share_revoked`. Recipient GET emits `viewed_by_recipient` (debounced — only once per recipient per 1 h).
-- **End of Day 5: full backend feature-complete.** UI starts Day 6.
+### Day 6 — Affection-plan API
 
-### Day 6 — Frontend: AddPlotModal toggle
+`/api/me/vault/plot-lookup` (DDA check). `/api/me/vault/parse-affection-plan` (Claude vision call, validation, confidence scoring). Build the Supabase `vault-affection-plans` bucket setup + signed-URL helper. Test with 3 real Affection Plan PDFs (founder to provide).
 
-- Edit `src/app/parcels/map/AddPlotModal.tsx`:
-  - Add Step 0 with two radio buttons + descriptive text.
-  - Re-route submit on Step 0 choice.
-  - When target=vault, also collect: source, stage (default LEAD), follow-up date, owner contact.
-- Visual styling per `CLAUDE.md` UI STYLE GUIDE (glass background, gold accents, no system inputs).
-- Submit happy-path tested end-to-end against the Day 2 API.
+### Day 7 — Verification API + admin queue
 
-### Day 7 — Frontend: Vault map layer (owned)
+`/api/me/vault/entries/[id]/verification` (POST/GET/DELETE). `/api/admin/vault-verification/{queue,approve,reject}`. Owner-flow integration with existing `parse-title-deed` to extract name + compute match score. Supabase `vault-verification-docs` bucket setup.
 
-- New helper `loadVaultMine(map)` next to `loadZaahiPlots` — fetches `/api/me/vault/map`, builds GeoJSON source `vault-mine-buildings`, adds layer `VAULT_MINE_3D`.
-- Layer config: `fill-extrusion-color` per stage (LEAD = teal, CONTACTED = amber, NEGOTIATING = gold, AGREEMENT_SIGNED = green, PROMOTED = gold solid, LOST = grey, CLOSED = navy). Outline: dashed gold. `fill-extrusion-opacity: 0.85` (literal — per CLAUDE.md no-data-expression rule).
-- Tab in layers panel: "My Vault (N)" with count badge. Toggle drives `visibility: "visible" / "none"` on the layer.
-- Hover and click handlers → `VaultSidePanelAdapter` opens with full data (calls `/api/me/vault/entries/[id]`).
+### Day 8 — Promote endpoint with verification gate
 
-### Day 8 — Frontend: Shared-with-me layer + SidePanel adapter
+`/api/me/vault/entries/[id]/promote` — gates on `verificationStatus === VERIFIED`. Extracts parcel-create logic from `/api/parcels/submit` into `src/lib/parcel-create.ts` (clean library boundary).
 
-- New helper `loadVaultShared(map)` — `vault-shared-buildings` source, `VAULT_SHARED_3D` layer. Dotted teal outline, opacity 0.55.
-- Tab: "Shared with me (M)".
-- `VaultSidePanelAdapter.tsx` — wraps the existing `SidePanel` component but with VaultEntry shape. Header reads "PRIVATE — only you" or "SHARED BY <nickname>" or "PROMOTED → public listing".
-- Permission-aware sections: feasibility section hidden when permission < FEASIBILITY (always hidden in MVP since VIEW only).
+**End of Day 8: backend feature-complete.** UI begins Day 9.
 
-### Day 9 — Frontend: /vault list page
+### Day 9 — Upload wizard Step 1 (plot lookup + Affection Plan branch)
 
-- New top-level route `src/app/vault/page.tsx` — gated by `<AuthGuard>`.
-- Table view with columns: plot number, district, stage, asking price, next follow-up, share count.
-- Filters: stage multi-select, search (matches plot number or district substring), source dropdown.
-- Row click → opens entry in side-panel adapter (no navigation; same panel as map).
-- "Open in map" button → navigates to `/parcels/map` with `?focus=<entryId>` query param; the map page reads this on mount and flies to the plot.
-- Empty state: "Add your first plot to your vault. Brokers and developers use this to keep their daily pipeline organised."
+`Step1PlotNumber.tsx` — plot input + emirate/district picker. `Step1AffectionPlanUploader.tsx` — PDF upload + parse + editable review form. "What is an Affection Plan?" help modal with sample image.
 
-### Day 10 — Frontend: ShareModal
+### Day 10 — Upload wizard Steps 2–5
 
-- `src/app/parcels/map/ShareModal.tsx`.
-- Recipient picker:
-  - Recent contacts (from previous shares; pulled via a side route GET `/api/me/vault/recent-recipients`).
-  - Free-text email or nickname lookup.
-- Permission: VIEW only (radio disabled at FEASIBILITY/OFFER in MVP — but rendered greyed-out with "Phase 2.2" tooltip to signal roadmap).
-- Expiry: Never / 7 days / 30 days.
-- Submit → `POST /api/me/vault/entries/[id]/shares` → toast "Shared with X" + close.
-- Recipient sees in-app notification (uses existing `Notification` model — Day 12 will wire it formally).
+`Step2Target.tsx`, `Step3Details.tsx` (broker data), `Step4Verification.tsx` (doc upload UI), `Step5Confirm.tsx` (preview + submit).
 
-### Day 11 — Frontend: PromoteToPublicModal + share list/revoke UI
+### Day 11 — Vault map layer (owned + shared)
 
-- `src/app/parcels/map/PromoteToPublicModal.tsx`.
-- Confirmation copy per spec §6.5.
-- Submit → `POST /api/me/vault/entries/[id]/promote` → on success, toast + close + side-panel refresh.
-- Edge: if 409 (existing public listing), modal swaps to "There's already a public listing for this plot. Link to it?" → user confirms → re-POST with `confirmDuplicates: true`.
-- In `VaultSidePanelAdapter`, add a "Shares" section listing active shares with revoke button for each.
+`loadVaultMine(map)`, `loadVaultShared(map)`. Layer config with stage-coloured fills, dashed/dotted outlines, literal opacities. Tab toggles in layers panel.
 
-### Day 12 — Activity feed + notifications integration
+### Day 12 — Conflict markers on map + ConflictBanner
 
-- Notifications: extend `Notification` model usage (existing) with new `kind` values: `vault_share_received`, `vault_share_viewed`, `vault_share_revoked`. Re-use existing `/api/me/notifications` infrastructure.
-- Activity feed: small section at bottom of `VaultSidePanelAdapter` showing last 5 activity rows ("3h ago: shared with @aigerim", "yesterday: stage changed to NEGOTIATING").
-- Email digest (Phase 2.2 cleanup — DEFERRED out of MVP; left as a TODO ticket).
+`vault-conflict-markers` symbol layer (red corner-bug on conflicting polygons). `ConflictBanner.tsx` rendered in SidePanel when `conflictsWithOthers = true`. `ConflictDetailModal.tsx` with redacted comparison.
 
-### Day 13 — Polish + edge cases
+### Day 13 — /vault list page
 
-- Loading skeletons on list view and side panel.
-- Empty states: no vault entries, no shares, no activity.
-- 4xx error toasts: 401 redirects to /, 404 silent, 409 surfaces in modal, 500 generic "try again".
-- A11y: `aria-label` on toggle tabs, kbd nav on list, focus return on modal close.
-- Mobile: list view collapses to cards; side panel becomes full-screen sheet (existing `SidePanel` already supports this — see line 258).
-- Visual QA against UI STYLE GUIDE checklist.
+Table view with inline price edit (`PriceEditCell.tsx`), `AttributionBadge.tsx`, verification badge, conflict indicator. Filters (stage, search, source). New "Conflicts (N)" tab pane (`ConflictsTab.tsx`).
 
-### Day 14 — Smoke + cohort deploy
+### Day 14 — VaultSidePanelAdapter + Price History UI
 
-- Smoke checklist (CLAUDE.md format):
-  - [ ] `pnpm build` clean
-  - [ ] Upload to vault works (4 stages tested)
-  - [ ] Vault map layer renders + click opens side panel
-  - [ ] Share with cohort user works
-  - [ ] Recipient sees on their `/vault` → Shared with me + on map layer
-  - [ ] Recipient cannot see brokerNotes / nextFollowUpAt (PII redaction)
-  - [ ] Revoke share removes recipient access immediately
-  - [ ] Promote-to-Public creates Parcel (PENDING_REVIEW) + links back
-  - [ ] PMTiles still render (regression)
-  - [ ] /api/parcels/map still returns 200 with old shape (regression)
-  - [ ] Existing AddPlot Public flow still works
-- Deploy to preview branch on Vercel; founder + 1 cohort broker UAT.
-- Production push pending founder approval.
+SidePanel wrapper for VaultEntry. Price history expandable section. Provenance breadcrumb display.
+
+### Day 15 — Share modal + verification modal
+
+`ShareModal.tsx`, `VerificationModal.tsx`. Both reuse existing UI patterns (recipient lookup, doc upload).
+
+### Day 16 — Promote modal + admin verification queue UI
+
+`PromoteToPublicModal.tsx` with verification gate. `VaultVerificationTab.tsx` in `/admin/queue` — list PENDING entries, side-by-side name-match for owner flow, approve/reject buttons.
+
+### Day 17 — Activity feed + notifications integration
+
+Hook in-app notifications for `verification_*`, `share_*`, `conflict_detected`, `viewed_by_recipient`. Small activity feed at bottom of SidePanel showing last 5 events.
+
+### Day 18 — Polish: empty states, loading, errors, a11y, mobile
+
+Loading skeletons. Empty states (no entries, no shares, no conflicts). Error toasts (401 → /, 404 silent, 409 modal-resurface, 500 generic). A11y. Mobile responsive (list collapses to cards; SidePanel full-screen sheet).
+
+### Day 19 — End-to-end smoke + cohort acceptance
+
+CLAUDE.md format smoke checklist:
+- [ ] `pnpm build` clean
+- [ ] Upload DDA plot to vault (auto path)
+- [ ] Upload non-DDA plot via Affection Plan parse
+- [ ] Share with cohort user — view-only respected
+- [ ] Recipient sees plot on their map + /vault → Shared with me
+- [ ] PII (brokerNotes, ownerContact, follow-up) redacted from recipient view
+- [ ] Conflict banner appears when 2nd user uploads same plot with different price
+- [ ] Conflict detail modal shows ONLY public-facing facts of others
+- [ ] Inline price edit writes VaultPriceHistory row
+- [ ] Price history expandable shows chronological changes
+- [ ] Submit Title Deed for owner flow → name-match computes
+- [ ] Admin /admin/queue shows verification PENDING with name-match score
+- [ ] Admin approve → user notified, can promote
+- [ ] Promote-to-Public creates Parcel (PENDING_REVIEW) + links back
+- [ ] Existing AddPlot Public flow untouched (regression)
+- [ ] /api/parcels/map old shape returns 200 (regression)
+- [ ] PMTiles unchanged (regression)
+
+### Day 20 — Preview deploy + founder UAT
+
+Deploy to Vercel preview. Founder + 1 cohort broker walk-through. Bug list compiled.
+
+### Day 21 — UAT fixes + production push
+
+Address P0/P1 from UAT. Production push with `prisma migrate deploy` in the deployment pipeline. Monitor first 24h. SLA target: admin verification queue triaged daily.
 
 ---
 
-## 6. What this plan deliberately defers
+## 6. What this revised plan defers
 
 | Item | Phase | Why |
 |---|---|---|
-| Kanban drag-and-drop UI | 2.2 | High value but high engineering cost; list view ships first |
-| Per-permission shares (FEASIBILITY, OFFER) | 2.2 | Enum already declared; ships when feasibility runs on Vault data |
-| Email daily-digest of follow-ups | 2.2 | Needs cron infrastructure; in-app activity feed is the MVP substitute |
-| AI smart suggestions, prospect scoring, market alerts | 2.3 | The moat — separate spec, longer effort, paid tier launch |
-| Team accounts (multi-user vault for a brokerage) | 2.3 | Needs new Organization model — too large for MVP |
-| CSV bulk import | 2.3 (or earlier if cohort screams) | Quality-of-life, not blocking |
-| Link-based sharing (token URLs) | 2.3 | Decision D3 — account-only for MVP |
-| Encrypted-at-rest `ownerContact` | 2.2 | PDPL-correct path; MVP stores plaintext with PII warning in UI |
-| Mobile native app | 2.4 | Separate spec, separate effort |
+| Kanban drag-and-drop UI | 2.2 | High value but high cost |
+| Per-permission shares (FEASIBILITY, OFFER) | 2.2 | Enum declared; ships when feasibility runs on vault data |
+| Email daily digest | 2.2 | Needs cron; in-app feed is MVP substitute |
+| AI smart suggestions, prospect scoring, market alerts | 2.3 | The moat |
+| Team accounts (multi-user brokerage vault) | 2.3 | Needs Organization model |
+| CSV bulk import | 2.3 (or earlier if needed) | Quality-of-life |
+| Link-based sharing (token URLs) | 2.3 | Decision D3 — account-only MVP |
+| Encrypted-at-rest `ownerContact` | 2.2 | PDPL polish |
+| **Full conflict resolution (DISPUTED state + admin review)** | **2.2** | MVP ships lite version (banner only) |
+| **Market intelligence dashboard** (aggregate conflict stats) | **2.2/2.3** | Strong v2 differentiator |
+| **Manual Affection Plan entry fallback** | **2.2** | If parse fails outright |
+| **Admin re-review queue for low-confidence parses** | **2.2** | When confidence < 0.6 |
+| **Multi-hop provenance chains** | **2.2** | When re-sharing imported entries is supported |
+| **Price sparkline / market comparison** | **2.2** | Polish |
 
 ---
 
-## 7. Constraints — verified against this plan
+## 7. Constraints — verified
 
 | Constraint | This plan |
 |---|---|
-| Master Tree v3.0 frozen | Adds new module A.10; doesn't modify A.1–A.9 or any other block |
-| ZAAHI Signature 3D | Untouched — Vault uses `emitTiers`-style helpers but writes to NEW source/layer IDs |
-| `fill-extrusion-opacity` is a literal number | Two new layers — both use literal numbers (0.85 mine, 0.55 shared) |
-| Auth flow / `src/app/page.tsx` | Untouched — Vault APIs use existing `getApprovedUserId` |
-| `/api/layers/*` | Untouched — Vault is at `/api/me/vault/*` and `/api/vault/*`, not under `/api/layers` |
-| `page.tsx` map page edits | Touched, but additively — new layer registrations + tab; no removal of existing |
-| `schema.prisma` | New enums + new models + back-relation lines on existing models; no existing field touched |
-| `prisma migrate deploy` only in prod | Migration scripted but not applied here; left for the implementing engineer in production gate |
-| `Parcel.ownerId` / `verifiedOwnerUserId` invariant | Untouched — Vault does NOT mutate Parcel rows except via Promote which goes through the normal `/api/parcels/submit` path |
-| Cohort role gating | Vault APIs use existing `getApprovedUserId`; further role gating (OWNER / BROKER / DEVELOPER only) added as Day 2 helper |
+| Master Tree v3.0 frozen | Adds A.10; doesn't modify other 9 A modules or any other block |
+| ZAAHI Signature 3D | Untouched; new sources/layers only |
+| `fill-extrusion-opacity` literals | Two extrusion layers (0.85 mine, 0.55 shared) + 1 symbol layer (conflict markers, no extrusion) |
+| Auth flow / `src/app/page.tsx` | Untouched |
+| `/api/layers/*` | Untouched |
+| `page.tsx` map page edits | Additive only |
+| `schema.prisma` | 3 enums + 4 models + back-relations; existing fields untouched |
+| `prisma migrate deploy` in prod | Migration scripted, not applied here |
+| Cohort role gating | OWNER / BROKER / DEVELOPER; verification flows role-tagged |
+| Parcel.ownerId / verifiedOwnerUserId invariant | Untouched |
 
 ---
 
-## 8. Risks specific to this plan (vs. spec-level risks)
+## 8. Risks specific to this revised plan
 
-- **Day 5 import-cycle risk.** The promote endpoint wants to reuse `/api/parcels/submit` logic. If the submit handler is a Next.js route handler (not a library function), inter-route calls are awkward. **Mitigation:** extract the parcel-create logic into `src/lib/parcel-create.ts` as part of Day 5 (small refactor of `submit/route.ts` to thin wrapper). Adds ~2 hours but produces a clean library boundary.
-- **Day 7 visual-cluttering of map.** Stage-coloured fills on top of existing public listings may look noisy. **Mitigation:** Day 7 also adds the "My Vault" tab toggle as default-OFF (per spec §6.2); user opts in.
-- **Day 10 recipient-lookup ambiguity.** If two cohort users share a nickname (shouldn't happen — unique constraint) or the typed email matches no user, the share creation needs a friendly error. **Mitigation:** spec'd as 404 `recipient_not_found`. UI shows "We couldn't find that user. Make sure they're an approved cohort member."
-- **Day 14 cohort-user-pool size.** UAT needs at least one OWNER and one BROKER cohort user. **Mitigation:** if not enough cohort users registered by Day 14, founder accounts (Zhan / Dymo) act as both sides for the test.
+- **R-PARSE1 — Affection Plan PDF formats vary.** Older Affection Plans may have different layouts (handwritten coords). **Mitigation:** test pack of 5–10 real PDFs from founder during Day 6. If accuracy < 80% on the pack, escalate scope decision (manual fallback in MVP or push to Phase 2.2).
+- **R-PARSE2 — Claude vision API cost.** ~$0.02–0.05 per parse. At 100 parses/day = $2–5/day. Acceptable for MVP cohort scale. **Tracking:** add `affection_plan_parse_cost_cents` to billing dashboard (Phase 2.2).
+- **R-VERIFY1 — Title Deed name-match accuracy.** Arabic names in transliteration can score < 0.85 for legitimate matches. **Mitigation:** auto-pass threshold tunable (Decision D8). Admin override always available. Phase 2.2 may add Arabic name normalisation library.
+- **R-CONFLICT1 — Conflict detection write amplification.** Recompute fires on every entry create/update. If 10 users upload the same plot, each update triggers an O(10) scan + 10 row updates. **Mitigation:** compound index makes the read fast; updates are short transactions; acceptable up to ~100 entries per plot. Beyond that, batch the recompute (Phase 2.2).
+- **R-WIZARD1 — Multi-step wizard abandon rate.** 5 steps is a lot. **Mitigation:** persistent draft state (localStorage on the client) — user can resume mid-wizard. MVP adds basic localStorage; Phase 2.2 adds server-side draft entries.
+- **R-ADMIN1 — Admin queue overload.** If 50 brokers all submit verification in week 1, the Жан + Dymo queue blows up. **Mitigation:** admin queue is FIFO with SLA badges; auto-pass threshold (D8) reduces owner-flow manual review. Phase 2.2 may add deputy admins.
+
+Plus the same Day-5 import-cycle risk from the original plan — extract parcel-create logic into `lib/parcel-create.ts` on Day 8 here (~2h refactor).
 
 ---
 
 ## 9. Day-1 readiness checklist
 
-Before the engineer (or future-me) starts Day 1, confirm:
-
-- [ ] Founder picks on D1–D5 + D-bonus signed off (this plan assumes recommended picks)
-- [ ] `feat/vault-mvp` branch created off `main`
-- [ ] CI pipeline runs Prisma generate + tsc + Next.js build on the branch
+- [ ] Founder picks on D1–D9 signed off
+- [ ] `feat/vault-mvp` branch off `main`
+- [ ] CI runs Prisma generate + tsc + Next.js build
 - [ ] Supabase dev DB accessible for `prisma migrate dev`
-- [ ] Test cohort accounts exist (1 OWNER, 1 BROKER, 1 DEVELOPER) for UAT
-- [ ] No competing branch in progress that overlaps `prisma/schema.prisma`
-
-If any unchecked → resolve before Day 1.
+- [ ] 1 OWNER + 1 BROKER + 1 DEVELOPER cohort test accounts
+- [ ] 3–5 sample Affection Plan PDFs (founder collects from real plots)
+- [ ] Claude vision API quota OK for testing (~50 parse calls)
+- [ ] Supabase Storage buckets `vault-affection-plans` + `vault-verification-docs` created with private ACL
 
 ---
 
-## 10. After MVP lands
+## 10. After MVP+ lands
 
-Phase 2.2 plan (kanban + pipeline depth + per-permission shares + email digest + encryption) becomes a separate doc: `docs/specs/phase-2/private-plot-vault/phase-2.2-pipeline-depth.md`. Estimated 7–10 days, gated on MVP cohort feedback (2–4 weeks of UAT) before scope-locks.
+Phase 2.2 covers: kanban + pipeline depth + per-permission shares + email digest + encryption + full conflict resolution (DISPUTED state, admin review, market dashboard) + manual Affection Plan entry. Estimate: **10–14 days.** Gated on 2–4 weeks MVP cohort feedback.
 
-Phase 2.3 (AI) is a research+spec effort before implementation. Probably needs founder decision on AI provider (Anthropic / OpenAI / hybrid via Vercel AI SDK) and budget.
+Phase 2.3 covers AI/intelligence + team accounts + paid tier launch. **3–4 weeks.** Founder decision on AI provider + budget.
