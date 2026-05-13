@@ -79,3 +79,28 @@
 **Приоритет:** post-summit. Не блокер для AD summit demo — сегодня визуально AD area выглядит реалистично.
 
 **Context added:** 2026-05-13
+
+---
+
+## Windows visual verification — scrollbar-gutter (3ec8bec)
+
+Verify in a real Windows browser (Chrome / Edge / Firefox latest):
+- No page-wide jitter on dashboard / plot detail / map pages
+- F12 Console clean (no new errors from the CSS rule)
+- 17 px gutter reserved cosmetically acceptable
+- Smooth scroll on long pages (privacy / terms / disclaimer)
+
+If verified: close out. If regression found: `git revert 3ec8bec && git push`
+(2-3 min via Vercel CI).
+
+**Context added:** 2026-05-13
+
+---
+
+## Auto-rotate camera — diagnostic pending
+
+Controller code ready (`src/lib/auto-rotate.ts` 166 lines + `src/app/parcels/map/page.tsx` wiring +138/-1), tsc passed, NOT deployed. Earlier deploy attempt showed rotation не запускается visually. Need read-only diagnostic next session — likely pitch<30 на старте или plot detail panel оставил `map.isEasing()` true.
+
+Resume: `git stash pop stash@{0}` restores both files exactly as parked.
+
+**Context added:** 2026-05-13
