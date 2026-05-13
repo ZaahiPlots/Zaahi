@@ -192,6 +192,22 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
+
+// ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
+// Two new fill-extrusion layers + one symbol layer for cross-user
+// conflict markers. Distinct visual treatment from ZAAHI listings:
+//   • VAULT_MINE_3D    — dashed gold outline, fill-extrusion-opacity 0.85
+//   • VAULT_SHARED_3D  — dotted teal outline, fill-extrusion-opacity 0.55
+//   • VAULT_CONFLICT_MARKERS — small red corner-bug symbol layer drawn
+//                              on top of polygons where conflictsWithOthers=true
+// Default visible: false (only when user toggles the new tabs). Per
+// spec.md §7 — fill-extrusion-opacity literal numbers, ZAAHI Signature
+// untouched, PMTiles untouched.
+const VAULT_MINE_SRC = "vault-mine-buildings";
+const VAULT_MINE_3D = "vault-mine-buildings-3d";
+const VAULT_SHARED_SRC = "vault-shared-buildings";
+const VAULT_SHARED_3D = "vault-shared-buildings-3d";
+const VAULT_CONFLICT_MARKERS_LAYER = "vault-conflict-markers";
 // Land-use legend — APPROVED by founder 2026-04-11. NEVER change without
 // explicit founder approval. 9 canonical categories. The exact same set
 // is duplicated in three other places that MUST stay in sync:
@@ -915,6 +931,10 @@ type LayersState = {
   // Amenities — data.dubai point overlays (off by default per spec).
   evChargers: boolean;
   metroStations: boolean; tramStations: boolean; marineStations: boolean;
+  // Private Plot Vault v2.1 — owner-scoped + share-scoped overlays.
+  // Both off by default — opt-in via the "My Vault" / "Shared with me"
+  // tabs. Data lives in DB (Postgres), not PMTiles.
+  vaultMine: boolean; vaultShared: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1244,7 +1264,8 @@ type LayerCategory =
   | "dda-districts"   // individual DDA community layers (206 items)
   | "masterplans"     // 8 master plan KMLs
   | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
-  | "amenities";      // data.dubai point overlays (EV / transit stations)
+  | "amenities"       // data.dubai point overlays (EV / transit stations)
+  | "vault";          // Private Plot Vault v2.1 — personal + shared overlays
 type LayerLockTier = "GOLD" | "PLATINUM";
 
 type LayerMeta = {
@@ -1258,7 +1279,7 @@ const LAYER_COUNTRY_ORDER: LayerCountry[] = [
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault",
 ];
 
 const COUNTRY_LABELS: Record<LayerCountry, string> = {
@@ -1276,6 +1297,7 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "dda-districts": "DDA Districts",
   "landplots": "Land Plots",
   "amenities": "Amenities",
+  "vault": "My Vault",
 };
 
 // Build-once map: layer-key → metadata. Keys not in this map are treated
@@ -1297,6 +1319,12 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     metroStations: { country: "dubai", category: "amenities" },
     tramStations: { country: "dubai", category: "amenities" },
     marineStations: { country: "dubai", category: "amenities" },
+    // ── Dubai — Private Plot Vault v2.1 (owner + shared overlays) ──
+    // Country=dubai for UI organisation (vault is technically per-user,
+    // not per-emirate — but cohort-scale demand is Dubai-centric and
+    // splitting out a "personal" pseudo-country is Phase 2.2 polish).
+    vaultMine: { country: "dubai", category: "vault" },
+    vaultShared: { country: "dubai", category: "vault" },
     // ── Dubai — master plans (all locked GOLD per mockup) ──
     islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
     meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
@@ -1494,6 +1522,9 @@ function ParcelsMapPageInner() {
     evChargers: false,
     metroStations: false,
     tramStations: false,
+    // Private Plot Vault v2.1 — opt-in tabs.
+    vaultMine: false,
+    vaultShared: false,
     marineStations: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -2692,6 +2723,174 @@ function ParcelsMapPageInner() {
     }
   }
 
+  // ── Private Plot Vault (Day 7) ───────────────────────────────────
+  //
+  // Two new GeoJSON sources + fill-extrusion layers feeding the user's
+  // own vault entries and entries shared with them. Layer visibility is
+  // driven by `layers.vaultMine` / `layers.vaultShared` state — both
+  // default false (opt-in via the layers panel tabs).
+  //
+  // Visual treatment per spec §7:
+  //   • Mine    — fill colour by stage, fill-extrusion-opacity 0.85 (literal)
+  //   • Shared  — fill colour by stage, fill-extrusion-opacity 0.55 (literal)
+  // Conflict markers ride a separate symbol layer (no extrusion → opacity
+  // rule N/A) that filters on conflictsWithOthers.
+  //
+  // Both loaders are no-ops when the corresponding API returns 401 (e.g.
+  // the user signed out mid-session) — the routes are auth-gated.
+
+  /** Stage → colour palette for vault entries. Mirrors land-use colours
+   * but biased by pipeline stage so the broker can see at a glance what
+   * needs follow-up. Tunable post-MVP. */
+  const VAULT_STAGE_COLOR = (stage: string): string => {
+    switch (stage) {
+      case "LEAD": return "#1B4965";          // teal-blue — cool, just added
+      case "CONTACTED": return "#E67E22";     // amber — engaged but uncommitted
+      case "NEGOTIATING": return "#C8A96E";   // gold — active deal motion
+      case "AGREEMENT_SIGNED": return "#2D6A4F"; // green — momentum
+      case "PROMOTED": return "#9B2226";      // red — moved to public listing
+      case "LOST": return "#6B7280";          // grey — abandoned
+      case "CLOSED": return "#1A1A2E";        // navy — done
+      default: return "#888888";
+    }
+  };
+
+  /** Load caller's own vault entries onto the VAULT_MINE_3D layer. */
+  async function loadVaultMine(map: MLMap) {
+    try {
+      const r = await apiFetch("/api/me/vault/map");
+      if (!r.ok) {
+        if (r.status !== 401) console.warn("[vault-mine] fetch:", r.status);
+        return;
+      }
+      const data = (await r.json()) as GeoJSON.FeatureCollection;
+
+      // Annotate features with stage colour so the fill-extrusion-color
+      // expression can read it via `["get", "color"]` (same pattern as
+      // ZAAHI_BUILDINGS_3D).
+      const features: GeoJSON.Feature[] = data.features.map((f) => {
+        const props = (f.properties ?? {}) as Record<string, unknown>;
+        const stage = String(props.stage ?? "LEAD");
+        return {
+          ...f,
+          properties: {
+            ...props,
+            color: VAULT_STAGE_COLOR(stage),
+            // Mid-rise visual placeholder when entry has no real height — feels right
+            // for a "personal" overlay where the broker doesn't always have FAR data.
+            height: 30,
+            base: 0,
+          },
+        };
+      });
+
+      if (map.getSource(VAULT_MINE_SRC)) {
+        (map.getSource(VAULT_MINE_SRC) as maplibregl.GeoJSONSource).setData({
+          type: "FeatureCollection",
+          features,
+        });
+      } else {
+        map.addSource(VAULT_MINE_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features },
+        });
+      }
+
+      if (!map.getLayer(VAULT_MINE_3D)) {
+        map.addLayer({
+          id: VAULT_MINE_3D,
+          type: "fill-extrusion",
+          source: VAULT_MINE_SRC,
+          // Polygons only — Point features (placeholder lat/lng) don't extrude.
+          filter: ["==", ["geometry-type"], "Polygon"],
+          layout: { visibility: "none" }, // default OFF — toggled via tab
+          paint: {
+            "fill-extrusion-color": ["get", "color"],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.85, // literal per CLAUDE.md rule
+          },
+        });
+      }
+
+      // Conflict markers — small red dot on top of polygons in conflict.
+      if (!map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
+        map.addLayer({
+          id: VAULT_CONFLICT_MARKERS_LAYER,
+          type: "circle",
+          source: VAULT_MINE_SRC,
+          filter: ["==", ["get", "conflictsWithOthers"], true],
+          layout: { visibility: "none" },
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#E63946",
+            "circle-stroke-color": "#1A1A2E",
+            "circle-stroke-width": 2,
+            "circle-opacity": 0.9,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[vault-mine] load failed:", e);
+    }
+  }
+
+  /** Load entries shared TO the caller onto the VAULT_SHARED_3D layer. */
+  async function loadVaultShared(map: MLMap) {
+    try {
+      const r = await apiFetch("/api/vault/shared-with-me/map");
+      if (!r.ok) {
+        if (r.status !== 401) console.warn("[vault-shared] fetch:", r.status);
+        return;
+      }
+      const data = (await r.json()) as GeoJSON.FeatureCollection;
+
+      const features: GeoJSON.Feature[] = data.features.map((f) => {
+        const props = (f.properties ?? {}) as Record<string, unknown>;
+        const stage = String(props.stage ?? "LEAD");
+        return {
+          ...f,
+          properties: {
+            ...props,
+            color: VAULT_STAGE_COLOR(stage),
+            height: 30,
+            base: 0,
+          },
+        };
+      });
+
+      if (map.getSource(VAULT_SHARED_SRC)) {
+        (map.getSource(VAULT_SHARED_SRC) as maplibregl.GeoJSONSource).setData({
+          type: "FeatureCollection",
+          features,
+        });
+      } else {
+        map.addSource(VAULT_SHARED_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features },
+        });
+      }
+
+      if (!map.getLayer(VAULT_SHARED_3D)) {
+        map.addLayer({
+          id: VAULT_SHARED_3D,
+          type: "fill-extrusion",
+          source: VAULT_SHARED_SRC,
+          filter: ["==", ["geometry-type"], "Polygon"],
+          layout: { visibility: "none" },
+          paint: {
+            "fill-extrusion-color": ["get", "color"],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.55, // literal per CLAUDE.md rule
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[vault-shared] load failed:", e);
+    }
+  }
+
   // ── PMTiles: DDA + AD Land Plots ─────────────────────────────────
   // Pre-built vector tiles served from /tiles/*.pmtiles (static files).
   // 99K DDA + 362K AD plots with color/height/landUse pre-computed.
@@ -2985,6 +3184,13 @@ function ParcelsMapPageInner() {
       // both the polygon source (fill / line / glow) and the building
       // source (3D extrusions colored by land use).
       await loadZaahiPlots(map);
+
+      // ── Private Plot Vault overlays (Day 7) ──
+      // Both sources/layers added immediately (default visibility "none")
+      // so the toggle-visibility useEffect can flip them on/off in O(1)
+      // without re-fetching. Each fetch 401-tolerant for signed-out users.
+      void loadVaultMine(map);
+      void loadVaultShared(map);
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
@@ -3305,6 +3511,10 @@ function ParcelsMapPageInner() {
       // (maplibre's source registry was wiped). The loader is idempotent
       // on map.getSource so it's safe to call.
       await loadZaahiPlots(map);
+      // Vault overlays also need re-attachment after a basemap swap.
+      // Same idempotent loaders.
+      void loadVaultMine(map);
+      void loadVaultShared(map);
       // Re-attach PMTiles land layers (sources wiped by setStyle)
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
@@ -3339,6 +3549,27 @@ function ParcelsMapPageInner() {
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
   }, [layers.ddaLandPlots, layers.adLandPlots, layers.omanLandPlots]);
+
+  // ── Private Plot Vault toggle wiring (Day 7) ──
+  // Layer visibility flips O(1) — sources are loaded on map-init and
+  // stay alive for the page lifetime. Conflict-markers symbol layer
+  // rides on the same VAULT_MINE_SRC and is only visible when the
+  // "My Vault" tab is on (and its features filter on conflictsWithOthers).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const mineV = layers.vaultMine ? "visible" : "none";
+    const sharedV = layers.vaultShared ? "visible" : "none";
+    if (map.getLayer(VAULT_MINE_3D)) {
+      map.setLayoutProperty(VAULT_MINE_3D, "visibility", mineV);
+    }
+    if (map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
+      map.setLayoutProperty(VAULT_CONFLICT_MARKERS_LAYER, "visibility", mineV);
+    }
+    if (map.getLayer(VAULT_SHARED_3D)) {
+      map.setLayoutProperty(VAULT_SHARED_3D, "visibility", sharedV);
+    }
+  }, [layers.vaultMine, layers.vaultShared]);
 
   useEffect(() => {
     if (!layersOpen) return;
