@@ -14,6 +14,7 @@
 
 import { prisma } from "./prisma";
 import { recordVaultEvent } from "./vault-activity";
+import { notifyUser } from "./vault-notifications";
 import type { VaultSharePermission } from "@prisma/client";
 
 /** Recipient lookup discriminated union — exactly one of email/nickname/userId. */
@@ -142,6 +143,14 @@ export async function createShare(
       },
     });
 
+    // Notify recipient via the dashboard bell. Fire-and-forget.
+    void notifyUser(recipient.id, "VAULT_SHARE_RECEIVED", {
+      shareId: share.id,
+      vaultEntryId: args.vaultEntryId,
+      sharerUserId: args.ownerId,
+      permission,
+    });
+
     return {
       share: {
         id: share.id,
@@ -193,7 +202,12 @@ export async function revokeShare(
   try {
     const existing = await prisma.vaultShare.findUnique({
       where: { id: args.shareId },
-      select: { id: true, vaultEntryId: true, revokedAt: true },
+      select: {
+        id: true,
+        vaultEntryId: true,
+        recipientUserId: true,
+        revokedAt: true,
+      },
     });
     if (!existing) return { error: "not_found" };
     if (existing.revokedAt !== null) return { error: "already_revoked" };
@@ -212,6 +226,13 @@ export async function revokeShare(
       actorUserId: args.ownerId,
       kind: "SHARE_REVOKED",
       payload: { shareId: args.shareId, reason: args.reason ?? null },
+    });
+
+    // Notify recipient that their access is gone.
+    void notifyUser(existing.recipientUserId, "VAULT_SHARE_REVOKED", {
+      shareId: args.shareId,
+      vaultEntryId: existing.vaultEntryId,
+      reason: args.reason ?? null,
     });
 
     return {

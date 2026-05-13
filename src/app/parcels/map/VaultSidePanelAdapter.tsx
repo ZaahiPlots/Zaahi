@@ -65,6 +65,13 @@ interface OwnerView {
     note: string | null;
     createdAt: string;
   }>;
+  activity: Array<{
+    id: string;
+    kind: string;
+    payload: unknown;
+    actor: { id: string; nickname: string | null } | null;
+    createdAt: string;
+  }>;
 }
 
 interface RecipientView {
@@ -243,6 +250,22 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
               </Section>
             )}
 
+            {view.access === "owner" && view.activity.length > 0 && (
+              <Section label="Activity">
+                {view.activity.slice(0, 5).map((a) => (
+                  <div key={a.id} style={{ ...rowStyle, fontSize: 12 }}>
+                    <div style={rowLabelStyle}>{timeAgo(a.createdAt)}</div>
+                    <div style={rowValueStyle}>
+                      {formatActivityKind(a.kind)}
+                      {a.actor && a.actor.nickname && (
+                        <span style={{ color: TEXT_DIM, marginLeft: 6 }}>· @{a.actor.nickname}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </Section>
+            )}
+
             {view.access === "share" && (
               <Section label="Share">
                 <Row label="From">@{view.sharedBy.nickname ?? "—"}</Row>
@@ -340,6 +363,24 @@ function timeAgo(iso: string): string {
   if (dt < 3_600_000) return `${Math.floor(dt / 60_000)}m ago`;
   if (dt < 86_400_000) return `${Math.floor(dt / 3_600_000)}h ago`;
   return `${Math.floor(dt / 86_400_000)}d ago`;
+}
+
+function formatActivityKind(kind: string): string {
+  switch (kind) {
+    case "CREATED": return "Entry created";
+    case "STAGE_CHANGED": return "Stage updated";
+    case "PRICE_CHANGED": return "Price updated";
+    case "NOTE_ADDED": return "Notes updated";
+    case "FOLLOW_UP_LOGGED": return "Follow-up set";
+    case "SHARED": return "Shared with a user";
+    case "SHARE_REVOKED": return "Share revoked";
+    case "VIEWED_BY_RECIPIENT": return "Viewed by recipient";
+    case "IMPORTED_FROM_SHARE": return "Imported from share";
+    case "PROMOTED_TO_PUBLIC": return "Promoted to public";
+    case "CONFLICT_DETECTED": return "Conflict detected";
+    case "CONFLICT_RESOLVED": return "Conflict cleared";
+    default: return kind;
+  }
 }
 
 // ── Compositional helpers ──

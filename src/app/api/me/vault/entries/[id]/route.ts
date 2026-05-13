@@ -88,6 +88,18 @@ export async function GET(
         },
       },
       addedBy: { select: { id: true, nickname: true } },
+      activity: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          kind: true,
+          payload: true,
+          actorUserId: true,
+          actor: { select: { id: true, nickname: true } },
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -109,6 +121,13 @@ export async function GET(
       expiresAt: s.expiresAt?.toISOString() ?? null,
       createdAt: s.createdAt.toISOString(),
       lastViewedAt: s.lastViewedAt?.toISOString() ?? null,
+    })),
+    activity: entry.activity.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      payload: a.payload,
+      actor: a.actor,
+      createdAt: a.createdAt.toISOString(),
     })),
     priceHistory,
   });

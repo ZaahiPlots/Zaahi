@@ -25,6 +25,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { writeActivity } from "./vault-activity";
+import { notifyUser } from "./vault-notifications";
 
 // Tolerances — kept as named constants so cohort feedback can tune
 // without touching call sites. Per spec §15.5.
@@ -141,6 +142,18 @@ export async function recomputeConflictsForPlot(
         vaultEntryId: e.id,
         kind: hasAnyConflict ? "CONFLICT_DETECTED" : "CONFLICT_RESOLVED",
       });
+      // Notify the entry's owner on the false→true transition only.
+      // Auto-resolution (true→false when prices/areas converge) doesn't
+      // warrant a notification — too noisy.
+      if (hasAnyConflict) {
+        void notifyUser(e.ownerId, "VAULT_CONFLICT_DETECTED", {
+          vaultEntryId: e.id,
+          emirate,
+          district,
+          plotNumber,
+          participantCount: entries.length,
+        });
+      }
     }
   } catch (err) {
     console.error("[vault-conflict] recomputeConflictsForPlot failed:", err);
