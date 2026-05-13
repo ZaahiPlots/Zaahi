@@ -7,7 +7,9 @@
 //       addedByNickname, priceFils, area, landUse, createdAt
 //     }>
 //   }
-// → 403 if caller has no entry for this plot (anti-fishing)
+// → 404 if caller has no entry for this plot (anti-fishing + the
+//   project's standard 404-not-403 pattern from Deal Room — don't leak
+//   existence to non-participants by status-code differentiation)
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §5.2, §6.7.
 //
@@ -63,14 +65,16 @@ export async function GET(
   const { emirate, district } = parsed.data;
 
   // Anti-fishing — caller must own at least one VaultEntry for this
-  // plot tuple. Without this, anyone could enumerate other brokers'
-  // entries by guessing plot numbers.
+  // plot tuple. Without this check, anyone could enumerate other
+  // brokers' entries by guessing plot numbers. 404 (not 403) matches
+  // the project's Deal-Room precedent: status code alone shouldn't
+  // tell a probe whether a plot has any vault entries at all.
   const callerHasEntry = await prisma.vaultEntry.findFirst({
     where: { ownerId: userId, emirate, district, plotNumber },
     select: { id: true },
   });
   if (!callerHasEntry) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   // Pull all entries for the plot tuple. Includes the caller's own
