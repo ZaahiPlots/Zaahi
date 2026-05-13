@@ -24,8 +24,7 @@ function VaultPageBody() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const supa = supabaseBrowser();
-      const { data } = await supa.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       if (!cancelled) setUserId(data.session?.user.id ?? null);
     })();
     return () => {
