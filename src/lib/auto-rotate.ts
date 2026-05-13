@@ -34,7 +34,7 @@ import type maplibregl from "maplibre-gl";
 
 const SECONDS_PER_REVOLUTION = 60;
 const DEG_PER_MS = 360 / (SECONDS_PER_REVOLUTION * 1000);
-const IDLE_RESUME_MS = 3000;
+const IDLE_RESUME_MS = 5000;
 const MIN_ZOOM = 11;
 const MIN_PITCH = 30;
 
