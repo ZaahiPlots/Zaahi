@@ -157,6 +157,12 @@ model User {
   registrationApplication RegistrationApplication?
   plotClaims              PlotClaim[]
 
+  // Private Plot Vault v2.1 relations (spec: docs/specs/phase-2/private-plot-vault)
+  vaultEntriesOwned     VaultEntry[]    @relation("VaultEntryOwner")
+  vaultEntriesAddedBy   VaultEntry[]    @relation("VaultEntryAddedBy")
+  vaultSharesReceived   VaultShare[]    @relation("VaultShareRecipient")
+  vaultActivityAuthored VaultActivity[] @relation("VaultActivityActor")
+
   @@index([role])
   @@index([referredById])
 }
@@ -199,6 +205,9 @@ model Parcel {
 
   // Cohort Pilot v1 relations
   claims PlotClaim[]
+
+  // Private Plot Vault v2.1 — entries that reference this public parcel
+  vaultEntryLinks VaultEntry[] @relation("VaultEntryPublicParcel")
 
   @@unique([emirate, district, plotNumber])
   @@index([ownerId])
@@ -697,4 +706,178 @@ enum ClaimStatus {
   VERIFIED // verifiable role admin-approved
   SELF_DECLARED // non-verifiable role; ALWAYS displayed with a note
   REJECTED // admin rejected with reason
+}
+
+// ── PRIVATE PLOT VAULT — Phase 2.1 MVP ─────────────────────────────
+// Spec: docs/specs/phase-2/private-plot-vault/
+// Vault is the personal plot tracker. Not a legal pipeline — public
+// listings (with their Title-Deed/Contract verification) live in the
+// existing /api/parcels/submit flow. Vault crosses into Listings only
+// via Promote-to-Public, which routes through that same submit form.
+//
+// Multiple users can independently track the same plot; their entries
+// live as separate rows (unique by (ownerId, emirate, district,
+// plotNumber)). Cross-user awareness surfaces via the conflictsWith-
+// Others flag (info-only banner; DISPUTED status + admin arbitration
+// are Phase 2.2 features gated on cohort signal).
+
+enum VaultStage {
+  LEAD // just added; haven't engaged owner yet
+  CONTACTED // spoken with owner, no commitment
+  NEGOTIATING // back-and-forth on price/terms
+  AGREEMENT_SIGNED // NDA / authorisation to market
+  PROMOTED // moved to Public Listings (kept here for history)
+  LOST // abandoned, owner went elsewhere
+  CLOSED // converted to Deal (kept for history)
+}
+
+enum VaultSharePermission {
+  VIEW
+  FEASIBILITY // declared now; Phase 2.2 ships gate behaviour
+  OFFER // declared now; Phase 2.2 ships gate behaviour
+}
+
+// Broker / developer / owner's private pipeline entry for a single plot.
+// Plot identity refers to a real plot in the world, not necessarily a
+// Parcel row — most entries describe plots that have no public listing.
+//
+// `publicParcelId` is set when the underlying plot is ALSO publicly
+// listed (including via this user's own Promote-to-Public). Linking is
+// informational; the public listing has independent lifecycle.
+//
+// `ownerContact` carries PII. MVP stores unencrypted; Phase 2.2 will
+// encrypt at rest. Always served via the vault routes which gate on
+// ownerId / active share.
+//
+// `@@unique([ownerId, emirate, district, plotNumber])` — one user, one
+// entry per plot. Multiple users CAN each have their own entry for the
+// same plot (the deliberate design behind the separate-table model —
+// see decisions.md D1).
+model VaultEntry {
+  id      String @id @default(cuid())
+  ownerId String
+  owner   User   @relation("VaultEntryOwner", fields: [ownerId], references: [id])
+
+  // Attribution. addedByUserId == ownerId for direct uploads; differs
+  // when the entry was created via "Add to my vault" on a shared entry.
+  // provenanceChain preserves the trail across imports.
+  addedByUserId       String?
+  addedBy             User?   @relation("VaultEntryAddedBy", fields: [addedByUserId], references: [id])
+  importedFromShareId String?
+  provenanceChain     Json? // append-only [{ userId, nickname, addedAt }, …]
+
+  // Plot identity
+  emirate        String
+  district       String
+  plotNumber     String
+  publicParcelId String?
+  publicParcel   Parcel? @relation("VaultEntryPublicParcel", fields: [publicParcelId], references: [id])
+
+  // Plot facts (denormalised). For DDA hits, populated from the existing
+  // DDA scrape on first upload. For non-DDA: user enters manually
+  // (area, optional lat/lng). MVP renders a flat marker on map if no
+  // geometry. Phase 2.2 ships Affection Plan PDF parsing for non-DDA.
+  area      Float?
+  latitude  Float?
+  longitude Float?
+  geometry  Json?
+  landUse   String?
+
+  // Broker's data
+  askingPriceFils BigInt?
+  ownerContact    Json? // { name, phone, email, role, notes } — PII
+  brokerNotes     String?    @db.Text
+  stage           VaultStage @default(LEAD)
+  source          String? // "cold-call" | "referral" | "dda-scrape" | "off-plan" | …
+  nextFollowUpAt  DateTime?
+
+  // Promote-to-Public bookkeeping. The actual promote routes through
+  // the existing /api/parcels/submit flow (which carries its own
+  // verification gates). promotedAt + promotedParcelId are set on
+  // successful promote completion.
+  promotedAt       DateTime?
+  promotedParcelId String?
+
+  // Conflict detection (info-only banner). Set true when ≥ 2 VaultEntry
+  // rows exist for the same (emirate, district, plotNumber) tuple
+  // across different users AND any conflict-relevant field disagrees
+  // beyond tolerances. Maintained by src/lib/vault-conflict.ts on
+  // entry create / update / delete.
+  conflictsWithOthers Boolean @default(false)
+  conflictedFields    Json? // [{ field, values: [{ userId, value }] }]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shares       VaultShare[]
+  activity     VaultActivity[]
+  priceHistory VaultPriceHistory[]
+
+  @@unique([ownerId, emirate, district, plotNumber])
+  @@index([ownerId])
+  @@index([stage])
+  @@index([publicParcelId])
+  @@index([nextFollowUpAt])
+  @@index([emirate, district, plotNumber]) // drives conflict detection
+}
+
+// Per-recipient access grant on a single VaultEntry. MVP grants VIEW
+// only; permission enum has FEASIBILITY and OFFER declared so Phase 2.2
+// can ship gate behaviour without an enum migration.
+model VaultShare {
+  id              String     @id @default(cuid())
+  vaultEntryId    String
+  vaultEntry      VaultEntry @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
+  ownerId         String // denormalised from vaultEntry.ownerId
+  recipientUserId String
+  recipient       User       @relation("VaultShareRecipient", fields: [recipientUserId], references: [id])
+
+  permission    VaultSharePermission @default(VIEW)
+  expiresAt     DateTime? // NULL = never
+  revokedAt     DateTime?
+  revokedReason String?
+
+  createdAt    DateTime  @default(now())
+  lastViewedAt DateTime? // updated on every GET by recipient
+
+  @@unique([vaultEntryId, recipientUserId])
+  @@index([recipientUserId, revokedAt])
+  @@index([ownerId])
+}
+
+// Append-only activity log per VaultEntry. Drives the side-panel
+// activity feed and contributes to the per-user ActivityLog via a
+// companion `logActivity()` call (shadow-row pattern — every
+// VaultActivity write pairs with a user-centric ActivityLog row).
+//
+// `kind` is UPPER_SNAKE_CASE per src/lib/activity.ts convention.
+// Closed enum lives in src/lib/vault-activity.ts. Payload capped at
+// 4 KB at write time.
+model VaultActivity {
+  id           String     @id @default(cuid())
+  vaultEntryId String
+  vaultEntry   VaultEntry @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
+  actorUserId  String? // NULL for system events
+  actor        User?      @relation("VaultActivityActor", fields: [actorUserId], references: [id])
+  kind         String
+  payload      Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([vaultEntryId, createdAt])
+}
+
+// Append-only price history. One row per change (including the initial
+// set). Drives the "Price history (N changes)" expandable section in
+// the side panel.
+model VaultPriceHistory {
+  id           String     @id @default(cuid())
+  vaultEntryId String
+  vaultEntry   VaultEntry @relation(fields: [vaultEntryId], references: [id], onDelete: Cascade)
+  priceFils    BigInt
+  setByUserId  String
+  source       String // "manual" | "import" | "promote-sync"
+  note         String?
+  createdAt    DateTime   @default(now())
+
+  @@index([vaultEntryId, createdAt])
 }
