@@ -6,6 +6,7 @@ import { Protocol } from "pmtiles";
 import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
+import { VaultSidePanelAdapter } from "./VaultSidePanelAdapter";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import MiniMap from "./MiniMap";
@@ -1368,6 +1369,13 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // Private Plot Vault v2.1 — side panel state. Set by VAULT_MINE_3D /
+  // VAULT_SHARED_3D click handlers (Day 8). Parallel to selectedParcelId
+  // (which drives the public SidePanel); both can be open at once via
+  // separate z-index layers.
+  const [selectedVaultEntry, setSelectedVaultEntry] = useState<
+    { id: string; mode: "owner" | "share" } | null
+  >(null);
   // sound.init() is called from inside HeaderBar's local useEffect now
   // (the music toggle button lives there). The page-level state used
   // to live here for the old floating button which was removed.
@@ -3192,6 +3200,25 @@ function ParcelsMapPageInner() {
       void loadVaultMine(map);
       void loadVaultShared(map);
 
+      // ── Vault side-panel click + hover handlers (Day 8) ──
+      // Open VaultSidePanelAdapter when the user clicks a vault polygon.
+      // Owner mode for VAULT_MINE_3D; share mode for VAULT_SHARED_3D.
+      // The adapter's polymorphic fetch resolves the correct view shape.
+      map.on("click", VAULT_MINE_3D, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        const id = f?.properties?.id as string | undefined;
+        if (id) setSelectedVaultEntry({ id, mode: "owner" });
+      });
+      map.on("click", VAULT_SHARED_3D, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        const id = f?.properties?.id as string | undefined;
+        if (id) setSelectedVaultEntry({ id, mode: "share" });
+      });
+      for (const layerId of [VAULT_MINE_3D, VAULT_SHARED_3D]) {
+        map.on("mouseenter", layerId, () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", layerId, () => { map.getCanvas().style.cursor = ""; });
+      }
+
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
@@ -4699,6 +4726,14 @@ function ParcelsMapPageInner() {
         buildingId={selectedBuildingId}
         onClose={() => setSelectedBuildingId(null)}
       />
+
+      {selectedVaultEntry && (
+        <VaultSidePanelAdapter
+          entryId={selectedVaultEntry.id}
+          mode={selectedVaultEntry.mode}
+          onClose={() => setSelectedVaultEntry(null)}
+        />
+      )}
 
       <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel
