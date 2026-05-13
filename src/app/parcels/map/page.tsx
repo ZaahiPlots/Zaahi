@@ -18,6 +18,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
+import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1445,6 +1446,14 @@ function ParcelsMapPageInner() {
   const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
   const droneCtrlRef = useRef<DroneController | null>(null);
+
+  // Auto-rotate camera — slow showcase rotation when the user is idle.
+  // HYBRID first-visit default: ON for first-ever visit (no localStorage
+  // key yet), respects saved choice on subsequent visits. Mutually
+  // exclusive with drone mode (each toggle disables the other).
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
+  const [showAutoRotateHint, setShowAutoRotateHint] = useState(false);
+  const autoRotateCtrlRef = useRef<AutoRotateController | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
@@ -3201,9 +3210,28 @@ function ParcelsMapPageInner() {
       /* localStorage may be blocked — stay OFF */
     }
 
+    // Auto-rotate controller — install once, drive enable/disable from
+    // `autoRotateEnabled` state. HYBRID first-visit default: if no
+    // localStorage key exists yet, treat as first-ever visit → start ON.
+    // Subsequent visits use the saved value.
+    const autoRotateCtrl = installAutoRotate(map);
+    autoRotateCtrlRef.current = autoRotateCtrl;
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("zaahi-autorotate");
+        if (saved === null || saved === "1") {
+          setAutoRotateEnabled(true);
+        }
+      }
+    } catch {
+      /* localStorage may be blocked — stay OFF */
+    }
+
     return () => {
       droneCtrl.destroy();
       droneCtrlRef.current = null;
+      autoRotateCtrl.destroy();
+      autoRotateCtrlRef.current = null;
       popup.remove();
       map.remove();
       mapRef.current = null;
@@ -3226,6 +3254,40 @@ function ParcelsMapPageInner() {
     setShowDroneHint(false);
     try { localStorage.setItem("zaahi-drone-mode", "0"); } catch { /* ignore */ }
   }, [droneEnabled]);
+
+  // Drive the auto-rotate controller from React state. Persists choice,
+  // gently tilts to 3D if the user is in flat view (rotation would
+  // otherwise showcase nothing), and shows the first-ever hint toast
+  // once per browser via a separate localStorage flag.
+  useEffect(() => {
+    const ctrl = autoRotateCtrlRef.current;
+    if (!ctrl) return;
+    if (autoRotateEnabled) {
+      // Auto-tilt to 3D if currently flat — easeTo runs concurrently with
+      // ctrl.enable() because the controller skips ticks while
+      // map.isEasing() is true (see auto-rotate.ts shouldRotate gate).
+      const m = mapRef.current;
+      if (m && m.getPitch() < 30) {
+        m.easeTo({ pitch: 45, duration: 600 });
+      }
+      ctrl.enable();
+      try { localStorage.setItem("zaahi-autorotate", "1"); } catch { /* ignore */ }
+      // First-ever hint toast — tracked in a separate flag so it doesn't
+      // fire on every subsequent enable.
+      let hintShown = false;
+      try { hintShown = localStorage.getItem("zaahi-autorotate-hint-shown") === "1"; } catch { /* ignore */ }
+      if (!hintShown) {
+        setShowAutoRotateHint(true);
+        try { localStorage.setItem("zaahi-autorotate-hint-shown", "1"); } catch { /* ignore */ }
+        const t = window.setTimeout(() => setShowAutoRotateHint(false), 3500);
+        return () => window.clearTimeout(t);
+      }
+      return;
+    }
+    ctrl.disable();
+    setShowAutoRotateHint(false);
+    try { localStorage.setItem("zaahi-autorotate", "0"); } catch { /* ignore */ }
+  }, [autoRotateEnabled]);
 
   // Theme swap → reload basemap, reattach overlays after styledata fires,
   // and re-tint the road colour to match.
@@ -3372,6 +3434,31 @@ function ParcelsMapPageInner() {
           }}
         >
           Drone mode activated — WASD to fly, right-click to rotate
+        </div>
+      )}
+
+      {showAutoRotateHint && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(10,22,40,0.7)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.9)",
+            borderRadius: 12,
+            padding: "8px 16px",
+            fontSize: 13,
+            letterSpacing: "0.02em",
+            zIndex: 40,
+            pointerEvents: "none",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          Auto-rotate ON — touch the map to pause
         </div>
       )}
 
@@ -3680,7 +3767,12 @@ function ParcelsMapPageInner() {
           aria-pressed={droneEnabled}
           onClick={() => {
             sound.whoosh();
-            setDroneEnabled((v) => !v);
+            setDroneEnabled((v) => {
+              const next = !v;
+              // Mutual exclusion: enabling drone disables auto-rotate.
+              if (next) setAutoRotateEnabled(false);
+              return next;
+            });
           }}
           style={{
             width: 30,
@@ -3719,6 +3811,51 @@ function ParcelsMapPageInner() {
             <circle cx="19" cy="12" r="2" />
             <circle cx="12" cy="5" r="2" />
             <circle cx="12" cy="19" r="2" />
+          </svg>
+        </button>
+        <button
+          title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
+          aria-label={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate"}
+          aria-pressed={autoRotateEnabled}
+          onClick={() => {
+            sound.whoosh();
+            setAutoRotateEnabled((v) => {
+              const next = !v;
+              // Mutual exclusion: enabling auto-rotate disables drone mode.
+              if (next) setDroneEnabled(false);
+              return next;
+            });
+          }}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            border: `1px solid ${autoRotateEnabled ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: autoRotateEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
+            color: autoRotateEnabled ? GOLD : "rgba(255, 255, 255, 0.55)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+            if (!autoRotateEnabled) e.currentTarget.style.color = GOLD;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = autoRotateEnabled ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = autoRotateEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
+            e.currentTarget.style.color = autoRotateEnabled ? GOLD : "rgba(255, 255, 255, 0.55)";
+          }}
+        >
+          {/* Circular arrow — auto-rotate indicator. */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+            <polyline points="21 4 21 9 16 9" />
           </svg>
         </button>
       </div>
