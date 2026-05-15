@@ -147,11 +147,53 @@ SELECT count(*) FROM pg_constraint WHERE contype='f' AND conrelid IN (
 -- expect 8
 ```
 
-[Zhan: paste output here when verified] —
+**Verified 2026-05-15** — agent ran the queries above against prod with
+founder approval (read-only `SELECT`s only). Raw psql output:
 
 ```
-<pending>
+               migration_name                |          finished_at
+---------------------------------------------+-------------------------------
+ 20260513230047_vault_mvp                    | 2026-05-13 22:55:57.043438+00
+ 20260510120000_plotclaim_parcel_user_unique | 2026-05-10 16:15:44.064983+00
+ 20260507_cohort_pilot_v1                    | 2026-05-07 18:34:10.521759+00
+(3 rows)
+
+ tables
+--------
+      4
+(1 row)
+
+ indexes
+---------
+      15
+(1 row)
+
+ enums
+-------
+     2
+(1 row)
+
+ fks
+-----
+   8
+(1 row)
 ```
+
+The migration's `finished_at` is in UTC; `2026-05-13 22:55:57+00` =
+`2026-05-14 02:55:57 Asia/Dubai`, matching the incident window.
+
+**Index count is 15 (not 11)** because the diagnostic above enumerated
+only secondary indexes from `@@index`/`@@unique` directives, omitting
+the 4 implicit primary-key indexes Postgres auto-creates (one per
+table). A follow-up `SELECT tablename, indexname FROM pg_indexes`
+confirmed the 4 surplus rows are exactly `VaultActivity_pkey`,
+`VaultEntry_pkey`, `VaultPriceHistory_pkey`, `VaultShare_pkey`. The
+remaining 11 rows match the doc's enumeration (VaultEntry 5 `@@index`
++ 1 `@@unique`, VaultShare 2 `@@index` + 1 `@@unique`, VaultActivity 1,
+VaultPriceHistory 1 → 11). Net damage assessment: **unchanged**.
+
+**Option A confirmed.** Proceeding with corrected Phase 3 protocol
+against staging.
 
 ### What was added to prod
 
