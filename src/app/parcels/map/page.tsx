@@ -20,6 +20,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
+import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -2773,24 +2774,69 @@ function ParcelsMapPageInner() {
       }
       const data = (await r.json()) as GeoJSON.FeatureCollection;
 
-      // Annotate features with stage colour so the fill-extrusion-color
-      // expression can read it via `["get", "color"]` (same pattern as
-      // ZAAHI_BUILDINGS_3D).
-      const features: GeoJSON.Feature[] = data.features.map((f) => {
+      // Expand each entry into 1–3 tier features:
+      //   • DDA-resolved (affectionPlan present) → ZAAHI Signature tiers
+      //     (podium/body/crown) per loadZaahiPlots semantics.
+      //   • Non-DDA polygon (no affectionPlan) → single flat 30 m block.
+      //   • Placeholder (5 m square around lat/lng) → single flat 3 m mini-block.
+      // Conflict-marker circle layer filters on tierIndex === 0 so we render
+      // exactly one marker per conflicting entry even when 3 tiers stack.
+      const features: GeoJSON.Feature[] = [];
+      for (const f of data.features) {
+        if (!f.geometry || f.geometry.type !== "Polygon") continue;
         const props = (f.properties ?? {}) as Record<string, unknown>;
         const stage = String(props.stage ?? "LEAD");
-        return {
-          ...f,
-          properties: {
-            ...props,
-            color: VAULT_STAGE_COLOR(stage),
-            // Mid-rise visual placeholder when entry has no real height — feels right
-            // for a "personal" overlay where the broker doesn't always have FAR data.
-            height: 30,
-            base: 0,
-          },
-        };
-      });
+        const color = VAULT_STAGE_COLOR(stage);
+        const placeholder = props.placeholder === true;
+        const plan = (props.affectionPlan ?? null) as {
+          maxFloors?: number | null;
+          maxHeightMeters?: number | null;
+          buildingLimitGeometry?: GeoJSON.Polygon | null;
+          setbacks?: SetbackEntry[] | null;
+          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          buildingStyle?: string | null;
+        } | null;
+
+        const baseProps = { ...props, color };
+
+        if (placeholder) {
+          features.push({
+            type: "Feature",
+            geometry: f.geometry,
+            properties: { ...baseProps, height: 3, base: 0, tierIndex: 0 },
+          });
+          continue;
+        }
+
+        if (plan) {
+          const tiers = emitSignatureTiers({
+            plotPolygon: f.geometry as GeoJSON.Polygon,
+            landUse: (typeof props.landUse === "string" && props.landUse) ? props.landUse : null,
+            areaSqft: typeof props.area === "number" ? props.area : null,
+            buildingLimitGeometry: (plan.buildingLimitGeometry ?? null) as GeoJSON.Polygon | null,
+            setbacks: plan.setbacks ?? null,
+            maxHeightMeters: plan.maxHeightMeters ?? null,
+            maxFloors: plan.maxFloors ?? null,
+            landUseSub: plan.landUseMix?.[0]?.sub ?? null,
+            buildingStyle: plan.buildingStyle ?? null,
+          });
+          tiers.forEach((t, idx) => {
+            features.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [t.ring] },
+              properties: { ...baseProps, height: t.topMeters, base: t.baseMeters, tierIndex: idx },
+            });
+          });
+          continue;
+        }
+
+        // Non-DDA polygon (e.g. future affection-plan PDF parse) — flat 30 m.
+        features.push({
+          type: "Feature",
+          geometry: f.geometry,
+          properties: { ...baseProps, height: 30, base: 0, tierIndex: 0 },
+        });
+      }
 
       if (map.getSource(VAULT_MINE_SRC)) {
         (map.getSource(VAULT_MINE_SRC) as maplibregl.GeoJSONSource).setData({
@@ -2809,8 +2855,6 @@ function ParcelsMapPageInner() {
           id: VAULT_MINE_3D,
           type: "fill-extrusion",
           source: VAULT_MINE_SRC,
-          // Polygons only — Point features (placeholder lat/lng) don't extrude.
-          filter: ["==", ["geometry-type"], "Polygon"],
           layout: { visibility: "none" }, // default OFF — toggled via tab
           paint: {
             "fill-extrusion-color": ["get", "color"],
@@ -2822,12 +2866,17 @@ function ParcelsMapPageInner() {
       }
 
       // Conflict markers — small red dot on top of polygons in conflict.
+      // tierIndex === 0 filter so multi-tier entries get ONE marker, not three.
       if (!map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
         map.addLayer({
           id: VAULT_CONFLICT_MARKERS_LAYER,
           type: "circle",
           source: VAULT_MINE_SRC,
-          filter: ["==", ["get", "conflictsWithOthers"], true],
+          filter: [
+            "all",
+            ["==", ["get", "conflictsWithOthers"], true],
+            ["==", ["get", "tierIndex"], 0],
+          ],
           layout: { visibility: "none" },
           paint: {
             "circle-radius": 6,
@@ -2853,19 +2902,62 @@ function ParcelsMapPageInner() {
       }
       const data = (await r.json()) as GeoJSON.FeatureCollection;
 
-      const features: GeoJSON.Feature[] = data.features.map((f) => {
+      // Same tier-expansion strategy as loadVaultMine. See its inline comment.
+      const features: GeoJSON.Feature[] = [];
+      for (const f of data.features) {
+        if (!f.geometry || f.geometry.type !== "Polygon") continue;
         const props = (f.properties ?? {}) as Record<string, unknown>;
         const stage = String(props.stage ?? "LEAD");
-        return {
-          ...f,
-          properties: {
-            ...props,
-            color: VAULT_STAGE_COLOR(stage),
-            height: 30,
-            base: 0,
-          },
-        };
-      });
+        const color = VAULT_STAGE_COLOR(stage);
+        const placeholder = props.placeholder === true;
+        const plan = (props.affectionPlan ?? null) as {
+          maxFloors?: number | null;
+          maxHeightMeters?: number | null;
+          buildingLimitGeometry?: GeoJSON.Polygon | null;
+          setbacks?: SetbackEntry[] | null;
+          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          buildingStyle?: string | null;
+        } | null;
+
+        const baseProps = { ...props, color };
+
+        if (placeholder) {
+          features.push({
+            type: "Feature",
+            geometry: f.geometry,
+            properties: { ...baseProps, height: 3, base: 0, tierIndex: 0 },
+          });
+          continue;
+        }
+
+        if (plan) {
+          const tiers = emitSignatureTiers({
+            plotPolygon: f.geometry as GeoJSON.Polygon,
+            landUse: (typeof props.landUse === "string" && props.landUse) ? props.landUse : null,
+            areaSqft: typeof props.area === "number" ? props.area : null,
+            buildingLimitGeometry: (plan.buildingLimitGeometry ?? null) as GeoJSON.Polygon | null,
+            setbacks: plan.setbacks ?? null,
+            maxHeightMeters: plan.maxHeightMeters ?? null,
+            maxFloors: plan.maxFloors ?? null,
+            landUseSub: plan.landUseMix?.[0]?.sub ?? null,
+            buildingStyle: plan.buildingStyle ?? null,
+          });
+          tiers.forEach((t, idx) => {
+            features.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [t.ring] },
+              properties: { ...baseProps, height: t.topMeters, base: t.baseMeters, tierIndex: idx },
+            });
+          });
+          continue;
+        }
+
+        features.push({
+          type: "Feature",
+          geometry: f.geometry,
+          properties: { ...baseProps, height: 30, base: 0, tierIndex: 0 },
+        });
+      }
 
       if (map.getSource(VAULT_SHARED_SRC)) {
         (map.getSource(VAULT_SHARED_SRC) as maplibregl.GeoJSONSource).setData({
@@ -2884,7 +2976,6 @@ function ParcelsMapPageInner() {
           id: VAULT_SHARED_3D,
           type: "fill-extrusion",
           source: VAULT_SHARED_SRC,
-          filter: ["==", ["geometry-type"], "Polygon"],
           layout: { visibility: "none" },
           paint: {
             "fill-extrusion-color": ["get", "color"],

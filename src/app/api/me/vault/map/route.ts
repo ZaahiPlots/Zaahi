@@ -4,13 +4,22 @@
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §5.1, §7.
 //
-// One feature per VaultEntry that has usable geometry (Polygon) OR a
-// fallback Point from (lat, lng). Entries with neither are skipped —
-// they appear in list view only.
+// One Polygon feature per VaultEntry. Sources:
+//   • `geometry` field on the entry (DDA-resolved or future affection-plan parse)
+//   • `publicParcel.geometry` (DDA-resolved entries that didn't copy)
+//   • synthesised 5 m square around (lat, lng) when neither geometry nor
+//     publicParcel exists — placeholder so the entry is visible on the map.
+//   • entries with neither geometry nor (lat, lng) and no publicParcel link
+//     are skipped (list-view only).
+//
+// When the entry is linked to a public Parcel (DDA path), we also return the
+// latest AffectionPlan fields so the client can render the ZAAHI Signature
+// (podium/body/crown) instead of a flat block.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
+import { synthesizePlaceholderPolygon } from "@/lib/vault-geometry";
 
 export const runtime = "nodejs";
 
@@ -34,38 +43,82 @@ export async function GET(req: NextRequest) {
       landUse: true,
       conflictsWithOthers: true,
       addedByUserId: true,
+      publicParcel: {
+        select: {
+          id: true,
+          geometry: true,
+          affectionPlans: {
+            orderBy: { fetchedAt: "desc" },
+            take: 1,
+            select: {
+              maxFloors: true,
+              maxHeightMeters: true,
+              buildingLimitGeometry: true,
+              setbacks: true,
+              landUseMix: true,
+              buildingStyle: true,
+            },
+          },
+        },
+      },
     },
   });
 
   const features: GeoJSON.Feature[] = [];
   for (const e of entries) {
-    const props = {
-      id: e.id,
-      plotNumber: e.plotNumber,
-      emirate: e.emirate,
-      district: e.district,
-      stage: e.stage,
-      askingPriceFils: e.askingPriceFils?.toString() ?? null,
-      area: e.area,
-      landUse: e.landUse,
-      conflictsWithOthers: e.conflictsWithOthers,
-      source: "vault-mine" as const,
-      addedByMe: e.addedByUserId === userId,
-    };
-    if (e.geometry && typeof e.geometry === "object") {
-      features.push({
-        type: "Feature",
-        geometry: e.geometry as unknown as GeoJSON.Geometry,
-        properties: props,
-      });
+    let polygon: GeoJSON.Polygon | null = null;
+    let placeholder = false;
+
+    if (
+      e.geometry &&
+      typeof e.geometry === "object" &&
+      (e.geometry as { type?: string }).type === "Polygon"
+    ) {
+      polygon = e.geometry as unknown as GeoJSON.Polygon;
+    } else if (
+      e.publicParcel?.geometry &&
+      typeof e.publicParcel.geometry === "object" &&
+      (e.publicParcel.geometry as { type?: string }).type === "Polygon"
+    ) {
+      polygon = e.publicParcel.geometry as unknown as GeoJSON.Polygon;
     } else if (e.latitude !== null && e.longitude !== null) {
-      features.push({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [e.longitude, e.latitude] },
-        properties: { ...props, placeholder: true },
-      });
+      polygon = synthesizePlaceholderPolygon(e.latitude, e.longitude, 5);
+      placeholder = true;
+    } else {
+      continue; // list-only
     }
-    // entries with neither geometry nor (lat, lng) are skipped — list-only
+
+    const plan = e.publicParcel?.affectionPlans?.[0] ?? null;
+    const affectionPlan = plan
+      ? {
+          maxFloors: plan.maxFloors,
+          maxHeightMeters: plan.maxHeightMeters,
+          buildingLimitGeometry: plan.buildingLimitGeometry,
+          setbacks: plan.setbacks,
+          landUseMix: plan.landUseMix,
+          buildingStyle: plan.buildingStyle,
+        }
+      : null;
+
+    features.push({
+      type: "Feature",
+      geometry: polygon,
+      properties: {
+        id: e.id,
+        plotNumber: e.plotNumber,
+        emirate: e.emirate,
+        district: e.district,
+        stage: e.stage,
+        askingPriceFils: e.askingPriceFils?.toString() ?? null,
+        area: e.area,
+        landUse: e.landUse,
+        conflictsWithOthers: e.conflictsWithOthers,
+        source: "vault-mine" as const,
+        addedByMe: e.addedByUserId === userId,
+        placeholder,
+        affectionPlan,
+      },
+    });
   }
 
   return NextResponse.json({
