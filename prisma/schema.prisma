@@ -806,6 +806,14 @@ model VaultEntry {
   conflictsWithOthers Boolean @default(false)
   conflictedFields    Json? // [{ field, values: [{ userId, value }] }]
 
+  // Snapshot of the DDA response when the entry was created via Path 1
+  // (live DDA lookup, plot not in our curated Parcel index). Stores the
+  // raw BASIC_LAND_BASE feature so the map renderer can apply ZAAHI
+  // Signature tiers without joining to AffectionPlan. Null for entries
+  // that resolved via publicParcelId (existing curated parcels) or via
+  // manual entry. See src/app/api/me/vault/plot-lookup/route.ts.
+  ddaSnapshot Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

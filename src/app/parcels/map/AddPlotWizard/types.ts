@@ -94,6 +94,8 @@ export interface PlotLookupResponse {
     latitude: number | null;
     longitude: number | null;
     district: string;
+    /** Raw DDA snapshot (BASIC_LAND_BASE feature). Present only on live DDA hits. */
+    ddaSnapshot?: unknown;
   };
 }
 
@@ -108,6 +110,8 @@ export interface WizardState {
   latitude: number | null;
   longitude: number | null;
   geometry: unknown | null;
+  /** Raw DDA snapshot persisted on the VaultEntry for Signature 3D render. */
+  ddaSnapshot: unknown | null;
   landUse: LandUse | null;
 
   // Step 2 outputs — broker's own data
@@ -134,6 +138,7 @@ export const INITIAL_WIZARD_STATE: WizardState = {
   latitude: null,
   longitude: null,
   geometry: null,
+  ddaSnapshot: null,
   landUse: null,
   askingPriceFils: null,
   stage: "LEAD",

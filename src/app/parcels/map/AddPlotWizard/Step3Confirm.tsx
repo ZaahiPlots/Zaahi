@@ -45,6 +45,7 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
         latitude: state.latitude ?? undefined,
         longitude: state.longitude ?? undefined,
         geometry: state.geometry ?? undefined,
+        ddaSnapshot: state.ddaSnapshot ?? undefined,
         landUse: state.landUse ?? undefined,
         askingPriceFils: state.askingPriceFils ?? undefined,
         ownerContact: state.ownerContact ?? undefined,

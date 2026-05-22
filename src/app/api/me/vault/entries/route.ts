@@ -44,6 +44,7 @@ const VaultEntryCreateSchema = z.object({
   latitude: z.number().min(22).max(27).optional(),
   longitude: z.number().min(51).max(57).optional(),
   geometry: z.unknown().optional(), // GeoJSON Polygon — server-side stored as-is; only set for DDA hits in MVP
+  ddaSnapshot: z.unknown().optional(), // raw DDA BASIC_LAND_BASE feature when sourced via live lookup
   landUse: z.string().trim().max(64).optional(),
   askingPriceFils: z
     .string()
@@ -191,6 +192,7 @@ export async function POST(req: NextRequest) {
         latitude: body.latitude ?? null,
         longitude: body.longitude ?? null,
         geometry: (body.geometry as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
+        ddaSnapshot: (body.ddaSnapshot as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
         landUse: body.landUse ?? null,
         askingPriceFils,
         ownerContact: body.ownerContact

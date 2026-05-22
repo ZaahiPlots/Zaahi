@@ -94,6 +94,7 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
       latitude: dda.latitude,
       longitude: dda.longitude,
       geometry: dda.geometry,
+      ddaSnapshot: dda.ddaSnapshot ?? null,
       landUse: (dda.landUse?.toUpperCase() as LandUse) ?? null,
     });
   }
@@ -108,6 +109,7 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
       latitude: latitude ? Number(latitude) : null,
       longitude: longitude ? Number(longitude) : null,
       geometry: null,
+      ddaSnapshot: null,
       landUse: (landUse || null) as LandUse | null,
     });
   }

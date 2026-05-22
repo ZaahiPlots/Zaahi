@@ -4,21 +4,27 @@
 // → 200 {
 //     source: "dda" | "not_found",
 //     existing: VaultEntrySummary | null,
-//     ddaData?: { area, geometry, landUse, latitude, longitude, district } // when source === "dda"
+//     ddaData?: {
+//       area, geometry, landUse, latitude, longitude, district,
+//       ddaSnapshot?,            // present only when sourced from live DDA
+//     }
 //   }
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §5.2, §6.1.
 //
-// Two checks in one round-trip:
-//   1. Does the caller already have a vault entry for this plot? Surfaces
-//      it so the wizard can short-circuit to edit-mode.
-//   2. Is the plot in our DDA scrape (existing Parcel + AffectionPlan)?
-//      If yes, auto-fills the wizard with area, geometry, landUse.
+// Lookup order:
+//   1. Does the caller already have a vault entry for this plot? Short-circuit
+//      to edit-mode.
+//   2. Is the plot in our local curated Parcel index? Hit → return cached.
+//   3. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). One fetch, no token,
+//      ~0.5s. Hit → return live data + ddaSnapshot for storage on the entry.
+//   4. Miss everything → "not_found"; wizard goes to manual entry.
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
+import { fetchDdaPlotByNumber } from "@/lib/dda-plot-lookup";
 
 export const runtime = "nodejs";
 
@@ -105,31 +111,53 @@ export async function POST(req: NextRequest) {
       }
     : null;
 
-  if (!ddaParcel) {
+  if (ddaParcel) {
+    // Hit in curated Parcel index — use cached data.
+    let primaryLandUse: string | null = null;
+    const mix = ddaParcel.affectionPlans[0]?.landUseMix;
+    if (Array.isArray(mix) && mix.length > 0) {
+      const first = mix[0] as { category?: string; sub?: string };
+      primaryLandUse = first.category ?? first.sub ?? null;
+    }
+
     return NextResponse.json({
-      source: "not_found" as const,
+      source: "dda" as const,
       existing: existingSummary,
+      ddaData: {
+        area: ddaParcel.area,
+        geometry: ddaParcel.geometry,
+        landUse: primaryLandUse,
+        latitude: ddaParcel.latitude,
+        longitude: ddaParcel.longitude,
+        district: ddaParcel.district,
+        // ddaSnapshot omitted — Parcel-cached plots use AffectionPlan join.
+      },
     });
   }
 
-  // Pull primary land-use from the most-recent affectionPlan if available.
-  let primaryLandUse: string | null = null;
-  const mix = ddaParcel.affectionPlans[0]?.landUseMix;
-  if (Array.isArray(mix) && mix.length > 0) {
-    const first = mix[0] as { category?: string; sub?: string };
-    primaryLandUse = first.category ?? first.sub ?? null;
+  // 3) Live DDA fallback — call BASIC_LAND_BASE/MapServer/2 for plots not in
+  //    our curated index. ~0.5s; null on miss/error → "not_found" branch.
+  if (emirate === "DUBAI") {
+    const live = await fetchDdaPlotByNumber(plotNumber);
+    if (live) {
+      return NextResponse.json({
+        source: "dda" as const,
+        existing: existingSummary,
+        ddaData: {
+          area: live.area,
+          geometry: live.geometry,
+          landUse: live.landUse,
+          latitude: live.latitude,
+          longitude: live.longitude,
+          district: live.district || district,
+          ddaSnapshot: live.ddaSnapshot,
+        },
+      });
+    }
   }
 
   return NextResponse.json({
-    source: "dda" as const,
+    source: "not_found" as const,
     existing: existingSummary,
-    ddaData: {
-      area: ddaParcel.area,
-      geometry: ddaParcel.geometry,
-      landUse: primaryLandUse,
-      latitude: ddaParcel.latitude,
-      longitude: ddaParcel.longitude,
-      district: ddaParcel.district,
-    },
   });
 }

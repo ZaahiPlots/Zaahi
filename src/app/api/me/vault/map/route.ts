@@ -20,6 +20,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { synthesizePlaceholderPolygon } from "@/lib/vault-geometry";
+import {
+  synthesizeAffectionPlanFromDdaSnapshot,
+  type DdaSnapshot,
+  type AffectionPlanLike,
+} from "@/lib/dda-plot-lookup";
 
 export const runtime = "nodejs";
 
@@ -43,6 +48,7 @@ export async function GET(req: NextRequest) {
       landUse: true,
       conflictsWithOthers: true,
       addedByUserId: true,
+      ddaSnapshot: true,
       publicParcel: {
         select: {
           id: true,
@@ -89,16 +95,28 @@ export async function GET(req: NextRequest) {
     }
 
     const plan = e.publicParcel?.affectionPlans?.[0] ?? null;
-    const affectionPlan = plan
-      ? {
-          maxFloors: plan.maxFloors,
-          maxHeightMeters: plan.maxHeightMeters,
-          buildingLimitGeometry: plan.buildingLimitGeometry,
-          setbacks: plan.setbacks,
-          landUseMix: plan.landUseMix,
-          buildingStyle: plan.buildingStyle,
-        }
-      : null;
+    let affectionPlan: AffectionPlanLike | null = null;
+    if (plan) {
+      affectionPlan = {
+        maxFloors: plan.maxFloors,
+        maxHeightMeters: plan.maxHeightMeters,
+        buildingLimitGeometry: plan.buildingLimitGeometry,
+        setbacks: plan.setbacks,
+        landUseMix: plan.landUseMix,
+        buildingStyle: plan.buildingStyle,
+      };
+    }
+
+    // Live-DDA entries (Path 1 fallback) — synthesise the affectionPlan shape
+    // from the stored DDA snapshot so the client renders Signature tiers
+    // without needing a Parcel + AffectionPlan join.
+    if (!affectionPlan && e.ddaSnapshot && typeof e.ddaSnapshot === "object") {
+      try {
+        affectionPlan = synthesizeAffectionPlanFromDdaSnapshot(e.ddaSnapshot as unknown as DdaSnapshot);
+      } catch (err) {
+        console.warn("[vault map] DDA snapshot synth failed for entry", e.id, err);
+      }
+    }
 
     features.push({
       type: "Feature",
