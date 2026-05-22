@@ -241,6 +241,24 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
+    // P2003 — FK violation. Most commonly: public.User row missing for an
+    // approved Supabase auth user (legacy account that bypassed
+    // /api/users/sync). Should be auto-handled by getApprovedUserId's
+    // upsert as of feat/vault-mvp-hotfix; keep this branch as a
+    // diagnosable surface in case the upsert itself failed.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2003"
+    ) {
+      console.error("[vault] FK violation on create:", err.meta);
+      return NextResponse.json(
+        {
+          error: "user_not_synced",
+          hint: "Your account profile didn't sync. Sign out and sign in again.",
+        },
+        { status: 500 },
+      );
+    }
     console.error("[vault] create failed:", err);
     return NextResponse.json({ error: "db_failure" }, { status: 500 });
   }

@@ -27,6 +27,8 @@ interface Props {
   onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
   onExistingFound: (existingId: string) => void;
+  /** Optional channel for submit-side errors — caller can show a toast. */
+  onError?: (message: string) => void;
   /** Override the small uppercase label in the modal header. */
   title?: string;
 }
@@ -35,6 +37,7 @@ export function AddPlotWizardModal({
   onCreated,
   onCancel,
   onExistingFound,
+  onError,
   title = "Add a plot to your vault",
 }: Props) {
   useEscapeClose(onCancel);
@@ -57,6 +60,7 @@ export function AddPlotWizardModal({
           onCreated={onCreated}
           onCancel={onCancel}
           onExistingFound={onExistingFound}
+          onError={onError}
         />
       </div>
     </div>

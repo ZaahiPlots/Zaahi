@@ -51,6 +51,38 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
   if (data.user.user_metadata?.approved !== true) return null;
+
+  // Auto-create public.User row from Supabase auth metadata if missing.
+  // Prevents Prisma P2003 (FK violation on User.id) on routes that write
+  // VaultEntry / Deal / Notification / etc. for accounts that signed up
+  // before /api/users/sync was wired (e.g. founders, legacy users).
+  // Idempotent — `update: {}` makes this a no-op once the row exists.
+  // Failure is swallowed (warn-only) so the caller can still serve
+  // read-only data; the FK violation will surface clearly downstream.
+  try {
+    const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+    const rawName = typeof meta.name === "string" ? meta.name.trim() : "";
+    const name = rawName.length > 0
+      ? rawName
+      : (data.user.email ?? "User").split("@")[0];
+    await prisma.user.upsert({
+      where: { id: data.user.id },
+      create: {
+        id: data.user.id,
+        email: data.user.email ?? "",
+        role: UserRole.OTHER, // generic default — real role comes from /register
+        name,
+        // nickname intentionally left null — @unique constraint, collision-risky
+      },
+      update: {}, // no-op on subsequent calls
+    });
+  } catch (e) {
+    console.warn(
+      "[auth] auto-sync User upsert failed:",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
   return data.user.id;
 }
 
