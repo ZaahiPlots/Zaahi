@@ -1484,6 +1484,11 @@ function ParcelsMapPageInner() {
   const [showDroneHint, setShowDroneHint] = useState(false);
   const droneCtrlRef = useRef<DroneController | null>(null);
 
+  // Vault-only map mode — when ON, public ZAAHI listings are hidden and
+  // the My Vault / Shared-with-me layers are force-visible. Persists via
+  // localStorage "zaahi-vault-only-mode". Default OFF.
+  const [vaultOnlyMode, setVaultOnlyMode] = useState(false);
+
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
   // key yet), respects saved choice on subsequent visits. Mutually
@@ -3673,11 +3678,15 @@ function ParcelsMapPageInner() {
   // stay alive for the page lifetime. Conflict-markers symbol layer
   // rides on the same VAULT_MINE_SRC and is only visible when the
   // "My Vault" tab is on (and its features filter on conflictsWithOthers).
+  //
+  // Vault-only mode override: when ON, both vault layers are force-visible
+  // regardless of the user's per-layer toggle state. Public listing
+  // visibility lives in the next useEffect.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const mineV = layers.vaultMine ? "visible" : "none";
-    const sharedV = layers.vaultShared ? "visible" : "none";
+    const mineV = (vaultOnlyMode || layers.vaultMine) ? "visible" : "none";
+    const sharedV = (vaultOnlyMode || layers.vaultShared) ? "visible" : "none";
     if (map.getLayer(VAULT_MINE_3D)) {
       map.setLayoutProperty(VAULT_MINE_3D, "visibility", mineV);
     }
@@ -3687,7 +3696,36 @@ function ParcelsMapPageInner() {
     if (map.getLayer(VAULT_SHARED_3D)) {
       map.setLayoutProperty(VAULT_SHARED_3D, "visibility", sharedV);
     }
-  }, [layers.vaultMine, layers.vaultShared]);
+  }, [layers.vaultMine, layers.vaultShared, vaultOnlyMode]);
+
+  // Vault-only mode side effect on public ZAAHI listings + persistence.
+  // When ON: hide ZAAHI_PLOTS_FILL / ZAAHI_PLOTS_LINE / ZAAHI_BUILDINGS_3D.
+  // When OFF: restore default visibility ("visible"). PMTiles, DDA districts,
+  // amenities and other contextual layers are deliberately NOT touched —
+  // they remain user-controlled via the Layers panel.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const publicV = vaultOnlyMode ? "none" : "visible";
+    for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
+      if (map.getLayer(lid)) {
+        map.setLayoutProperty(lid, "visibility", publicV);
+      }
+    }
+    try {
+      localStorage.setItem("zaahi-vault-only-mode", vaultOnlyMode ? "1" : "0");
+    } catch { /* ignore quota / SSR */ }
+  }, [vaultOnlyMode]);
+
+  // Hydrate vault-only mode from localStorage once on mount.
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" &&
+          localStorage.getItem("zaahi-vault-only-mode") === "1") {
+        setVaultOnlyMode(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     if (!layersOpen) return;
@@ -4205,6 +4243,46 @@ function ParcelsMapPageInner() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-3.5-7.1" />
             <polyline points="21 4 21 9 16 9" />
+          </svg>
+        </button>
+        <button
+          title={vaultOnlyMode ? "Exit vault-only view (show public listings)" : "Vault-only view (hide public ZAAHI listings, show only your vault)"}
+          aria-label={vaultOnlyMode ? "Disable vault-only mode" : "Enable vault-only mode"}
+          aria-pressed={vaultOnlyMode}
+          onClick={() => {
+            sound.whoosh();
+            setVaultOnlyMode((v) => !v);
+          }}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            border: `1px solid ${vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
+            color: vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+            if (!vaultOnlyMode) e.currentTarget.style.color = GOLD;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
+            e.currentTarget.style.color = vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)";
+          }}
+        >
+          {/* Padlock — private/vault indicator. */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
         </button>
       </div>
