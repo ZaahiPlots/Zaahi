@@ -1486,6 +1486,17 @@ function ParcelsMapPageInner() {
   // AddPlotModal / AddPlotWizard internal logic untouched.
   type AddFlow = "none" | "chooser" | "listing" | "vault";
   const [addFlow, setAddFlow] = useState<AddFlow>("none");
+
+  // Lightweight toast for success / error feedback after wizard or listing
+  // submit. Single slot — newer toast replaces older. Auto-dismiss after 4s,
+  // user can dismiss manually via ×.
+  type Toast = { message: string; sub?: string; kind: "success" | "error" };
+  const [toast, setToast] = useState<Toast | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
   // Drone mode — toggleable via on-map button. Persists across reloads
   // via localStorage "zaahi-drone-mode". Default OFF on first visit.
   const [droneEnabled, setDroneEnabled] = useState(false);
@@ -3889,6 +3900,11 @@ function ParcelsMapPageInner() {
             // public map until verified — so we can't fly to them yet, just close.
             console.log("[zaahi] submitted parcel", id);
             setAddFlow("none");
+            setToast({
+              kind: "success",
+              message: "Listing submitted",
+              sub: "It will appear on the map once verified by an admin.",
+            });
           }}
         />
       )}
@@ -3897,15 +3913,102 @@ function ParcelsMapPageInner() {
           // Per Option B: cancel/×/Esc/backdrop inside the vault flow
           // returns to the chooser, not to the bare map.
           onCancel={() => setAddFlow("chooser")}
-          onCreated={(id) => {
-            console.log("[zaahi] vault entry created", id);
+          onCreated={(id, coords) => {
+            console.log("[zaahi] vault entry created", id, coords);
             setAddFlow("none");
+            // Auto-enable the My Vault layer so the user sees the new
+            // entry immediately (default toggle is off).
+            setLayers((prev) => prev.vaultMine ? prev : { ...prev, vaultMine: true });
+            // Refresh the vault source so the new entry is included.
+            const map = mapRef.current;
+            if (map) {
+              void loadVaultMine(map);
+              if (coords.latitude != null && coords.longitude != null) {
+                map.flyTo({
+                  center: [coords.longitude, coords.latitude],
+                  zoom: 17,
+                  pitch: 45,
+                  duration: 1500,
+                  essential: true,
+                });
+              }
+            }
+            setToast({
+              kind: "success",
+              message: "Added to vault",
+              sub: coords.latitude != null
+                ? "Flying to your plot — it's a 3D building now."
+                : "Toggle 'My Vault' in Layers to see it on the map.",
+            });
           }}
           onExistingFound={(id) => {
             console.log("[zaahi] vault entry already exists", id);
             setAddFlow("none");
+            setToast({
+              kind: "success",
+              message: "Already in vault",
+              sub: "Opened your existing entry — go to /vault to edit.",
+            });
           }}
         />
+      )}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            top: 80,
+            right: 20,
+            zIndex: 60,
+            maxWidth: 320,
+            padding: "14px 16px",
+            borderRadius: 12,
+            background: "rgba(10, 22, 40, 0.92)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            border: `1px solid ${toast.kind === "error" ? "rgba(230, 57, 70, 0.55)" : "rgba(200, 169, 110, 0.45)"}`,
+            color: "rgba(255, 255, 255, 0.92)",
+            fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.55)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: "Georgia, serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: toast.kind === "error" ? "#E63946" : "#C8A96E",
+              letterSpacing: "-0.01em",
+              marginBottom: toast.sub ? 4 : 0,
+            }}>
+              {toast.kind === "error" ? "✕" : "✓"} {toast.message}
+            </div>
+            {toast.sub && (
+              <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.65)", lineHeight: 1.4 }}>
+                {toast.sub}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(255, 255, 255, 0.55)",
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* Layer switcher — compact icon button */}

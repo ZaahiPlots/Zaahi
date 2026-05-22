@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { Spinner } from "../Spinner";
 import {
   EMIRATE_LABELS,
   LAND_USE_LABELS,
@@ -15,6 +16,12 @@ import {
   type LandUse,
   type WizardState,
 } from "./types";
+
+/** Coordinates passed back to the caller so the map can fly to the new entry. */
+export interface CreatedCoords {
+  latitude: number | null;
+  longitude: number | null;
+}
 
 const GOLD = "#C8A96E";
 const BG_GLASS = "rgba(10, 22, 40, 0.4)";
@@ -25,7 +32,7 @@ const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
 interface Props {
   state: WizardState;
   onBack: () => void;
-  onCreated: (entryId: string) => void;
+  onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
 }
 
@@ -70,7 +77,10 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
         return;
       }
       const created = (await r.json()) as { id: string };
-      onCreated(created.id);
+      // Pass coords through so the map can flyTo + auto-enable the layer.
+      // Coords come from wizard state — either DDA-derived centroid (Path 1)
+      // or user-entered lat/lng (manual Branch B). Null if user skipped.
+      onCreated(created.id, { latitude: state.latitude, longitude: state.longitude });
     } catch (e) {
       console.error("[wizard step3] submit failed:", e);
       setError("Network error — please try again.");
@@ -140,11 +150,11 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
       {error && <p style={errorStyle}>{error}</p>}
 
       <div style={{ display: "flex", gap: 12, marginTop: 22, justifyContent: "space-between" }}>
-        <button onClick={onBack} style={buttonSecondaryStyle}>
+        <button onClick={onBack} disabled={submitting} style={buttonSecondaryStyle}>
           ← Back
         </button>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onCancel} style={buttonSecondaryStyle}>
+          <button onClick={onCancel} disabled={submitting} style={buttonSecondaryStyle}>
             Cancel
           </button>
           <button
@@ -152,7 +162,14 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
             disabled={submitting}
             style={submitting ? buttonDisabledStyle : buttonStyle}
           >
-            {submitting ? "Adding..." : "Add to my vault"}
+            {submitting ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <Spinner size={14} />
+                Saving to vault…
+              </span>
+            ) : (
+              "Add to my vault"
+            )}
           </button>
         </div>
       </div>

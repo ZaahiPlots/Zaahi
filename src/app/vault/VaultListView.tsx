@@ -51,6 +51,11 @@ export function VaultListView({ selfUserId }: Props) {
     setShowWizard(true);
   }
 
+  // Signature accepts the optional `coords` second arg from the wizard so
+  // the prop type matches AddPlotWizardModal; /vault doesn't fly a camera,
+  // so coords are ignored here.
+  function handleWizardSuccess(_entryId: string, _coords?: unknown): void;
+  function handleWizardSuccess(): void;
   function handleWizardSuccess() {
     setShowWizard(false);
     setTab("mine");

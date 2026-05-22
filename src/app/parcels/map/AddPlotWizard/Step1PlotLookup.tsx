@@ -14,6 +14,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { Spinner } from "../Spinner";
 import {
   EMIRATES,
   EMIRATE_LABELS,
@@ -159,13 +160,27 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
       {error && <p style={errorStyle}>{error}</p>}
 
       {!lookupResult && (
-        <button
-          onClick={handleLookup}
-          disabled={!canLookup}
-          style={canLookup ? buttonStyle : buttonDisabledStyle}
-        >
-          {loading ? "Looking up..." : "Look up plot"}
-        </button>
+        <>
+          <button
+            onClick={handleLookup}
+            disabled={!canLookup}
+            style={canLookup ? buttonStyle : buttonDisabledStyle}
+          >
+            {loading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <Spinner size={14} />
+                Looking up in DDA…
+              </span>
+            ) : (
+              "Look up plot"
+            )}
+          </button>
+          {loading && (
+            <p style={{ ...subduedStyle, marginTop: 8, fontSize: 11 }}>
+              Querying DDA server — usually 1–2 seconds.
+            </p>
+          )}
+        </>
       )}
 
       {lookupResult?.source === "dda" && lookupResult.ddaData && (

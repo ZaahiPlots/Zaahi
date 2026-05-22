@@ -13,8 +13,10 @@
 // go back to the previous screen (e.g. the chooser) or return all the
 // way out — this component just emits the event.
 
-import { AddPlotWizard } from "./AddPlotWizard";
+import { AddPlotWizard, type CreatedCoords } from "./AddPlotWizard";
 import { useEscapeClose } from "./useEscapeClose";
+
+export type { CreatedCoords };
 
 const GOLD = "#C8A96E";
 const BORDER = "rgba(255, 255, 255, 0.1)";
@@ -22,7 +24,7 @@ const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
 const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
 
 interface Props {
-  onCreated: (entryId: string) => void;
+  onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
   onExistingFound: (existingId: string) => void;
   /** Override the small uppercase label in the modal header. */

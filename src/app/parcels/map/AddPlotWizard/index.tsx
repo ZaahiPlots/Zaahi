@@ -22,11 +22,13 @@
 import { useState } from "react";
 import { Step1PlotLookup } from "./Step1PlotLookup";
 import { Step2Details } from "./Step2Details";
-import { Step3Confirm } from "./Step3Confirm";
+import { Step3Confirm, type CreatedCoords } from "./Step3Confirm";
 import { INITIAL_WIZARD_STATE, type WizardState } from "./types";
 
+export type { CreatedCoords };
+
 interface Props {
-  onCreated: (entryId: string) => void;
+  onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
   onExistingFound?: (existingId: string) => void;
 }
