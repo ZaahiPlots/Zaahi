@@ -3950,6 +3950,16 @@ function ParcelsMapPageInner() {
               sub: "Opened your existing entry — go to /vault to edit.",
             });
           }}
+          onError={(message) => {
+            // Wizard keeps its inline error visible; the toast adds a
+            // top-right notification so the user notices even if their
+            // attention is elsewhere. Modal stays open — user can retry.
+            setToast({
+              kind: "error",
+              message: "Add to vault failed",
+              sub: message,
+            });
+          }}
         />
       )}
       {toast && (

@@ -31,9 +31,11 @@ interface Props {
   onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
   onExistingFound?: (existingId: string) => void;
+  /** Optional channel for submit-side errors — caller can show a toast. */
+  onError?: (message: string) => void;
 }
 
-export function AddPlotWizard({ onCreated, onCancel, onExistingFound }: Props) {
+export function AddPlotWizard({ onCreated, onCancel, onExistingFound, onError }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [state, setState] = useState<WizardState>(INITIAL_WIZARD_STATE);
 
@@ -70,6 +72,7 @@ export function AddPlotWizard({ onCreated, onCancel, onExistingFound }: Props) {
           onBack={() => setStep(2)}
           onCreated={onCreated}
           onCancel={onCancel}
+          onError={onError}
         />
       )}
     </div>

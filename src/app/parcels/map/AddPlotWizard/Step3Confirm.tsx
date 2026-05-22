@@ -34,9 +34,14 @@ interface Props {
   onBack: () => void;
   onCreated: (entryId: string, coords: CreatedCoords) => void;
   onCancel: () => void;
+  /** Surfaces submit-side errors so the parent can show a toast. The
+   *  inline error inside the modal stays as-is; this is an additive
+   *  notification channel. Wizard error path: 409 (already in vault),
+   *  500 (server), network failure. */
+  onError?: (message: string) => void;
 }
 
-export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
+export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,13 +72,24 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
       });
       if (r.status === 409) {
         const data = await r.json().catch(() => ({}));
-        setError(
-          `You already have this plot in your vault. (existing id: ${data.existingId ?? "unknown"})`,
-        );
+        const msg = `You already have this plot in your vault. (existing id: ${data.existingId ?? "unknown"})`;
+        setError(msg);
+        onError?.(msg);
         return;
       }
       if (!r.ok) {
-        setError(`Submit failed (${r.status})`);
+        // Parse server error body for a human-friendly hint when available.
+        // Shape from /api/me/vault/entries: { error, hint? }.
+        let serverMsg = "";
+        try {
+          const body = (await r.json()) as { error?: string; hint?: string };
+          serverMsg = body.hint || body.error || "";
+        } catch { /* response not JSON */ }
+        const msg = serverMsg
+          ? `${serverMsg} (HTTP ${r.status})`
+          : `Submit failed (${r.status})`;
+        setError(msg);
+        onError?.(msg);
         return;
       }
       const created = (await r.json()) as { id: string };
@@ -83,7 +99,9 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel }: Props) {
       onCreated(created.id, { latitude: state.latitude, longitude: state.longitude });
     } catch (e) {
       console.error("[wizard step3] submit failed:", e);
-      setError("Network error — please try again.");
+      const msg = "Network error — please try again.";
+      setError(msg);
+      onError?.(msg);
     } finally {
       setSubmitting(false);
     }
