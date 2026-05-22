@@ -6,8 +6,11 @@ import { Protocol } from "pmtiles";
 import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
+import { VaultSidePanelAdapter } from "./VaultSidePanelAdapter";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
+import { AddPlotChooser } from "./AddPlotChooser";
+import { AddPlotWizardModal } from "./AddPlotWizardModal";
 import MiniMap from "./MiniMap";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
@@ -19,6 +22,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
+import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -192,6 +196,22 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
+
+// ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
+// Two new fill-extrusion layers + one symbol layer for cross-user
+// conflict markers. Distinct visual treatment from ZAAHI listings:
+//   • VAULT_MINE_3D    — dashed gold outline, fill-extrusion-opacity 0.85
+//   • VAULT_SHARED_3D  — dotted teal outline, fill-extrusion-opacity 0.55
+//   • VAULT_CONFLICT_MARKERS — small red corner-bug symbol layer drawn
+//                              on top of polygons where conflictsWithOthers=true
+// Default visible: false (only when user toggles the new tabs). Per
+// spec.md §7 — fill-extrusion-opacity literal numbers, ZAAHI Signature
+// untouched, PMTiles untouched.
+const VAULT_MINE_SRC = "vault-mine-buildings";
+const VAULT_MINE_3D = "vault-mine-buildings-3d";
+const VAULT_SHARED_SRC = "vault-shared-buildings";
+const VAULT_SHARED_3D = "vault-shared-buildings-3d";
+const VAULT_CONFLICT_MARKERS_LAYER = "vault-conflict-markers";
 // Land-use legend — APPROVED by founder 2026-04-11. NEVER change without
 // explicit founder approval. 9 canonical categories. The exact same set
 // is duplicated in three other places that MUST stay in sync:
@@ -915,6 +935,10 @@ type LayersState = {
   // Amenities — data.dubai point overlays (off by default per spec).
   evChargers: boolean;
   metroStations: boolean; tramStations: boolean; marineStations: boolean;
+  // Private Plot Vault v2.1 — owner-scoped + share-scoped overlays.
+  // Both off by default — opt-in via the "My Vault" / "Shared with me"
+  // tabs. Data lives in DB (Postgres), not PMTiles.
+  vaultMine: boolean; vaultShared: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -1244,7 +1268,8 @@ type LayerCategory =
   | "dda-districts"   // individual DDA community layers (206 items)
   | "masterplans"     // 8 master plan KMLs
   | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
-  | "amenities";      // data.dubai point overlays (EV / transit stations)
+  | "amenities"       // data.dubai point overlays (EV / transit stations)
+  | "vault";          // Private Plot Vault v2.1 — personal + shared overlays
 type LayerLockTier = "GOLD" | "PLATINUM";
 
 type LayerMeta = {
@@ -1258,7 +1283,7 @@ const LAYER_COUNTRY_ORDER: LayerCountry[] = [
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault",
 ];
 
 const COUNTRY_LABELS: Record<LayerCountry, string> = {
@@ -1276,6 +1301,7 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "dda-districts": "DDA Districts",
   "landplots": "Land Plots",
   "amenities": "Amenities",
+  "vault": "My Vault",
 };
 
 // Build-once map: layer-key → metadata. Keys not in this map are treated
@@ -1297,6 +1323,12 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     metroStations: { country: "dubai", category: "amenities" },
     tramStations: { country: "dubai", category: "amenities" },
     marineStations: { country: "dubai", category: "amenities" },
+    // ── Dubai — Private Plot Vault v2.1 (owner + shared overlays) ──
+    // Country=dubai for UI organisation (vault is technically per-user,
+    // not per-emirate — but cohort-scale demand is Dubai-centric and
+    // splitting out a "personal" pseudo-country is Phase 2.2 polish).
+    vaultMine: { country: "dubai", category: "vault" },
+    vaultShared: { country: "dubai", category: "vault" },
     // ── Dubai — master plans (all locked GOLD per mockup) ──
     islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
     meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
@@ -1340,6 +1372,13 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // Private Plot Vault v2.1 — side panel state. Set by VAULT_MINE_3D /
+  // VAULT_SHARED_3D click handlers (Day 8). Parallel to selectedParcelId
+  // (which drives the public SidePanel); both can be open at once via
+  // separate z-index layers.
+  const [selectedVaultEntry, setSelectedVaultEntry] = useState<
+    { id: string; mode: "owner" | "share" } | null
+  >(null);
   // sound.init() is called from inside HeaderBar's local useEffect now
   // (the music toggle button lives there). The page-level state used
   // to live here for the old floating button which was removed.
@@ -1440,12 +1479,34 @@ function ParcelsMapPageInner() {
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
   const [bearing, setBearing] = useState(0);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // "+" on the map opens a chooser (Listing vs Vault), then routes to the
+  // selected flow. Per founder direction: Cancel/×/Esc/backdrop inside
+  // either inner flow returns to the chooser; the chooser's own ×/Esc/
+  // backdrop returns to the map. Two-step exit is intentional — keeps
+  // AddPlotModal / AddPlotWizard internal logic untouched.
+  type AddFlow = "none" | "chooser" | "listing" | "vault";
+  const [addFlow, setAddFlow] = useState<AddFlow>("none");
+
+  // Lightweight toast for success / error feedback after wizard or listing
+  // submit. Single slot — newer toast replaces older. Auto-dismiss after 4s,
+  // user can dismiss manually via ×.
+  type Toast = { message: string; sub?: string; kind: "success" | "error" };
+  const [toast, setToast] = useState<Toast | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
   // Drone mode — toggleable via on-map button. Persists across reloads
   // via localStorage "zaahi-drone-mode". Default OFF on first visit.
   const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
   const droneCtrlRef = useRef<DroneController | null>(null);
+
+  // Vault-only map mode — when ON, public ZAAHI listings are hidden and
+  // the My Vault / Shared-with-me layers are force-visible. Persists via
+  // localStorage "zaahi-vault-only-mode". Default OFF.
+  const [vaultOnlyMode, setVaultOnlyMode] = useState(false);
 
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
@@ -1494,6 +1555,9 @@ function ParcelsMapPageInner() {
     evChargers: false,
     metroStations: false,
     tramStations: false,
+    // Private Plot Vault v2.1 — opt-in tabs.
+    vaultMine: false,
+    vaultShared: false,
     marineStations: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -2692,6 +2756,264 @@ function ParcelsMapPageInner() {
     }
   }
 
+  // ── Private Plot Vault (Day 7) ───────────────────────────────────
+  //
+  // Two new GeoJSON sources + fill-extrusion layers feeding the user's
+  // own vault entries and entries shared with them. Layer visibility is
+  // driven by `layers.vaultMine` / `layers.vaultShared` state — both
+  // default false (opt-in via the layers panel tabs).
+  //
+  // Visual treatment per spec §7:
+  //   • Mine    — fill colour by stage, fill-extrusion-opacity 0.85 (literal)
+  //   • Shared  — fill colour by stage, fill-extrusion-opacity 0.55 (literal)
+  // Conflict markers ride a separate symbol layer (no extrusion → opacity
+  // rule N/A) that filters on conflictsWithOthers.
+  //
+  // Both loaders are no-ops when the corresponding API returns 401 (e.g.
+  // the user signed out mid-session) — the routes are auth-gated.
+
+  /** Stage → colour palette for vault entries. Mirrors land-use colours
+   * but biased by pipeline stage so the broker can see at a glance what
+   * needs follow-up. Tunable post-MVP. */
+  const VAULT_STAGE_COLOR = (stage: string): string => {
+    switch (stage) {
+      case "LEAD": return "#1B4965";          // teal-blue — cool, just added
+      case "CONTACTED": return "#E67E22";     // amber — engaged but uncommitted
+      case "NEGOTIATING": return "#C8A96E";   // gold — active deal motion
+      case "AGREEMENT_SIGNED": return "#2D6A4F"; // green — momentum
+      case "PROMOTED": return "#9B2226";      // red — moved to public listing
+      case "LOST": return "#6B7280";          // grey — abandoned
+      case "CLOSED": return "#1A1A2E";        // navy — done
+      default: return "#888888";
+    }
+  };
+
+  /** Load caller's own vault entries onto the VAULT_MINE_3D layer. */
+  async function loadVaultMine(map: MLMap) {
+    try {
+      const r = await apiFetch("/api/me/vault/map");
+      if (!r.ok) {
+        if (r.status !== 401) console.warn("[vault-mine] fetch:", r.status);
+        return;
+      }
+      const data = (await r.json()) as GeoJSON.FeatureCollection;
+
+      // Expand each entry into 1–3 tier features:
+      //   • DDA-resolved (affectionPlan present) → ZAAHI Signature tiers
+      //     (podium/body/crown) per loadZaahiPlots semantics.
+      //   • Non-DDA polygon (no affectionPlan) → single flat 30 m block.
+      //   • Placeholder (5 m square around lat/lng) → single flat 3 m mini-block.
+      // Conflict-marker circle layer filters on tierIndex === 0 so we render
+      // exactly one marker per conflicting entry even when 3 tiers stack.
+      const features: GeoJSON.Feature[] = [];
+      for (const f of data.features) {
+        if (!f.geometry || f.geometry.type !== "Polygon") continue;
+        const props = (f.properties ?? {}) as Record<string, unknown>;
+        const stage = String(props.stage ?? "LEAD");
+        const color = VAULT_STAGE_COLOR(stage);
+        const placeholder = props.placeholder === true;
+        const plan = (props.affectionPlan ?? null) as {
+          maxFloors?: number | null;
+          maxHeightMeters?: number | null;
+          buildingLimitGeometry?: GeoJSON.Polygon | null;
+          setbacks?: SetbackEntry[] | null;
+          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          buildingStyle?: string | null;
+        } | null;
+
+        const baseProps = { ...props, color };
+
+        if (placeholder) {
+          features.push({
+            type: "Feature",
+            geometry: f.geometry,
+            properties: { ...baseProps, height: 3, base: 0, tierIndex: 0 },
+          });
+          continue;
+        }
+
+        if (plan) {
+          const tiers = emitSignatureTiers({
+            plotPolygon: f.geometry as GeoJSON.Polygon,
+            landUse: (typeof props.landUse === "string" && props.landUse) ? props.landUse : null,
+            areaSqft: typeof props.area === "number" ? props.area : null,
+            buildingLimitGeometry: (plan.buildingLimitGeometry ?? null) as GeoJSON.Polygon | null,
+            setbacks: plan.setbacks ?? null,
+            maxHeightMeters: plan.maxHeightMeters ?? null,
+            maxFloors: plan.maxFloors ?? null,
+            landUseSub: plan.landUseMix?.[0]?.sub ?? null,
+            buildingStyle: plan.buildingStyle ?? null,
+          });
+          tiers.forEach((t, idx) => {
+            features.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [t.ring] },
+              properties: { ...baseProps, height: t.topMeters, base: t.baseMeters, tierIndex: idx },
+            });
+          });
+          continue;
+        }
+
+        // Non-DDA polygon (e.g. future affection-plan PDF parse) — flat 30 m.
+        features.push({
+          type: "Feature",
+          geometry: f.geometry,
+          properties: { ...baseProps, height: 30, base: 0, tierIndex: 0 },
+        });
+      }
+
+      if (map.getSource(VAULT_MINE_SRC)) {
+        (map.getSource(VAULT_MINE_SRC) as maplibregl.GeoJSONSource).setData({
+          type: "FeatureCollection",
+          features,
+        });
+      } else {
+        map.addSource(VAULT_MINE_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features },
+        });
+      }
+
+      if (!map.getLayer(VAULT_MINE_3D)) {
+        map.addLayer({
+          id: VAULT_MINE_3D,
+          type: "fill-extrusion",
+          source: VAULT_MINE_SRC,
+          layout: { visibility: "none" }, // default OFF — toggled via tab
+          paint: {
+            "fill-extrusion-color": ["get", "color"],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.85, // literal per CLAUDE.md rule
+          },
+        });
+      }
+
+      // Conflict markers — small red dot on top of polygons in conflict.
+      // tierIndex === 0 filter so multi-tier entries get ONE marker, not three.
+      if (!map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
+        map.addLayer({
+          id: VAULT_CONFLICT_MARKERS_LAYER,
+          type: "circle",
+          source: VAULT_MINE_SRC,
+          filter: [
+            "all",
+            ["==", ["get", "conflictsWithOthers"], true],
+            ["==", ["get", "tierIndex"], 0],
+          ],
+          layout: { visibility: "none" },
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#E63946",
+            "circle-stroke-color": "#1A1A2E",
+            "circle-stroke-width": 2,
+            "circle-opacity": 0.9,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[vault-mine] load failed:", e);
+    }
+  }
+
+  /** Load entries shared TO the caller onto the VAULT_SHARED_3D layer. */
+  async function loadVaultShared(map: MLMap) {
+    try {
+      const r = await apiFetch("/api/vault/shared-with-me/map");
+      if (!r.ok) {
+        if (r.status !== 401) console.warn("[vault-shared] fetch:", r.status);
+        return;
+      }
+      const data = (await r.json()) as GeoJSON.FeatureCollection;
+
+      // Same tier-expansion strategy as loadVaultMine. See its inline comment.
+      const features: GeoJSON.Feature[] = [];
+      for (const f of data.features) {
+        if (!f.geometry || f.geometry.type !== "Polygon") continue;
+        const props = (f.properties ?? {}) as Record<string, unknown>;
+        const stage = String(props.stage ?? "LEAD");
+        const color = VAULT_STAGE_COLOR(stage);
+        const placeholder = props.placeholder === true;
+        const plan = (props.affectionPlan ?? null) as {
+          maxFloors?: number | null;
+          maxHeightMeters?: number | null;
+          buildingLimitGeometry?: GeoJSON.Polygon | null;
+          setbacks?: SetbackEntry[] | null;
+          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          buildingStyle?: string | null;
+        } | null;
+
+        const baseProps = { ...props, color };
+
+        if (placeholder) {
+          features.push({
+            type: "Feature",
+            geometry: f.geometry,
+            properties: { ...baseProps, height: 3, base: 0, tierIndex: 0 },
+          });
+          continue;
+        }
+
+        if (plan) {
+          const tiers = emitSignatureTiers({
+            plotPolygon: f.geometry as GeoJSON.Polygon,
+            landUse: (typeof props.landUse === "string" && props.landUse) ? props.landUse : null,
+            areaSqft: typeof props.area === "number" ? props.area : null,
+            buildingLimitGeometry: (plan.buildingLimitGeometry ?? null) as GeoJSON.Polygon | null,
+            setbacks: plan.setbacks ?? null,
+            maxHeightMeters: plan.maxHeightMeters ?? null,
+            maxFloors: plan.maxFloors ?? null,
+            landUseSub: plan.landUseMix?.[0]?.sub ?? null,
+            buildingStyle: plan.buildingStyle ?? null,
+          });
+          tiers.forEach((t, idx) => {
+            features.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: [t.ring] },
+              properties: { ...baseProps, height: t.topMeters, base: t.baseMeters, tierIndex: idx },
+            });
+          });
+          continue;
+        }
+
+        features.push({
+          type: "Feature",
+          geometry: f.geometry,
+          properties: { ...baseProps, height: 30, base: 0, tierIndex: 0 },
+        });
+      }
+
+      if (map.getSource(VAULT_SHARED_SRC)) {
+        (map.getSource(VAULT_SHARED_SRC) as maplibregl.GeoJSONSource).setData({
+          type: "FeatureCollection",
+          features,
+        });
+      } else {
+        map.addSource(VAULT_SHARED_SRC, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features },
+        });
+      }
+
+      if (!map.getLayer(VAULT_SHARED_3D)) {
+        map.addLayer({
+          id: VAULT_SHARED_3D,
+          type: "fill-extrusion",
+          source: VAULT_SHARED_SRC,
+          layout: { visibility: "none" },
+          paint: {
+            "fill-extrusion-color": ["get", "color"],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "base"],
+            "fill-extrusion-opacity": 0.55, // literal per CLAUDE.md rule
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[vault-shared] load failed:", e);
+    }
+  }
+
   // ── PMTiles: DDA + AD Land Plots ─────────────────────────────────
   // Pre-built vector tiles served from /tiles/*.pmtiles (static files).
   // 99K DDA + 362K AD plots with color/height/landUse pre-computed.
@@ -2985,6 +3307,32 @@ function ParcelsMapPageInner() {
       // both the polygon source (fill / line / glow) and the building
       // source (3D extrusions colored by land use).
       await loadZaahiPlots(map);
+
+      // ── Private Plot Vault overlays (Day 7) ──
+      // Both sources/layers added immediately (default visibility "none")
+      // so the toggle-visibility useEffect can flip them on/off in O(1)
+      // without re-fetching. Each fetch 401-tolerant for signed-out users.
+      void loadVaultMine(map);
+      void loadVaultShared(map);
+
+      // ── Vault side-panel click + hover handlers (Day 8) ──
+      // Open VaultSidePanelAdapter when the user clicks a vault polygon.
+      // Owner mode for VAULT_MINE_3D; share mode for VAULT_SHARED_3D.
+      // The adapter's polymorphic fetch resolves the correct view shape.
+      map.on("click", VAULT_MINE_3D, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        const id = f?.properties?.id as string | undefined;
+        if (id) setSelectedVaultEntry({ id, mode: "owner" });
+      });
+      map.on("click", VAULT_SHARED_3D, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        const f = e.features?.[0];
+        const id = f?.properties?.id as string | undefined;
+        if (id) setSelectedVaultEntry({ id, mode: "share" });
+      });
+      for (const layerId of [VAULT_MINE_3D, VAULT_SHARED_3D]) {
+        map.on("mouseenter", layerId, () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", layerId, () => { map.getCanvas().style.cursor = ""; });
+      }
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
@@ -3305,6 +3653,10 @@ function ParcelsMapPageInner() {
       // (maplibre's source registry was wiped). The loader is idempotent
       // on map.getSource so it's safe to call.
       await loadZaahiPlots(map);
+      // Vault overlays also need re-attachment after a basemap swap.
+      // Same idempotent loaders.
+      void loadVaultMine(map);
+      void loadVaultShared(map);
       // Re-attach PMTiles land layers (sources wiped by setStyle)
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
@@ -3339,6 +3691,60 @@ function ParcelsMapPageInner() {
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
   }, [layers.ddaLandPlots, layers.adLandPlots, layers.omanLandPlots]);
+
+  // ── Private Plot Vault toggle wiring (Day 7) ──
+  // Layer visibility flips O(1) — sources are loaded on map-init and
+  // stay alive for the page lifetime. Conflict-markers symbol layer
+  // rides on the same VAULT_MINE_SRC and is only visible when the
+  // "My Vault" tab is on (and its features filter on conflictsWithOthers).
+  //
+  // Vault-only mode override: when ON, both vault layers are force-visible
+  // regardless of the user's per-layer toggle state. Public listing
+  // visibility lives in the next useEffect.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const mineV = (vaultOnlyMode || layers.vaultMine) ? "visible" : "none";
+    const sharedV = (vaultOnlyMode || layers.vaultShared) ? "visible" : "none";
+    if (map.getLayer(VAULT_MINE_3D)) {
+      map.setLayoutProperty(VAULT_MINE_3D, "visibility", mineV);
+    }
+    if (map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
+      map.setLayoutProperty(VAULT_CONFLICT_MARKERS_LAYER, "visibility", mineV);
+    }
+    if (map.getLayer(VAULT_SHARED_3D)) {
+      map.setLayoutProperty(VAULT_SHARED_3D, "visibility", sharedV);
+    }
+  }, [layers.vaultMine, layers.vaultShared, vaultOnlyMode]);
+
+  // Vault-only mode side effect on public ZAAHI listings + persistence.
+  // When ON: hide ZAAHI_PLOTS_FILL / ZAAHI_PLOTS_LINE / ZAAHI_BUILDINGS_3D.
+  // When OFF: restore default visibility ("visible"). PMTiles, DDA districts,
+  // amenities and other contextual layers are deliberately NOT touched —
+  // they remain user-controlled via the Layers panel.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const publicV = vaultOnlyMode ? "none" : "visible";
+    for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
+      if (map.getLayer(lid)) {
+        map.setLayoutProperty(lid, "visibility", publicV);
+      }
+    }
+    try {
+      localStorage.setItem("zaahi-vault-only-mode", vaultOnlyMode ? "1" : "0");
+    } catch { /* ignore quota / SSR */ }
+  }, [vaultOnlyMode]);
+
+  // Hydrate vault-only mode from localStorage once on mount.
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" &&
+          localStorage.getItem("zaahi-vault-only-mode") === "1") {
+        setVaultOnlyMode(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     if (!layersOpen) return;
@@ -3475,17 +3881,134 @@ function ParcelsMapPageInner() {
           })
         }
         onSelectParcel={(id) => setSelectedParcelId(id)}
-        onOpenAddModal={() => setShowAddModal(true)}
+        onOpenAddModal={() => setAddFlow("chooser")}
       />
-      {showAddModal && (
+      {addFlow === "chooser" && (
+        <AddPlotChooser
+          onPickListing={() => setAddFlow("listing")}
+          onPickVault={() => setAddFlow("vault")}
+          onClose={() => setAddFlow("none")}
+        />
+      )}
+      {addFlow === "listing" && (
         <AddPlotModal
-          onClose={() => setShowAddModal(false)}
+          // Per Option B: cancel/×/Esc/backdrop inside the listing flow
+          // returns to the chooser, not to the bare map.
+          onClose={() => setAddFlow("chooser")}
           onSubmitted={(id) => {
             // Submitted parcels start in PENDING_REVIEW and don't show on the
             // public map until verified — so we can't fly to them yet, just close.
             console.log("[zaahi] submitted parcel", id);
+            setAddFlow("none");
+            setToast({
+              kind: "success",
+              message: "Listing submitted",
+              sub: "It will appear on the map once verified by an admin.",
+            });
           }}
         />
+      )}
+      {addFlow === "vault" && (
+        <AddPlotWizardModal
+          // Per Option B: cancel/×/Esc/backdrop inside the vault flow
+          // returns to the chooser, not to the bare map.
+          onCancel={() => setAddFlow("chooser")}
+          onCreated={(id, coords) => {
+            console.log("[zaahi] vault entry created", id, coords);
+            setAddFlow("none");
+            // Auto-enable the My Vault layer so the user sees the new
+            // entry immediately (default toggle is off).
+            setLayers((prev) => prev.vaultMine ? prev : { ...prev, vaultMine: true });
+            // Refresh the vault source so the new entry is included.
+            const map = mapRef.current;
+            if (map) {
+              void loadVaultMine(map);
+              if (coords.latitude != null && coords.longitude != null) {
+                map.flyTo({
+                  center: [coords.longitude, coords.latitude],
+                  zoom: 17,
+                  pitch: 45,
+                  duration: 1500,
+                  essential: true,
+                });
+              }
+            }
+            setToast({
+              kind: "success",
+              message: "Added to vault",
+              sub: coords.latitude != null
+                ? "Flying to your plot — it's a 3D building now."
+                : "Toggle 'My Vault' in Layers to see it on the map.",
+            });
+          }}
+          onExistingFound={(id) => {
+            console.log("[zaahi] vault entry already exists", id);
+            setAddFlow("none");
+            setToast({
+              kind: "success",
+              message: "Already in vault",
+              sub: "Opened your existing entry — go to /vault to edit.",
+            });
+          }}
+        />
+      )}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            top: 80,
+            right: 20,
+            zIndex: 60,
+            maxWidth: 320,
+            padding: "14px 16px",
+            borderRadius: 12,
+            background: "rgba(10, 22, 40, 0.92)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            border: `1px solid ${toast.kind === "error" ? "rgba(230, 57, 70, 0.55)" : "rgba(200, 169, 110, 0.45)"}`,
+            color: "rgba(255, 255, 255, 0.92)",
+            fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.55)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: "Georgia, serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: toast.kind === "error" ? "#E63946" : "#C8A96E",
+              letterSpacing: "-0.01em",
+              marginBottom: toast.sub ? 4 : 0,
+            }}>
+              {toast.kind === "error" ? "✕" : "✓"} {toast.message}
+            </div>
+            {toast.sub && (
+              <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.65)", lineHeight: 1.4 }}>
+                {toast.sub}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(255, 255, 255, 0.55)",
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* Layer switcher — compact icon button */}
@@ -3856,6 +4379,46 @@ function ParcelsMapPageInner() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-3.5-7.1" />
             <polyline points="21 4 21 9 16 9" />
+          </svg>
+        </button>
+        <button
+          title={vaultOnlyMode ? "Exit vault-only view (show public listings)" : "Vault-only view (hide public ZAAHI listings, show only your vault)"}
+          aria-label={vaultOnlyMode ? "Disable vault-only mode" : "Enable vault-only mode"}
+          aria-pressed={vaultOnlyMode}
+          onClick={() => {
+            sound.whoosh();
+            setVaultOnlyMode((v) => !v);
+          }}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            border: `1px solid ${vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
+            color: vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+            if (!vaultOnlyMode) e.currentTarget.style.color = GOLD;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
+            e.currentTarget.style.color = vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)";
+          }}
+        >
+          {/* Padlock — private/vault indicator. */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
         </button>
       </div>
@@ -4468,6 +5031,14 @@ function ParcelsMapPageInner() {
         buildingId={selectedBuildingId}
         onClose={() => setSelectedBuildingId(null)}
       />
+
+      {selectedVaultEntry && (
+        <VaultSidePanelAdapter
+          entryId={selectedVaultEntry.id}
+          mode={selectedVaultEntry.mode}
+          onClose={() => setSelectedVaultEntry(null)}
+        />
+      )}
 
       <ArchibaldChat hidden={!!selectedParcelId} />
       <SidePanel

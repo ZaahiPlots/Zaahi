@@ -4,6 +4,58 @@
 
 ---
 
+## Accumulated FK / default drift в schema.prisma (pre-existing)
+
+**Задача:** исследовать накопленный schema drift между `prisma/schema.prisma`
+и migration history, спланировать cleanup migration.
+
+**Что обнаружено (2026-05-22, при создании vault_dda_snapshot migration):**
+`prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma`
+вернул не только желаемое `ADD COLUMN VaultEntry.ddaSnapshot`, но и
+**15 statement'ов drift** который существовал ДО vault MVP work:
+
+| Drift item | Что значит |
+|---|---|
+| `ALTER TABLE ActivityLog DROP CONSTRAINT ActivityLog_userId_fkey` + re-ADD with `ON DELETE CASCADE` | Re-applies cascade semantics |
+| Same DROP+ADD на: `Notification.userId`, `ParcelView.parcelId`, `ParcelView.userId` (SET NULL), `SavedParcel.userId`, `SavedParcel.parcelId`, `SavedSearch.userId` | 7 FK constraints с обновлёнными onDelete/onUpdate |
+| `ALTER TABLE AmbassadorApplication ALTER COLUMN "updatedAt" DROP DEFAULT` | Колонка раньше имела default; теперь Prisma-managed `@updatedAt` |
+
+**Origin:** кто-то редактировал `schema.prisma` (менял `onDelete` атрибуты FK,
+драгнул default'ы), но миграции не создавались. Когда staging-v2 setup'или
+сегодня — все 18 миграций применились (старые семантики), а schema.prisma
+ушёл вперёд. Затрагивает таблицы из cohort-pilot / dashboards / ambassador
+phase, не vault.
+
+**Что проверить ПЕРЕД любым apply этого drift на prod:**
+1. **Orphan rows на каждой FK** — например `Notification.userId` not in
+   `User.id`. Если есть orphan → CASCADE recreate упадёт. Запрос:
+   ```sql
+   SELECT COUNT(*) FROM "Notification" n
+   LEFT JOIN "User" u ON u.id = n."userId" WHERE u.id IS NULL;
+   ```
+   Repeat для всех 7 FK.
+2. **AmbassadorApplication.updatedAt DROP DEFAULT** — проверить что нет rows
+   с NULL updatedAt; иначе будущие `@updatedAt` writes могут не обновлять.
+3. **Test на prod-replica или branch DB** прежде чем apply на prod.
+
+**Что НЕ делать:**
+- НЕ собирать "drift fix" в одну миграцию с vault или другой feature work.
+  Должна быть отдельная commit + отдельный migrate deploy с явным согласием
+  founder'а.
+- НЕ применять автоматически — каждый FK recreate должен пройти orphan check.
+
+**Текущее состояние (2026-05-22):**
+- staging-v2: drift присутствует (как на prod). vault_dda_snapshot migration
+  применён БЕЗ drift fix (surgical Option B per founder direction).
+- prod: drift присутствует, известен, отложен.
+
+**Приоритет:** post-Vault-UAT, post-Day-14-prod-vault-deploy. Отдельная
+session с founder approval по каждому FK orphan-check результату.
+
+**Context added:** 2026-05-22
+
+---
+
 ## Vector basemap migration (label customization)
 
 **Задача:** заменить текущий raster basemap (Esri / CARTO) на vector tiles для полного контроля над labels.

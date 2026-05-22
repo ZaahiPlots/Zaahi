@@ -40,7 +40,16 @@ export type ActivityKind =
   | "PLOT_CLAIM_CREATED"
   | "OWNER_VERIFIED"
   | "CLAIM_VERIFIED"
-  | "CLAIM_REJECTED";
+  | "CLAIM_REJECTED"
+  // Private Plot Vault v2.1 — shadow-row events from src/lib/vault-activity.ts
+  | "VAULT_ENTRY_CREATED"
+  | "VAULT_STAGE_CHANGED"
+  | "VAULT_PRICE_CHANGED"
+  | "VAULT_SHARED"
+  | "VAULT_SHARE_REVOKED"
+  | "VAULT_IMPORTED_FROM_SHARE"
+  | "VAULT_PROMOTED_TO_PUBLIC"
+  | "VAULT_CONFLICT_DETECTED";
 
 export interface LogActivityArgs {
   userId: string;

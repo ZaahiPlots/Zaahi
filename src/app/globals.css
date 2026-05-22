@@ -154,3 +154,9 @@ html {
   background: var(--glass-bg-hover);
   border-color: var(--glass-border-color-hover);
 }
+
+/* Spinner rotation — used by <Spinner> in AddPlotWizard buttons */
+@keyframes zaahi-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
