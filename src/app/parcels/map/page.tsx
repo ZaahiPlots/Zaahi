@@ -9,6 +9,8 @@ import ArchibaldChat from "./ArchibaldChat";
 import { VaultSidePanelAdapter } from "./VaultSidePanelAdapter";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
+import { AddPlotChooser } from "./AddPlotChooser";
+import { AddPlotWizardModal } from "./AddPlotWizardModal";
 import MiniMap from "./MiniMap";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
@@ -1477,7 +1479,13 @@ function ParcelsMapPageInner() {
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
   const [bearing, setBearing] = useState(0);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // "+" on the map opens a chooser (Listing vs Vault), then routes to the
+  // selected flow. Per founder direction: Cancel/×/Esc/backdrop inside
+  // either inner flow returns to the chooser; the chooser's own ×/Esc/
+  // backdrop returns to the map. Two-step exit is intentional — keeps
+  // AddPlotModal / AddPlotWizard internal logic untouched.
+  type AddFlow = "none" | "chooser" | "listing" | "vault";
+  const [addFlow, setAddFlow] = useState<AddFlow>("none");
   // Drone mode — toggleable via on-map button. Persists across reloads
   // via localStorage "zaahi-drone-mode". Default OFF on first visit.
   const [droneEnabled, setDroneEnabled] = useState(false);
@@ -3862,15 +3870,40 @@ function ParcelsMapPageInner() {
           })
         }
         onSelectParcel={(id) => setSelectedParcelId(id)}
-        onOpenAddModal={() => setShowAddModal(true)}
+        onOpenAddModal={() => setAddFlow("chooser")}
       />
-      {showAddModal && (
+      {addFlow === "chooser" && (
+        <AddPlotChooser
+          onPickListing={() => setAddFlow("listing")}
+          onPickVault={() => setAddFlow("vault")}
+          onClose={() => setAddFlow("none")}
+        />
+      )}
+      {addFlow === "listing" && (
         <AddPlotModal
-          onClose={() => setShowAddModal(false)}
+          // Per Option B: cancel/×/Esc/backdrop inside the listing flow
+          // returns to the chooser, not to the bare map.
+          onClose={() => setAddFlow("chooser")}
           onSubmitted={(id) => {
             // Submitted parcels start in PENDING_REVIEW and don't show on the
             // public map until verified — so we can't fly to them yet, just close.
             console.log("[zaahi] submitted parcel", id);
+            setAddFlow("none");
+          }}
+        />
+      )}
+      {addFlow === "vault" && (
+        <AddPlotWizardModal
+          // Per Option B: cancel/×/Esc/backdrop inside the vault flow
+          // returns to the chooser, not to the bare map.
+          onCancel={() => setAddFlow("chooser")}
+          onCreated={(id) => {
+            console.log("[zaahi] vault entry created", id);
+            setAddFlow("none");
+          }}
+          onExistingFound={(id) => {
+            console.log("[zaahi] vault entry already exists", id);
+            setAddFlow("none");
           }}
         />
       )}

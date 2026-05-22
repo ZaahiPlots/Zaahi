@@ -8,8 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
-import { AddPlotWizard } from "@/app/parcels/map/AddPlotWizard";
-import { useEscapeClose } from "@/app/parcels/map/useEscapeClose";
+import { AddPlotWizardModal } from "@/app/parcels/map/AddPlotWizardModal";
 import { VaultListItem } from "./VaultListItem";
 import { ConflictsTab } from "./ConflictsTab";
 import { EmptyState } from "./EmptyState";
@@ -142,46 +141,6 @@ export function VaultListView({ selfUserId }: Props) {
           onExistingFound={handleWizardSuccess}
         />
       )}
-    </div>
-  );
-}
-
-// ── Add Plot Wizard modal wrapper ──
-//
-// AddPlotWizard renders its 3-step body without a backdrop — this wrapper
-// adds the dialog chrome (glassmorphism backdrop, centered card, Esc close).
-
-function AddPlotWizardModal({
-  onCreated,
-  onCancel,
-  onExistingFound,
-}: {
-  onCreated: (entryId: string) => void;
-  onCancel: () => void;
-  onExistingFound: (existingId: string) => void;
-}) {
-  useEscapeClose(onCancel);
-  return (
-    <div onClick={onCancel} style={modalBackdropStyle}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={modalPanelStyle}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Add a plot to your vault"
-      >
-        <div style={modalHeaderStyle}>
-          <div style={modalTinyLabelStyle}>Add a plot to your vault</div>
-          <button onClick={onCancel} style={modalCloseButtonStyle} aria-label="Close">
-            ×
-          </button>
-        </div>
-        <AddPlotWizard
-          onCreated={onCreated}
-          onCancel={onCancel}
-          onExistingFound={onExistingFound}
-        />
-      </div>
     </div>
   );
 }
@@ -380,67 +339,6 @@ const addButtonStyle: React.CSSProperties = {
   fontFamily: "inherit",
   whiteSpace: "nowrap",
   transition: "background 150ms ease, border-color 150ms ease",
-};
-
-const modalBackdropStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0, 0, 0, 0.6)",
-  backdropFilter: "blur(8px)",
-  WebkitBackdropFilter: "blur(8px)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 50,
-  padding: 20,
-};
-
-const modalPanelStyle: React.CSSProperties = {
-  background: "rgba(10, 22, 40, 0.92)",
-  backdropFilter: "blur(24px) saturate(150%)",
-  WebkitBackdropFilter: "blur(24px) saturate(150%)",
-  border: `1px solid ${BORDER}`,
-  borderRadius: 14,
-  padding: 22,
-  maxWidth: 760,
-  width: "100%",
-  maxHeight: "90vh",
-  overflowY: "auto",
-  color: TEXT_PRIMARY,
-  fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-  boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
-};
-
-const modalHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 16,
-  paddingBottom: 12,
-  borderBottom: `1px solid ${BORDER}`,
-};
-
-const modalTinyLabelStyle: React.CSSProperties = {
-  fontSize: 10,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: GOLD,
-  opacity: 0.8,
-};
-
-const modalCloseButtonStyle: React.CSSProperties = {
-  background: "rgba(255, 255, 255, 0.04)",
-  border: `1px solid ${BORDER}`,
-  color: TEXT_DIM,
-  borderRadius: 6,
-  width: 30,
-  height: 30,
-  fontSize: 18,
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
 };
 
 const titleStyle: React.CSSProperties = {
