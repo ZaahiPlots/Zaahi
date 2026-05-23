@@ -1621,11 +1621,13 @@ function ParcelsMapPageInner() {
   });
   // Sun-time slider visibility — gated by the ☀ button in the right
   // stack. The toggle controls UI visibility only; the directional
-  // light is always on via useSunLight below. So flipping the button
-  // off just hides the slider — the 08:15 (or last-chosen) override
-  // stays in effect. Double-clicking the slider is the way to clear
-  // back to live wall-clock time.
-  const [sunSliderActive, setSunSliderActive] = useState(true);
+  // light is always on via useSunLight below (gated solely on
+  // mapStyleReady). Default closed so users land on a clean map;
+  // the 08:15 sun is already lighting the scene, just without slider
+  // chrome on screen. Click ☀ to reveal the slider, click again
+  // to hide. Double-clicking the slider is the way to clear back to
+  // live wall-clock time.
+  const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
   // Vault-only map mode — when ON, public ZAAHI listings are hidden and
