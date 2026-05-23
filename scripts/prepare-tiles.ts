@@ -11,7 +11,7 @@
  *   npx tsx scripts/prepare-tiles.ts
  *   tippecanoe -o public/tiles/dda-land.pmtiles ...
  */
-import { readdirSync, readFileSync, createWriteStream } from "node:fs";
+import { readdirSync, readFileSync, createWriteStream, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
@@ -148,16 +148,30 @@ interface TierFeature {
   properties: Record<string, unknown>;
 }
 
+/**
+ * Emit one flat 2D feature + 1-3 tier extrusion features for a plot.
+ *
+ * Setback (inset) is applied ONLY to tier features (podium/body/crown)
+ * via the optional `insetRing` parameter. The flat feature always uses
+ * the original plot polygon so the 2D plot footprint at zoom 10-13
+ * stays at full plot boundary. When `insetRing` is missing (e.g. tiny
+ * plot dropped during shapely buffer, or the inset directory wasn't
+ * pre-built), tier features fall back to the original ring — same
+ * "small-plot bypass" semantics as ZAAHI Signature in loadZaahiPlots.
+ */
 function emitTiers(
   out: NodeJS.WritableStream,
   ring: number[][],
+  insetRing: number[][] | undefined,
   totalH: number,
   color: string,
   baseProps: Record<string, unknown>,
 ): number {
   let count = 0;
 
-  // Always emit the flat 2D feature (height=0, base=0) for fill/line/hover
+  // Always emit the flat 2D feature (height=0, base=0) using the FULL
+  // plot polygon — at zoom 10-13 plot footprints should match real
+  // cadastral boundaries.
   const flat: TierFeature = {
     type: "Feature",
     geometry: { type: "Polygon", coordinates: [ring] },
@@ -168,13 +182,18 @@ function emitTiers(
 
   if (totalH <= 0) return count;
 
+  // Tier features use the pre-baked inset (3m perpendicular buffer
+  // produced by scripts/inset-geojson.py). Fallback to the original
+  // ring keeps the pipeline robust if the inset prepass wasn't run.
+  const baseRing = insetRing ?? ring;
+
   const floors = Math.max(1, Math.round(totalH / FLOOR_H));
 
   if (floors <= 4) {
-    // Podium only — full footprint
+    // Podium only — full inset footprint
     const f: TierFeature = {
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [ring] },
+      geometry: { type: "Polygon", coordinates: [baseRing] },
       properties: { ...baseProps, color, height: Math.round(totalH), base: 0, tier: "podium" },
     };
     out.write(JSON.stringify(f) + "\n");
@@ -183,12 +202,12 @@ function emitTiers(
     // Podium (0→14m) + Body (14→top, 70% footprint)
     out.write(JSON.stringify({
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [ring] },
+      geometry: { type: "Polygon", coordinates: [baseRing] },
       properties: { ...baseProps, color, height: PODIUM_TOP, base: 0, tier: "podium" },
     }) + "\n");
     out.write(JSON.stringify({
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.7)] },
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(baseRing, 0.7)] },
       properties: { ...baseProps, color, height: Math.round(totalH), base: PODIUM_TOP, tier: "body" },
     }) + "\n");
     count += 2;
@@ -197,17 +216,17 @@ function emitTiers(
     const crownBase = Math.round(totalH - CROWN_H);
     out.write(JSON.stringify({
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [ring] },
+      geometry: { type: "Polygon", coordinates: [baseRing] },
       properties: { ...baseProps, color, height: PODIUM_TOP, base: 0, tier: "podium" },
     }) + "\n");
     out.write(JSON.stringify({
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.7)] },
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(baseRing, 0.7)] },
       properties: { ...baseProps, color, height: crownBase, base: PODIUM_TOP, tier: "body" },
     }) + "\n");
     out.write(JSON.stringify({
       type: "Feature",
-      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(ring, 0.5)] },
+      geometry: { type: "Polygon", coordinates: [scaleRingFromCentroid(baseRing, 0.5)] },
       properties: { ...baseProps, color, height: Math.round(totalH), base: crownBase, tier: "crown" },
     }) + "\n");
     count += 3;
@@ -216,9 +235,39 @@ function emitTiers(
   return count;
 }
 
+/**
+ * Build an in-memory lookup: plotNumber → inset polygon ring.
+ *
+ * Reads every *.geojson file in `dir` (produced by
+ * scripts/inset-geojson.py) and indexes the first ring of each feature
+ * by the value of `keyProp` in its properties. Returns an empty Map
+ * if `dir` doesn't exist (graceful — the rest of the pipeline still
+ * works without insets, just without setback).
+ *
+ * Memory: ~200 MB for 433K plots × ~30 vertices, fine on a build box.
+ */
+function loadInsetIndex(dir: string, keyProp: string): Map<string, number[][]> {
+  const idx = new Map<string, number[][]>();
+  if (!existsSync(dir)) return idx;
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".geojson"))) {
+    const fc = JSON.parse(readFileSync(join(dir, file), "utf8")) as GeoJSON.FeatureCollection;
+    for (const feat of fc.features) {
+      if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
+      const key = String((feat.properties as Record<string, unknown>)[keyProp] ?? "");
+      if (!key) continue;
+      idx.set(key, (feat.geometry as GeoJSON.Polygon).coordinates[0]);
+    }
+  }
+  return idx;
+}
+
 // ── Process directories ──
 
-function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
+function processDdaDir(
+  dir: string,
+  insetIndex: Map<string, number[][]>,
+  out: NodeJS.WritableStream,
+): number {
   const files = readdirSync(dir).filter(f => f.endsWith(".geojson"));
   let count = 0;
   for (const file of files) {
@@ -263,7 +312,7 @@ function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
         source: "dda",
       };
 
-      count += emitTiers(out, ring, height, color, baseProps);
+      count += emitTiers(out, ring, insetIndex.get(plotNumber), height, color, baseProps);
     }
   }
   return count;
@@ -271,6 +320,7 @@ function processDdaDir(dir: string, out: NodeJS.WritableStream): number {
 
 function processAdDir(
   dir: string,
+  insetIndex: Map<string, number[][]>,
   admOut: NodeJS.WritableStream,
   otherOut: NodeJS.WritableStream,
 ): { admCount: number; otherCount: number } {
@@ -333,11 +383,12 @@ function processAdDir(
       // Split by municipality to keep each PMTiles < 100MB:
       //   ADM (Abu Dhabi Municipality) → ad-plots-adm.geojson.nl
       //   AAM (Al Ain) + WRM (Western Region) + other → ad-plots-other.geojson.nl
+      const insetRing = insetIndex.get(plotNumber);
       if (municipality === "ADM") {
-        emitTiers(admOut, ring, height, color, baseProps);
+        emitTiers(admOut, ring, insetRing, height, color, baseProps);
         admCount++;
       } else {
-        emitTiers(otherOut, ring, height, color, baseProps);
+        emitTiers(otherOut, ring, insetRing, height, color, baseProps);
         otherCount++;
       }
     }
@@ -348,7 +399,13 @@ function processAdDir(
 // ── Oman (Muscat Municipality — Seeb contract) ─────────────────────
 // Source: https://geoportal.mm.gov.om/.../MUSCAT.Plots (MapServer/11).
 // 94,640 plots, already returned as WGS84 GeoJSON by the server.
-function processOmanDir(dir: string, out: NodeJS.WritableStream): number {
+// Oman insetting isn't wired yet — pass an empty index until the
+// shapely prepass runs against the Oman dir.
+function processOmanDir(
+  dir: string,
+  insetIndex: Map<string, number[][]>,
+  out: NodeJS.WritableStream,
+): number {
   const files = readdirSync(dir).filter(f => f.endsWith(".geojson"));
   let count = 0;
   for (const file of files) {
@@ -419,7 +476,7 @@ function processOmanDir(dir: string, out: NodeJS.WritableStream): number {
         status,
       };
 
-      count += emitTiers(out, ring, height, color, baseProps);
+      count += emitTiers(out, ring, insetIndex.get(plotNumber), height, color, baseProps);
     }
   }
   return count;
@@ -434,16 +491,34 @@ async function main() {
   const adOtherOut = join(process.cwd(), "data", "tiles", "ad-plots-other.geojson.nl");
   const omanOut = join(process.cwd(), "data", "tiles", "oman-plots.geojson.nl");
 
+  // Inset polygon directories — produced by scripts/inset-geojson.py.
+  // If missing the pipeline still works; tier features fall back to
+  // the full plot polygon (= no setback for that plot).
+  const ddaInsetDir = join(process.cwd(), "data", "layers-inset", "dda-plots");
+  const adInsetDir = join(process.cwd(), "data", "layers-inset", "ad-plots");
+  const omanInsetDir = join(process.cwd(), "data", "layers-inset", "oman-plots");
+
+  console.log("Loading inset polygon indices...");
+  const ddaInset = loadInsetIndex(ddaInsetDir, "PLOT_NUMBER");
+  const adInset = loadInsetIndex(adInsetDir, "PLOTNUMBER");
+  // Oman uses NEWPLOTNO; PLOTNO is a fallback in processOmanDir but
+  // the inset index keys off the primary field only — secondary
+  // lookups would just hide data mismatches.
+  const omanInset = loadInsetIndex(omanInsetDir, "NEWPLOTNO");
+  console.log(`  DDA inset: ${ddaInset.size.toLocaleString()} plots`);
+  console.log(`  AD inset:  ${adInset.size.toLocaleString()} plots`);
+  console.log(`  Oman inset: ${omanInset.size.toLocaleString()} plots`);
+
   console.log("Processing DDA plots (with podium/body/crown tiers)...");
   const ddaStream = createWriteStream(ddaOut);
-  const ddaCount = processDdaDir(ddaDir, ddaStream);
+  const ddaCount = processDdaDir(ddaDir, ddaInset, ddaStream);
   ddaStream.end();
   console.log(`  ${ddaCount.toLocaleString()} features → ${ddaOut}`);
 
   console.log("Processing AD plots (split by municipality for <100MB PMTiles)...");
   const adAdmStream = createWriteStream(adAdmOut);
   const adOtherStream = createWriteStream(adOtherOut);
-  const { admCount, otherCount } = processAdDir(adDir, adAdmStream, adOtherStream);
+  const { admCount, otherCount } = processAdDir(adDir, adInset, adAdmStream, adOtherStream);
   adAdmStream.end();
   adOtherStream.end();
   console.log(`  ADM (Abu Dhabi Municipality): ${admCount.toLocaleString()} plots → ${adAdmOut}`);
@@ -451,7 +526,7 @@ async function main() {
 
   console.log("Processing Oman plots (Muscat — Seeb contract, all wilayats)...");
   const omanStream = createWriteStream(omanOut);
-  const omanCount = processOmanDir(omanDir, omanStream);
+  const omanCount = processOmanDir(omanDir, omanInset, omanStream);
   omanStream.end();
   console.log(`  ${omanCount.toLocaleString()} features → ${omanOut}`);
 

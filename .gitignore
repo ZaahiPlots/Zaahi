@@ -10,6 +10,11 @@ data/meydan/
 data/layers/dda-plots/
 data/layers/ad-plots/
 data/layers/oman-plots/
+# Inset (negative-buffer) copy of the per-community plot GeoJSONs,
+# regenerated each pipeline run by scripts/inset-geojson.py. Same
+# rationale as data/layers/*-plots/ — too large for git, only used
+# to feed prepare-tiles.ts.
+data/layers-inset/
 # Intermediate newline-delimited GeoJSON used to build PMTiles
 data/tiles/
 # Raw KMZ/KML source material + instruction screenshots from founder.
