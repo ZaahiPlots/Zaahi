@@ -236,30 +236,47 @@ function emitTiers(
 }
 
 /**
- * Build an in-memory lookup: plotNumber → inset polygon ring.
+ * Build an in-memory lookup: composite-key → inset polygon ring.
  *
  * Reads every *.geojson file in `dir` (produced by
- * scripts/inset-geojson.py) and indexes the first ring of each feature
- * by the value of `keyProp` in its properties. Returns an empty Map
- * if `dir` doesn't exist (graceful — the rest of the pipeline still
+ * scripts/inset-geojson.py) and indexes the first ring of each
+ * Polygon feature by `keyFn(properties)`. Returns an empty Map if
+ * `dir` doesn't exist (graceful — the rest of the pipeline still
  * works without insets, just without setback).
+ *
+ * Key-builder pattern: DDA's PLOT_NUMBER is globally unique
+ * (7-digit DDA id) so `String(p.PLOT_NUMBER)` works. AD's PLOTNUMBER
+ * is sequential within a community (each community has plots 1,2,3…)
+ * so a composite "DISTRICT|COMMUNITY|PLOTNUMBER" key is needed.
+ * Oman uses NEWPLOTNO (string-unique).
  *
  * Memory: ~200 MB for 433K plots × ~30 vertices, fine on a build box.
  */
-function loadInsetIndex(dir: string, keyProp: string): Map<string, number[][]> {
+function loadInsetIndex(
+  dir: string,
+  keyFn: (props: Record<string, unknown>) => string,
+): Map<string, number[][]> {
   const idx = new Map<string, number[][]>();
   if (!existsSync(dir)) return idx;
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".geojson"))) {
     const fc = JSON.parse(readFileSync(join(dir, file), "utf8")) as GeoJSON.FeatureCollection;
     for (const feat of fc.features) {
       if (!feat.geometry || feat.geometry.type !== "Polygon") continue;
-      const key = String((feat.properties as Record<string, unknown>)[keyProp] ?? "");
+      const key = keyFn(feat.properties as Record<string, unknown>);
       if (!key) continue;
       idx.set(key, (feat.geometry as GeoJSON.Polygon).coordinates[0]);
     }
   }
   return idx;
 }
+
+// Per-dataset key builders. Used both at index time (loadInsetIndex)
+// and at lookup time (processXDir) so they MUST stay in sync.
+const ddaKey = (p: Record<string, unknown>) => String(p.PLOT_NUMBER ?? "");
+const adKey = (p: Record<string, unknown>) =>
+  `${p.DISTRICTENG ?? ""}|${p.COMMUNITYENG ?? ""}|${p.PLOTNUMBER ?? ""}`;
+const omanKey = (p: Record<string, unknown>) =>
+  String(p.NEWPLOTNO ?? p.PLOTNO ?? "");
 
 // ── Process directories ──
 
@@ -312,7 +329,7 @@ function processDdaDir(
         source: "dda",
       };
 
-      count += emitTiers(out, ring, insetIndex.get(plotNumber), height, color, baseProps);
+      count += emitTiers(out, ring, insetIndex.get(ddaKey(p)), height, color, baseProps);
     }
   }
   return count;
@@ -383,7 +400,7 @@ function processAdDir(
       // Split by municipality to keep each PMTiles < 100MB:
       //   ADM (Abu Dhabi Municipality) → ad-plots-adm.geojson.nl
       //   AAM (Al Ain) + WRM (Western Region) + other → ad-plots-other.geojson.nl
-      const insetRing = insetIndex.get(plotNumber);
+      const insetRing = insetIndex.get(adKey(p));
       if (municipality === "ADM") {
         emitTiers(admOut, ring, insetRing, height, color, baseProps);
         admCount++;
@@ -476,7 +493,7 @@ function processOmanDir(
         status,
       };
 
-      count += emitTiers(out, ring, insetIndex.get(plotNumber), height, color, baseProps);
+      count += emitTiers(out, ring, insetIndex.get(omanKey(p)), height, color, baseProps);
     }
   }
   return count;
@@ -499,12 +516,9 @@ async function main() {
   const omanInsetDir = join(process.cwd(), "data", "layers-inset", "oman-plots");
 
   console.log("Loading inset polygon indices...");
-  const ddaInset = loadInsetIndex(ddaInsetDir, "PLOT_NUMBER");
-  const adInset = loadInsetIndex(adInsetDir, "PLOTNUMBER");
-  // Oman uses NEWPLOTNO; PLOTNO is a fallback in processOmanDir but
-  // the inset index keys off the primary field only — secondary
-  // lookups would just hide data mismatches.
-  const omanInset = loadInsetIndex(omanInsetDir, "NEWPLOTNO");
+  const ddaInset = loadInsetIndex(ddaInsetDir, ddaKey);
+  const adInset = loadInsetIndex(adInsetDir, adKey);
+  const omanInset = loadInsetIndex(omanInsetDir, omanKey);
   console.log(`  DDA inset: ${ddaInset.size.toLocaleString()} plots`);
   console.log(`  AD inset:  ${adInset.size.toLocaleString()} plots`);
   console.log(`  Oman inset: ${omanInset.size.toLocaleString()} plots`);
