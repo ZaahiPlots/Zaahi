@@ -57,15 +57,14 @@ function enuAxesAt(
   WGS84_ELLIPSOID.getEastNorthUpAxes(deg2rad(latDeg), deg2rad(lngDeg), east, north, up, pos);
 }
 
-// Approximate camera altitude (above ground) for a MapLibre zoom + lat.
-// 40075016.686 m = Earth circumference at equator. Standard mapbox/maplibre
-// meters-per-pixel formula × half viewport height / tan(half fov) × fudge.
-function cameraAltitudeMeters(zoom: number, latDeg: number): number {
-  const mpp = (40075016.686 * Math.abs(Math.cos(deg2rad(latDeg)))) / (2 ** zoom * 512);
-  const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
-  const halfFov = Math.PI / 6; // 30° → fov 60°
-  return (mpp * (viewportH / 2)) / Math.tan(halfFov) * 2.5;
-}
+// Fixed camera slant distance from the ground point — 800m per founder
+// spec 2026-05-23. At pitch 60° this means the camera sits ~400m above
+// ground and ~693m horizontally from the lookat point, so Burj Khalifa
+// (828m tall, ~2km north of Business Bay) reads as a dramatic close-up
+// 3D mesh rather than a distant prick. Pulled out of the zoom-derived
+// formula entirely — the zoom-derived altitude was ~4.2km at zoom 15,
+// too high to see individual building geometry.
+const FIXED_CAMERA_SLANT_M = 800;
 
 const BASE_STYLE: StyleSpecification = {
   version: 8,
@@ -150,7 +149,6 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
 
       const map = this.mapRef;
       const center = map.getCenter();
-      const zoom = map.getZoom();
       const bearing = map.getBearing();
       const pitch = map.getPitch();
 
@@ -178,8 +176,7 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
       back.addScaledVector(east, -Math.sin(pitchRad) * sinB);
       back.normalize();
 
-      const altGround = cameraAltitudeMeters(zoom, center.lat);
-      const camPos = ground.clone().addScaledVector(back, altGround);
+      const camPos = ground.clone().addScaledVector(back, FIXED_CAMERA_SLANT_M);
 
       this.camera.position.copy(camPos);
       this.camera.up.copy(up);
