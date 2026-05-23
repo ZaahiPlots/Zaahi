@@ -78,7 +78,20 @@ export default function SpikePage() {
     scene.add(tiles.group);
 
     tiles.addEventListener("load-tile-set", () => {
-      console.log("[3d-spike] load-tile-set fired");
+      console.log("[3d-spike] load-tile-set fired — recentering scene at Business Bay");
+      // ECEF coordinates put every vertex ~6.37 Mm from the scene
+      // origin; at that magnitude float32 precision is ~0.5 m per
+      // coordinate, which makes building edges jitter and depth
+      // testing break down. Shift the entire tileset by -ground so
+      // Business Bay sits at (0, 0, 0), then place the camera close
+      // to the new origin. The geometry is unchanged — just rebased
+      // into a small coordinate range where float32 is precise.
+      tiles.group.position.copy(ground.clone().negate());
+      camera.position.copy(up.clone().multiplyScalar(800));
+      camera.up.copy(up);
+      camera.lookAt(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      controls.update();
     });
     let lastChildCount = 0;
     tiles.addEventListener("tiles-load-end", () => {
