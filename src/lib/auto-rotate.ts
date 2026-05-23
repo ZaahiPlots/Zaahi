@@ -32,8 +32,11 @@
 
 import type maplibregl from "maplibre-gl";
 
-const SECONDS_PER_REVOLUTION = 60;
-const DEG_PER_MS = 360 / (SECONDS_PER_REVOLUTION * 1000);
+// Auto-rotate speed in degrees per second. 1.5 °/s = one full revolution
+// every 4 minutes — "expensive elevator" pacing per founder spec
+// 2026-05-23, replacing the earlier 6 °/s (60 s per revolution).
+const ROTATION_DEG_PER_SEC = 1.5;
+const DEG_PER_MS = ROTATION_DEG_PER_SEC / 1000;
 const IDLE_RESUME_MS = 5000;
 const MIN_ZOOM = 11;
 const MIN_PITCH = 30;
