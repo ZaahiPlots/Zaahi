@@ -1620,8 +1620,11 @@ function ParcelsMapPageInner() {
     return d;
   });
   // Sun-time slider visibility — gated by the ☀ button in the right
-  // stack. Starts ON so users land on the 08:15 default; turning it
-  // off wipes the override so the light snaps back to live time.
+  // stack. The toggle controls UI visibility only; the directional
+  // light is always on via useSunLight below. So flipping the button
+  // off just hides the slider — the 08:15 (or last-chosen) override
+  // stays in effect. Double-clicking the slider is the way to clear
+  // back to live wall-clock time.
   const [sunSliderActive, setSunSliderActive] = useState(true);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
@@ -4702,18 +4705,17 @@ function ParcelsMapPageInner() {
           </svg>
         </button>
         <button
-          title={sunSliderActive ? "Hide sun-time slider (return to real time)" : "Show sun-time slider (override shadow time of day)"}
-          aria-label={sunSliderActive ? "Disable sun-time override" : "Enable sun-time override"}
+          title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
+          aria-label={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
           aria-pressed={sunSliderActive}
           onClick={() => {
+            // Toggle controls slider VISIBILITY only — never touches
+            // sunTimeOverride. The directional light stays driven by
+            // useSunLight regardless of slider visibility (founder
+            // spec 2026-05-23). Reset back to live time happens via
+            // the slider's double-click handler.
             sound.whoosh();
-            setSunSliderActive((v) => {
-              const next = !v;
-              // Turning the slider off wipes the override so the
-              // directional light snaps back to real wall-clock time.
-              if (!next) setSunTimeOverride(null);
-              return next;
-            });
+            setSunSliderActive((v) => !v);
           }}
           style={{
             width: 30,
