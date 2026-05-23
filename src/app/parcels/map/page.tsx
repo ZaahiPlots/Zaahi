@@ -3223,13 +3223,17 @@ function ParcelsMapPageInner() {
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
-    // maxzoom: 24 instructs MapLibre to overzoom (stretch) the deepest
-    // tile in the tileset up to z24 (MapLibre's hard cap), instead of
-    // stopping rendering once the user passes the tileset's actual
-    // header maxzoom (15 for AD, 17 for DDA/Oman). Without this 3D
-    // extrusions vanish at close zoom — founder fix 2026-05-23
-    // (initial bump 15/17→22, follow-up bump 22→24 same day).
-    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 24 });
+    // maxzoom: 18 — tippecanoe builds these tilesets with
+    // --maximum-zoom=16 (see scripts/update-tiles.sh), so MapLibre
+    // overzooms the z16 tile by 2 levels at most (4× stretch).
+    // Earlier values (22 then 24) let the camera overzoom 6–8 levels
+    // (64–256× stretch), and at that magnification: (a) tippecanoe's
+    // default 5px clip buffer effectively becomes 0px and polygons
+    // near tile edges drop out, (b) the camera near-plane gets close
+    // enough to building tops that fill-extrusion geometry is culled
+    // entirely. Founder fix 2026-05-23 (overzoom-band correction).
+    // If we ever rebuild with --maximum-zoom=18+, bump this in lockstep.
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 18 });
     // 2D fill — only "flat" features (tier=flat, height=0)
     map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],
@@ -3364,12 +3368,15 @@ function ParcelsMapPageInner() {
       pitch: saved?.pitch ?? 45,
       bearing: saved?.bearing ?? -17,
       maxPitch: 70,
-      // MapLibre default maxZoom is 22; explicitly lifted to 24 so the
-      // camera can reach the same close-up zoom band that source/layer
-      // maxzoom: 24 already allow. Without this the camera caps at z22
-      // and PMTiles 3D buildings appear to "vanish" on further wheel
-      // input — founder fix 2026-05-23 (camera-cap follow-up).
-      maxZoom: 24,
+      // maxZoom: 18 — matches PMTiles overzoom band (source maxzoom 18
+      // in addLandTileSource). MapLibre default is 22; lifting it
+      // higher (we tried 24) caused PMTiles 3D buildings to vanish
+      // because tippecanoe caps tiles at z16 and at >18 the overzoom
+      // factor collapses the clip buffer + crowds the camera near-
+      // plane against building tops. Founder fix 2026-05-23
+      // (overzoom-band correction). Bump in lockstep with the source
+      // maxzoom in addLandTileSource if PMTiles are rebuilt deeper.
+      maxZoom: 18,
       dragRotate: true,
       pitchWithRotate: true,
       touchPitch: true,
