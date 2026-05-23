@@ -74,7 +74,16 @@ function cardinal(deg: number): string | null {
   return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][idx];
 }
 
-export default function DroneHUD({ mainMapRef }: { mainMapRef: RefObject<MLMap | null> }) {
+export default function DroneHUD({
+  mainMapRef,
+  firing = false,
+}: {
+  mainMapRef: RefObject<MLMap | null>;
+  /** When true, the crosshair runs a 3× white→green pulse for ~900 ms
+   *  to confirm a fire (Space / map click in drone mode). Parent flips
+   *  it back to false via setTimeout. */
+  firing?: boolean;
+}) {
   const [sample, setSample] = useState<HudSample | null>(null);
   const prevRef = useRef<PrevSample | null>(null);
 
@@ -303,8 +312,8 @@ export default function DroneHUD({ mainMapRef }: { mainMapRef: RefObject<MLMap |
         }}
       />
 
-      {/* 1. Crosshair — center reticle. */}
-      <Crosshair />
+      {/* 1. Crosshair — center reticle. Pulses on fire. */}
+      <Crosshair firing={firing} />
 
       {/* 5. Left rail — ALT + VS. Vertically centered. */}
       <div
@@ -365,15 +374,32 @@ export default function DroneHUD({ mainMapRef }: { mainMapRef: RefObject<MLMap |
 
       <style>{`
         @keyframes zaahi-hud-blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes zaahi-hud-fire-arm {
+          0%   { background: ${GREEN_SOFT}; filter: brightness(1); box-shadow: none; }
+          50%  { background: #FFFFFF;       filter: brightness(3); box-shadow: 0 0 6px #FFFFFF; }
+          100% { background: ${GREEN_SOFT}; filter: brightness(1); box-shadow: none; }
+        }
+        @keyframes zaahi-hud-fire-dot {
+          0%   { background: ${GREEN};      filter: brightness(1); box-shadow: 0 0 4px ${GREEN}; }
+          50%  { background: #FFFFFF;       filter: brightness(3); box-shadow: 0 0 10px #FFFFFF; }
+          100% { background: ${GREEN};      filter: brightness(1); box-shadow: 0 0 4px ${GREEN}; }
+        }
       `}</style>
     </div>
   );
 }
 
-function Crosshair() {
+function Crosshair({ firing }: { firing: boolean }) {
+  // Each pulse: 300 ms × 3 = 900 ms total. The parent flips firing back
+  // to false on a matching 900 ms timer, so the animation property
+  // returns to "none" and is ready to re-trigger on the next fire.
+  const armAnim = firing ? "zaahi-hud-fire-arm 300ms ease-in-out 3" : "none";
+  const dotAnim = firing ? "zaahi-hud-fire-dot 300ms ease-in-out 3" : "none";
+
   const armStyle: CSSProperties = {
     position: "absolute",
     background: GREEN_SOFT,
+    animation: armAnim,
   };
   return (
     <div
@@ -404,6 +430,7 @@ function Crosshair() {
           background: GREEN,
           borderRadius: "50%",
           boxShadow: `0 0 4px ${GREEN}`,
+          animation: dotAnim,
         }}
       />
     </div>

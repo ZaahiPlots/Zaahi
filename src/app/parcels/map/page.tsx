@@ -1593,6 +1593,11 @@ function ParcelsMapPageInner() {
   const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
   const droneCtrlRef = useRef<DroneController | null>(null);
+  // Crosshair "fire" feedback — Space tap or map click in drone mode
+  // flies the camera to the unprojected screen-center and pulses the
+  // reticle for 900 ms. Set true → false sequence drives the CSS
+  // animation in DroneHUD's Crosshair.
+  const [droneFiring, setDroneFiring] = useState(false);
 
   // Sun-time override — null means "use real wall-clock time" so the
   // shadow direction tracks live; a Date overrides it to the slider's
@@ -3785,6 +3790,58 @@ function ParcelsMapPageInner() {
     try { localStorage.setItem("zaahi-drone-mode", "0"); } catch { /* ignore */ }
   }, [droneEnabled]);
 
+  // Crosshair fire — Space tap or click on the map flies the camera to
+  // whatever is under the screen center. Only active while drone mode
+  // is on. e.repeat is guarded so holding Space (which drone-controls
+  // already binds to ascend / zoom-out) fires exactly once per discrete
+  // press, leaving the held-key ascend behaviour intact. The HUD stays
+  // pointer-events: none so this click handler — attached to the map
+  // container directly — runs first while existing parcel-click
+  // selection continues to work.
+  useEffect(() => {
+    if (!droneEnabled) return;
+    const container = containerRef.current;
+
+    const fire = () => {
+      const map = mapRef.current;
+      if (!map) return;
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const target = map.unproject([cx, cy]);
+      map.flyTo({
+        center: [target.lng, target.lat],
+        duration: 1200,
+        essential: true,
+      });
+      setDroneFiring(true);
+      window.setTimeout(() => setDroneFiring(false), 900);
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      // Auto-repeat events keep firing while Space is held; drone
+      // ascend (drone-controls.ts) wants the held-state, but firing
+      // should be a discrete action per press.
+      if (e.repeat) return;
+      // Don't fire when the user is typing.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      e.preventDefault();
+      fire();
+    };
+
+    const onClick = () => {
+      fire();
+    };
+
+    window.addEventListener("keydown", onKey);
+    container?.addEventListener("click", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      container?.removeEventListener("click", onClick);
+    };
+  }, [droneEnabled]);
+
   // Drive the auto-rotate controller from React state. Persists choice,
   // gently tilts to 3D if the user is in flat view (rotation would
   // otherwise showcase nothing), and shows the first-ever hint toast
@@ -4010,7 +4067,7 @@ function ParcelsMapPageInner() {
           chrome (crosshair, horizon, compass tape, coords, ALT/VS/SPD/
           HDG/PCH rails, corner brackets, status, time, zoom) reads
           live from mapRef. Founder spec 2026-05-23. */}
-      {droneEnabled && <DroneHUD mainMapRef={mapRef} />}
+      {droneEnabled && <DroneHUD mainMapRef={mapRef} firing={droneFiring} />}
 
       {/* Drone-mode on-enable toast — shown each time the user turns drone mode ON */}
       {showDroneHint && (
