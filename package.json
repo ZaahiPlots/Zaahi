@@ -10,6 +10,7 @@
     "agent": "python3 agent.py"
   },
   "dependencies": {
+    "3d-tiles-renderer": "^0.4.25",
     "@deck.gl/core": "^9.3.2",
     "@deck.gl/geo-layers": "^9.3.2",
     "@deck.gl/layers": "^9.3.2",

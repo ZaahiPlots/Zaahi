@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      3d-tiles-renderer:
+        specifier: ^0.4.25
+        version: 0.4.25(@mapbox/vector-tile@2.0.4)(@react-three/fiber@9.5.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.183.2))(pbf@4.0.1)(pmtiles@4.4.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.183.2)
       '@deck.gl/core':
         specifier: ^9.3.2
         version: 9.3.2
@@ -128,6 +131,38 @@ importers:
         version: 5.9.3
 
 packages:
+
+  3d-tiles-renderer@0.4.25:
+    resolution: {integrity: sha512-05wG0xQ2D2+lQSMV7TQGh1ul3Ozx8USHTCBI0JO0E9EIDlS0gSevwWYBcT/4TMX3JMFIzva4Ls7NjStoH+Z76Q==}
+    peerDependencies:
+      '@babylonjs/core': '>=8.0.0'
+      '@babylonjs/loaders': '>=8.0.0'
+      '@mapbox/vector-tile': ^2.0.3
+      '@react-three/fiber': ^8.17.9 || ^9.0.0
+      pbf: ^4.0.1
+      pmtiles: ^4.3.2
+      react: ^18.3.1 || ^19.0.0
+      react-dom: ^18.3.1 || ^19.0.0
+      three: '>=0.167.0'
+    peerDependenciesMeta:
+      '@babylonjs/core':
+        optional: true
+      '@babylonjs/loaders':
+        optional: true
+      '@mapbox/vector-tile':
+        optional: true
+      '@react-three/fiber':
+        optional: true
+      pbf:
+        optional: true
+      pmtiles:
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      three:
+        optional: true
 
   '@adraffy/ens-normalize@1.10.1':
     resolution: {integrity: sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==}
@@ -3201,6 +3236,16 @@ packages:
         optional: true
 
 snapshots:
+
+  3d-tiles-renderer@0.4.25(@mapbox/vector-tile@2.0.4)(@react-three/fiber@9.5.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.183.2))(pbf@4.0.1)(pmtiles@4.4.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.183.2):
+    optionalDependencies:
+      '@mapbox/vector-tile': 2.0.4
+      '@react-three/fiber': 9.5.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.183.2)
+      pbf: 4.0.1
+      pmtiles: 4.4.1
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      three: 0.183.2
 
   '@adraffy/ens-normalize@1.10.1': {}
 

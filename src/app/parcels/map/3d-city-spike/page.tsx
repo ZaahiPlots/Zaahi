@@ -1,47 +1,51 @@
 "use client";
 
-// ── Google Photorealistic 3D Tiles spike ─────────────────────────────
-// Research/3d-city-spike branch only — DO NOT merge to main without
-// founder review. Goal: confirm Business Bay + Burj Khalifa render as
-// real Google 3D Tiles over our MapLibre basemap.
+// ── Google Photorealistic 3D Tiles spike (Three.js render path) ──────
 //
-// Stack:
-//   MapLibre        — basemap (CARTO Positron, matches /parcels/map)
-//   deck.gl         — Tile3DLayer to load Google 3D Tiles root tileset
-//   MapboxOverlay   — interop between deck.gl and MapLibre v5
-//   @loaders.gl     — Tiles3DLoader handles the spec (root.json → tiles)
+// research/3d-city-spike branch only. Replaces the failed deck.gl
+// Tile3DLayer attempt (which reported `root tiles: 0` with no further
+// progress) with the canonical 3d-tiles-renderer pipeline:
 //
-// API key lives in NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (.env.local + Vercel
-// preview only). Restrict via HTTP referrer in GCP console before any
-// public exposure — the NEXT_PUBLIC_ prefix means this key ships to
-// every browser that loads this page.
+//   • MapLibre custom layer shares its WebGL context with Three.js.
+//   • TilesRenderer (3d-tiles-renderer/three) loads + LOD-streams the
+//     Google Photorealistic 3D Tiles tileset.
+//   • GoogleCloudAuthPlugin handles `?key=` auth + session refresh.
+//   • Tileset is in ECEF (Earth-centred). We rebase it into MapLibre's
+//     mercator world via inverse-ENU at Business Bay + meter→mercator
+//     scale + a Y-axis flip (mercator Y increases southward, ENU N is
+//     positive Y, so the meter-scale on Y is negated).
 //
-// Attribution: Google 3D Tiles requires showing "Google" attribution
-// alongside the rendered tiles. Built-in MapLibre attribution control
-// shows the "© Google" copyright surfaced by the tileset's copyright
-// header at render time.
+// On render(gl, matrix) MapLibre hands us a 4×4 MVP in mercator world
+// space; we feed it directly into Three's camera.projectionMatrix and
+// keep matrixWorldInverse = identity so positions live in mercator
+// world unmodified by Three's camera. tilesRenderer.update() drives
+// LOD off the same camera; map.triggerRepaint() keeps the frame loop
+// hot while tiles stream in.
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { Map as MLMap, StyleSpecification } from "maplibre-gl";
+import maplibregl, {
+  Map as MLMap,
+  StyleSpecification,
+  MercatorCoordinate,
+  CustomLayerInterface,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MapboxOverlay } from "@deck.gl/mapbox";
-import { Tile3DLayer } from "@deck.gl/geo-layers";
-import { Tiles3DLoader } from "@loaders.gl/3d-tiles";
+import * as THREE from "three";
+import { TilesRenderer } from "3d-tiles-renderer";
+import { GoogleCloudAuthPlugin } from "3d-tiles-renderer/plugins";
+import { Ellipsoid, WGS84_RADIUS } from "3d-tiles-renderer";
 
 const GOLD = "#C8A96E";
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-// Google's Photorealistic 3D Tiles documentation uses `?key=` query
-// param for auth — not the X-GOOG-API-KEY header (which works for
-// some other Google APIs but not this one). Pass via URL so the
-// initial root.json fetch and every child tile request authenticate
-// the same way.
-const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json?key=${API_KEY}`;
 
-// Business Bay + Burj Khalifa fit in a single view at zoom 15 / pitch 60.
-const BB_CENTER: [number, number] = [55.2708, 25.1865];
+const BB_LNG = 55.2708;
+const BB_LAT = 25.1865;
+const BB_ALT = 0;
 const INITIAL_ZOOM = 15;
 const INITIAL_PITCH = 60;
 const INITIAL_BEARING = -17;
+
+const WGS84_ELLIPSOID = new Ellipsoid(WGS84_RADIUS, WGS84_RADIUS, WGS84_RADIUS);
 
 const BASE_STYLE: StyleSpecification = {
   version: 8,
@@ -61,33 +65,152 @@ const BASE_STYLE: StyleSpecification = {
   layers: [{ id: "carto", type: "raster", source: "carto" }],
 };
 
+// Build the matrix that takes a vertex in ECEF (where Google tiles
+// live) and lands it in MapLibre's mercator world, positioned at
+// Business Bay with proper scale + Y-axis flip.
+//
+//   v_merc = T_bb × S_m2merc × R_invENU × v_ecef
+//
+// where:
+//   R_invENU      — inverse of the ENU frame at BB (lat/lng/height).
+//                   Brings the tileset into local-meters at BB with
+//                   X=East, Y=North, Z=Up.
+//   S_m2merc      — scale meters → mercator. Diagonal (s, -s, s):
+//                   Y is negated because mercator Y grows southward
+//                   whereas ENU-North is positive Y.
+//   T_bb          — translate to BB in mercator world coords.
+function buildTilesetMatrix(): THREE.Matrix4 {
+  // ENU at Business Bay (lat/lng in degrees → method expects radians? — Ellipsoid uses degrees per API).
+  const enu = new THREE.Matrix4();
+  WGS84_ELLIPSOID.getEastNorthUpFrame(BB_LAT, BB_LNG, BB_ALT, enu);
+  const invEnu = enu.clone().invert();
+
+  // Mercator coord of BB (anchor) + meter-to-mercator scale.
+  const bb = MercatorCoordinate.fromLngLat({ lng: BB_LNG, lat: BB_LAT }, BB_ALT);
+  const s = bb.meterInMercatorCoordinateUnits();
+  const scale = new THREE.Matrix4().makeScale(s, -s, s);
+  const translate = new THREE.Matrix4().makeTranslation(bb.x, bb.y, bb.z);
+
+  return new THREE.Matrix4().multiplyMatrices(translate, scale).multiply(invEnu);
+}
+
+interface SpikeCustomLayer extends CustomLayerInterface {
+  tiles?: TilesRenderer;
+  renderer?: THREE.WebGLRenderer;
+  scene?: THREE.Scene;
+  camera?: THREE.Camera;
+  mapRef?: MLMap;
+  rafActive?: boolean;
+}
+
+function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
+  const layer: SpikeCustomLayer = {
+    id: "google-3d-tiles",
+    type: "custom",
+    renderingMode: "3d",
+
+    onAdd(map, gl) {
+      console.log("[3d-spike] custom layer onAdd — initialising Three.js");
+      this.mapRef = map as MLMap;
+
+      const scene = new THREE.Scene();
+      // Empty ambient + a soft directional so 3D tiles textures stay readable
+      // even on cloudy days; Google tiles already ship as baked-PBR materials
+      // so heavy lighting isn't needed — these mostly stop the unlit edges
+      // from going pitch black on shadow sides.
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+      dir.position.set(0.5, 1, 0.5);
+      scene.add(dir);
+      this.scene = scene;
+
+      const camera = new THREE.PerspectiveCamera();
+      camera.matrixAutoUpdate = false;
+      this.camera = camera;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: map.getCanvas(),
+        context: gl as WebGLRenderingContext,
+        antialias: true,
+      });
+      renderer.autoClear = false;
+      this.renderer = renderer;
+
+      const tiles = new TilesRenderer(`https://tile.googleapis.com/v1/3dtiles/root.json`);
+      tiles.registerPlugin(new GoogleCloudAuthPlugin({ apiToken: API_KEY }));
+      // Rebase tileset from ECEF into MapLibre's mercator world,
+      // anchored at Business Bay.
+      const m = buildTilesetMatrix();
+      tiles.group.applyMatrix4(m);
+      tiles.group.matrixAutoUpdate = false;
+      scene.add(tiles.group);
+
+      tiles.addEventListener("load-tile-set", () => {
+        console.log("[3d-spike] tilesRenderer load-tile-set fired");
+        setStatus("Tileset loaded · streaming tiles");
+      });
+      tiles.addEventListener("tiles-load-end", () => {
+        console.log("[3d-spike] tilesRenderer tiles-load-end (frame settled)");
+      });
+      this.tiles = tiles;
+    },
+
+    render(_gl, args) {
+      const matrix = Array.isArray(args)
+        ? (args as unknown as number[])
+        : (args as { defaultProjectionData: { mainMatrix: number[] } })
+            .defaultProjectionData.mainMatrix;
+      if (!this.scene || !this.camera || !this.renderer || !this.tiles || !this.mapRef) return;
+
+      // MapLibre's MVP is already mercator-world → clip space. Stuff
+      // it into the camera's projection matrix and pin matrixWorld to
+      // identity so Three's own view transform is a no-op.
+      this.camera.projectionMatrix.fromArray(matrix);
+      this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+      this.camera.matrix.identity();
+      this.camera.matrixWorld.identity();
+      this.camera.matrixWorldInverse.identity();
+
+      this.tiles.setCamera(this.camera);
+      this.tiles.setResolutionFromRenderer(this.camera, this.renderer);
+      this.tiles.update();
+
+      // Reset state Three.js modified before MapLibre drew its frame.
+      this.renderer.resetState();
+      this.renderer.render(this.scene, this.camera);
+
+      // Keep the frame loop hot while tiles are still streaming —
+      // tilesRenderer is async so we need continuous repaints.
+      this.mapRef.triggerRepaint();
+    },
+
+    onRemove() {
+      this.tiles?.dispose();
+      this.tiles = undefined;
+      this.scene = undefined;
+      this.camera = undefined;
+      this.renderer?.dispose();
+      this.renderer = undefined;
+    },
+  };
+  return layer;
+}
+
 export default function ThreeDCitySpikePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
-  const overlayRef = useRef<MapboxOverlay | null>(null);
+  const layerRef = useRef<SpikeCustomLayer | null>(null);
   const [tilesOn, setTilesOn] = useState(true);
-  // overlayReady flips true after MapboxOverlay is added to the map.
-  // Calling setProps on an overlay that hasn't run onAdd() yet is a
-  // silent no-op in some deck.gl versions, so the tiles effect waits
-  // for this flag before constructing the layer.
-  const [overlayReady, setOverlayReady] = useState(false);
   const [status, setStatus] = useState<string>(
     API_KEY ? "Loading Google 3D Tiles…" : "MISSING NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in env",
   );
-  const [copyright, setCopyright] = useState<string>("");
 
-  // ── Map init (once) ──
+  // ── Init MapLibre + the custom 3D-Tiles layer ──
   useEffect(() => {
-    // Diagnostic — confirms the NEXT_PUBLIC_ key is in the bundle.
-    // If this logs `false`, .env.local wasn't read at build time —
-    // restart pnpm dev so Next re-snapshots process.env.
     console.log("[3d-spike] API key present:", API_KEY.length > 0, "(length", API_KEY.length, ")");
 
-    // Direct probe — independent of deck.gl. If this 200s, the key
-    // is valid and CORS works. If it 4xx/5xx or errors, the rest of
-    // the pipeline can't possibly work.
     if (API_KEY) {
-      fetch(TILESET_URL)
+      fetch(`https://tile.googleapis.com/v1/3dtiles/root.json?key=${API_KEY}`)
         .then((r) => {
           console.log("[3d-spike] direct fetch root.json status:", r.status);
           return r.json();
@@ -100,7 +223,7 @@ export default function ThreeDCitySpikePage() {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: BASE_STYLE,
-      center: BB_CENTER,
+      center: [BB_LNG, BB_LAT],
       zoom: INITIAL_ZOOM,
       pitch: INITIAL_PITCH,
       bearing: INITIAL_BEARING,
@@ -108,71 +231,45 @@ export default function ThreeDCitySpikePage() {
     });
     mapRef.current = map;
 
-    // interleaved: false — deck.gl renders to its own canvas above the
-    // MapLibre canvas. interleaved: true relies on mapbox-gl internal
-    // renderer hooks that MapLibre v5 has since diverged from, so
-    // overlay layers can silently fail to mount.
-    const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
-    overlayRef.current = overlay;
     map.on("load", () => {
-      console.log("[3d-spike] map load fired — mounting deck overlay");
-      // MapboxOverlay implements the IControl interface MapLibre
-      // expects; cast satisfies the typecheck.
-      map.addControl(overlay as unknown as maplibregl.IControl);
-      setOverlayReady(true);
+      console.log("[3d-spike] map load fired — adding custom layer");
+      const layer = buildTilesLayer(setStatus);
+      layerRef.current = layer;
+      map.addLayer(layer);
     });
 
     return () => {
-      overlay.finalize();
-      overlayRef.current = null;
+      if (layerRef.current && map.getLayer(layerRef.current.id)) {
+        map.removeLayer(layerRef.current.id);
+      }
+      layerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // ── Tile3DLayer wired to overlay (toggles via tilesOn) ──
+  // ── Toggle handler — add/remove the custom layer ──
   useEffect(() => {
-    console.log("[3d-spike] tiles effect — overlayReady:", overlayReady, "tilesOn:", tilesOn, "key?", API_KEY.length > 0);
-    if (!overlayReady) return;
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    if (!API_KEY) {
-      overlay.setProps({ layers: [] });
-      return;
-    }
-    if (!tilesOn) {
-      overlay.setProps({ layers: [] });
-      setStatus("3D tiles OFF — MapLibre basemap only.");
-      return;
-    }
+    const map = mapRef.current;
+    if (!map) return;
+    if (!API_KEY) return;
 
-    const layer = new Tile3DLayer({
-      id: "google-3d-tiles",
-      data: TILESET_URL,
-      loader: Tiles3DLoader,
-      onTilesetLoad: (tileset: { tiles?: unknown[] } | null) => {
-        const n = tileset?.tiles?.length ?? 0;
-        console.log("[3d-spike] onTilesetLoad — root tiles:", n);
-        setStatus(`Tileset loaded · ${n} root tiles`);
-      },
-      onTileLoad: () => {
-        // Google's tileset features a `copyright` header per tile.
-        // The tileset surfaces credits via its root JSON properties.
-        setCopyright("© Google · 3D Tiles");
-      },
-      onTileError: (err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error("[3d-spike] onTileError:", err);
-        setStatus(`Tile load error: ${msg}`);
-      },
-      // operation: 'terrain+draping' would let MapLibre features
-      // (e.g. a parcel polygon) drape over the photogrammetry mesh —
-      // out of scope for this spike but worth noting for follow-up.
-    });
-    console.log("[3d-spike] Tile3DLayer constructed, applying via overlay.setProps");
+    const apply = () => {
+      const hasLayer = !!map.getLayer("google-3d-tiles");
+      if (tilesOn && !hasLayer) {
+        const layer = buildTilesLayer(setStatus);
+        layerRef.current = layer;
+        map.addLayer(layer);
+      } else if (!tilesOn && hasLayer) {
+        map.removeLayer("google-3d-tiles");
+        layerRef.current = null;
+        setStatus("3D tiles OFF — MapLibre basemap only.");
+      }
+    };
 
-    overlay.setProps({ layers: [layer] });
-  }, [overlayReady, tilesOn]);
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+  }, [tilesOn]);
 
   return (
     <div style={{ position: "absolute", inset: 0, background: "#0A1628" }}>
@@ -211,7 +308,7 @@ export default function ThreeDCitySpikePage() {
           3D City Spike · Business Bay
         </div>
         <div style={{ opacity: 0.85 }}>{status}</div>
-        {copyright && <div style={{ opacity: 0.6, marginTop: 4 }}>{copyright}</div>}
+        <div style={{ opacity: 0.6, marginTop: 4 }}>© Google · 3D Tiles</div>
       </div>
 
       {/* Toggle */}
