@@ -1610,11 +1610,19 @@ function ParcelsMapPageInner() {
   // map.setLight() whenever this changes (or once per minute on the
   // live path). Gate on mapStyleReady so the first setLight call lands
   // *after* the style has loaded — otherwise it's a silent no-op.
-  const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(null);
+  //
+  // Founder spec 2026-05-23: default override at 08:15 (warm dawn-
+  // shadow look that reads best against Dubai glass). The ☀ button
+  // starts active so the slider is visible on first load.
+  const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(() => {
+    const d = new Date();
+    d.setHours(8, 15, 0, 0);
+    return d;
+  });
   // Sun-time slider visibility — gated by the ☀ button in the right
-  // stack. When the user turns it off we also wipe any active override
-  // so the light snaps back to real wall-clock time.
-  const [sunSliderActive, setSunSliderActive] = useState(false);
+  // stack. Starts ON so users land on the 08:15 default; turning it
+  // off wipes the override so the light snaps back to live time.
+  const [sunSliderActive, setSunSliderActive] = useState(true);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
   // Vault-only map mode — when ON, public ZAAHI listings are hidden and
