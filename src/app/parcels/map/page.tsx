@@ -5062,12 +5062,15 @@ function ParcelsMapPageInner() {
           the user opens it, the full dock (layer rail · minimap ·
           action rail) slides up with a 300 ms ease-in-out fade. The
           MiniMap instance stays mounted while hidden so it keeps
-          syncing with the main map — re-opening is instant. */}
+          syncing with the main map — re-opening is instant.
+          Position: bottom: 16, left: 50% with translateX(-50%) per
+          founder spec 2026-05-23. */}
       <div
         style={{
           position: "absolute",
-          left: 12,
-          bottom: 12,
+          left: "50%",
+          bottom: 16,
+          transform: "translateX(-50%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -5178,6 +5181,21 @@ function ParcelsMapPageInner() {
                 <circle cx="4" cy="18" r="1.2" fill="currentColor" />
               </svg>
             </MiniRailBtn>
+            <Link
+              href="/vault"
+              title="Private Plot Vault"
+              aria-label="Vault"
+              style={{ display: "block", textDecoration: "none" }}
+              tabIndex={miniOpen ? 0 : -1}
+            >
+              <MiniRailBtn title="Vault" active={false} onClick={() => {}} asSpan>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="12" cy="12" r="2.4" />
+                  <path d="M12 9.6V8M12 16v-1.6M9.6 12H8M16 12h-1.6" />
+                </svg>
+              </MiniRailBtn>
+            </Link>
             <Link
               href="/dashboard"
               title="Profile / Dashboard"

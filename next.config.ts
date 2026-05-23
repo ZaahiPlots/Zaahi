@@ -15,6 +15,18 @@ import type { NextConfig } from "next";
  * implicit per-route tracing do its job keeps each function at the
  * single file it actually needs (≤4 MB).
  */
-const nextConfig: NextConfig = {};
+// Ambassador program now lives at /refer (founder spec 2026-05-23 —
+// 20% flat, no "tier" wording). The old /join URL is referenced in
+// older WelcomeTour copy and external materials, so we permanently
+// (308) redirect it. The /refer route itself is a separate backlog
+// item — until it ships /refer renders the standard 404, which is
+// the intended state during the rollout window.
+const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: "/join", destination: "/refer", permanent: true },
+    ];
+  },
+};
 
 export default nextConfig;

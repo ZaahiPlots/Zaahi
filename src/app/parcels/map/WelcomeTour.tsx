@@ -34,7 +34,7 @@ const STEPS: Array<{ title: string; body: string; icon: string }> = [
   {
     icon: "🏆",
     title: "Earn as an Ambassador",
-    body: "Invite friends via your referral link, earn commissions on every closed deal. Visit /join to pick a tier.",
+    body: "Invite brokers and investors, earn 20% from every closed deal commission. Join /refer to get your link.",
   },
 ];
 

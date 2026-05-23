@@ -42,17 +42,21 @@ const LANDUSE_COLOR: Record<string, string> = {
 const INITIAL_CENTER: [number, number] = [55.6, 24.3];
 const INITIAL_ZOOM = 5.9;
 
-// Raster-only light basemap with no labels — contours visible, nothing
-// competes with the viewport rectangle and plot dots.
+// CARTO Positron (light_all) — unified basemap across the platform per
+// founder style audit 2026-05-23. Previously this mini used light_nolabels
+// so the viewport rectangle would stand out; the founder chose to keep
+// the same Positron basemap everywhere for a single visual language.
+// The 2 px red viewport rect plus the colored dots stay readable on
+// top of the label-bearing Positron tiles.
 const MINI_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     base: {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
       ],
       tileSize: 256,
       attribution: "",
@@ -322,7 +326,7 @@ export default function MiniMap({
       style={{
         position: "relative",
         width: 280,
-        height: 162,
+        height: 160,
         border: "1px solid rgba(255,255,255,0.12)",
         borderRadius: 8,
         overflow: "hidden",

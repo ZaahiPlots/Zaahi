@@ -41,7 +41,11 @@ export default function AuthPage() {
     };
   }, [router]);
 
-  // Initialize MapLibre satellite map
+  // Initialize MapLibre — CARTO Positron (light_all). Unified basemap
+  // across the whole platform per founder style audit 2026-05-23. The
+  // login page used to render Esri satellite; we now match the rest
+  // of the product so the visual transition into /parcels/map is
+  // seamless (no abrupt basemap switch on sign-in).
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
     const map = new maplibregl.Map({
@@ -49,17 +53,19 @@ export default function AuthPage() {
       style: {
         version: 8,
         sources: {
-          esri: {
+          carto: {
             type: 'raster',
             tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+              'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
             ],
             tileSize: 256,
-            attribution: '© Esri World Imagery',
+            attribution: '© CARTO © OpenStreetMap contributors',
           },
         },
         glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
-        layers: [{ id: 'esri', type: 'raster', source: 'esri' }],
+        layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
       },
       center: [55.27, 25.20], // Dubai center
       zoom: 12,
