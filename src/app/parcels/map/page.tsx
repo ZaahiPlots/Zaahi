@@ -1261,7 +1261,12 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 // still works — Phase 3 will actually disable the checkbox once
 // `useAccess()` + tier enforcement land.
 
-type LayerCountry = "dubai" | "abudhabi" | "otheruae" | "saudi" | "oman";
+// Saudi + Oman removed from panel UI 2026-05-23 (founder spec) — the
+// PMTiles infrastructure and `saudiGovernorates` / `riyadhZones` /
+// `omanLandPlots` flags in LayersState stay intact (always false, never
+// surfaced as toggles). LayerCountry type stays UAE-only so the panel
+// stays a 3-country structure.
+type LayerCountry = "dubai" | "abudhabi" | "otheruae";
 type LayerCategory =
   | "base"            // roads / metro / admin boundaries
   | "dda-admin"       // DDA projects, free zones, 99K plots layer
@@ -1269,29 +1274,30 @@ type LayerCategory =
   | "masterplans"     // 8 master plan KMLs
   | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
   | "amenities"       // data.dubai point overlays (EV / transit stations)
-  | "vault";          // Private Plot Vault v2.1 — personal + shared overlays
+  | "vault"           // Private Plot Vault v2.1 — personal + shared overlays
+  | "coming-soon";    // visual-only placeholders for Phase 2 emirates
 type LayerLockTier = "GOLD" | "PLATINUM";
 
 type LayerMeta = {
   country: LayerCountry;
   category: LayerCategory;
   tier?: LayerLockTier;
+  /** Disabled toggle + "Soon" badge. Excluded from total/on counts. */
+  comingSoon?: true;
 };
 
 const LAYER_COUNTRY_ORDER: LayerCountry[] = [
-  "dubai", "abudhabi", "otheruae", "saudi", "oman",
+  "dubai", "abudhabi", "otheruae",
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault", "coming-soon",
 ];
 
 const COUNTRY_LABELS: Record<LayerCountry, string> = {
   dubai: "UAE — Dubai",
   abudhabi: "UAE — Abu Dhabi",
   otheruae: "UAE — Other Emirates",
-  saudi: "Saudi Arabia",
-  oman: "Oman",
 };
 
 const CATEGORY_LABELS: Record<LayerCategory, string> = {
@@ -1302,6 +1308,7 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "landplots": "Land Plots",
   "amenities": "Amenities",
   "vault": "My Vault",
+  "coming-soon": "Coming Soon",
 };
 
 // Build-once map: layer-key → metadata. Keys not in this map are treated
@@ -1345,11 +1352,14 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     adLandPlots: { country: "abudhabi", category: "landplots", tier: "GOLD" },
     // ── Other UAE ──
     uaeDistricts: { country: "otheruae", category: "base" },
-    // ── Saudi ──
-    saudiGovernorates: { country: "saudi", category: "base" },
-    riyadhZones: { country: "saudi", category: "base", tier: "PLATINUM" },
-    // ── Oman ──
-    omanLandPlots: { country: "oman", category: "landplots", tier: "GOLD" },
+    // Phase 2 emirate placeholders — UI-only "Soon" rows under
+    // Other Emirates. No backing PMTiles yet; the toggle is disabled
+    // and excluded from on/total counts.
+    emirateSharjah:  { country: "otheruae", category: "coming-soon", comingSoon: true },
+    emirateRAK:      { country: "otheruae", category: "coming-soon", comingSoon: true },
+    emirateAjman:    { country: "otheruae", category: "coming-soon", comingSoon: true },
+    emirateFujairah: { country: "otheruae", category: "coming-soon", comingSoon: true },
+    emirateUAQ:      { country: "otheruae", category: "coming-soon", comingSoon: true },
   };
   // DDA districts (206 community polygons) — all Dubai, not tier-locked.
   for (const d of DDA_LAYERS) {
@@ -1438,8 +1448,9 @@ function saveLayers(state: Record<string, boolean>): void {
 }
 
 function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
-  if (lng < 50) return "saudi";          // Riyadh ~46.7
-  if (lng > 56.5) return "oman";         // Muscat ~58.5
+  // Saudi (lng < 50) and Oman (lng > 56.5) panels were removed
+  // 2026-05-23 (founder spec); out-of-UAE views fall back to Dubai.
+  if (lng < 50 || lng > 56.5) return "dubai";
   // Inside UAE rectangle — distinguish Dubai / AD / other emirates.
   if (lat < 24.85) return "abudhabi";    // AD metro ~24.45, Al Ain ~24.2
   if (lat > 25.35) return "otheruae";    // Sharjah+, RAK, Fujairah
@@ -1602,7 +1613,7 @@ function ParcelsMapPageInner() {
   // first open of the layers panel we re-initialise from map center so
   // a user already panned to AD/Oman sees the right country expanded.
   const [countryOpen, setCountryOpen] = useState<Record<LayerCountry, boolean>>({
-    dubai: true, abudhabi: false, otheruae: false, saudi: false, oman: false,
+    dubai: true, abudhabi: false, otheruae: false,
   });
   const countryInitialisedRef = useRef(false);
   const [layerSearch, setLayerSearch] = useState("");
@@ -3927,7 +3938,7 @@ function ParcelsMapPageInner() {
     const ctr = map.getCenter();
     const detected = detectCountryFromLngLat(ctr.lng, ctr.lat);
     setCountryOpen({
-      dubai: false, abudhabi: false, otheruae: false, saudi: false, oman: false,
+      dubai: false, abudhabi: false, otheruae: false,
       [detected]: true,
     });
     countryInitialisedRef.current = true;
@@ -4774,7 +4785,7 @@ function ParcelsMapPageInner() {
             compact LayerGroup sub-sections (no per-category collapse —
             the country collapse is the primary control). */}
         {(() => {
-          type PanelItem = { key: string; label: string; description?: string; requiredTier?: LayerLockTier };
+          type PanelItem = { key: string; label: string; description?: string; requiredTier?: LayerLockTier; comingSoon?: boolean };
           const q = layerSearch.trim().toLowerCase();
           const searchActive = q.length > 0;
           // Human-readable label + description per layer. Description renders
@@ -4809,9 +4820,12 @@ function ParcelsMapPageInner() {
             adCommunities: "Abu Dhabi communities",
             adLandPlots: "Abu Dhabi Land Plots · 362K parcels from DMT registry",
             uaeDistricts: "UAE districts (Sharjah, Ajman, RAK, UAQ, Fujairah)",
-            saudiGovernorates: "Saudi Arabia governorates (administrative regions)",
-            riyadhZones: "Riyadh planning zones",
-            omanLandPlots: "Oman Land Plots · 95K parcels (Muscat Municipality, Seeb contract)",
+            // Coming-soon emirate placeholders — English + Arabic
+            emirateSharjah: "Sharjah · شارقة",
+            emirateRAK: "Ras Al Khaimah · رأس الخيمة",
+            emirateAjman: "Ajman · عجمان",
+            emirateFujairah: "Fujairah · الفجيرة",
+            emirateUAQ: "Umm Al Quwain · أم القيوين",
           });
           const descriptions: Record<string, string> = {
             communities: "Community / neighbourhood boundary polygons across Dubai.",
@@ -4839,9 +4853,11 @@ function ParcelsMapPageInner() {
             adCommunities: "Community-level neighbourhood polygons in Abu Dhabi.",
             adLandPlots: "All 362,000 land plots in Abu Dhabi from the DMT (Department of Municipalities and Transport) registry.",
             uaeDistricts: "District boundaries for the five northern emirates (Sharjah, Ajman, UAQ, RAK, Fujairah).",
-            saudiGovernorates: "Top-level administrative regions (governorates) across the Kingdom of Saudi Arabia.",
-            riyadhZones: "Planning zones used by the Royal Commission for Riyadh City (RCRC).",
-            omanLandPlots: "94,640 land plots in Muscat Municipality from the Seeb-contract dataset.",
+            emirateSharjah: "Coming soon — Sharjah plots in development.",
+            emirateRAK: "Coming soon — Ras Al Khaimah plots in development.",
+            emirateAjman: "Coming soon — Ajman plots in development.",
+            emirateFujairah: "Coming soon — Fujairah plots in development.",
+            emirateUAQ: "Coming soon — Umm Al Quwain plots in development.",
           };
           // DDA district layers — generic "Community-level boundary" tooltip
           // since each polygon is one of the 206 community sub-areas.
@@ -4851,7 +4867,7 @@ function ParcelsMapPageInner() {
             }
           }
           const grouped: Record<LayerCountry, Partial<Record<LayerCategory, PanelItem[]>>> = {
-            dubai: {}, abudhabi: {}, otheruae: {}, saudi: {}, oman: {},
+            dubai: {}, abudhabi: {}, otheruae: {},
           };
           for (const [key, meta] of Object.entries(LAYER_META)) {
             (grouped[meta.country][meta.category] ??= []).push({
@@ -4859,6 +4875,7 @@ function ParcelsMapPageInner() {
               label: labels[key] ?? key,
               description: descriptions[key],
               requiredTier: meta.tier,
+              comingSoon: meta.comingSoon,
             });
           }
           return LAYER_COUNTRY_ORDER.map((country) => {
@@ -4868,8 +4885,11 @@ function ParcelsMapPageInner() {
               ? allInCountry.filter((i) => i.label.toLowerCase().includes(q))
               : allInCountry;
             if (searchActive && matches.length === 0) return null;
-            const onCount = allInCountry.filter((i) => layers[i.key as keyof LayersState] as boolean).length;
-            const total = allInCountry.length;
+            // Coming-soon rows aren't real toggles — exclude them from
+            // the "on / total" count shown next to the country header.
+            const countable = allInCountry.filter((i) => !i.comingSoon);
+            const onCount = countable.filter((i) => layers[i.key as keyof LayersState] as boolean).length;
+            const total = countable.length;
             const open = searchActive || !!countryOpen[country];
             return (
               <CountryGroup
@@ -5297,6 +5317,7 @@ function LayerToggle({
   onChange,
   color,
   requiredTier,
+  comingSoon,
 }: {
   label: string;
   /** Optional one-line description shown as native tooltip on row hover. */
@@ -5305,6 +5326,10 @@ function LayerToggle({
   onChange: (v: boolean) => void;
   color: string;
   requiredTier?: "GOLD" | "PLATINUM";
+  /** Disabled toggle for Phase 2 placeholders — dim opacity, not-allowed
+   * cursor, gold "Soon" badge in place of LockBadge. Founder spec
+   * 2026-05-23. */
+  comingSoon?: boolean;
 }) {
   return (
     <label
@@ -5315,27 +5340,70 @@ function LayerToggle({
         gap: 8,
         padding: "5px 14px 5px 24px",
         fontSize: 11,
-        cursor: "pointer",
+        cursor: comingSoon ? "not-allowed" : "pointer",
         color: checked ? GOLD : color,
+        opacity: comingSoon ? 0.4 : 1,
         lineHeight: 1.3,
         borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
         transition: "background 150ms ease, color 150ms ease",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
+      onMouseEnter={(e) => {
+        if (!comingSoon) e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+      }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
     >
       <input
         type="checkbox"
-        checked={checked}
+        checked={comingSoon ? false : checked}
+        disabled={comingSoon}
         onChange={(e) => {
+          if (comingSoon) return;
           sound.toggleSfx();
           onChange(e.target.checked);
         }}
-        style={{ accentColor: GOLD, width: 13, height: 13, margin: 0, cursor: "pointer" }}
+        style={{
+          accentColor: GOLD,
+          width: 13,
+          height: 13,
+          margin: 0,
+          cursor: comingSoon ? "not-allowed" : "pointer",
+        }}
       />
       <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-      {requiredTier && <LockBadge tier={requiredTier} />}
+      {comingSoon ? <SoonBadge /> : requiredTier && <LockBadge tier={requiredTier} />}
     </label>
+  );
+}
+
+// Visual-only "Soon" pill for Phase 2 layer placeholders. Same visual
+// language as LockBadge (gold border, gold text, serif weight) but with
+// a clock icon and "Soon" text instead of the padlock + tier name.
+function SoonBadge() {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        padding: "2px 6px",
+        border: `1px solid ${GOLD}`,
+        borderRadius: 3,
+        fontSize: 9,
+        letterSpacing: "0.08em",
+        color: GOLD,
+        background: "rgba(200, 169, 110, 0.12)",
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontWeight: 700,
+        flexShrink: 0,
+        textTransform: "uppercase",
+      }}
+    >
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+      Soon
+    </span>
   );
 }
 
@@ -5387,7 +5455,7 @@ function LayerGroup({
   open: boolean;
   onToggle: () => void;
   search: string;
-  items: Array<{ key: string; label: string; description?: string; requiredTier?: "GOLD" | "PLATINUM" }>;
+  items: Array<{ key: string; label: string; description?: string; requiredTier?: "GOLD" | "PLATINUM"; comingSoon?: boolean }>;
   isOn: (key: string) => boolean;
   onChange: (key: string, v: boolean) => void;
   hideCollapseCaret?: boolean;
@@ -5395,8 +5463,11 @@ function LayerGroup({
   const q = search.trim().toLowerCase();
   const sorted = [...items].sort((a, b) => a.label.localeCompare(b.label));
   const filtered = q ? sorted.filter((i) => i.label.toLowerCase().includes(q)) : sorted;
-  const onCount = items.filter((i) => isOn(i.key)).length;
-  const total = items.length;
+  // Coming-soon rows don't count toward on/total and the section
+  // tri-state "All" toggle must skip them — they aren't real layers.
+  const realItems = items.filter((i) => !i.comingSoon);
+  const onCount = realItems.filter((i) => isOn(i.key)).length;
+  const total = realItems.length;
   // When the user is searching, force-open the group so matches are visible.
   const effectivelyOpen = q ? filtered.length > 0 : open;
   if (q && filtered.length === 0) return null;
@@ -5455,6 +5526,7 @@ function LayerGroup({
             //   ▪ some on → click → turn all on
             const target = !(onCount === total);
             for (const i of filtered) {
+              if (i.comingSoon) continue;
               if (isOn(i.key) !== target) onChange(i.key, target);
             }
           }}
@@ -5469,6 +5541,7 @@ function LayerGroup({
           onChange={(v) => onChange(i.key, v)}
           color="rgba(255, 255, 255, 0.9)"
           requiredTier={i.requiredTier}
+          comingSoon={i.comingSoon}
         />
       ))}
     </div>
