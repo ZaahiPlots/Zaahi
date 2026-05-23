@@ -12,6 +12,7 @@ import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
 import { AddPlotWizardModal } from "./AddPlotWizardModal";
 import MiniMap from "./MiniMap";
+import DroneHUD from "./DroneHUD";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
@@ -3986,6 +3987,13 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* Military-UAV HUD — visible only while drone mode is active.
+          z-index 50, pointer-events none (no click interception). All
+          chrome (crosshair, horizon, compass tape, coords, ALT/VS/SPD/
+          HDG/PCH rails, corner brackets, status, time, zoom) reads
+          live from mapRef. Founder spec 2026-05-23. */}
+      {droneEnabled && <DroneHUD mainMapRef={mapRef} />}
 
       {/* Drone-mode on-enable toast — shown each time the user turns drone mode ON */}
       {showDroneHint && (
