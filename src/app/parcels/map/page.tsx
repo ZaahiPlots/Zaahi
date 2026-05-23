@@ -1339,6 +1339,11 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     // splitting out a "personal" pseudo-country is Phase 2.2 polish).
     vaultMine: { country: "dubai", category: "vault" },
     vaultShared: { country: "dubai", category: "vault" },
+    // ── Dubai — environmental layers (Phase 2 placeholders) ──
+    // Real-time noise monitoring via Dubai Municipality is on the
+    // roadmap but the data ingest isn't wired yet; show as a Soon row
+    // so users see the planned coverage now.
+    dubaiNoiseLevels: { country: "dubai", category: "coming-soon", comingSoon: true },
     // ── Dubai — master plans (all locked GOLD per mockup) ──
     islands: { country: "dubai", category: "masterplans", tier: "GOLD" },
     meydan: { country: "dubai", category: "masterplans", tier: "GOLD" },
@@ -4959,6 +4964,8 @@ function ParcelsMapPageInner() {
             emirateAjman: "Ajman · عجمان",
             emirateFujairah: "Fujairah · الفجيرة",
             emirateUAQ: "Umm Al Quwain · أم القيوين",
+            // Coming-soon environmental data layers
+            dubaiNoiseLevels: "Noise Levels · Dubai",
           });
           const descriptions: Record<string, string> = {
             communities: "Community / neighbourhood boundary polygons across Dubai.",
@@ -4991,6 +4998,7 @@ function ParcelsMapPageInner() {
             emirateAjman: "Coming soon — Ajman plots in development.",
             emirateFujairah: "Coming soon — Fujairah plots in development.",
             emirateUAQ: "Coming soon — Umm Al Quwain plots in development.",
+            dubaiNoiseLevels: "Real-time noise monitoring via Dubai Municipality — coming soon.",
           };
           // DDA district layers — generic "Community-level boundary" tooltip
           // since each polygon is one of the 206 community sub-areas.
