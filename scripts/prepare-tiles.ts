@@ -335,6 +335,25 @@ function processDdaDir(
   return count;
 }
 
+// AD-specific height defaults from primaryUse string (founder spec
+// 2026-05-23). Replaces the prior pipeline that mixed GFA-derived
+// heights with the regulatory MAXALLOWABLEHEIGHTS ceiling (often
+// 300 m+, producing absurdly tall buildings on commercial plots).
+// These numbers are per-use realistic medians for Abu Dhabi/Al Ain;
+// the 150 m hard cap in the caller stops any outliers.
+const adDefaultHeight = (use: string): number => {
+  const u = (use ?? "").toLowerCase();
+  if (u.includes("villa") || u.includes("townhouse")) return 10;
+  if (u.includes("apartment") || u.includes("residential")) return 20;
+  if (u.includes("hotel") || u.includes("hospitality")) return 35;
+  if (u.includes("commercial") || u.includes("office")) return 30;
+  if (u.includes("mixed")) return 25;
+  if (u.includes("retail") || u.includes("mall")) return 15;
+  if (u.includes("industrial") || u.includes("warehouse")) return 8;
+  if (u.includes("government") || u.includes("education")) return 12;
+  return 15;
+};
+
 function processAdDir(
   dir: string,
   insetIndex: Map<string, number[][]>,
@@ -366,21 +385,12 @@ function processAdDir(
 
       let height = 0;
       if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT") {
-        // PRIMARY: GFA-derived per-plot (mirrors Dubai fallback). Works on ADM
-        // mainland where DevCode_MaxGFA + CALCULATEDAREA are populated (~82%).
-        if (maxGfa > 0 && areaSqm > 0) {
-          height = Math.ceil(maxGfa / (areaSqm * 0.6)) * 3.5;
-        }
-        // FALLBACK: land-use defaults (shared helper). Catches Saadiyat / Reem /
-        // Al Ain / Western Region where DevCode_MaxGFA is missing.
-        if (height <= 0) height = defaultHeight(landUse);
-        // CEILING: MAXALLOWABLEHEIGHTS is the regulatory zoning cap, not the
-        // target. Clamp unrealistically tall GFA-derived heights to it.
-        const maxAllowableM = parseFloat(maxHeightStr);
-        if (!isNaN(maxAllowableM) && maxAllowableM > 0 && maxAllowableM < 500 && height > maxAllowableM) {
-          height = maxAllowableM;
-        }
-        if (height > 300) height = 300;
+        // Founder spec 2026-05-23: drop the GFA/regulatory-ceiling
+        // approach (was clamping to MAXALLOWABLEHEIGHTS, which is a
+        // zoning cap up to 500 m, producing wildly tall buildings on
+        // ordinary commercial plots). Replaced with per-primaryUse
+        // realistic defaults, hard-capped at 150 m.
+        height = Math.min(adDefaultHeight(primaryUse || devCategory), 150);
       }
 
       const ring = (feat.geometry as GeoJSON.Polygon).coordinates[0];
