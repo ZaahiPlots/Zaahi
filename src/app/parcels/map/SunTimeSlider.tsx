@@ -13,7 +13,7 @@
 // We hand the parent a Date so this component owns the hour↔Date math
 // and the parent doesn't have to know about the override semantics.
 
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 const GOLD = "#C8A96E";
 
@@ -37,12 +37,25 @@ function formatHour(hour: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+// Default override time per founder spec 2026-05-23 — 08:15 catches
+// the warm dawn-shadow look that reads best against Dubai's
+// glass-tower geometry. Decimal hour: 8 + 15/60 = 8.25.
+const DEFAULT_OVERRIDE_HOUR = 8.25;
+
 export default function SunTimeSlider({ onChange }: SunTimeSliderProps) {
-  // Default the slider to the current hour so the first nudge is small.
-  const [overrideHour, setOverrideHour] = useState<number | null>(null);
-  const displayHour =
-    overrideHour ??
-    (new Date().getHours() + new Date().getMinutes() / 60);
+  // Slider starts at the founder-chosen default time, not real
+  // wall-clock — and we push that override up to the parent on mount
+  // so the directional light snaps to 08:15 the moment the slider
+  // mounts. Double-clicking still clears back to live time.
+  const [overrideHour, setOverrideHour] = useState<number | null>(DEFAULT_OVERRIDE_HOUR);
+  const displayHour = overrideHour ?? (new Date().getHours() + new Date().getMinutes() / 60);
+
+  useEffect(() => {
+    if (overrideHour !== null) onChange(dateAtHour(overrideHour));
+    // Run once on mount only — the slider's own onChange already
+    // pushes updates while the user drags.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSlider(e: ChangeEvent<HTMLInputElement>) {
     const v = Number(e.target.value);
