@@ -59,6 +59,10 @@ export interface VaultEntryFull {
   promotedParcelId: string | null;
   conflictsWithOthers: boolean;
   conflictedFields: unknown | null;
+  /** Raw DDA snapshot when entry was sourced via live BASIC_LAND_BASE
+   *  lookup (Path 1 fallback). Null for curated-Parcel-linked entries
+   *  and manual non-DDA entries. See src/lib/dda-plot-lookup.ts. */
+  ddaSnapshot: unknown | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +107,7 @@ export function serializeVaultEntryFull(
     promotedParcelId: row.promotedParcelId,
     conflictsWithOthers: row.conflictsWithOthers,
     conflictedFields: row.conflictedFields,
+    ddaSnapshot: row.ddaSnapshot,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   });
@@ -131,6 +136,7 @@ export function serializeVaultEntryForRecipient(
     geometry: full.geometry,
     landUse: full.landUse,
     askingPriceFils: full.askingPriceFils,
+    ddaSnapshot: full.ddaSnapshot, // raw scrape facts — public-by-nature on prod portal
     ownerContact: redactOwnerContact(full.ownerContact),
     stage: full.stage,
     source: full.source,

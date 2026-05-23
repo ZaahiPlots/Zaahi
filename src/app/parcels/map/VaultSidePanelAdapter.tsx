@@ -30,6 +30,32 @@ const BORDER = "rgba(255, 255, 255, 0.1)";
 const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
 const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
 
+// AffectionPlan fields from the public Parcel join (when entry has
+// publicParcelId). Mirrors the columns selected in
+// /api/me/vault/entries/[id] GET. All nullable — only present for
+// curated-index hits.
+interface AffectionPlanLite {
+  plotAreaSqm: number | null;
+  plotAreaSqft: number | null;
+  maxGfaSqm: number | null;
+  maxGfaSqft: number | null;
+  maxFloors: number | null;
+  maxHeightMeters: number | null;
+  maxHeightCode: string | null;
+  far: number | null;
+  setbacks: unknown;
+  landUseMix: unknown;
+  buildingStyle: string | null;
+  buildingLimitGeometry: unknown;
+  sitePlanIssue: string | null;
+  sitePlanExpiry: string | null;
+  notes: string | null;
+  projectName: string | null;
+  community: string | null;
+  masterDeveloper: string | null;
+  plotGuidelinesUrl: string | null;
+}
+
 interface OwnerView {
   access: "owner";
   id: string;
@@ -49,6 +75,13 @@ interface OwnerView {
   conflictedFields: unknown | null;
   promotedAt: string | null;
   promotedParcelId: string | null;
+  /** Raw DDA snapshot when entry was sourced via live BASIC_LAND_BASE
+   *  lookup (Path 1 fallback for plots not in our curated Parcel index). */
+  ddaSnapshot: unknown | null;
+  /** AffectionPlan from publicParcel join — present for entries linked
+   *  to a curated Parcel row. Used together with ddaSnapshot to render
+   *  DIMENSIONS / LAND USE / AFFECTION PLAN sections. */
+  affectionPlan: AffectionPlanLite | null;
   addedBy: { id: string; nickname: string | null } | null;
   shares: Array<{
     id: string;
@@ -90,6 +123,8 @@ interface RecipientView {
   sharedBy: { id: string; nickname: string | null };
   permission: string;
   shareId: string;
+  ddaSnapshot: unknown | null;
+  affectionPlan: AffectionPlanLite | null;
 }
 
 type EntryView = OwnerView | RecipientView;
@@ -164,7 +199,7 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
                   : "VAULT ENTRY"}
             </div>
             <h2 style={titleStyle}>
-              {view ? `${view.plotNumber} · ${view.district}` : "Loading…"}
+              {view ? `Plot ${view.plotNumber} · ${view.district} · ${formatEmirate(view.emirate)}` : "Loading…"}
             </h2>
             {view && view.access === "owner" && view.promotedAt && (
               <div style={{ fontSize: 12, color: GOLD, marginTop: 2 }}>
@@ -187,13 +222,7 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
 
         {view && (
           <div style={bodyStyle}>
-            <Section label="Plot">
-              <Row label="Emirate">{view.emirate}</Row>
-              <Row label="District">{view.district}</Row>
-              <Row label="Plot number">{view.plotNumber}</Row>
-              {view.area !== null && <Row label="Area">{view.area.toLocaleString()} sqft</Row>}
-              {view.landUse && <Row label="Land use">{view.landUse}</Row>}
-            </Section>
+            <PlotFactsSections view={view} />
 
             <Section label="Your pipeline">
               <Row label="Stage">{view.stage}</Row>
@@ -410,6 +439,234 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+// ── Plot facts (DIMENSIONS / LAND USE / AFFECTION PLAN / NOTES) ──
+//
+// Data fallback chain:
+//   1. view.affectionPlan (from curated Parcel join) — preferred, clean shape
+//   2. view.ddaSnapshot.feature.properties (from live DDA fetch) — fallback
+//   3. None — only the YOUR PIPELINE section renders below
+
+function PlotFactsSections({ view }: { view: EntryView }) {
+  const facts = derivePlanFacts(view);
+  if (!facts) return null;
+
+  return (
+    <>
+      {facts.dimensions && (
+        <Section label="Dimensions">
+          {facts.dimensions.plotAreaSqft && (
+            <Row label="Plot area">
+              {facts.dimensions.plotAreaSqft.toLocaleString()} sqft
+              {facts.dimensions.plotAreaSqm
+                ? ` (${facts.dimensions.plotAreaSqm.toLocaleString()} m²)`
+                : ""}
+            </Row>
+          )}
+          {facts.dimensions.maxGfaSqft && (
+            <Row label="Max GFA">
+              {facts.dimensions.maxGfaSqft.toLocaleString()} sqft
+              {facts.dimensions.maxGfaSqm
+                ? ` (${facts.dimensions.maxGfaSqm.toLocaleString()} m²)`
+                : ""}
+            </Row>
+          )}
+          {facts.dimensions.far !== null && (
+            <Row label="FAR">{facts.dimensions.far.toFixed(2)}</Row>
+          )}
+          {facts.dimensions.maxHeight && <Row label="Max height">{facts.dimensions.maxHeight}</Row>}
+        </Section>
+      )}
+
+      {facts.landUseCategory && (
+        <Section label="Land use">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 4 }}>
+            <span style={landUseTagStyle(facts.landUseCategory)}>
+              {prettyLandUseLabel(facts.landUseCategory)}
+            </span>
+            {facts.landUseSub && (
+              <span style={{ fontSize: 12, color: TEXT_DIM }}>{facts.landUseSub}</span>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {(facts.sitePlanIssue || facts.sitePlanExpiry) && (
+        <Section label="Affection plan">
+          {facts.sitePlanIssue && <Row label="Issued">{formatMonthYear(facts.sitePlanIssue)}</Row>}
+          {facts.sitePlanExpiry && <Row label="Expires">{formatMonthYear(facts.sitePlanExpiry)}</Row>}
+        </Section>
+      )}
+
+      {facts.generalNotes && (
+        <Section label="General notes">
+          <div style={{ ...rowValueStyle, whiteSpace: "pre-wrap", fontSize: 12, lineHeight: 1.55 }}>
+            {facts.generalNotes}
+          </div>
+        </Section>
+      )}
+
+      {facts.plotGuidelinesUrl && (
+        <Section label="Documents">
+          <a
+            href={facts.plotGuidelinesUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={downloadLinkStyle}
+          >
+            ⬇ Download site plan PDF
+          </a>
+        </Section>
+      )}
+    </>
+  );
+}
+
+/** Unified facts extracted from affectionPlan (preferred) or ddaSnapshot. */
+interface PlanFacts {
+  dimensions: {
+    plotAreaSqft: number | null;
+    plotAreaSqm: number | null;
+    maxGfaSqft: number | null;
+    maxGfaSqm: number | null;
+    far: number | null;
+    maxHeight: string | null;
+  } | null;
+  landUseCategory: string | null;
+  landUseSub: string | null;
+  sitePlanIssue: string | null;
+  sitePlanExpiry: string | null;
+  generalNotes: string | null;
+  plotGuidelinesUrl: string | null;
+}
+
+function derivePlanFacts(view: EntryView): PlanFacts | null {
+  // Path 1: curated Parcel join (AffectionPlan present).
+  if (view.affectionPlan) {
+    const plan = view.affectionPlan;
+    const mix = Array.isArray(plan.landUseMix)
+      ? (plan.landUseMix as Array<{ category?: string; sub?: string | null }>)
+      : null;
+    const first = mix?.[0] ?? null;
+    return {
+      dimensions: {
+        plotAreaSqft: plan.plotAreaSqft,
+        plotAreaSqm: plan.plotAreaSqm,
+        maxGfaSqft: plan.maxGfaSqft,
+        maxGfaSqm: plan.maxGfaSqm,
+        far: plan.far,
+        maxHeight: plan.maxHeightCode
+          ?? (plan.maxFloors ? `G+${Math.max(0, plan.maxFloors - 1)}` : null),
+      },
+      landUseCategory: first?.category ?? null,
+      landUseSub: first?.sub ?? null,
+      sitePlanIssue: plan.sitePlanIssue,
+      sitePlanExpiry: plan.sitePlanExpiry,
+      generalNotes: plan.notes,
+      plotGuidelinesUrl: plan.plotGuidelinesUrl,
+    };
+  }
+
+  // Path 2: live-DDA snapshot (BASIC_LAND_BASE fields).
+  if (
+    view.ddaSnapshot &&
+    typeof view.ddaSnapshot === "object" &&
+    "feature" in view.ddaSnapshot
+  ) {
+    const snap = view.ddaSnapshot as { feature?: { properties?: Record<string, unknown> } };
+    const p = snap.feature?.properties ?? {};
+    const areaSqm = typeof p.AREA_SQM === "number" ? p.AREA_SQM : null;
+    const areaSqft = typeof p.AREA_SQFT === "number" ? p.AREA_SQFT : null;
+    const gfaSqm = typeof p.GFA_SQM === "number" ? p.GFA_SQM : null;
+    const gfaSqft = typeof p.GFA_SQFT === "number" ? p.GFA_SQFT : null;
+    const far = (gfaSqm && areaSqm) ? gfaSqm / areaSqm : null;
+    const issueMs = typeof p.SITEPLAN_ISSUE_DATE === "number" ? p.SITEPLAN_ISSUE_DATE : null;
+    const expiryMs = typeof p.SITEPLAN_EXPIRY_DATE === "number" ? p.SITEPLAN_EXPIRY_DATE : null;
+    return {
+      dimensions: {
+        plotAreaSqft: areaSqft,
+        plotAreaSqm: areaSqm,
+        maxGfaSqft: gfaSqft,
+        maxGfaSqm: gfaSqm,
+        far,
+        maxHeight: typeof p.MAX_HEIGHT_FLOORS === "string" ? p.MAX_HEIGHT_FLOORS : null,
+      },
+      landUseCategory:
+        typeof p.LANDUSE_CATEGORY === "string" ? p.LANDUSE_CATEGORY :
+        typeof p.MAIN_LANDUSE === "string" ? p.MAIN_LANDUSE :
+        null,
+      landUseSub: typeof p.SUB_LANDUSE === "string" ? p.SUB_LANDUSE : null,
+      sitePlanIssue: issueMs ? new Date(issueMs).toISOString() : null,
+      sitePlanExpiry: expiryMs ? new Date(expiryMs).toISOString() : null,
+      generalNotes: typeof p.GENERAL_NOTES === "string" && p.GENERAL_NOTES.trim().length > 0
+        ? p.GENERAL_NOTES
+        : null,
+      plotGuidelinesUrl: null, // BASIC_LAND_BASE doesn't surface a PDF URL; only the DIS PlotInfo does
+    };
+  }
+
+  // Path 3: manual entry — no DDA data, no curated parcel.
+  return null;
+}
+
+// ── Helpers (UI formatters) ──
+
+const EMIRATE_LABEL: Record<string, string> = {
+  DUBAI: "Dubai",
+  ABU_DHABI: "Abu Dhabi",
+  SHARJAH: "Sharjah",
+  AJMAN: "Ajman",
+  UAQ: "Umm Al Quwain",
+  RAK: "Ras Al Khaimah",
+  FUJAIRAH: "Fujairah",
+};
+function formatEmirate(code: string): string {
+  return EMIRATE_LABEL[code] ?? code;
+}
+
+function formatMonthYear(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+// 9-category palette per CLAUDE.md (founder-ratified 2026-04-11).
+const LANDUSE_COLOR: Record<string, string> = {
+  RESIDENTIAL: "#FFD700",
+  COMMERCIAL: "#4A90D9",
+  MIXED_USE: "#9B59B6",
+  "MIXED USE": "#9B59B6",
+  HOTEL: "#E67E22",
+  HOSPITALITY: "#E67E22",
+  INDUSTRIAL: "#708090",
+  WAREHOUSE: "#708090",
+  EDUCATIONAL: "#1ABC9C",
+  EDUCATION: "#1ABC9C",
+  HEALTHCARE: "#E74C3C",
+  AGRICULTURAL: "#6B8E23",
+  AGRICULTURE: "#6B8E23",
+  FUTURE_DEVELOPMENT: "#84CC16",
+  "FUTURE DEVELOPMENT": "#84CC16",
+};
+function landUseTagStyle(category: string): React.CSSProperties {
+  const key = category.toUpperCase().trim();
+  const hex = LANDUSE_COLOR[key] ?? "#6B7280";
+  return {
+    display: "inline-block",
+    padding: "3px 9px",
+    borderRadius: 4,
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#1A1A2E",
+    background: hex,
+    border: `1px solid ${hex}`,
+  };
+}
+function prettyLandUseLabel(raw: string): string {
+  return raw.replace(/_/g, " ");
+}
+
 // ── Styles (CLAUDE.md UI STYLE GUIDE) ──
 
 const panelStyle: React.CSSProperties = {
@@ -545,4 +802,17 @@ const secondaryButtonStyle: React.CSSProperties = {
   background: "rgba(255, 255, 255, 0.04)",
   border: `1px solid ${BORDER}`,
   color: TEXT_DIM,
+};
+
+const downloadLinkStyle: React.CSSProperties = {
+  display: "inline-block",
+  padding: "8px 12px",
+  borderRadius: 6,
+  fontSize: 12,
+  color: GOLD,
+  border: `1px solid rgba(200, 169, 110, 0.3)`,
+  background: "rgba(200, 169, 110, 0.08)",
+  textDecoration: "none",
+  letterSpacing: "0.04em",
+  transition: "background 150ms ease, border-color 150ms ease",
 };

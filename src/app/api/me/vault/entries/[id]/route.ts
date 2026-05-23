@@ -100,6 +100,40 @@ export async function GET(
           createdAt: true,
         },
       },
+      // Join publicParcel + latest AffectionPlan so the side panel can
+      // render dimensions / FAR / setbacks / land use / affection-plan
+      // dates without a second round-trip. Mirrors the pattern in
+      // /api/me/vault/map (GAP 1).
+      publicParcel: {
+        select: {
+          id: true,
+          affectionPlans: {
+            orderBy: { fetchedAt: "desc" },
+            take: 1,
+            select: {
+              plotAreaSqm: true,
+              plotAreaSqft: true,
+              maxGfaSqm: true,
+              maxGfaSqft: true,
+              maxFloors: true,
+              maxHeightMeters: true,
+              maxHeightCode: true,
+              far: true,
+              setbacks: true,
+              landUseMix: true,
+              buildingStyle: true,
+              buildingLimitGeometry: true,
+              sitePlanIssue: true,
+              sitePlanExpiry: true,
+              notes: true,
+              projectName: true,
+              community: true,
+              masterDeveloper: true,
+              plotGuidelinesUrl: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -110,6 +144,34 @@ export async function GET(
 
   const full = serializeVaultEntryFull(entry);
   const priceHistory = await getPriceHistory(id, 50);
+
+  // Resolve affectionPlan from publicParcel join when present. Side panel
+  // uses these fields to render DIMENSIONS / LAND USE / AFFECTION PLAN
+  // sections matching the public listing layout.
+  const plan = entry.publicParcel?.affectionPlans?.[0] ?? null;
+  const affectionPlan = plan
+    ? {
+        plotAreaSqm: plan.plotAreaSqm,
+        plotAreaSqft: plan.plotAreaSqft,
+        maxGfaSqm: plan.maxGfaSqm,
+        maxGfaSqft: plan.maxGfaSqft,
+        maxFloors: plan.maxFloors,
+        maxHeightMeters: plan.maxHeightMeters,
+        maxHeightCode: plan.maxHeightCode,
+        far: plan.far,
+        setbacks: plan.setbacks,
+        landUseMix: plan.landUseMix,
+        buildingStyle: plan.buildingStyle,
+        buildingLimitGeometry: plan.buildingLimitGeometry,
+        sitePlanIssue: plan.sitePlanIssue?.toISOString() ?? null,
+        sitePlanExpiry: plan.sitePlanExpiry?.toISOString() ?? null,
+        notes: plan.notes,
+        projectName: plan.projectName,
+        community: plan.community,
+        masterDeveloper: plan.masterDeveloper,
+        plotGuidelinesUrl: plan.plotGuidelinesUrl,
+      }
+    : null;
 
   return NextResponse.json({
     ...full,
@@ -130,6 +192,7 @@ export async function GET(
       createdAt: a.createdAt.toISOString(),
     })),
     priceHistory,
+    affectionPlan,
   });
 }
 

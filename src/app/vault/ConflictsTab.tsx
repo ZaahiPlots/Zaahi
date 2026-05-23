@@ -13,6 +13,10 @@ import type { VaultEntrySummary } from "./types";
 interface Props {
   selfUserId: string;
   onPriceSaved: (id: string, newPriceFils: string | null) => void;
+  /** Optional — when present, ConflictsTab will optimistically remove
+   *  the row after a successful delete. Pure VaultListView path passes
+   *  this; legacy callers without it can omit (row stays until refetch). */
+  onDeleted?: (id: string) => void;
 }
 
 interface ConflictsResponse {
@@ -20,7 +24,7 @@ interface ConflictsResponse {
   total: number;
 }
 
-export function ConflictsTab({ selfUserId, onPriceSaved }: Props) {
+export function ConflictsTab({ selfUserId, onPriceSaved, onDeleted }: Props) {
   const [items, setItems] = useState<VaultEntrySummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +79,10 @@ export function ConflictsTab({ selfUserId, onPriceSaved }: Props) {
           entry={e}
           selfUserId={selfUserId}
           onPriceSaved={onPriceSaved}
+          onDeleted={(id) => {
+            setItems((prev) => prev?.filter((p) => p.id !== id) ?? prev);
+            onDeleted?.(id);
+          }}
         />
       ))}
     </div>

@@ -215,6 +215,11 @@ function OwnedList({
     );
   }
 
+  // Optimistic remove — VaultListItem already called DELETE and got 204.
+  function handleDeleted(id: string) {
+    setItems((prev) => prev.filter((p) => p.id !== id));
+  }
+
   if (loading) {
     return (
       <div style={{ padding: 24, color: TEXT_DIM, fontSize: 13 }}>Loading…</div>
@@ -237,6 +242,7 @@ function OwnedList({
           entry={e}
           selfUserId={selfUserId}
           onPriceSaved={handlePriceSaved}
+          onDeleted={handleDeleted}
         />
       ))}
       {nextCursor && (
