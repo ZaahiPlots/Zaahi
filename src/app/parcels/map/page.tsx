@@ -3364,6 +3364,12 @@ function ParcelsMapPageInner() {
       pitch: saved?.pitch ?? 45,
       bearing: saved?.bearing ?? -17,
       maxPitch: 70,
+      // MapLibre default maxZoom is 22; explicitly lifted to 24 so the
+      // camera can reach the same close-up zoom band that source/layer
+      // maxzoom: 24 already allow. Without this the camera caps at z22
+      // and PMTiles 3D buildings appear to "vanish" on further wheel
+      // input — founder fix 2026-05-23 (camera-cap follow-up).
+      maxZoom: 24,
       dragRotate: true,
       pitchWithRotate: true,
       touchPitch: true,
