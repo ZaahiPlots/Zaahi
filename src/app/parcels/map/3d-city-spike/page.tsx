@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl, {
   Map as MLMap,
   StyleSpecification,
+  MercatorCoordinate,
   CustomLayerInterface,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -32,11 +33,38 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
 const BB_LNG = 55.2708;
 const BB_LAT = 25.1865;
+// 3d-tiles-renderer's Ellipsoid methods take RADIANS — explicit per
+// JSDoc on Ellipsoid.js. The previous two spikes passed degrees, so
+// camera + tileset both rendered against meaningless coordinates.
+const BB_LAT_RAD = (BB_LAT * Math.PI) / 180;
+const BB_LNG_RAD = (BB_LNG * Math.PI) / 180;
 const INITIAL_ZOOM = 15;
 const INITIAL_PITCH = 60;
 const INITIAL_BEARING = -17;
 
 const WGS84_ELLIPSOID = new Ellipsoid(WGS84_RADIUS, WGS84_RADIUS, WGS84_RADIUS);
+
+// ECEF → MapLibre mercator-world transform anchored at Business Bay.
+//
+//   v_merc = T_bb × S(s,-s,s) × invENU_at_BB × v_ecef
+//
+//   invENU_at_BB    — ECEF → local meters at BB (X=East, Y=North, Z=Up).
+//                     Built with RADIANS this time.
+//   S(s,-s,s)       — meters → mercator. Y negated because MapLibre's
+//                     mercator Y grows southward whereas ENU-North is +Y.
+//   T_bb            — translate to BB in mercator world.
+function buildTilesetMatrix(): THREE.Matrix4 {
+  const enu = new THREE.Matrix4();
+  WGS84_ELLIPSOID.getEastNorthUpFrame(BB_LAT_RAD, BB_LNG_RAD, 0, enu);
+  const invEnu = enu.clone().invert();
+
+  const bb = MercatorCoordinate.fromLngLat({ lng: BB_LNG, lat: BB_LAT }, 0);
+  const s = bb.meterInMercatorCoordinateUnits();
+  const scale = new THREE.Matrix4().makeScale(s, -s, s);
+  const translate = new THREE.Matrix4().makeTranslation(bb.x, bb.y, bb.z);
+
+  return new THREE.Matrix4().multiplyMatrices(translate, scale).multiply(invEnu);
+}
 
 const BASE_STYLE: StyleSpecification = {
   version: 8,
@@ -56,36 +84,11 @@ const BASE_STYLE: StyleSpecification = {
   layers: [{ id: "carto", type: "raster", source: "carto" }],
 };
 
-// ECEF position helper — wraps Ellipsoid.getCartographicToPosition.
-// Note: 3d-tiles-renderer's Ellipsoid takes lat/lng in DEGREES, not
-// radians (this was a likely source of the prior matrix bug — too).
-function ecefAt(lat: number, lng: number, altMeters: number): THREE.Vector3 {
-  const v = new THREE.Vector3();
-  WGS84_ELLIPSOID.getCartographicToPosition(lat, lng, altMeters, v);
-  return v;
-}
-
-// Approximate camera altitude (above ground) for a given MapLibre zoom
-// and pitch. Derived from the standard "meters per screen height"
-// formula used by mapbox/maplibre. At zoom 15 + pitch 60, this lands
-// around 1.5–2 km — enough to see Burj Khalifa from above with sky
-// behind it.
-function cameraAltitudeMeters(zoom: number, lat: number, _pitch: number): number {
-  const metersPerPixel =
-    (40075016.686 * Math.abs(Math.cos((lat * Math.PI) / 180))) / (2 ** zoom * 512);
-  const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
-  // Approx altitude needed for half-viewport-height meters to fit at
-  // ~30° vertical half-FOV. Generous fudge factor (×2.5) lets the
-  // frustum easily encompass nearby tiles.
-  const fovHalf = Math.PI / 6;
-  return metersPerPixel * (viewportH / 2) / Math.tan(fovHalf) * 2.5;
-}
-
 interface SpikeCustomLayer extends CustomLayerInterface {
   tiles?: TilesRenderer;
   renderer?: THREE.WebGLRenderer;
   scene?: THREE.Scene;
-  camera?: THREE.PerspectiveCamera;
+  camera?: THREE.Camera;
   mapRef?: MLMap;
   childCountLastLogged?: number;
 }
@@ -107,12 +110,12 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
       scene.add(dir);
       this.scene = scene;
 
-      // Standard perspective camera — Three computes projection from
-      // fov/aspect/near/far. ECEF distances are 6.37 M m, so near/far
-      // need a wide range; setting near=100 m, far=20 000 km handles
-      // close-up city views up to "see the whole planet".
-      const aspect = typeof window !== "undefined" ? window.innerWidth / window.innerHeight : 1.5;
-      const camera = new THREE.PerspectiveCamera(60, aspect, 100, 20_000_000);
+      // Camera projection matrix is set directly from MapLibre's MVP
+      // each frame; matrixAutoUpdate stays off so Three doesn't
+      // recompute matrixWorld from position/rotation (we pin it to
+      // identity below).
+      const camera = new THREE.Camera();
+      camera.matrixAutoUpdate = false;
       this.camera = camera;
 
       const renderer = new THREE.WebGLRenderer({
@@ -125,7 +128,14 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
 
       const tiles = new TilesRenderer(`https://tile.googleapis.com/v1/3dtiles/root.json`);
       tiles.registerPlugin(new GoogleCloudAuthPlugin({ apiToken: API_KEY }));
-      // Leave tileset in native ECEF — no group transform applied.
+      // Apply the ECEF→mercator transform once on init. With radians
+      // wired in, this lands the Business Bay anchor at the correct
+      // mercator-world point so MapLibre's MVP camera sees the tiles
+      // exactly where the basemap shows Dubai.
+      const tilesetMatrix = buildTilesetMatrix();
+      tiles.group.applyMatrix4(tilesetMatrix);
+      tiles.group.matrixAutoUpdate = false;
+      console.log("[3d-spike] tileset matrix applied (degrees→radians fix)");
       scene.add(tiles.group);
 
       tiles.addEventListener("load-tile-set", () => {
@@ -141,70 +151,30 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
       this.tiles = tiles;
     },
 
-    render() {
+    render(_gl, args) {
       if (!this.scene || !this.camera || !this.renderer || !this.tiles || !this.mapRef) return;
 
-      const map = this.mapRef;
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      const bearing = map.getBearing();
-      const pitch = map.getPitch();
+      // MapLibre v5's render signature varies: older builds passed the
+      // matrix array directly as the 2nd arg, v5 wraps it in a struct.
+      const matrix = Array.isArray(args)
+        ? (args as unknown as number[])
+        : (args as { defaultProjectionData: { mainMatrix: number[] } })
+            .defaultProjectionData.mainMatrix;
 
-      // Camera is positioned in ECEF, looking at the ground point
-      // under the MapLibre map center. We approximate the camera
-      // location by: take the ground point at center, walk along the
-      // local up vector by altitude, then offset toward the pitch
-      // direction (camera tilts backward as pitch grows).
-      const altGround = cameraAltitudeMeters(zoom, center.lat, pitch);
-      const ground = ecefAt(center.lat, center.lng, 0);
-
-      // ENU axes at the ground point — used to interpret bearing +
-      // pitch as a tilt of the camera vector.
-      const east = new THREE.Vector3();
-      const north = new THREE.Vector3();
-      const up = new THREE.Vector3();
-      WGS84_ELLIPSOID.getEastNorthUpAxes(center.lat, center.lng, east, north, up, ground);
-
-      // Bearing rotates the ground "north" axis around `up`. Pitch
-      // tilts the camera ray away from `up` toward the (rotated)
-      // north. With pitch=0 the camera sits directly above; pitch=60
-      // moves the camera ~60° away from vertical, looking down at
-      // the ground from an angle.
-      const bearingRad = (bearing * Math.PI) / 180;
-      const pitchRad = (pitch * Math.PI) / 180;
-      const cosB = Math.cos(bearingRad);
-      const sinB = Math.sin(bearingRad);
-
-      // Direction "behind" the camera (i.e. away from look-at point)
-      const back = new THREE.Vector3();
-      back.copy(up).multiplyScalar(Math.cos(pitchRad));
-      back.addScaledVector(north, Math.sin(pitchRad) * cosB);
-      back.addScaledVector(east, -Math.sin(pitchRad) * sinB);
-      back.normalize();
-
-      const camPos = ground.clone().addScaledVector(back, altGround);
-      this.camera.position.copy(camPos);
-      this.camera.up.copy(up);
-      this.camera.lookAt(ground);
-      this.camera.updateMatrixWorld();
-
-      // Resize handling — keep camera aspect ratio in sync with the
-      // map canvas. Cheap enough to do every frame.
-      const canvas = map.getCanvas();
-      if (canvas.width && canvas.height) {
-        const a = canvas.width / canvas.height;
-        if (Math.abs(this.camera.aspect - a) > 0.001) {
-          this.camera.aspect = a;
-          this.camera.updateProjectionMatrix();
-        }
-      }
+      // Camera projection = MapLibre's full MVP (mercator world → clip
+      // space). Pin matrixWorld/Inverse to identity so Three doesn't
+      // apply its own view transform on top.
+      this.camera.projectionMatrix.fromArray(matrix);
+      this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+      this.camera.matrix.identity();
+      this.camera.matrixWorld.identity();
+      this.camera.matrixWorldInverse.identity();
 
       this.tiles.setCamera(this.camera);
       this.tiles.setResolutionFromRenderer(this.camera, this.renderer);
       this.tiles.update();
 
-      // Diagnostic — log when children count changes so we see if any
-      // mesh actually got attached.
+      // Diagnostic — log when child count changes (mesh attach events).
       const cc = this.tiles.group.children.length;
       if (cc !== this.childCountLastLogged) {
         console.log("[3d-spike] tilesRenderer.group.children.length:", cc);
@@ -214,7 +184,7 @@ function buildTilesLayer(setStatus: (s: string) => void): SpikeCustomLayer {
       this.renderer.resetState();
       this.renderer.render(this.scene, this.camera);
 
-      map.triggerRepaint();
+      this.mapRef.triggerRepaint();
     },
 
     onRemove() {
