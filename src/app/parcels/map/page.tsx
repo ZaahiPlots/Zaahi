@@ -3223,7 +3223,12 @@ function ParcelsMapPageInner() {
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
-    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}` });
+    // maxzoom: 22 instructs MapLibre to overzoom (stretch) the deepest
+    // tile in the tileset up to z22, instead of stopping rendering once
+    // the user passes the tileset's actual header maxzoom (15 for AD,
+    // 17 for DDA/Oman). Without this 3D extrusions vanish at close
+    // zoom — founder fix 2026-05-23.
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 22 });
     // 2D fill — only "flat" features (tier=flat, height=0)
     map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],
