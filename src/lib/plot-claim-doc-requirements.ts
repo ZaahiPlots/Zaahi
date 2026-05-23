@@ -47,6 +47,9 @@ export interface ClaimDocRequirement {
 export const PLOT_CLAIM_DOC_REQUIREMENTS: Record<UserRole, ClaimDocRequirement> = {
   OWNER: { required: true, kinds: ["title_deed"] },
   BROKER: { required: true, kinds: ["rera_form"] },
+  // PROJECT_MANAGER claims aren't verifiable from a single canonical
+  // document — treat as self-declared (same as INTERMEDIARY/BUYER).
+  PROJECT_MANAGER: { required: false, kinds: [] },
   DEVELOPER: { required: true, kinds: ["developer_registration"] },
   ARCHITECT: { required: true, kinds: ["architect_proof"] },
   POA: { required: true, kinds: ["poa_document"] },

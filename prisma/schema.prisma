@@ -15,9 +15,10 @@ datasource db {
 // ── ENUMS ─────────────────────────────────────────────
 
 enum UserRole {
-  // Cohort v1.0 official roles (10):
+  // Cohort v1.0 official roles (10) + PROJECT_MANAGER added 2026-05-23:
   OWNER
   BROKER
+  PROJECT_MANAGER
   DEVELOPER
   BUYER
   ARCHITECT

@@ -57,6 +57,10 @@ export interface DocRequirement {
 export const REGISTRATION_DOC_REQUIREMENTS: Record<UserRole, DocRequirement> = {
   OWNER: { mode: "AND", kinds: ["emirates_id", "title_deed"] },
   BROKER: { mode: "AND", kinds: ["emirates_id", "rera_card", "agency_licence"] },
+  // PROJECT_MANAGER: ID-only baseline (same as BUYER / INTERMEDIARY).
+  // Founder may tighten to a project-management cert via a new DocKind
+  // in Phase 2.2.
+  PROJECT_MANAGER: { mode: "OR", kinds: ["emirates_id", "passport"] },
   DEVELOPER: { mode: "AND", kinds: ["trade_licence", "dld_developer_registration"] },
   ARCHITECT: { mode: "AND", kinds: ["emirates_id", "architect_licence"] },
   POA: { mode: "AND", kinds: ["emirates_id", "poa_document"] },

@@ -14,10 +14,15 @@ export default function AuthPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  // Forgot-password flow uses Supabase's built-in resetPasswordForEmail.
+  // This is a SEPARATE auth method from signInWithPassword — the existing
+  // sign-in flow is untouched (per CLAUDE.md SECURITY rule).
+  const [resetMessage, setResetMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
 
   // Auto-redirect if already signed in AND admin-approved.
   useEffect(() => {
@@ -68,6 +73,27 @@ export default function AuthPage() {
       mapRef.current = null;
     };
   }, []);
+
+  async function onForgotPassword() {
+    setResetMessage(null);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setResetMessage({ kind: 'error', text: 'Enter your email first' });
+      return;
+    }
+    try {
+      const { error } = await supabaseBrowser.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${window.location.origin}/`,
+      });
+      if (error) {
+        setResetMessage({ kind: 'error', text: error.message });
+        return;
+      }
+      setResetMessage({ kind: 'info', text: 'Check your email for the reset link.' });
+    } catch (err) {
+      setResetMessage({ kind: 'error', text: (err as Error).message });
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -236,15 +262,93 @@ export default function AuthPage() {
                 required
                 style={inputStyle}
               />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                style={inputStyle}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{ ...inputStyle, paddingRight: 42 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: 10,
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.6)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {showPassword ? (
+                    // eye-off SVG
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                      <path d="M9.9 4.24A10.05 10.05 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                      <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    // eye SVG
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              <div style={{ textAlign: 'right', marginTop: -4 }}>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: GOLD,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              {resetMessage && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: resetMessage.kind === 'error' ? '#ff6b6b' : GOLD,
+                    background: resetMessage.kind === 'error'
+                      ? 'rgba(255,107,107,0.1)'
+                      : 'rgba(200,169,110,0.12)',
+                    border: `1px solid ${
+                      resetMessage.kind === 'error'
+                        ? 'rgba(255,107,107,0.25)'
+                        : 'rgba(200,169,110,0.3)'
+                    }`,
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                  }}
+                >
+                  {resetMessage.text}
+                </div>
+              )}
 
               {error && (
                 <div
@@ -302,20 +406,9 @@ export default function AuthPage() {
               </a>
             </div>
 
-            <div
-              style={{
-                marginTop: 14,
-                textAlign: 'center',
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.4)',
-                lineHeight: 1.6,
-              }}
-            >
-              By continuing you agree to{' '}
-              <a href="/terms" style={{ color: GOLD, textDecoration: 'none' }}>
-                Terms of Service
-              </a>
-            </div>
+            {/* "By continuing you agree to Terms" line removed — the same
+                Terms · Privacy · Disclaimer links already live in the
+                footer below, so this duplicated it. */}
           </div>
         )}
       </div>

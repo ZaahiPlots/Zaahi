@@ -6,6 +6,7 @@ import { z } from "zod";
 export const COHORT_APPLICANT_ROLES = [
   "OWNER",
   "BROKER",
+  "PROJECT_MANAGER",
   "DEVELOPER",
   "BUYER",
   "ARCHITECT",
@@ -22,6 +23,7 @@ export type CohortApplicantRole = (typeof COHORT_APPLICANT_ROLES)[number];
 export const ROLE_LABELS: Record<CohortApplicantRole, string> = {
   OWNER: "Owner — landowner / titleholder",
   BROKER: "Broker — RERA-licensed real-estate broker",
+  PROJECT_MANAGER: "Project Manager — coordinating a development project",
   DEVELOPER: "Developer — DLD-registered developer",
   BUYER: "Buyer — looking to acquire land",
   ARCHITECT: "Architect — licensed architect",

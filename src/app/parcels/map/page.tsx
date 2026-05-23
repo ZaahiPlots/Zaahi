@@ -2486,6 +2486,13 @@ function ParcelsMapPageInner() {
       for (const it of payload.items) pnSet.add(it.plotNumber);
       zaahiPlotNumbersRef.current = pnSet;
 
+      // Hide PMTiles features whose plotNumber matches a ZAAHI listing —
+      // without this the curated SIGNATURE building (opacity 1) and the
+      // PMTiles background building (opacity 0.35) render on top of each
+      // other, producing visual double-stacking on the 114 curated plots.
+      // Filter applies to all 4 PMTiles sources × 3 layers each = 12 calls.
+      applyZaahiExclusionToTileLayers(map, pnSet);
+
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
       for (const it of payload.items) {
@@ -3037,6 +3044,46 @@ function ParcelsMapPageInner() {
   const OMAN_LAND_TILES_FILL = "oman-land-tiles-fill";
   const OMAN_LAND_TILES_LINE = "oman-land-tiles-line";
   const OMAN_LAND_TILES_3D = "oman-land-tiles-3d";
+
+  /**
+   * Re-apply each PMTiles layer's base filter (tier=flat / tier!=flat)
+   * combined with a NOT-IN-zaahiPlotNumbers exclusion. Called from
+   * loadZaahiPlots after the ZAAHI plot-number set is populated.
+   *
+   * Idempotent — safe to call repeatedly. Layers that aren't on the map
+   * yet (basemap swap mid-flight) are silently skipped; the next time
+   * loadZaahiPlots runs after a swap they'll be re-filtered.
+   *
+   * Without this, ZAAHI's curated SIGNATURE 3D buildings (opacity 1)
+   * and the matching PMTiles background features (opacity 0.35) render
+   * on top of each other on all 114 curated plots — visible as a
+   * darker / double-shadowed silhouette around our listings.
+   */
+  function applyZaahiExclusionToTileLayers(map: MLMap, plotNumbers: Set<string>) {
+    const exclude: maplibregl.FilterSpecification = [
+      "!",
+      ["in", ["get", "plotNumber"], ["literal", [...plotNumbers]]],
+    ];
+    const flatBase: maplibregl.FilterSpecification = ["==", ["get", "tier"], "flat"];
+    const tierBase: maplibregl.FilterSpecification = ["!=", ["get", "tier"], "flat"];
+
+    const FILL_LAYERS = [DDA_LAND_TILES_FILL, AD_ADM_TILES_FILL, AD_OTHER_TILES_FILL, OMAN_LAND_TILES_FILL];
+    const LINE_LAYERS = [DDA_LAND_TILES_LINE, AD_ADM_TILES_LINE, AD_OTHER_TILES_LINE, OMAN_LAND_TILES_LINE];
+    const EXT_LAYERS  = [DDA_LAND_TILES_3D,   AD_ADM_TILES_3D,   AD_OTHER_TILES_3D,   OMAN_LAND_TILES_3D];
+
+    for (const id of FILL_LAYERS) {
+      if (!map.getLayer(id)) continue;
+      map.setFilter(id, ["all", flatBase, exclude]);
+    }
+    for (const id of LINE_LAYERS) {
+      if (!map.getLayer(id)) continue;
+      map.setFilter(id, ["all", flatBase, exclude]);
+    }
+    for (const id of EXT_LAYERS) {
+      if (!map.getLayer(id)) continue;
+      map.setFilter(id, ["all", tierBase, exclude]);
+    }
+  }
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
@@ -5632,17 +5679,42 @@ function HeaderBar({
           busy={findBusy}
           error={findError}
         />
-        <HdrField
-          c={c}
-          icon="✓"
-          label=""
-          placeholder="Plot #"
-          value={check}
-          onChange={setCheck}
-          onKey={doCheck}
-          busy={false}
-          tooltip="Check Plot"
-        />
+        {/* Check DLD — links to the dedicated /parcels/check-plot page
+            where the user enters the 3+4-digit split and lands on DLD's
+            inquiry form with the number copied. Old inline doCheck input
+            removed in favour of the dedicated route. */}
+        <Link
+          href="/parcels/check-plot"
+          title="Check Plot Status on DLD"
+          aria-label="Check Plot Status on DLD"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            height: 28,
+            padding: "0 12px",
+            borderRadius: 6,
+            border: `1px solid ${c.border}`,
+            background: "rgba(10, 22, 40, 0.5)",
+            color: GOLD,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            textDecoration: "none",
+            fontFamily: "inherit",
+            transition: "border-color 150ms ease, background 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = c.border;
+            e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
+          }}
+        >
+          CHECK DLD
+        </Link>
         <button
           type="button"
           onClick={() => sound.toggle()}
