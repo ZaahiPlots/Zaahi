@@ -3249,7 +3249,7 @@ function ParcelsMapPageInner() {
         "fill-extrusion-color": ["get", "color"],
         "fill-extrusion-height": ["get", "height"],
         "fill-extrusion-base": ["get", "base"],
-        "fill-extrusion-opacity": 0.5,
+        "fill-extrusion-opacity": 0.45,
     }});
     // Hover
     map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -3913,6 +3913,23 @@ function ParcelsMapPageInner() {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
       map.keyboard.enable();
+
+      // ── PMTiles re-attach FIRST ──
+      // Critical: if any await further down throws (amenity icons,
+      // attachOverlays, or the /api/parcels/map fetch), the PMTiles
+      // re-add must already have happened. Used to live after the
+      // awaits and disappeared in dark/satellite mode whenever any
+      // upstream loader hiccupped — founder fix 2026-05-23.
+      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+      addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
+      addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
+      setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
+      setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
+      setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
+      setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
+
+      // ── Then everything else (any of these can throw safely now) ──
       await loadAmenityIcons(map);
       await attachOverlays(map);
       // ZAAHI plots also need to be re-attached after a basemap swap
@@ -3923,15 +3940,6 @@ function ParcelsMapPageInner() {
       // Same idempotent loaders.
       void loadVaultMine(map);
       void loadVaultShared(map);
-      // Re-attach PMTiles land layers (sources wiped by setStyle)
-      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
-      addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
-      addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
-      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
-      setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
-      setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
-      setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-      setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
       if (map.getLayer(ROADS_LINE)) {
         map.setPaintProperty(ROADS_LINE, "line-color", baseMap === "dark" ? "#888888" : "#666666");
       }
