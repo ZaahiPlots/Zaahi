@@ -1606,6 +1606,10 @@ function ParcelsMapPageInner() {
   // live path). Gate on mapStyleReady so the first setLight call lands
   // *after* the style has loaded — otherwise it's a silent no-op.
   const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(null);
+  // Sun-time slider visibility — gated by the ☀ button in the right
+  // stack. When the user turns it off we also wipe any active override
+  // so the light snaps back to real wall-clock time.
+  const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
   // Vault-only map mode — when ON, public ZAAHI listings are hidden and
@@ -4056,11 +4060,12 @@ function ParcelsMapPageInner() {
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* Sun-time override slider — bottom-right, above MapLibre's
-          built-in zoom buttons. Drives the directional-light date that
-          useSunLight feeds to map.setLight(); double-click resets to
-          real time. */}
-      <SunTimeSlider onChange={setSunTimeOverride} />
+      {/* Sun-time override slider — visible only when the ☀ button in
+          the right stack is toggled on. Drives the directional-light
+          date that useSunLight feeds to map.setLight(). Double-click
+          on the slider also resets to real time (in addition to the
+          dedicated button). */}
+      {sunSliderActive && <SunTimeSlider onChange={setSunTimeOverride} />}
 
       {/* Military-UAV HUD — visible only while drone mode is active.
           z-index 50, pointer-events none (no click interception). All
@@ -4681,6 +4686,52 @@ function ParcelsMapPageInner() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="10" rx="2" />
             <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        </button>
+        <button
+          title={sunSliderActive ? "Hide sun-time slider (return to real time)" : "Show sun-time slider (override shadow time of day)"}
+          aria-label={sunSliderActive ? "Disable sun-time override" : "Enable sun-time override"}
+          aria-pressed={sunSliderActive}
+          onClick={() => {
+            sound.whoosh();
+            setSunSliderActive((v) => {
+              const next = !v;
+              // Turning the slider off wipes the override so the
+              // directional light snaps back to real wall-clock time.
+              if (!next) setSunTimeOverride(null);
+              return next;
+            });
+          }}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 6,
+            border: `1px solid ${sunSliderActive ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+            background: sunSliderActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
+            color: sunSliderActive ? GOLD : "rgba(255, 255, 255, 0.55)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = GOLD;
+            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+            if (!sunSliderActive) e.currentTarget.style.color = GOLD;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = sunSliderActive ? GOLD : "rgba(200, 169, 110, 0.3)";
+            e.currentTarget.style.background = sunSliderActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
+            e.currentTarget.style.color = sunSliderActive ? GOLD : "rgba(255, 255, 255, 0.55)";
+          }}
+        >
+          {/* Sun — radiating rays around a centered disc. */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
           </svg>
         </button>
       </div>

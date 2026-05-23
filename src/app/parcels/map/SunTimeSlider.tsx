@@ -60,9 +60,14 @@ export default function SunTimeSlider({ onChange }: SunTimeSliderProps) {
       title="Drag to override sun time. Double-click to snap back to real time."
       onDoubleClick={handleReset}
       style={{
+        // Vertically centered to align with the right-side button stack,
+        // sitting just to the left of the 30px-wide column (right: 12)
+        // with an 8 px gap. Sun-icon button toggles the slider's
+        // visibility so this only mounts when needed.
         position: "absolute",
-        bottom: 90,
-        right: 16,
+        top: "50%",
+        right: 50,
+        transform: "translateY(-50%)",
         zIndex: 12,
         display: "flex",
         alignItems: "center",
