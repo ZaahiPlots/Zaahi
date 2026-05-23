@@ -30,7 +30,12 @@ import { Tiles3DLoader } from "@loaders.gl/3d-tiles";
 
 const GOLD = "#C8A96E";
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-const TILESET_URL = "https://tile.googleapis.com/v1/3dtiles/root.json";
+// Google's Photorealistic 3D Tiles documentation uses `?key=` query
+// param for auth — not the X-GOOG-API-KEY header (which works for
+// some other Google APIs but not this one). Pass via URL so the
+// initial root.json fetch and every child tile request authenticate
+// the same way.
+const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json?key=${API_KEY}`;
 
 // Business Bay + Burj Khalifa fit in a single view at zoom 15 / pitch 60.
 const BB_CENTER: [number, number] = [55.2708, 25.1865];
@@ -61,6 +66,11 @@ export default function ThreeDCitySpikePage() {
   const mapRef = useRef<MLMap | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const [tilesOn, setTilesOn] = useState(true);
+  // overlayReady flips true after MapboxOverlay is added to the map.
+  // Calling setProps on an overlay that hasn't run onAdd() yet is a
+  // silent no-op in some deck.gl versions, so the tiles effect waits
+  // for this flag before constructing the layer.
+  const [overlayReady, setOverlayReady] = useState(false);
   const [status, setStatus] = useState<string>(
     API_KEY ? "Loading Google 3D Tiles…" : "MISSING NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in env",
   );
@@ -68,6 +78,24 @@ export default function ThreeDCitySpikePage() {
 
   // ── Map init (once) ──
   useEffect(() => {
+    // Diagnostic — confirms the NEXT_PUBLIC_ key is in the bundle.
+    // If this logs `false`, .env.local wasn't read at build time —
+    // restart pnpm dev so Next re-snapshots process.env.
+    console.log("[3d-spike] API key present:", API_KEY.length > 0, "(length", API_KEY.length, ")");
+
+    // Direct probe — independent of deck.gl. If this 200s, the key
+    // is valid and CORS works. If it 4xx/5xx or errors, the rest of
+    // the pipeline can't possibly work.
+    if (API_KEY) {
+      fetch(TILESET_URL)
+        .then((r) => {
+          console.log("[3d-spike] direct fetch root.json status:", r.status);
+          return r.json();
+        })
+        .then((d) => console.log("[3d-spike] root.json payload keys:", Object.keys(d ?? {})))
+        .catch((e) => console.error("[3d-spike] direct fetch error:", e));
+    }
+
     if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -80,12 +108,18 @@ export default function ThreeDCitySpikePage() {
     });
     mapRef.current = map;
 
-    const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
+    // interleaved: false — deck.gl renders to its own canvas above the
+    // MapLibre canvas. interleaved: true relies on mapbox-gl internal
+    // renderer hooks that MapLibre v5 has since diverged from, so
+    // overlay layers can silently fail to mount.
+    const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
     overlayRef.current = overlay;
     map.on("load", () => {
-      // addControl casts to maplibregl's IControl — MapboxOverlay
-      // implements the same interface. Cast to satisfy the typecheck.
+      console.log("[3d-spike] map load fired — mounting deck overlay");
+      // MapboxOverlay implements the IControl interface MapLibre
+      // expects; cast satisfies the typecheck.
       map.addControl(overlay as unknown as maplibregl.IControl);
+      setOverlayReady(true);
     });
 
     return () => {
@@ -98,6 +132,8 @@ export default function ThreeDCitySpikePage() {
 
   // ── Tile3DLayer wired to overlay (toggles via tilesOn) ──
   useEffect(() => {
+    console.log("[3d-spike] tiles effect — overlayReady:", overlayReady, "tilesOn:", tilesOn, "key?", API_KEY.length > 0);
+    if (!overlayReady) return;
     const overlay = overlayRef.current;
     if (!overlay) return;
     if (!API_KEY) {
@@ -114,11 +150,9 @@ export default function ThreeDCitySpikePage() {
       id: "google-3d-tiles",
       data: TILESET_URL,
       loader: Tiles3DLoader,
-      loadOptions: {
-        fetch: { headers: { "X-GOOG-API-KEY": API_KEY } },
-      },
       onTilesetLoad: (tileset: { tiles?: unknown[] } | null) => {
         const n = tileset?.tiles?.length ?? 0;
+        console.log("[3d-spike] onTilesetLoad — root tiles:", n);
         setStatus(`Tileset loaded · ${n} root tiles`);
       },
       onTileLoad: () => {
@@ -128,15 +162,17 @@ export default function ThreeDCitySpikePage() {
       },
       onTileError: (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
+        console.error("[3d-spike] onTileError:", err);
         setStatus(`Tile load error: ${msg}`);
       },
       // operation: 'terrain+draping' would let MapLibre features
       // (e.g. a parcel polygon) drape over the photogrammetry mesh —
       // out of scope for this spike but worth noting for follow-up.
     });
+    console.log("[3d-spike] Tile3DLayer constructed, applying via overlay.setProps");
 
     overlay.setProps({ layers: [layer] });
-  }, [tilesOn]);
+  }, [overlayReady, tilesOn]);
 
   return (
     <div style={{ position: "absolute", inset: 0, background: "#0A1628" }}>
