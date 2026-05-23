@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useAreaUnit, formatAreaWithBoth } from "@/lib/area-unit";
 import { ConflictBanner } from "./ConflictBanner";
 import { ConflictDetailModal } from "./ConflictDetailModal";
 import { ShareModal } from "./ShareModal";
@@ -448,28 +449,22 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function PlotFactsSections({ view }: { view: EntryView }) {
   const facts = derivePlanFacts(view);
+  const unit = useAreaUnit();
   if (!facts) return null;
+
+  const plotAreaDisplay = facts.dimensions
+    ? formatAreaWithBoth(facts.dimensions.plotAreaSqft, facts.dimensions.plotAreaSqm, unit)
+    : null;
+  const maxGfaDisplay = facts.dimensions
+    ? formatAreaWithBoth(facts.dimensions.maxGfaSqft, facts.dimensions.maxGfaSqm, unit)
+    : null;
 
   return (
     <>
       {facts.dimensions && (
         <Section label="Dimensions">
-          {facts.dimensions.plotAreaSqft && (
-            <Row label="Plot area">
-              {facts.dimensions.plotAreaSqft.toLocaleString()} sqft
-              {facts.dimensions.plotAreaSqm
-                ? ` (${facts.dimensions.plotAreaSqm.toLocaleString()} m²)`
-                : ""}
-            </Row>
-          )}
-          {facts.dimensions.maxGfaSqft && (
-            <Row label="Max GFA">
-              {facts.dimensions.maxGfaSqft.toLocaleString()} sqft
-              {facts.dimensions.maxGfaSqm
-                ? ` (${facts.dimensions.maxGfaSqm.toLocaleString()} m²)`
-                : ""}
-            </Row>
-          )}
+          {plotAreaDisplay && <Row label="Plot area">{plotAreaDisplay}</Row>}
+          {maxGfaDisplay && <Row label="Max GFA">{maxGfaDisplay}</Row>}
           {facts.dimensions.far !== null && (
             <Row label="FAR">{facts.dimensions.far.toFixed(2)}</Row>
           )}

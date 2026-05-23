@@ -10,6 +10,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
+import { PdfProgressBar } from "./PdfProgressBar";
 
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
 // Updated 2026-04-16: warm off-white text + gold-tinted lines, matches
@@ -164,6 +165,7 @@ export default function SidePanel({
   const [offerOpen, setOfferOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [guidelinesBusy, setGuidelinesBusy] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
 
@@ -453,6 +455,7 @@ export default function SidePanel({
               </svg>
               <span>{pdfBusy ? "Generating…" : "Download Site Plan"}</span>
             </button>
+            <PdfProgressBar busy={pdfBusy} />
           </div>
 
           {/* JV Terms — only when openToJV is set AND a structured term
@@ -792,33 +795,45 @@ export default function SidePanel({
                         Routed through /api/parcels/[id]/plot-guidelines so
                         the same Bearer-token + downloadFile flow works. */}
                     {plan.plotGuidelinesUrl && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!data) return;
-                          downloadFile(
-                            `/api/parcels/${data.id}/plot-guidelines`,
-                            `${data.plotNumber}-plot-details.pdf`,
-                          ).catch((e) => {
-                            console.error("[plot-guidelines-download]", e);
-                            alert("Could not download Plot Details. Try again or contact support.");
-                          });
-                        }}
-                        style={{
-                          display: "block",
-                          width: "100%",
-                          textAlign: "left",
-                          fontSize: 10,
-                          color: GOLD,
-                          padding: "4px 8px",
-                          background: "transparent",
-                          border: 0,
-                          cursor: "pointer",
-                          fontFamily: "inherit",
-                        }}
-                      >
-                        📑 Plot Details (PDF)
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          disabled={guidelinesBusy}
+                          onClick={async () => {
+                            if (!data || guidelinesBusy) return;
+                            setGuidelinesBusy(true);
+                            try {
+                              await downloadFile(
+                                `/api/parcels/${data.id}/plot-guidelines`,
+                                `${data.plotNumber}-plot-details.pdf`,
+                              );
+                            } catch (e) {
+                              console.error("[plot-guidelines-download]", e);
+                              alert("Could not download Plot Details. Try again or contact support.");
+                            } finally {
+                              setGuidelinesBusy(false);
+                            }
+                          }}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            textAlign: "left",
+                            fontSize: 10,
+                            color: GOLD,
+                            padding: "4px 8px",
+                            background: "transparent",
+                            border: 0,
+                            cursor: guidelinesBusy ? "wait" : "pointer",
+                            opacity: guidelinesBusy ? 0.7 : 1,
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          {guidelinesBusy ? "📑 Downloading…" : "📑 Plot Details (PDF)"}
+                        </button>
+                        <div style={{ padding: "0 8px" }}>
+                          <PdfProgressBar busy={guidelinesBusy} />
+                        </div>
+                      </>
                     )}
                   </div>
                 )}

@@ -14,6 +14,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
+import { type AreaUnit, loadAreaUnit, saveAreaUnit } from "@/lib/area-unit";
 
 const GOLD = "#C8A96E";
 const GOLD_TEXT = "#e8d5a8";
@@ -1523,6 +1524,9 @@ function Settings() {
       <H1>Settings</H1>
       <Sub>Personalise how ZAAHI behaves for you.</Sub>
 
+      <ChangePasswordCard />
+      <AreaUnitCard />
+
       <Card>
         <H2>Default Map View</H2>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
@@ -1572,6 +1576,177 @@ function Settings() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// ─── Settings sub-cards ─────────────────────────────────────────────
+
+function ChangePasswordCard() {
+  const [pw1, setPw1] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus(null);
+    if (pw1.length < 8) {
+      setStatus({ kind: "err", text: "Password must be at least 8 characters." });
+      return;
+    }
+    if (pw1 !== pw2) {
+      setStatus({ kind: "err", text: "Passwords don't match." });
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabaseBrowser.auth.updateUser({ password: pw1 });
+      if (error) {
+        setStatus({ kind: "err", text: error.message });
+        return;
+      }
+      setStatus({ kind: "ok", text: "Password updated. Use the new one on next sign-in." });
+      setPw1("");
+      setPw2("");
+    } catch (err) {
+      setStatus({ kind: "err", text: (err as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <H2>Change Password</H2>
+      <p style={{ fontSize: 11, color: SUBTLE, margin: "0 0 12px" }}>
+        Sign-in stays valid on this device. Other sessions keep using the old
+        password until they sign in again.
+      </p>
+      <form onSubmit={onSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "end" }}>
+        <Field label="New password">
+          <input
+            type="password"
+            value={pw1}
+            onChange={(e) => setPw1(e.target.value)}
+            minLength={8}
+            autoComplete="new-password"
+            style={input()}
+          />
+        </Field>
+        <Field label="Confirm">
+          <input
+            type="password"
+            value={pw2}
+            onChange={(e) => setPw2(e.target.value)}
+            minLength={8}
+            autoComplete="new-password"
+            style={input()}
+          />
+        </Field>
+        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="submit"
+            disabled={busy || !pw1 || !pw2}
+            style={{
+              padding: "9px 18px",
+              background: GOLD,
+              color: "#1A1A2E",
+              border: 0,
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: busy ? "wait" : "pointer",
+              opacity: busy || !pw1 || !pw2 ? 0.5 : 1,
+              fontFamily: "inherit",
+            }}
+          >
+            {busy ? "Updating…" : "Update Password"}
+          </button>
+        </div>
+      </form>
+      {status && (
+        <div
+          style={{
+            marginTop: 12,
+            fontSize: 12,
+            padding: "8px 10px",
+            borderRadius: 6,
+            color: status.kind === "err" ? "#ff6b6b" : GOLD,
+            background: status.kind === "err" ? "rgba(255,107,107,0.1)" : "rgba(200,169,110,0.1)",
+            border: `1px solid ${
+              status.kind === "err"
+                ? "rgba(255,107,107,0.25)"
+                : "rgba(200,169,110,0.3)"
+            }`,
+          }}
+        >
+          {status.text}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function AreaUnitCard() {
+  const [unit, setUnit] = useState<AreaUnit>("sqft");
+  useEffect(() => {
+    setUnit(loadAreaUnit());
+  }, []);
+
+  function pick(next: AreaUnit) {
+    setUnit(next);
+    saveAreaUnit(next);
+  }
+
+  return (
+    <Card>
+      <H2>Area Unit</H2>
+      <p style={{ fontSize: 11, color: SUBTLE, margin: "0 0 12px" }}>
+        How plot area is shown on map cards and side panels. Stored values
+        stay in sqft (Dubai market standard) — this only affects display.
+      </p>
+      <div style={{ display: "inline-flex", gap: 0, border: `1px solid ${LINE}`, borderRadius: 6, overflow: "hidden" }}>
+        <AreaUnitButton current={unit} value="sqft" onClick={pick}>sqft</AreaUnitButton>
+        <AreaUnitButton current={unit} value="sqm" onClick={pick}>m²</AreaUnitButton>
+      </div>
+    </Card>
+  );
+}
+
+function AreaUnitButton({
+  current,
+  value,
+  onClick,
+  children,
+}: {
+  current: AreaUnit;
+  value: AreaUnit;
+  onClick: (v: AreaUnit) => void;
+  children: React.ReactNode;
+}) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      style={{
+        padding: "8px 18px",
+        fontSize: 12,
+        letterSpacing: "0.06em",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        background: active ? GOLD : "transparent",
+        color: active ? "#1A1A2E" : DIM,
+        border: 0,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        transition: "background 150ms ease, color 150ms ease",
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

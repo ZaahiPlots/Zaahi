@@ -1360,6 +1360,83 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
 
 // Best-effort country detection from a map center. Used once on first
 // panel open so the user's current country is auto-expanded.
+// ── Map view persistence ─────────────────────────────────────────────
+// Saves the user's last camera state (center / zoom / bearing / pitch)
+// and active layer toggles so /parcels/map opens where they left it.
+// Camera is restored at map-init; layers are restored via lazy useState.
+// Save is debounced 500ms inside the map init useEffect.
+
+interface SavedMapView {
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+}
+const MAP_VIEW_STORAGE_KEY = "zaahi-map-view";
+const MAP_LAYERS_STORAGE_KEY = "zaahi-map-layers";
+
+function loadSavedMapView(): SavedMapView | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(MAP_VIEW_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SavedMapView>;
+    if (
+      !Array.isArray(parsed.center) ||
+      parsed.center.length !== 2 ||
+      typeof parsed.center[0] !== "number" ||
+      typeof parsed.center[1] !== "number" ||
+      typeof parsed.zoom !== "number" ||
+      typeof parsed.bearing !== "number" ||
+      typeof parsed.pitch !== "number"
+    ) return null;
+    return {
+      center: [parsed.center[0], parsed.center[1]],
+      zoom: parsed.zoom,
+      bearing: parsed.bearing,
+      pitch: parsed.pitch,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveMapView(v: SavedMapView): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MAP_VIEW_STORAGE_KEY, JSON.stringify(v));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function loadSavedLayers(defaults: Record<string, boolean>): Record<string, boolean> {
+  if (typeof window === "undefined") return defaults;
+  try {
+    const raw = window.localStorage.getItem(MAP_LAYERS_STORAGE_KEY);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    // Merge over defaults so new layers added in code default to OFF (and
+    // existing toggles aren't lost when shape changes).
+    const merged: Record<string, boolean> = { ...defaults };
+    for (const k of Object.keys(defaults)) {
+      if (typeof parsed[k] === "boolean") merged[k] = parsed[k] as boolean;
+    }
+    return merged;
+  } catch {
+    return defaults;
+  }
+}
+
+function saveLayers(state: Record<string, boolean>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MAP_LAYERS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* ignore */
+  }
+}
+
 function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
   if (lng < 50) return "saudi";          // Riyadh ~46.7
   if (lng > 56.5) return "oman";         // Muscat ~58.5
@@ -1531,7 +1608,11 @@ function ParcelsMapPageInner() {
   const [layerSearch, setLayerSearch] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
-  const [layers, setLayers] = useState<LayersState>({
+  // Layers state is lazy-init'd from localStorage so the user's previous
+  // selection is restored when they come back to /parcels/map. Unknown
+  // keys (layers added since their last visit) default to false via
+  // loadSavedLayers merge. Save effect lives below.
+  const [layers, setLayers] = useState<LayersState>(() => loadSavedLayers({
     // Founder spec 2026-04-15: all user-toggleable layers default OFF.
     // Only ZAAHI parcel polygons + ZAAHI Signature 3D buildings stay on
     // by default — those are the core listings (loaded unconditionally
@@ -1775,9 +1856,14 @@ function ParcelsMapPageInner() {
     shamalBs1: false,
     dubaiPoliceAcademy: false,
     shamalMankhool: false,
-  });
+  }) as LayersState);
   const layersRef = useRef(layers);
   layersRef.current = layers;
+  // Persist any layer toggle change. Debounced by React's batched state
+  // updates; localStorage write is cheap. Pair with loadSavedLayers above.
+  useEffect(() => {
+    saveLayers(layers as unknown as Record<string, boolean>);
+  }, [layers]);
   const themeRef = useRef<Theme>("light");
   themeRef.current = theme;
 
@@ -3205,13 +3291,19 @@ function ParcelsMapPageInner() {
     // Register PMTiles protocol for vector tile sources
     const pmtilesProtocol = new Protocol();
     maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
+
+    // Restore saved camera (zoom / center / bearing / pitch) from prior
+    // session. localStorage key "zaahi-map-view". Falls back to Dubai
+    // defaults if absent / malformed. Layers state is restored in a
+    // separate effect below — has to wait for layers' initial useState.
+    const saved = loadSavedMapView();
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: STYLES.light,
-      center: [55.27, 25.20],
-      zoom: 12,
-      pitch: 45,
-      bearing: -17,
+      center: saved?.center ?? [55.27, 25.20],
+      zoom: saved?.zoom ?? 12,
+      pitch: saved?.pitch ?? 45,
+      bearing: saved?.bearing ?? -17,
       maxPitch: 70,
       dragRotate: true,
       pitchWithRotate: true,
@@ -3228,6 +3320,26 @@ function ParcelsMapPageInner() {
     map.on("mousemove", (e) => setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat }));
     map.on("zoom", () => setZoom(map.getZoom()));
     map.on("rotate", () => setBearing(map.getBearing()));
+
+    // Debounced save on every camera change. moveend fires for pan/zoom/
+    // rotate/pitch combined so a single listener catches all of them.
+    let saveTimer: number | null = null;
+    function scheduleSave() {
+      if (saveTimer) window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        const c = map.getCenter();
+        saveMapView({
+          center: [c.lng, c.lat],
+          zoom: map.getZoom(),
+          bearing: map.getBearing(),
+          pitch: map.getPitch(),
+        });
+      }, 500);
+    }
+    map.on("moveend", scheduleSave);
+    map.on("zoomend", scheduleSave);
+    map.on("rotateend", scheduleSave);
+    map.on("pitchend", scheduleSave);
 
     // Single shared popup
     const popup = new maplibregl.Popup({
@@ -4662,42 +4774,91 @@ function ParcelsMapPageInner() {
             compact LayerGroup sub-sections (no per-category collapse —
             the country collapse is the primary control). */}
         {(() => {
-          type PanelItem = { key: string; label: string; requiredTier?: LayerLockTier };
+          type PanelItem = { key: string; label: string; description?: string; requiredTier?: LayerLockTier };
           const q = layerSearch.trim().toLowerCase();
           const searchActive = q.length > 0;
-          // One label lookup fed from DDA_LAYERS + explicit overrides.
+          // Human-readable label + description per layer. Description renders
+          // as native tooltip on row hover. DDA district labels come from the
+          // DDA_LAYERS table; explicit overrides below carry friendly names
+          // for everything else (amenities, vault, master plans, etc.).
           const labels: Record<string, string> = {};
           for (const d of DDA_LAYERS) labels[d.key] = d.label;
           Object.assign(labels, {
-            communities: "Communities",
-            roads: "Major Roads",
-            metro: "Metro Lines",
-            plotLabels: "Plot Numbers (zoom in)",
-            ddaProjects: "DDA Project Boundaries",
-            ddaFreeZones: "DDA Free Zones",
-            ddaLandPlots: "DDA Land Plots (99K)",
-            islands: "Dubai Islands",
-            meydan: "Meydan Horizon",
-            alFurjan: "Al Furjan",
-            intlCity23: "International City 2 & 3",
-            residential12: "Residential District I & II",
-            d11: "D11 — Parcel L/D",
-            nadAlHammer: "Nad Al Hammer",
-            adMunicipalities: "AD Municipalities",
-            adDistricts: "AD Districts",
-            adCommunities: "AD Communities",
-            adLandPlots: "AD Land Plots (362K)",
-            uaeDistricts: "UAE Districts",
-            saudiGovernorates: "Saudi Arabia Governorates",
-            riyadhZones: "Riyadh Zones",
-            omanLandPlots: "Oman Land Plots (95K)",
+            communities: "Communities of Dubai",
+            roads: "Major roads of Dubai",
+            metro: "Dubai Metro — lines and stations",
+            plotLabels: "Plot numbers (visible when you zoom in)",
+            ddaProjects: "DDA project boundaries (master plans)",
+            ddaFreeZones: "Free economic zones in Dubai",
+            ddaLandPlots: "Dubai Land Plots · 99K parcels from DDA registry",
+            evChargers: "Electric Vehicle charging stations",
+            metroStations: "Dubai Metro — station points",
+            tramStations: "Dubai Tram — station points",
+            marineStations: "Marine transport — abra / ferry stations",
+            vaultMine: "My Vault — your private plot tracker entries",
+            vaultShared: "Shared with me — vault entries others granted you access to",
+            islands: "Dubai Islands master plan",
+            meydan: "Meydan Horizon master plan",
+            alFurjan: "Al Furjan master plan",
+            intlCity23: "International City Phase 2 & 3 master plan",
+            residential12: "Residential District I & II master plan",
+            d11: "D11 — Parcel L/D master plan",
+            nadAlHammer: "Nad Al Hammer master plan",
+            adMunicipalities: "Abu Dhabi municipalities",
+            adDistricts: "Abu Dhabi districts",
+            adCommunities: "Abu Dhabi communities",
+            adLandPlots: "Abu Dhabi Land Plots · 362K parcels from DMT registry",
+            uaeDistricts: "UAE districts (Sharjah, Ajman, RAK, UAQ, Fujairah)",
+            saudiGovernorates: "Saudi Arabia governorates (administrative regions)",
+            riyadhZones: "Riyadh planning zones",
+            omanLandPlots: "Oman Land Plots · 95K parcels (Muscat Municipality, Seeb contract)",
           });
+          const descriptions: Record<string, string> = {
+            communities: "Community / neighbourhood boundary polygons across Dubai.",
+            roads: "Major roads of Dubai — highways, primary, and secondary arteries.",
+            metro: "Full Dubai Metro line geometries with station markers.",
+            plotLabels: "Per-plot numeric labels. Visible at zoom 16+ to avoid clutter.",
+            ddaProjects: "Boundaries of named projects/developments registered with DDA (Dubai Development Authority).",
+            ddaFreeZones: "Designated Free Economic Zones in Dubai (DIFC, JAFZA, DMC, etc.).",
+            ddaLandPlots: "All 99,000 land plots in DDA's public registry. Shows ownership, area, and land-use status.",
+            evChargers: "Public electric vehicle charging stations in Dubai (DEWA + private operators).",
+            metroStations: "Individual Dubai Metro station locations as point markers.",
+            tramStations: "Dubai Tram station locations along the Marina line.",
+            marineStations: "Marine transport stations — water buses, abras, ferry terminals.",
+            vaultMine: "Plots you've added to your private vault. Visible only to you and people you share with.",
+            vaultShared: "Vault entries that other ZAAHI users have shared specifically with you.",
+            islands: "DDA master plan for Dubai Islands (Deira waterfront development). PMTiles overlay.",
+            meydan: "DDA master plan for Meydan Horizon (south of Downtown). PMTiles overlay.",
+            alFurjan: "DDA master plan for Al Furjan (south of JLT). PMTiles overlay.",
+            intlCity23: "DDA master plan for International City Phases 2 and 3. PMTiles overlay.",
+            residential12: "DDA master plan for Residential District I & II. PMTiles overlay.",
+            d11: "DDA master plan for D11 — Parcel L/D (Mohammed Bin Rashid City). PMTiles overlay.",
+            nadAlHammer: "DDA master plan for Nad Al Hammer (Ras Al Khor area). PMTiles overlay.",
+            adMunicipalities: "Three top-level municipalities of Abu Dhabi emirate (City, Al Ain, Al Dhafra).",
+            adDistricts: "Administrative districts within Abu Dhabi municipalities.",
+            adCommunities: "Community-level neighbourhood polygons in Abu Dhabi.",
+            adLandPlots: "All 362,000 land plots in Abu Dhabi from the DMT (Department of Municipalities and Transport) registry.",
+            uaeDistricts: "District boundaries for the five northern emirates (Sharjah, Ajman, UAQ, RAK, Fujairah).",
+            saudiGovernorates: "Top-level administrative regions (governorates) across the Kingdom of Saudi Arabia.",
+            riyadhZones: "Planning zones used by the Royal Commission for Riyadh City (RCRC).",
+            omanLandPlots: "94,640 land plots in Muscat Municipality from the Seeb-contract dataset.",
+          };
+          // DDA district layers — generic "Community-level boundary" tooltip
+          // since each polygon is one of the 206 community sub-areas.
+          for (const d of DDA_LAYERS) {
+            if (!descriptions[d.key]) {
+              descriptions[d.key] = `DDA community / sub-area: ${d.label}.`;
+            }
+          }
           const grouped: Record<LayerCountry, Partial<Record<LayerCategory, PanelItem[]>>> = {
             dubai: {}, abudhabi: {}, otheruae: {}, saudi: {}, oman: {},
           };
           for (const [key, meta] of Object.entries(LAYER_META)) {
             (grouped[meta.country][meta.category] ??= []).push({
-              key, label: labels[key] ?? key, requiredTier: meta.tier,
+              key,
+              label: labels[key] ?? key,
+              description: descriptions[key],
+              requiredTier: meta.tier,
             });
           }
           return LAYER_COUNTRY_ORDER.map((country) => {
@@ -5113,12 +5274,15 @@ function ParcelsMapPageInner() {
 
 function LayerToggle({
   label,
+  description,
   checked,
   onChange,
   color,
   requiredTier,
 }: {
   label: string;
+  /** Optional one-line description shown as native tooltip on row hover. */
+  description?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
   color: string;
@@ -5126,6 +5290,7 @@ function LayerToggle({
 }) {
   return (
     <label
+      title={description}
       style={{
         display: "flex",
         alignItems: "center",
@@ -5204,7 +5369,7 @@ function LayerGroup({
   open: boolean;
   onToggle: () => void;
   search: string;
-  items: Array<{ key: string; label: string; requiredTier?: "GOLD" | "PLATINUM" }>;
+  items: Array<{ key: string; label: string; description?: string; requiredTier?: "GOLD" | "PLATINUM" }>;
   isOn: (key: string) => boolean;
   onChange: (key: string, v: boolean) => void;
   hideCollapseCaret?: boolean;
@@ -5281,6 +5446,7 @@ function LayerGroup({
         <LayerToggle
           key={i.key}
           label={i.label}
+          description={i.description}
           checked={isOn(i.key)}
           onChange={(v) => onChange(i.key, v)}
           color="rgba(255, 255, 255, 0.9)"
