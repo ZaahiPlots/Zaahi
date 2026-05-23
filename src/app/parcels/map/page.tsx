@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent, ExpressionSpecification } from "maplibre-gl";
+import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Protocol } from "pmtiles";
 import Link from "next/link";
@@ -3208,43 +3208,6 @@ function ParcelsMapPageInner() {
     }
   }
 
-  // Data-driven colour for PMTiles 3D buildings (DDA / AD / Oman).
-  // PMTiles features carry land use under `mainLandUse` (DDA) or
-  // `primaryUse` (AD) — confirmed via the hover handler that already
-  // reads both. We lowercase + substring-match so variants like
-  // "COMMERCIAL (OFFICE)", "RESIDENTIAL APARTMENT" all classify.
-  // Anything we don't recognise falls back to a neutral warm grey.
-  // Only applied to fill-extrusion-color per founder spec 2026-05-23;
-  // 2D fill / line layers keep ["get", "color"] from the tileset,
-  // and fill-extrusion-opacity stays literal 0.35 (CLAUDE.md).
-  const PMTILES_LAND_USE_LC: ExpressionSpecification = [
-    "downcase",
-    ["to-string", ["coalesce", ["get", "mainLandUse"], ["get", "primaryUse"], ""]],
-  ];
-  const PMTILES_BUILDING_COLOR: ExpressionSpecification = [
-    "case",
-    ["!=", ["index-of", "residential", PMTILES_LAND_USE_LC], -1], "#E8D5B0",
-    ["!=", ["index-of", "villa",       PMTILES_LAND_USE_LC], -1], "#E8D5B0",
-    ["!=", ["index-of", "townhouse",   PMTILES_LAND_USE_LC], -1], "#E8D5B0",
-    ["!=", ["index-of", "apartment",   PMTILES_LAND_USE_LC], -1], "#E8D5B0",
-    ["!=", ["index-of", "office",      PMTILES_LAND_USE_LC], -1], "#B0C4D8",
-    ["!=", ["index-of", "commercial",  PMTILES_LAND_USE_LC], -1], "#B0C4D8",
-    ["!=", ["index-of", "mall",        PMTILES_LAND_USE_LC], -1], "#D0C0C8",
-    ["!=", ["index-of", "retail",      PMTILES_LAND_USE_LC], -1], "#D0C0C8",
-    ["!=", ["index-of", "showroom",    PMTILES_LAND_USE_LC], -1], "#D0C0C8",
-    ["!=", ["index-of", "hotel",       PMTILES_LAND_USE_LC], -1], "#D4B896",
-    ["!=", ["index-of", "hospitality", PMTILES_LAND_USE_LC], -1], "#D4B896",
-    ["!=", ["index-of", "resort",      PMTILES_LAND_USE_LC], -1], "#D4B896",
-    ["!=", ["index-of", "mixed",       PMTILES_LAND_USE_LC], -1], "#C4C8B0",
-    ["!=", ["index-of", "industrial",  PMTILES_LAND_USE_LC], -1], "#B8B4A8",
-    ["!=", ["index-of", "warehouse",   PMTILES_LAND_USE_LC], -1], "#B8B4A8",
-    ["!=", ["index-of", "government",  PMTILES_LAND_USE_LC], -1], "#B8C4B0",
-    ["!=", ["index-of", "education",   PMTILES_LAND_USE_LC], -1], "#C8D4B8",
-    ["!=", ["index-of", "school",      PMTILES_LAND_USE_LC], -1], "#C8D4B8",
-    ["!=", ["index-of", "university",  PMTILES_LAND_USE_LC], -1], "#C8D4B8",
-    "#C8C4BC", // neutral default for unknown / null land use
-  ];
-
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
     map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}` });
@@ -3261,15 +3224,11 @@ function ParcelsMapPageInner() {
       paint: {
         "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
     }});
-    // 3D extrusion — only tier features (podium/body/crown).
-    // Colour is land-use-driven (warm cream for residential, steel
-    // blue for commercial, gold-beige for hotels, etc.) instead of
-    // the single tileset-baked grey. Opacity stays literal per
-    // CLAUDE.md ("fill-extrusion-opacity ВСЕГДА number").
+    // 3D extrusion — only tier features (podium/body/crown)
     map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, layout: { visibility: "none" },
       filter: ["!=", ["get", "tier"], "flat"],
       paint: {
-        "fill-extrusion-color": PMTILES_BUILDING_COLOR,
+        "fill-extrusion-color": ["get", "color"],
         "fill-extrusion-height": ["get", "height"],
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.35,
