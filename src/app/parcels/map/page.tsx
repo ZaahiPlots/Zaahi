@@ -13,6 +13,8 @@ import { AddPlotChooser } from "./AddPlotChooser";
 import { AddPlotWizardModal } from "./AddPlotWizardModal";
 import MiniMap from "./MiniMap";
 import DroneHUD from "./DroneHUD";
+import SunTimeSlider from "./SunTimeSlider";
+import { useSunLight } from "./useSunLight";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
@@ -1591,6 +1593,15 @@ function ParcelsMapPageInner() {
   const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
   const droneCtrlRef = useRef<DroneController | null>(null);
+
+  // Sun-time override — null means "use real wall-clock time" so the
+  // shadow direction tracks live; a Date overrides it to the slider's
+  // chosen hour-of-today. Passed straight into useSunLight which calls
+  // map.setLight() whenever this changes (or once per minute on the
+  // live path). Gate on mapStyleReady so the first setLight call lands
+  // *after* the style has loaded — otherwise it's a silent no-op.
+  const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(null);
+  useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
   // Vault-only map mode — when ON, public ZAAHI listings are hidden and
   // the My Vault / Shared-with-me layers are force-visible. Persists via
@@ -3987,6 +3998,12 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* Sun-time override slider — bottom-right, above MapLibre's
+          built-in zoom buttons. Drives the directional-light date that
+          useSunLight feeds to map.setLight(); double-click resets to
+          real time. */}
+      <SunTimeSlider onChange={setSunTimeOverride} />
 
       {/* Military-UAV HUD — visible only while drone mode is active.
           z-index 50, pointer-events none (no click interception). All
