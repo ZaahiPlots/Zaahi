@@ -3223,12 +3223,13 @@ function ParcelsMapPageInner() {
 
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
-    // maxzoom: 22 instructs MapLibre to overzoom (stretch) the deepest
-    // tile in the tileset up to z22, instead of stopping rendering once
-    // the user passes the tileset's actual header maxzoom (15 for AD,
-    // 17 for DDA/Oman). Without this 3D extrusions vanish at close
-    // zoom — founder fix 2026-05-23.
-    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 22 });
+    // maxzoom: 24 instructs MapLibre to overzoom (stretch) the deepest
+    // tile in the tileset up to z24 (MapLibre's hard cap), instead of
+    // stopping rendering once the user passes the tileset's actual
+    // header maxzoom (15 for AD, 17 for DDA/Oman). Without this 3D
+    // extrusions vanish at close zoom — founder fix 2026-05-23
+    // (initial bump 15/17→22, follow-up bump 22→24 same day).
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 24 });
     // 2D fill — only "flat" features (tier=flat, height=0)
     map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],
@@ -3242,8 +3243,11 @@ function ParcelsMapPageInner() {
       paint: {
         "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
     }});
-    // 3D extrusion — only tier features (podium/body/crown)
-    map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, layout: { visibility: "none" },
+    // 3D extrusion — only tier features (podium/body/crown).
+    // maxzoom: 24 is MapLibre's default cap but is set explicitly here
+    // to document that we want the layer rendered all the way down,
+    // so a future edit can't silently shrink the visible zoom band.
+    map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, maxzoom: 24, layout: { visibility: "none" },
       filter: ["!=", ["get", "tier"], "flat"],
       paint: {
         "fill-extrusion-color": ["get", "color"],
