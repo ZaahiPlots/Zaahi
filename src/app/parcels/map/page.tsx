@@ -3231,7 +3231,7 @@ function ParcelsMapPageInner() {
         "fill-extrusion-color": ["get", "color"],
         "fill-extrusion-height": ["get", "height"],
         "fill-extrusion-base": ["get", "base"],
-        "fill-extrusion-opacity": 0.35,
+        "fill-extrusion-opacity": 0.5,
     }});
     // Hover
     map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
