@@ -2218,6 +2218,14 @@ function ParcelsMapPageInner() {
           "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
           "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
           "icon-anchor": "center",
+          // 2026-05-24 follow-up to ddee824: MapLibre pre-initialises a
+          // default `text-font` (["Open Sans Regular","Arial Unicode MS
+          // Regular"]) for every symbol layer it ingests at style-load,
+          // even icon-only layers without `text-field`. The Arial
+          // Unicode MS fontstack 404s as HTML on openmaptiles → "Unimplemented
+          // type: 4". Pin the fontstack to a known-good one to block
+          // the broken fallback chain at style-load time.
+          "text-font": ["Open Sans Regular"],
         },
         symbolPaint: {
           "icon-color": "#1B4965",           // palette TEAL (unchanged)
@@ -2244,6 +2252,9 @@ function ParcelsMapPageInner() {
           "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
           "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
           "icon-anchor": "center",
+          // See EV-charger comment above — same MapLibre default-fontstack
+          // pre-fetch behaviour, same broken Arial Unicode MS endpoint.
+          "text-font": ["Open Sans Regular"],
         },
         symbolPaint: {
           "icon-color": [
@@ -2274,6 +2285,8 @@ function ParcelsMapPageInner() {
           "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 14, 0.6, 18, 0.95],
           "icon-allow-overlap": ["step", ["zoom"], false, 11, true],
           "icon-anchor": "center",
+          // See EV-charger comment above.
+          "text-font": ["Open Sans Regular"],
         },
         symbolPaint: {
           "icon-color": "#E67E22",           // palette AMBER (unchanged)
@@ -2299,6 +2312,8 @@ function ParcelsMapPageInner() {
           "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 0.55, 18, 0.9],
           "icon-allow-overlap": ["step", ["zoom"], false, 12, true],
           "icon-anchor": "center",
+          // See EV-charger comment above.
+          "text-font": ["Open Sans Regular"],
         },
         symbolPaint: {
           "icon-color": "#1A4D7A",           // deep navy-teal (unchanged)
@@ -4200,9 +4215,15 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     if (!legendOpen) return;
     const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
+      const t = e.target as Element | null;
+      if (!t) return;
       if (legendRef.current?.contains(t)) return;
-      if (legendBtnRef.current?.contains(t)) return;
+      // The Legend can be opened from multiple triggers (big-map right
+      // stack + mini-dock right rail since the 5×5 redesign 2026-05-24).
+      // Any trigger marked `data-legend-trigger` is treated as part of
+      // the Legend surface so a click on it doesn't immediately
+      // re-close the panel that the same click just opened.
+      if (t.closest?.("[data-legend-trigger]")) return;
       setLegendOpen(false);
     };
     document.addEventListener("mousedown", onDown);
@@ -4458,44 +4479,10 @@ function ParcelsMapPageInner() {
         </div>
       )}
 
-      {/* Layer switcher — compact icon button */}
-      <button
-        ref={panelBtnRef}
-        onClick={() => setLayersOpen((o) => !o)}
-        aria-label="Toggle layers"
-        title="Layers"
-        style={{
-          position: "absolute",
-          top: 56,
-          left: 12,
-          width: 30,
-          height: 30,
-          borderRadius: 6,
-          border: `1px solid rgba(200, 169, 110, 0.3)`,
-          background: "rgba(10, 22, 40, 0.5)",
-          color: GOLD,
-          cursor: "pointer",
-          zIndex: 11,
-          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 0,
-          transition: "border-color 150ms ease, background 150ms ease, box-shadow 150ms ease",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 2 7 12 12 22 7 12 2" />
-          <polyline points="2 17 12 22 22 17" />
-          <polyline points="2 12 12 17 22 12" />
-        </svg>
-      </button>
-
-      {/* Legend top-right button moved to mini dock right rail
-          on 2026-05-24 (founder map UI cleanup). legendBtnRef and
-          setLegendOpen are now driven from MiniRailBtn in the dock. */}
+      {/* Layers / Legend / basemap / auto-rotate triggers now live in
+          the symmetric 5×5 big-map button stacks below (founder
+          spec 2026-05-24). Layers retains `panelBtnRef` via the left
+          stack so click-outside on the layers panel still works. */}
 
       {legendOpen && (
         <div
@@ -4623,7 +4610,109 @@ function ParcelsMapPageInner() {
         {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z{zoom.toFixed(2)}
       </div>
 
-      {/* Right vertical center: zoom+, zoom-, compass, 3D/2D */}
+      {/* ── LEFT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
+          Top→bottom: Layers, Basemap Light, Basemap Dark, Basemap
+          Satellite, Auto-rotate. Mirrors the right stack horizontally —
+          both stacks are 5 buttons at top: 50% translateY(-50%), gap 6,
+          so button N on the left is at the same y as button N on the
+          right. All buttons use ChromeBtn glassmorphism gold; active
+          state shows GOLD-tinted fill. */}
+      <div
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          zIndex: 11,
+        }}
+      >
+        {/* 1. Layers — opens the Layers panel. panelBtnRef stays here so
+              the panel's click-outside handler still excludes this
+              button. */}
+        <span ref={panelBtnRef} style={{ display: "block" }}>
+          <ChromeBtn
+            c={c}
+            title="Layers"
+            active={layersOpen}
+            onClick={() => setLayersOpen((o) => !o)}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </ChromeBtn>
+        </span>
+        {/* 2. Basemap Light */}
+        <ChromeBtn
+          c={c}
+          title="Light basemap"
+          active={baseMap === "light"}
+          onClick={() => setBaseMap("light")}
+        >
+          {/* Sun — solid disc with rays. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+        </ChromeBtn>
+        {/* 3. Basemap Dark */}
+        <ChromeBtn
+          c={c}
+          title="Dark basemap"
+          active={baseMap === "dark"}
+          onClick={() => setBaseMap("dark")}
+        >
+          {/* Crescent moon. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+          </svg>
+        </ChromeBtn>
+        {/* 4. Basemap Satellite */}
+        <ChromeBtn
+          c={c}
+          title="Satellite basemap"
+          active={baseMap === "satellite"}
+          onClick={() => setBaseMap("satellite")}
+        >
+          {/* Satellite dish — minimalist parabolic glyph. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 20l8-8" />
+            <path d="M14.5 13.5l-3-3" />
+            <path d="M9 7c4 0 8 4 8 8" />
+            <path d="M11.5 4.5C16 4.5 19.5 8 19.5 12.5" />
+            <circle cx="6" cy="18" r="1.6" />
+          </svg>
+        </ChromeBtn>
+        {/* 5. Auto-rotate — mutex with drone mode. */}
+        <ChromeBtn
+          c={c}
+          title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
+          active={autoRotateEnabled}
+          onClick={() => {
+            sound.whoosh();
+            setAutoRotateEnabled((v) => {
+              const next = !v;
+              if (next) setDroneEnabled(false);
+              return next;
+            });
+          }}
+        >
+          {/* Circular arrow — auto-rotate indicator. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+            <polyline points="21 4 21 9 16 9" />
+          </svg>
+        </ChromeBtn>
+      </div>
+
+      {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
+          Top→bottom: Legend, Zoom+, Zoom−, Reset bearing, 3D/2D.
+          Mirrors the LEFT stack horizontally — same y-positions for
+          buttons 1..5. */}
       <div
         style={{
           position: "absolute",
@@ -4636,8 +4725,32 @@ function ParcelsMapPageInner() {
           zIndex: 11,
         }}
       >
+        {/* 1. Legend — Mirrors Layers on the left. data-legend-trigger
+              keeps the click-outside handler from re-closing the panel
+              when the user clicks this trigger; the mini-dock Legend
+              MiniRailBtn carries the same marker. */}
+        <span ref={legendBtnRef} data-legend-trigger style={{ display: "block" }}>
+          <ChromeBtn
+            c={c}
+            title="Legend"
+            active={legendOpen}
+            onClick={() => setLegendOpen((o) => !o)}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <circle cx="4" cy="6" r="1.2" fill="currentColor" />
+              <circle cx="4" cy="12" r="1.2" fill="currentColor" />
+              <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+            </svg>
+          </ChromeBtn>
+        </span>
+        {/* 2. Zoom in */}
         <ChromeBtn c={c} title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
+        {/* 3. Zoom out */}
         <ChromeBtn c={c} title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
+        {/* 4. Reset bearing — compass icon rotates with current bearing. */}
         <ChromeBtn
           c={c}
           title="Reset bearing"
@@ -4647,9 +4760,11 @@ function ParcelsMapPageInner() {
             ⊕
           </span>
         </ChromeBtn>
+        {/* 5. 2D/3D toggle */}
         <ChromeBtn
           c={c}
           title={is3D ? "Switch to 2D" : "Switch to 3D"}
+          active={is3D}
           onClick={() => {
             const map = mapRef.current;
             if (!map) return;
@@ -4663,13 +4778,6 @@ function ParcelsMapPageInner() {
             {is3D ? "3D" : "2D"}
           </span>
         </ChromeBtn>
-        {/* Drone / Auto-rotate / Vault-only / Sun-slider toggles
-            moved into the mini dock right rail on 2026-05-24 (founder
-            map UI cleanup). The main right stack now keeps only the
-            four highest-frequency controls: zoom in/out, compass,
-            2D/3D. State (droneEnabled, autoRotateEnabled, vaultOnlyMode,
-            sunSliderActive) still lives at this component level and
-            is consumed from MiniRailBtn clicks inside the dock. */}
       </div>
 
       {layersOpen && (
@@ -5276,9 +5384,13 @@ function ParcelsMapPageInner() {
               alignSelf: "start",
             }}
           >
-            {/* Wrapping span carries legendBtnRef so the click-outside
-                handler at L4182 doesn't fight the toggle. */}
-            <span ref={legendBtnRef} style={{ display: "block" }}>
+            {/* data-legend-trigger marks this as a Legend toggle so the
+                click-outside handler skips clicks on it (same as the
+                big-map Legend in the right stack). legendBtnRef now
+                lives only on the big-map trigger; data-attribute
+                detection replaces direct ref containment so the
+                handler works for any number of Legend triggers. */}
+            <span data-legend-trigger style={{ display: "block" }}>
               <MiniRailBtn
                 title="Legend"
                 active={legendOpen}
@@ -5294,10 +5406,14 @@ function ParcelsMapPageInner() {
                 </svg>
               </MiniRailBtn>
             </span>
-            {/* Basemap selector — 3 inline buttons (Light / Dark / Satellite)
-                Promoted into the dock 2026-05-24. Tabs reused from the
-                previous left-stack control; state is the page-level
-                baseMap / setBaseMap. */}
+            {/* Basemap selector — 3 separate buttons (Light / Dark /
+                Satellite). The big-map LEFT stack is the primary
+                location for basemap selection (2026-05-24 founder
+                spec); these mini-dock buttons remain as a redundant
+                surface for when the dock is open and the user is
+                already pinned bottom-centre. Founder confirmed
+                duplicates are acceptable while the mini-dock revamp
+                is deferred. */}
             <div
               style={{
                 display: "flex",
@@ -5408,20 +5524,13 @@ function ParcelsMapPageInner() {
                 <circle cx="12" cy="19" r="2" />
               </svg>
             </MiniRailBtn>
-            <MiniRailBtn
-              title={vaultOnlyMode ? "Exit vault-only view (show public listings)" : "Vault-only view (hide public ZAAHI listings, show only your vault)"}
-              active={vaultOnlyMode}
-              onClick={() => {
-                sound.whoosh();
-                setVaultOnlyMode((v) => !v);
-              }}
-            >
-              {/* Padlock — vault-only indicator. */}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-            </MiniRailBtn>
+            {/* Vault-only viewmode toggle removed from the dock on
+                2026-05-24 (rail balance 5/5). vaultOnlyMode / setVaultOnlyMode
+                state stays in page.tsx so the existing visibility
+                effect at L4115 keeps working as a no-op; the toggle
+                will return in a future revamp if needed. The Vault
+                link in the header (next to Profile) is the discovery
+                path for now. */}
           </div>
         </div>
 
@@ -5912,24 +6021,30 @@ type ChromeTheme = {
 
 // Square chrome button used in the right vertical control column.
 function ChromeBtn({
-  c, title, onClick, children,
+  c, title, onClick, children, active,
 }: {
   c: ChromeTheme;
   title: string;
   onClick: () => void;
   children: React.ReactNode;
+  // Optional active state — used by Layers, basemap select, Auto-rotate,
+  // Legend triggers in the symmetric 5×5 big-map button stacks (2026-05-24).
+  // Default false keeps the legacy zoom / compass / 3D look untouched.
+  active?: boolean;
 }) {
+  const isActive = !!active;
   return (
     <button
       title={title}
       aria-label={title}
+      aria-pressed={active != null ? isActive : undefined}
       onClick={onClick}
       style={{
         width: 30,
         height: 30,
         borderRadius: 6,
-        border: `1px solid rgba(200, 169, 110, 0.3)`,
-        background: "rgba(10, 22, 40, 0.5)",
+        border: `1px solid ${isActive ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+        background: isActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
         color: GOLD,
         cursor: "pointer",
         display: "flex",
@@ -5941,8 +6056,16 @@ function ChromeBtn({
         padding: 0,
         transition: "border-color 150ms ease, background 150ms ease",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = GOLD;
+        e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = isActive ? GOLD : "rgba(200, 169, 110, 0.3)";
+        e.currentTarget.style.background = isActive
+          ? "rgba(200, 169, 110, 0.25)"
+          : "rgba(10, 22, 40, 0.5)";
+      }}
     >
       {children}
     </button>
