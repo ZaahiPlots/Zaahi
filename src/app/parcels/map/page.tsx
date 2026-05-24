@@ -3881,12 +3881,16 @@ function ParcelsMapPageInner() {
             data: [{ position: HERO_COORDS }],
             scenegraph: HERO_GLB_URL,
             getPosition: (d: { position: [number, number] }) => d.position,
-            // Y-up GLB → Z-up deck.gl world. Roll the model 90° around
-            // its Z so its built-in vertical axis stands upright on
-            // the map plane (founder spec 2026-05-25). Yaw stays 0 —
-            // the building was already rotated 40.1° from north inside
-            // the Blender model itself, so no additional yaw needed.
-            getOrientation: [0, 0, 90],
+            // [pitch, yaw, roll] in degrees.
+            //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
+            //   yaw  -40  → clockwise (when viewed from above) match
+            //     with the real Business Bay footprint contour on the
+            //     basemap. The 40° rotation that was baked into the
+            //     Blender model coords didn't carry through into the
+            //     deck.gl world frame after the roll, so we re-apply
+            //     it here. Founder dialled in 2026-05-25 against the
+            //     dotted plot contour visible on the live map.
+            getOrientation: [0, -40, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
