@@ -3883,14 +3883,12 @@ function ParcelsMapPageInner() {
             getPosition: (d: { position: [number, number] }) => d.position,
             // [pitch, yaw, roll] in degrees.
             //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  -40  → clockwise (when viewed from above) match
-            //     with the real Business Bay footprint contour on the
-            //     basemap. The 40° rotation that was baked into the
-            //     Blender model coords didn't carry through into the
-            //     deck.gl world frame after the roll, so we re-apply
-            //     it here. Founder dialled in 2026-05-25 against the
-            //     dotted plot contour visible on the live map.
-            getOrientation: [0, -40, 90],
+            //   yaw  -50  → clockwise (viewed from above) so the
+            //     building's broad face lines up parallel to the
+            //     SW→NE road that runs along the plot. -40 left the
+            //     facade slightly off; founder dialled to -50 against
+            //     the live basemap 2026-05-25.
+            getOrientation: [0, -50, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
