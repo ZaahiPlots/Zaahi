@@ -2421,7 +2421,13 @@ function ParcelsMapPageInner() {
             layout: {
               "text-field": ["coalesce", ["get", "PLOT_NUMBER"], ""],
               "text-size": 10,
-              "text-font": ["Noto Sans Regular"],
+              // 2026-05-24 fix: openmaptiles glyph CDN returns
+              // text/html (not protobuf) for the "Noto Sans Regular"
+              // fontstack, breaking the layer with "Unimplemented
+              // type: 4". The Open Sans Regular endpoint returns
+              // valid PBF, so use that instead. Pair-fix for the
+              // DISTRICT_NAMES_LAYER text-font below.
+              "text-font": ["Open Sans Regular"],
               "text-allow-overlap": false,
               "symbol-placement": "point",
               visibility: "none",
@@ -3435,6 +3441,15 @@ function ParcelsMapPageInner() {
         minzoom: 11,
         layout: {
           "text-field": ["get", "name"],
+          // 2026-05-24 fix: when text-font is unspecified, MapLibre
+          // falls back to ["Open Sans Regular", "Arial Unicode MS
+          // Regular"]. The openmaptiles glyph CDN returns text/html
+          // (not protobuf) for "Arial Unicode MS Regular", which
+          // makes MapLibre throw "Unimplemented type: 4" on every
+          // glyph range and force-fall-back to local Canvas2D
+          // rendering. Pinning to ["Open Sans Semibold"] (which
+          // returns valid PBF) skips the broken fallback chain.
+          "text-font": ["Open Sans Semibold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 11, 10, 16, 16],
           "text-letter-spacing": 0.06,
           "text-allow-overlap": false,
