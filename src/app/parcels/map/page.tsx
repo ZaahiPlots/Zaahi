@@ -112,6 +112,12 @@ const GOLD = "#C8A96E";
 const COMMUNITIES_SRC = "communities";
 const COMMUNITIES_LINE = "communities-line";
 const COMMUNITIES_FILL = "communities-fill"; // invisible, only for hit-testing
+// District-name centroid labels — derived client-side from the same
+// /api/layers/communities GeoJSON polygon source. Symbol layer renders
+// at zoom ≥ 11 so city-level overviews stay clean. Added 2026-05-24
+// (founder map UI cleanup); toggled via layers.districtNames.
+const DISTRICT_NAMES_SRC = "district-names-src";
+const DISTRICT_NAMES_LAYER = "district-names-labels";
 const ROADS_SRC = "roads";
 const ROADS_LINE = "roads-line";
 const METRO_SRC = "metro";
@@ -945,6 +951,12 @@ type LayersState = {
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
+  // Dubai community/district name labels rendered as a client-side
+  // symbol layer (centroids derived from /api/layers/communities).
+  // ON by default since this is a navigation aid — see 2026-05-24
+  // founder map UI cleanup. Persisted via zaahi-map-layers in
+  // localStorage like every other toggle.
+  districtNames: boolean;
   islands: boolean; meydan: boolean; d11: boolean;
   alFurjan: boolean; intlCity23: boolean; residential12: boolean;
   nadAlHammer: boolean;
@@ -1646,7 +1658,10 @@ function ParcelsMapPageInner() {
   const [legendOpen, setLegendOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
-  const legendBtnRef = useRef<HTMLButtonElement>(null);
+  // Wrapped around the mini-dock Legend button so the click-outside
+  // handler at L4182 skips clicks on that button (was the standalone
+  // top-right button until the 2026-05-24 founder map UI cleanup).
+  const legendBtnRef = useRef<HTMLElement>(null);
   // Country-first hierarchy — one section per country, collapsible.
   // Phase 1: default Dubai expanded (where 114 ZAAHI listings live); on
   // first open of the layers panel we re-initialise from map center so
@@ -1682,6 +1697,10 @@ function ParcelsMapPageInner() {
     adLandPlots: false,
     omanLandPlots: false,
     plotLabels: false,
+    // District Names — default ON per founder spec 2026-05-24. Symbol
+    // layer is gated by zoom ≥ 11 so it stays invisible at country
+    // scale and only emerges at city scale.
+    districtNames: true,
     // Amenities — data.dubai point overlays.
     evChargers: false,
     metroStations: false,
@@ -2316,6 +2335,10 @@ function ParcelsMapPageInner() {
   // every layer fetch.
   const loadedLayersRef = useRef<Set<string>>(new Set());
   const loadingLayersRef = useRef<Set<string>>(new Set());
+  // District-name centroid features cached across basemap swaps —
+  // computed once from /api/layers/communities (see
+  // ensureDistrictNamesLayer below) and reused on every setStyle.
+  const districtNameFeaturesRef = useRef<GeoJSON.Feature<GeoJSON.Point>[] | null>(null);
 
   // Per-load hover registration. The handlers themselves are defined
   // inside map.on("load") because they close over the popup; we stash
@@ -3360,6 +3383,71 @@ function ParcelsMapPageInner() {
         await setLayerVisibility(map, def, wantOn);
       }
     }
+    // District-name centroid symbol layer. Always re-attached after
+    // attachOverlays so a basemap swap doesn't drop the labels.
+    await ensureDistrictNamesLayer(map);
+  }
+
+  // ── District-name labels ───────────────────────────────────────────
+  // Computes one Point feature per community polygon (centroid of the
+  // outer ring) and adds a symbol layer rendering the English community
+  // name (`CNAME_E`). Run on map init + after every basemap swap. The
+  // centroid features are cached in a ref so re-attaching after a
+  // setStyle doesn't trigger a refetch.
+  async function ensureDistrictNamesLayer(map: MLMap) {
+    if (!districtNameFeaturesRef.current) {
+      try {
+        const r = await apiFetch("/api/layers/communities");
+        if (!r.ok) return;
+        const fc = (await r.json()) as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
+        const feats: GeoJSON.Feature<GeoJSON.Point>[] = [];
+        for (const f of fc.features) {
+          if (f.geometry?.type !== "Polygon") continue;
+          const ring = f.geometry.coordinates[0];
+          if (!ring?.length) continue;
+          let sx = 0;
+          let sy = 0;
+          for (const p of ring) { sx += p[0]; sy += p[1]; }
+          const name = (f.properties?.CNAME_E as string | undefined) ?? "";
+          if (!name) continue;
+          feats.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [sx / ring.length, sy / ring.length] },
+            properties: { name },
+          });
+        }
+        districtNameFeaturesRef.current = feats;
+      } catch {
+        return; // Best-effort — silent failure leaves the layer dormant.
+      }
+    }
+    if (!map.getSource(DISTRICT_NAMES_SRC)) {
+      map.addSource(DISTRICT_NAMES_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: districtNameFeaturesRef.current },
+      });
+    }
+    if (!map.getLayer(DISTRICT_NAMES_LAYER)) {
+      map.addLayer({
+        id: DISTRICT_NAMES_LAYER,
+        type: "symbol",
+        source: DISTRICT_NAMES_SRC,
+        minzoom: 11,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 11, 10, 16, 16],
+          "text-letter-spacing": 0.06,
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          visibility: layersRef.current.districtNames ? "visible" : "none",
+        },
+        paint: {
+          "text-color": "#1A1A2E",
+          "text-halo-color": "rgba(255,255,255,0.85)",
+          "text-halo-width": 1.5,
+        },
+      });
+    }
   }
 
   useEffect(() => {
@@ -3996,6 +4084,22 @@ function ParcelsMapPageInner() {
     setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
   }, [layers.ddaLandPlots, layers.adLandPlots, layers.omanLandPlots]);
 
+  // District-name symbol layer visibility — direct toggle since this
+  // layer lives outside LAYER_REGISTRY (custom centroid source, no
+  // hover/click handlers, no per-feature fetch). The layer is added
+  // via ensureDistrictNamesLayer inside attachOverlays.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer(DISTRICT_NAMES_LAYER)) {
+      map.setLayoutProperty(
+        DISTRICT_NAMES_LAYER,
+        "visibility",
+        layers.districtNames ? "visible" : "none",
+      );
+    }
+  }, [layers.districtNames]);
+
   // ── Private Plot Vault toggle wiring (Day 7) ──
   // Layer visibility flips O(1) — sources are loaded on map-init and
   // stay alive for the page lifetime. Conflict-markers symbol layer
@@ -4374,39 +4478,9 @@ function ParcelsMapPageInner() {
         </svg>
       </button>
 
-      {/* Legend button — top-right, icon only */}
-      <button
-        ref={legendBtnRef}
-        onClick={() => setLegendOpen((o) => !o)}
-        aria-label="Toggle legend"
-        title="Legend"
-        style={{
-          position: "absolute",
-          top: 86,
-          right: 12,
-          width: 30,
-          height: 30,
-          borderRadius: 6,
-          border: `1px solid rgba(200, 169, 110, 0.3)`,
-          background: "rgba(10, 22, 40, 0.5)",
-          color: GOLD,
-          cursor: "pointer",
-          zIndex: 11,
-          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "border-color 150ms ease, background 150ms ease",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-      </button>
+      {/* Legend top-right button moved to mini dock right rail
+          on 2026-05-24 (founder map UI cleanup). legendBtnRef and
+          setLegendOpen are now driven from MiniRailBtn in the dock. */}
 
       {legendOpen && (
         <div
@@ -4512,48 +4586,10 @@ function ParcelsMapPageInner() {
         </div>
       )}
 
-      {/* Basemap selector — left vertical center */}
-      <div
-        style={{
-          position: "absolute",
-          left: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          zIndex: 11,
-        }}
-      >
-        {(["light", "dark", "satellite"] as BaseMap[]).map((b) => (
-          <button
-            key={b}
-            onClick={() => setBaseMap(b)}
-            title={b === "light" ? "Light" : b === "dark" ? "Dark" : "Satellite"}
-            aria-label={b}
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 6,
-              border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-              background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.5)",
-              color: baseMap === b ? "#0A1628" : c.text,
-              cursor: "pointer",
-              fontSize: 12,
-              boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-              transition: "border-color 150ms ease, background 150ms ease",
-            }}
-            onMouseEnter={(e) => {
-              if (baseMap !== b) { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }
-            }}
-            onMouseLeave={(e) => {
-              if (baseMap !== b) { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }
-            }}
-          >
-            {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
-          </button>
-        ))}
-      </div>
+      {/* Basemap selector moved to mini dock right rail
+          on 2026-05-24 (founder map UI cleanup). baseMap / setBaseMap
+          state lives at the page level and is consumed in MiniRailBtn
+          clicks inside the dock. */}
 
       {/* Cursor coordinates — left bottom corner, mini */}
       <div
@@ -4612,188 +4648,13 @@ function ParcelsMapPageInner() {
             {is3D ? "3D" : "2D"}
           </span>
         </ChromeBtn>
-        <button
-          title={droneEnabled ? "Disable drone mode" : "Enable drone mode (WASD + right-click rotate)"}
-          aria-label={droneEnabled ? "Disable drone mode" : "Enable drone mode"}
-          aria-pressed={droneEnabled}
-          onClick={() => {
-            sound.whoosh();
-            setDroneEnabled((v) => {
-              const next = !v;
-              // Mutual exclusion: enabling drone disables auto-rotate.
-              if (next) setAutoRotateEnabled(false);
-              return next;
-            });
-          }}
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 6,
-            border: `1px solid ${droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-            color: droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = GOLD;
-            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-            if (!droneEnabled) e.currentTarget.style.color = GOLD;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = droneEnabled ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = droneEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
-            e.currentTarget.style.color = droneEnabled ? GOLD : "rgba(255, 255, 255, 0.55)";
-          }}
-        >
-          {/* Minimal quadcopter silhouette — four arms, center body, props. */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="2" />
-            <line x1="12" y1="10" x2="12" y2="5" />
-            <line x1="12" y1="14" x2="12" y2="19" />
-            <line x1="10" y1="12" x2="5" y2="12" />
-            <line x1="14" y1="12" x2="19" y2="12" />
-            <circle cx="5" cy="12" r="2" />
-            <circle cx="19" cy="12" r="2" />
-            <circle cx="12" cy="5" r="2" />
-            <circle cx="12" cy="19" r="2" />
-          </svg>
-        </button>
-        <button
-          title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
-          aria-label={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate"}
-          aria-pressed={autoRotateEnabled}
-          onClick={() => {
-            sound.whoosh();
-            setAutoRotateEnabled((v) => {
-              const next = !v;
-              // Mutual exclusion: enabling auto-rotate disables drone mode.
-              if (next) setDroneEnabled(false);
-              return next;
-            });
-          }}
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 6,
-            border: `1px solid ${autoRotateEnabled ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: autoRotateEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-            color: autoRotateEnabled ? GOLD : "rgba(255, 255, 255, 0.55)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = GOLD;
-            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-            if (!autoRotateEnabled) e.currentTarget.style.color = GOLD;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = autoRotateEnabled ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = autoRotateEnabled ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
-            e.currentTarget.style.color = autoRotateEnabled ? GOLD : "rgba(255, 255, 255, 0.55)";
-          }}
-        >
-          {/* Circular arrow — auto-rotate indicator. */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-3.5-7.1" />
-            <polyline points="21 4 21 9 16 9" />
-          </svg>
-        </button>
-        <button
-          title={vaultOnlyMode ? "Exit vault-only view (show public listings)" : "Vault-only view (hide public ZAAHI listings, show only your vault)"}
-          aria-label={vaultOnlyMode ? "Disable vault-only mode" : "Enable vault-only mode"}
-          aria-pressed={vaultOnlyMode}
-          onClick={() => {
-            sound.whoosh();
-            setVaultOnlyMode((v) => !v);
-          }}
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 6,
-            border: `1px solid ${vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-            color: vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = GOLD;
-            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-            if (!vaultOnlyMode) e.currentTarget.style.color = GOLD;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = vaultOnlyMode ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
-            e.currentTarget.style.color = vaultOnlyMode ? GOLD : "rgba(255, 255, 255, 0.55)";
-          }}
-        >
-          {/* Padlock — private/vault indicator. */}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="10" rx="2" />
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-          </svg>
-        </button>
-        <button
-          title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
-          aria-label={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
-          aria-pressed={sunSliderActive}
-          onClick={() => {
-            // Toggle controls slider VISIBILITY only — never touches
-            // sunTimeOverride. The directional light stays driven by
-            // useSunLight regardless of slider visibility (founder
-            // spec 2026-05-23). Reset back to live time happens via
-            // the slider's double-click handler.
-            sound.whoosh();
-            setSunSliderActive((v) => !v);
-          }}
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 6,
-            border: `1px solid ${sunSliderActive ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: sunSliderActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-            color: sunSliderActive ? GOLD : "rgba(255, 255, 255, 0.55)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-            transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = GOLD;
-            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-            if (!sunSliderActive) e.currentTarget.style.color = GOLD;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = sunSliderActive ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = sunSliderActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)";
-            e.currentTarget.style.color = sunSliderActive ? GOLD : "rgba(255, 255, 255, 0.55)";
-          }}
-        >
-          {/* Sun — radiating rays around a centered disc. */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
-        </button>
+        {/* Drone / Auto-rotate / Vault-only / Sun-slider toggles
+            moved into the mini dock right rail on 2026-05-24 (founder
+            map UI cleanup). The main right stack now keeps only the
+            four highest-frequency controls: zoom in/out, compass,
+            2D/3D. State (droneEnabled, autoRotateEnabled, vaultOnlyMode,
+            sunSliderActive) still lives at this component level and
+            is consumed from MiniRailBtn clicks inside the dock. */}
       </div>
 
       {layersOpen && (
@@ -5370,8 +5231,25 @@ function ParcelsMapPageInner() {
             ))}
           </div>
 
-          <div style={{ gridArea: "mid" }}>
+          <div style={{ gridArea: "mid", display: "flex", flexDirection: "column", gap: 4 }}>
             <MiniMap mainMapRef={mapRef} />
+            {/* Cursor coords + zoom footer under the minimap. Duplicates
+                the bottom-left readout on purpose: power users glance
+                here when the dock is open; the bottom-left version is
+                kept for users who never open the dock. */}
+            <div
+              style={{
+                fontSize: 9,
+                color: "rgba(255, 255, 255, 0.55)",
+                fontFamily: '"SF Mono", "Menlo", monospace',
+                letterSpacing: "0.04em",
+                textAlign: "center",
+                paddingTop: 2,
+                pointerEvents: "none",
+              }}
+            >
+              {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z{zoom.toFixed(2)}
+            </div>
           </div>
 
           <div
@@ -5383,49 +5261,152 @@ function ParcelsMapPageInner() {
               alignSelf: "start",
             }}
           >
-            <MiniRailBtn
-              title="Legend"
-              active={legendOpen}
-              onClick={() => setLegendOpen((o) => !o)}
+            {/* Wrapping span carries legendBtnRef so the click-outside
+                handler at L4182 doesn't fight the toggle. */}
+            <span ref={legendBtnRef} style={{ display: "block" }}>
+              <MiniRailBtn
+                title="Legend"
+                active={legendOpen}
+                onClick={() => setLegendOpen((o) => !o)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <circle cx="4" cy="6" r="1.2" fill="currentColor" />
+                  <circle cx="4" cy="12" r="1.2" fill="currentColor" />
+                  <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+                </svg>
+              </MiniRailBtn>
+            </span>
+            {/* Basemap selector — 3 inline buttons (Light / Dark / Satellite)
+                Promoted into the dock 2026-05-24. Tabs reused from the
+                previous left-stack control; state is the page-level
+                baseMap / setBaseMap. */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: 4,
+                alignSelf: "start",
+              }}
+              aria-label="Basemap"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <circle cx="4" cy="6" r="1.2" fill="currentColor" />
-                <circle cx="4" cy="12" r="1.2" fill="currentColor" />
-                <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+              {(["light", "dark", "satellite"] as BaseMap[]).map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setBaseMap(b)}
+                  title={b === "light" ? "Light basemap" : b === "dark" ? "Dark basemap" : "Satellite basemap"}
+                  aria-label={`${b} basemap`}
+                  aria-pressed={baseMap === b}
+                  tabIndex={miniOpen ? 0 : -1}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 5,
+                    border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
+                    background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.5)",
+                    color: baseMap === b ? "#0A1628" : "rgba(255, 255, 255, 0.55)",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (baseMap !== b) {
+                      e.currentTarget.style.borderColor = GOLD;
+                      e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+                      e.currentTarget.style.color = GOLD;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (baseMap !== b) {
+                      e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+                      e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
+                      e.currentTarget.style.color = "rgba(255, 255, 255, 0.55)";
+                    }
+                  }}
+                >
+                  {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
+                </button>
+              ))}
+            </div>
+            <MiniRailBtn
+              title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
+              active={sunSliderActive}
+              onClick={() => {
+                sound.whoosh();
+                setSunSliderActive((v) => !v);
+              }}
+            >
+              {/* Sun — radiating rays around a centered disc. */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
               </svg>
             </MiniRailBtn>
-            <Link
-              href="/vault"
-              title="Private Plot Vault"
-              aria-label="Vault"
-              style={{ display: "block", textDecoration: "none" }}
-              tabIndex={miniOpen ? 0 : -1}
+            <MiniRailBtn
+              title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
+              active={autoRotateEnabled}
+              onClick={() => {
+                sound.whoosh();
+                setAutoRotateEnabled((v) => {
+                  const next = !v;
+                  // Mutual exclusion: enabling auto-rotate disables drone.
+                  if (next) setDroneEnabled(false);
+                  return next;
+                });
+              }}
             >
-              <MiniRailBtn title="Vault" active={false} onClick={() => {}} asSpan>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="5" width="18" height="14" rx="2" />
-                  <circle cx="12" cy="12" r="2.4" />
-                  <path d="M12 9.6V8M12 16v-1.6M9.6 12H8M16 12h-1.6" />
-                </svg>
-              </MiniRailBtn>
-            </Link>
-            <Link
-              href="/dashboard"
-              title="Profile / Dashboard"
-              aria-label="Profile"
-              style={{ display: "block", textDecoration: "none" }}
-              tabIndex={miniOpen ? 0 : -1}
+              {/* Circular arrow — auto-rotate indicator. */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+                <polyline points="21 4 21 9 16 9" />
+              </svg>
+            </MiniRailBtn>
+            <MiniRailBtn
+              title={droneEnabled ? "Disable drone mode" : "Enable drone mode (WASD + right-click rotate)"}
+              active={droneEnabled}
+              onClick={() => {
+                sound.whoosh();
+                setDroneEnabled((v) => {
+                  const next = !v;
+                  // Mutual exclusion: enabling drone disables auto-rotate.
+                  if (next) setAutoRotateEnabled(false);
+                  return next;
+                });
+              }}
             >
-              <MiniRailBtn title="Profile" active={false} onClick={() => {}} asSpan>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-                </svg>
-              </MiniRailBtn>
-            </Link>
+              {/* Minimal quadcopter silhouette. */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="2" />
+                <line x1="12" y1="10" x2="12" y2="5" />
+                <line x1="12" y1="14" x2="12" y2="19" />
+                <line x1="10" y1="12" x2="5" y2="12" />
+                <line x1="14" y1="12" x2="19" y2="12" />
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="12" cy="19" r="2" />
+              </svg>
+            </MiniRailBtn>
+            <MiniRailBtn
+              title={vaultOnlyMode ? "Exit vault-only view (show public listings)" : "Vault-only view (hide public ZAAHI listings, show only your vault)"}
+              active={vaultOnlyMode}
+              onClick={() => {
+                sound.whoosh();
+                setVaultOnlyMode((v) => !v);
+              }}
+            >
+              {/* Padlock — vault-only indicator. */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+            </MiniRailBtn>
           </div>
         </div>
 
@@ -6195,6 +6176,22 @@ function HeaderBar({
             </svg>
           </a>
         )}
+        {/* Vault — direct access to /vault, promoted out of the mini
+            dock right rail on 2026-05-24 (founder map UI cleanup).
+            Padlock icon distinguishes from Profile. */}
+        <Link
+          href="/vault"
+          title="Private Plot Vault"
+          aria-label="Vault"
+          style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        </Link>
         <a
           href="/dashboard"
           title="Profile"
@@ -6499,6 +6496,19 @@ const MINI_LEFT_LAYERS: MiniLayer[] = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 21V9l9-6 9 6v12" />
         <path d="M9 21v-7h6v7" />
+      </svg>
+    ),
+  },
+  {
+    // District names render at zoom ≥ 11 (city scale). Default ON per
+    // LayersState init; persists via zaahi-map-layers in localStorage.
+    key: "districtNames",
+    label: "District Names",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* "Aa" glyph — uppercase A + lowercase a, stylized strokes. */}
+        <path d="M4 19l4-12 4 12M5.5 15h5" />
+        <path d="M18 19v-5a3 3 0 0 0-6 0M18 14v5M12 18a2 2 0 0 0 4 0" />
       </svg>
     ),
   },
