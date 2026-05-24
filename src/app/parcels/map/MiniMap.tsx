@@ -38,7 +38,9 @@ const LANDUSE_COLOR: Record<string, string> = {
   "FUTURE DEVELOPMENT": "#84CC16",
 };
 
-// Dubai + UAE + northern Oman. Fits 3 emirates + Muscat contract area.
+// Dubai + the 7 UAE emirates. Oman was dropped 2026-05-24 — the
+// initial view stays centred a touch east of Dubai so all of UAE
+// fits without leaving Riyadh / Muscat dead-space on either side.
 const INITIAL_CENTER: [number, number] = [55.6, 24.3];
 const INITIAL_ZOOM = 5.9;
 

@@ -131,12 +131,13 @@ const TRAM_STATIONS_SRC = "tram-stations";
 const TRAM_STATIONS_SYMBOL = "tram-stations-symbol";
 const MARINE_STATIONS_SRC = "marine-stations";
 const MARINE_STATIONS_SYMBOL = "marine-stations-symbol";
-const SAUDI_GOV_SRC = "saudi-governorates";
-const SAUDI_GOV_LINE = "saudi-governorates-line";
-const SAUDI_GOV_FILL = "saudi-governorates-fill";
-const RIYADH_ZONES_SRC = "riyadh-zones";
-const RIYADH_ZONES_LINE = "riyadh-zones-line";
-const RIYADH_ZONES_FILL = "riyadh-zones-fill";
+// Saudi Governorates layer removed 2026-05-24 (founder spec — no
+// Saudi coverage on the platform). Same removal pass dropped the
+// Riyadh Zones masterplan, the Oman PMTiles, and the per-country
+// LayersState flags. data/layers/governorate.kml stays on disk per
+// CLAUDE.md's "NEVER delete data/" rule but is no longer served.
+// Riyadh Zones layer removed 2026-05-24 — see Saudi Governorates
+// comment above. data/layers/zones_masterplan.kml stays on disk.
 const AD_MUN_SRC = "ad-municipalities";
 const AD_MUN_LINE = "ad-municipalities-line";
 const AD_MUN_FILL = "ad-municipalities-fill";
@@ -936,10 +937,11 @@ const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 
 type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
-  saudiGovernorates: boolean; riyadhZones: boolean;
+  // Saudi Governorates / Riyadh Zones / Oman PMTiles flags removed
+  // 2026-05-24 (founder spec — Saudi + Oman coverage dropped).
   adMunicipalities: boolean; adDistricts: boolean; adCommunities: boolean;
   uaeDistricts: boolean;
-  ddaLandPlots: boolean; adLandPlots: boolean; omanLandPlots: boolean;
+  ddaLandPlots: boolean; adLandPlots: boolean;
   ddaProjects: boolean; ddaFreeZones: boolean;
   // Amenities — data.dubai point overlays (off by default per spec).
   evChargers: boolean;
@@ -1276,11 +1278,10 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 // still works — Phase 3 will actually disable the checkbox once
 // `useAccess()` + tier enforcement land.
 
-// Saudi + Oman removed from panel UI 2026-05-23 (founder spec) — the
-// PMTiles infrastructure and `saudiGovernorates` / `riyadhZones` /
-// `omanLandPlots` flags in LayersState stay intact (always false, never
-// surfaced as toggles). LayerCountry type stays UAE-only so the panel
-// stays a 3-country structure.
+// Saudi + Oman fully removed 2026-05-24 (founder spec) — the
+// `saudiGovernorates`, `riyadhZones`, `omanLandPlots` flags are gone
+// from LayersState; the layer definitions, hover handlers, and
+// PMTiles binding are dropped below. LayerCountry stays UAE-only.
 type LayerCountry = "dubai" | "abudhabi" | "otheruae";
 type LayerCategory =
   | "base"            // roads / metro / admin boundaries
@@ -1685,8 +1686,6 @@ function ParcelsMapPageInner() {
     communities: false,
     roads: false,
     metro: false,
-    saudiGovernorates: false,
-    riyadhZones: false,
     adMunicipalities: false,
     adDistricts: false,
     adCommunities: false,
@@ -1695,7 +1694,6 @@ function ParcelsMapPageInner() {
     ddaFreeZones: false,
     ddaLandPlots: false,
     adLandPlots: false,
-    omanLandPlots: false,
     plotLabels: false,
     // District Names — default ON per founder spec 2026-05-24. Symbol
     // layer is gated by zoom ≥ 11 so it stays invisible at country
@@ -2050,42 +2048,8 @@ function ParcelsMapPageInner() {
           "line-opacity": 0.85,
         },
       },
-      {
-        key: "saudiGovernorates",
-        kind: "base",
-        label: "Saudi Arabia Governorates",
-        url: "/api/layers/saudi-governorates",
-        srcId: SAUDI_GOV_SRC,
-        fillId: SAUDI_GOV_FILL,
-        lineId: SAUDI_GOV_LINE,
-        fillPaint: {
-          "fill-color": "#C8A96E",
-          "fill-opacity": 0.06,
-        },
-        linePaint: {
-          "line-color": "#B8975E",
-          "line-width": 2,
-          "line-opacity": 0.7,
-        },
-      },
-      {
-        key: "riyadhZones",
-        kind: "base",
-        label: "Riyadh Zones",
-        url: "/api/layers/riyadh-zones",
-        srcId: RIYADH_ZONES_SRC,
-        fillId: RIYADH_ZONES_FILL,
-        lineId: RIYADH_ZONES_LINE,
-        fillPaint: {
-          "fill-color": "#C8A96E",
-          "fill-opacity": 0.1,
-        },
-        linePaint: {
-          "line-color": "#C8A96E",
-          "line-width": 1.5,
-          "line-opacity": 0.7,
-        },
-      },
+      // saudiGovernorates + riyadhZones LayerDef entries removed
+      // 2026-05-24 along with the rest of the Saudi coverage.
       // ── Abu Dhabi boundaries ──
       {
         key: "adMunicipalities",
@@ -3219,11 +3183,10 @@ function ParcelsMapPageInner() {
   const AD_OTHER_TILES_FILL = "ad-other-tiles-fill";
   const AD_OTHER_TILES_LINE = "ad-other-tiles-line";
   const AD_OTHER_TILES_3D = "ad-other-tiles-3d";
-  // Oman — Muscat Municipality (Seeb contract): 94,640 plots, single PMTiles
-  const OMAN_LAND_TILES_SRC = "oman-land-tiles";
-  const OMAN_LAND_TILES_FILL = "oman-land-tiles-fill";
-  const OMAN_LAND_TILES_LINE = "oman-land-tiles-line";
-  const OMAN_LAND_TILES_3D = "oman-land-tiles-3d";
+  // Oman PMTiles consts removed 2026-05-24 — Saudi + Oman coverage
+  // dropped from the platform. data/tiles/oman-plots.geojson.nl and
+  // the R2 oman-land.pmtiles object stay around as orphans; remove
+  // them in a separate dataset-cleanup pass if/when desired.
 
   /**
    * Re-apply each PMTiles layer's base filter (tier=flat / tier!=flat)
@@ -3247,9 +3210,9 @@ function ParcelsMapPageInner() {
     const flatBase: maplibregl.FilterSpecification = ["==", ["get", "tier"], "flat"];
     const tierBase: maplibregl.FilterSpecification = ["!=", ["get", "tier"], "flat"];
 
-    const FILL_LAYERS = [DDA_LAND_TILES_FILL, AD_ADM_TILES_FILL, AD_OTHER_TILES_FILL, OMAN_LAND_TILES_FILL];
-    const LINE_LAYERS = [DDA_LAND_TILES_LINE, AD_ADM_TILES_LINE, AD_OTHER_TILES_LINE, OMAN_LAND_TILES_LINE];
-    const EXT_LAYERS  = [DDA_LAND_TILES_3D,   AD_ADM_TILES_3D,   AD_OTHER_TILES_3D,   OMAN_LAND_TILES_3D];
+    const FILL_LAYERS = [DDA_LAND_TILES_FILL, AD_ADM_TILES_FILL, AD_OTHER_TILES_FILL];
+    const LINE_LAYERS = [DDA_LAND_TILES_LINE, AD_ADM_TILES_LINE, AD_OTHER_TILES_LINE];
+    const EXT_LAYERS  = [DDA_LAND_TILES_3D,   AD_ADM_TILES_3D,   AD_OTHER_TILES_3D];
 
     for (const id of FILL_LAYERS) {
       if (!map.getLayer(id)) continue;
@@ -3700,7 +3663,7 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
-      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
+      // Oman PMTiles dropped 2026-05-24.
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
@@ -3822,41 +3785,8 @@ function ParcelsMapPageInner() {
         popup.remove();
       });
 
-      // ── Saudi Governorates hover ──
-      map.on("mousemove", SAUDI_GOV_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const name = `Governorate ${(f.properties?.OBJECTID as string) ?? "—"}`;
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">${name}</div>`,
-          )
-          .addTo(map);
-      });
-      map.on("mouseleave", SAUDI_GOV_FILL, () => {
-        map.getCanvas().style.cursor = "";
-        popup.remove();
-      });
-
-      // ── Riyadh Zones hover ──
-      map.on("mousemove", RIYADH_ZONES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        map.getCanvas().style.cursor = "pointer";
-        const zone = (f.properties?.zone as string) ?? "—";
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(
-            `<div style="font-family:Georgia,serif;font-weight:700;font-size:10px;letter-spacing:0.04em">Zone ${zone}</div>`,
-          )
-          .addTo(map);
-      });
-      map.on("mouseleave", RIYADH_ZONES_FILL, () => {
-        map.getCanvas().style.cursor = "";
-        popup.remove();
-      });
+      // Saudi Governorates + Riyadh Zones hover handlers removed
+      // 2026-05-24 along with the rest of the Saudi coverage.
 
       // ── DDA Project Boundaries hover ──
       map.on("mousemove", DDA_PROJ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -4071,11 +4001,10 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
-      addLandTileSource(map, OMAN_LAND_TILES_SRC, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, "/tiles/oman-land.pmtiles");
+      // Oman PMTiles dropped 2026-05-24.
       setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
       setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
       setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-      setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
 
       // ── Then everything else (any of these can throw safely now) ──
       await loadAmenityIcons(map);
@@ -4111,8 +4040,7 @@ function ParcelsMapPageInner() {
     setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
     setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-    setLandTileVisibility(map, OMAN_LAND_TILES_FILL, OMAN_LAND_TILES_LINE, OMAN_LAND_TILES_3D, layers.omanLandPlots);
-  }, [layers.ddaLandPlots, layers.adLandPlots, layers.omanLandPlots]);
+  }, [layers.ddaLandPlots, layers.adLandPlots]);
 
   // District-name symbol layer visibility — direct toggle since this
   // layer lives outside LAYER_REGISTRY (custom centroid source, no
@@ -6514,16 +6442,7 @@ const MINI_TOP_LAYERS: MiniLayer[] = [
       </svg>
     ),
   },
-  {
-    key: "omanLandPlots",
-    label: "Oman Land Plots (Muscat)",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3v18" />
-      </svg>
-    ),
-  },
+  // Oman entry dropped 2026-05-24 — coverage removed from platform.
   {
     key: "metro",
     label: "Metro",
@@ -6563,16 +6482,8 @@ const MINI_LEFT_LAYERS: MiniLayer[] = [
       </svg>
     ),
   },
-  {
-    key: "saudiGovernorates",
-    label: "Saudi Governorates",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0z" />
-        <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
-      </svg>
-    ),
-  },
+  // Saudi Governorates entry dropped 2026-05-24 along with the rest
+  // of the Saudi coverage (Riyadh Zones, governorate KML route).
   {
     key: "ddaFreeZones",
     label: "Free Zones",
