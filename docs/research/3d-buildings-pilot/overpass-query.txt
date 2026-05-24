@@ -1,0 +1,6 @@
+[out:json][timeout:90];
+(
+  way["building"](25.180,55.260,25.195,55.282);
+  relation["building"](25.180,55.260,25.195,55.282);
+);
+out body geom;

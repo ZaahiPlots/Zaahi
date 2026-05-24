@@ -1,0 +1,146 @@
+{
+  "input_ways": 454,
+  "input_relations_skipped": 17,
+  "kept": 454,
+  "skipped_geom_empty": 0,
+  "skipped_too_few_nodes": 0,
+  "height_explicit": 172,
+  "height_from_levels": 37,
+  "height_fallback": 245,
+  "height_median_m": 15.0,
+  "height_p90_m": 130.0,
+  "height_p99_m": 248.0,
+  "height_max_m": 288.0,
+  "vertices": 8872,
+  "indices": 47784,
+  "triangles": 15928,
+  "glb_kb": 395.6,
+  "bbox": [
+    25.18,
+    55.26,
+    25.195,
+    55.282
+  ],
+  "named_sample": [
+    [
+      "فندق العنوان داون تاون",
+      20.0
+    ],
+    [
+      "District Cooling Plant 3",
+      15.0
+    ],
+    [
+      "مسجد الصفا",
+      15.0
+    ],
+    [
+      "Villa Rotana",
+      21.0
+    ],
+    [
+      "Burj Views",
+      30.0
+    ],
+    [
+      "Al Manzil",
+      45.0
+    ],
+    [
+      "The Palace - Downtown Dubai",
+      20.0
+    ],
+    [
+      "Millenium Tower",
+      285.0
+    ],
+    [
+      "الخليج التجاري",
+      15.0
+    ],
+    [
+      "Vida Residence",
+      10.0
+    ],
+    [
+      "BLVD Crescent",
+      15.0
+    ],
+    [
+      "BLVD Heights",
+      15.0
+    ],
+    [
+      "Forte",
+      10.5
+    ],
+    [
+      "Address Residences",
+      30.0
+    ],
+    [
+      "Boulevard Point",
+      30.0
+    ],
+    [
+      "The 118",
+      20.0
+    ],
+    [
+      "Damac Maison Distinction",
+      21.0
+    ],
+    [
+      "Tiara United Tower 2",
+      225.0
+    ],
+    [
+      "Taj Dubai Hotel",
+      120.0
+    ],
+    [
+      "Executive Tower C",
+      114.0
+    ],
+    [
+      "Executive Tower B",
+      190.0
+    ],
+    [
+      "Executive Tower F",
+      120.0
+    ],
+    [
+      "Executive Tower E",
+      118.0
+    ],
+    [
+      "Executive Tower G",
+      170.0
+    ],
+    [
+      "Executive Tower H",
+      182.0
+    ],
+    [
+      "Executive Tower J",
+      170.0
+    ],
+    [
+      "Executive Tower K",
+      186.0
+    ],
+    [
+      "Executive Tower L",
+      182.0
+    ],
+    [
+      "Executive Tower M",
+      210.0
+    ],
+    [
+      "The Oberoi Hotel",
+      15.0
+    ]
+  ]
+}

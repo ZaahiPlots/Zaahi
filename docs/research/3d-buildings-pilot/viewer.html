@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZAAHI — Business Bay OSM buildings (GLB viewer)</title>
+  <style>
+    :root { --gold: #c8a96e; --navy: #0a1628; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #f5f1e8; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1a2e; }
+    #viewer { position: absolute; inset: 0; }
+    #sidebar {
+      position: absolute; top: 12px; left: 12px; width: 280px;
+      background: rgba(10, 22, 40, 0.92); color: #fff;
+      padding: 14px; border-radius: 10px;
+      border: 1px solid rgba(200, 169, 110, 0.35);
+      backdrop-filter: blur(16px);
+      font-size: 12px; line-height: 1.5;
+    }
+    #sidebar h1 { font-family: Georgia, serif; font-size: 15px; color: var(--gold); letter-spacing: 0.05em; margin-bottom: 6px; }
+    #sidebar .sub { font-size: 9px; text-transform: uppercase; color: rgba(255,255,255,0.55); letter-spacing: 0.15em; margin-bottom: 12px; }
+    #sidebar .stat { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: "SF Mono", Menlo, monospace; }
+    #sidebar .stat .k { color: rgba(255,255,255,0.55); }
+    #sidebar .stat .v { color: var(--gold); }
+    #sidebar .hint { margin-top: 10px; font-size: 10px; color: rgba(255,255,255,0.55); }
+    button {
+      display: block; width: 100%; margin-top: 6px; padding: 7px 8px;
+      background: rgba(200, 169, 110, 0.12); border: 1px solid rgba(200, 169, 110, 0.4);
+      color: var(--gold); border-radius: 5px; cursor: pointer; font-size: 11px;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    button:hover { background: rgba(200, 169, 110, 0.25); border-color: var(--gold); }
+  </style>
+</head>
+<body>
+  <div id="viewer"></div>
+  <div id="sidebar">
+    <h1>BUSINESS BAY · OSM</h1>
+    <div class="sub">3D-buildings pilot · approach 1</div>
+    <div class="stat"><span class="k">Buildings</span><span class="v">454</span></div>
+    <div class="stat"><span class="k">Triangles</span><span class="v">15,928</span></div>
+    <div class="stat"><span class="k">GLB size</span><span class="v">396 KB</span></div>
+    <div class="stat"><span class="k">Heights (real)</span><span class="v">209 / 454</span></div>
+    <div class="stat"><span class="k">Tallest (m)</span><span class="v">288</span></div>
+    <div class="stat"><span class="k">FPS</span><span class="v" id="fps">—</span></div>
+    <div class="hint">Drag = orbit · scroll = zoom · right-drag = pan</div>
+    <button id="reset">Reset camera</button>
+    <button id="screenshot">📸 Screenshot PNG</button>
+    <button id="toggle-wire">Toggle wireframe</button>
+  </div>
+
+  <script type="importmap">
+  { "imports": {
+      "three": "https://unpkg.com/three@0.166.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.166.0/examples/jsm/"
+  }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader }      from "three/addons/loaders/GLTFLoader.js";
+    import { OrbitControls }   from "three/addons/controls/OrbitControls.js";
+
+    const root = document.getElementById("viewer");
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xf5f1e8, 1.0);
+    root.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xf5f1e8, 2500, 6000);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 8000);
+    const DEFAULT_CAM = new THREE.Vector3(1100, 900, 1300);
+    camera.position.copy(DEFAULT_CAM);
+    camera.lookAt(0, 50, 0);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 50, 0);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI * 0.49;
+
+    // Lights — neutral, no dramatic shadows.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sun.position.set(1500, 2000, 1200);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xb0c4d6, 0.35);
+    fill.position.set(-1500, 800, -800);
+    scene.add(fill);
+
+    // Ground reference plane — semi-transparent so user knows "down".
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(6000, 6000),
+      new THREE.MeshStandardMaterial({ color: 0xe5dccb, roughness: 0.95, metalness: 0 }),
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Compass axis helper (Y up).
+    const grid = new THREE.GridHelper(6000, 60, 0xc8a96e, 0xb0a48c);
+    grid.position.y = 0.05;
+    scene.add(grid);
+
+    let wire = false;
+    let model = null;
+    const loader = new GLTFLoader();
+    loader.load(
+      "./business-bay-buildings.glb",
+      (gltf) => {
+        model = gltf.scene;
+        model.traverse((o) => {
+          if (o.isMesh) {
+            o.material = new THREE.MeshStandardMaterial({
+              color: 0xd6cebd,
+              roughness: 0.85,
+              metalness: 0.05,
+              flatShading: true,
+            });
+            o.material.wireframe = false;
+            o.castShadow = false;
+            o.receiveShadow = false;
+          }
+        });
+        scene.add(model);
+      },
+      undefined,
+      (err) => {
+        console.error("[viewer] GLB load failed:", err);
+        document.getElementById("sidebar").insertAdjacentHTML(
+          "beforeend",
+          `<div style="margin-top:10px;color:#E74C3C;font-size:11px">GLB load failed — see console.</div>`,
+        );
+      },
+    );
+
+    document.getElementById("reset").addEventListener("click", () => {
+      camera.position.copy(DEFAULT_CAM);
+      controls.target.set(0, 50, 0);
+    });
+    document.getElementById("screenshot").addEventListener("click", () => {
+      renderer.render(scene, camera);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      a.href = renderer.domElement.toDataURL("image/png");
+      a.download = `business-bay-osm-${ts}.png`;
+      a.click();
+    });
+    document.getElementById("toggle-wire").addEventListener("click", () => {
+      wire = !wire;
+      if (model) {
+        model.traverse((o) => { if (o.isMesh) o.material.wireframe = wire; });
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    let lastFps = performance.now();
+    let frames = 0;
+    function loop() {
+      requestAnimationFrame(loop);
+      controls.update();
+      renderer.render(scene, camera);
+      frames++;
+      const now = performance.now();
+      if (now - lastFps > 500) {
+        document.getElementById("fps").textContent = Math.round(frames * 1000 / (now - lastFps));
+        frames = 0;
+        lastFps = now;
+      }
+    }
+    loop();
+  </script>
+</body>
+</html>
