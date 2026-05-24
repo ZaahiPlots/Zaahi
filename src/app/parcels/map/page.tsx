@@ -5384,87 +5384,15 @@ function ParcelsMapPageInner() {
               alignSelf: "start",
             }}
           >
-            {/* data-legend-trigger marks this as a Legend toggle so the
-                click-outside handler skips clicks on it (same as the
-                big-map Legend in the right stack). legendBtnRef now
-                lives only on the big-map trigger; data-attribute
-                detection replaces direct ref containment so the
-                handler works for any number of Legend triggers. */}
-            <span data-legend-trigger style={{ display: "block" }}>
-              <MiniRailBtn
-                title="Legend"
-                active={legendOpen}
-                onClick={() => setLegendOpen((o) => !o)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <circle cx="4" cy="6" r="1.2" fill="currentColor" />
-                  <circle cx="4" cy="12" r="1.2" fill="currentColor" />
-                  <circle cx="4" cy="18" r="1.2" fill="currentColor" />
-                </svg>
-              </MiniRailBtn>
-            </span>
-            {/* Basemap selector — 3 separate buttons (Light / Dark /
-                Satellite). The big-map LEFT stack is the primary
-                location for basemap selection (2026-05-24 founder
-                spec); these mini-dock buttons remain as a redundant
-                surface for when the dock is open and the user is
-                already pinned bottom-centre. Founder confirmed
-                duplicates are acceptable while the mini-dock revamp
-                is deferred. */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 4,
-                alignSelf: "start",
-              }}
-              aria-label="Basemap"
-            >
-              {(["light", "dark", "satellite"] as BaseMap[]).map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setBaseMap(b)}
-                  title={b === "light" ? "Light basemap" : b === "dark" ? "Dark basemap" : "Satellite basemap"}
-                  aria-label={`${b} basemap`}
-                  aria-pressed={baseMap === b}
-                  tabIndex={miniOpen ? 0 : -1}
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 5,
-                    border: `1px solid ${baseMap === b ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-                    background: baseMap === b ? GOLD : "rgba(10, 22, 40, 0.5)",
-                    color: baseMap === b ? "#0A1628" : "rgba(255, 255, 255, 0.55)",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 0,
-                    transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (baseMap !== b) {
-                      e.currentTarget.style.borderColor = GOLD;
-                      e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-                      e.currentTarget.style.color = GOLD;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (baseMap !== b) {
-                      e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
-                      e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
-                      e.currentTarget.style.color = "rgba(255, 255, 255, 0.55)";
-                    }
-                  }}
-                >
-                  {b === "light" ? "☀" : b === "dark" ? "☾" : "🛰"}
-                </button>
-              ))}
-            </div>
+            {/* Mini-dock right rail cleanup 2026-05-24 (Option A):
+                Legend, the 3 basemap buttons, and Auto-rotate were
+                removed because they duplicate the big-map 5×5 stacks
+                (RIGHT slot 1 = Legend; LEFT slots 2-4 = basemap;
+                LEFT slot 5 = Auto-rotate). The right rail keeps only
+                Sun-slider + Drone — controls that have no big-map
+                counterpart. Yes, the rail is now asymmetric (4 top,
+                5 left, 2 right) — accepted as a trade-off for "no
+                duplicate clicks" per founder spec. */}
             <MiniRailBtn
               title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
               active={sunSliderActive}
@@ -5479,25 +5407,10 @@ function ParcelsMapPageInner() {
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
               </svg>
             </MiniRailBtn>
-            <MiniRailBtn
-              title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
-              active={autoRotateEnabled}
-              onClick={() => {
-                sound.whoosh();
-                setAutoRotateEnabled((v) => {
-                  const next = !v;
-                  // Mutual exclusion: enabling auto-rotate disables drone.
-                  if (next) setDroneEnabled(false);
-                  return next;
-                });
-              }}
-            >
-              {/* Circular arrow — auto-rotate indicator. */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-3.5-7.1" />
-                <polyline points="21 4 21 9 16 9" />
-              </svg>
-            </MiniRailBtn>
+            {/* Auto-rotate moved exclusively to big-map LEFT slot 5
+                (commit 9f34cc8) — removed from the mini dock to drop
+                the duplicate per Option A. State / mutex against
+                Drone still lives at the page level. */}
             <MiniRailBtn
               title={droneEnabled ? "Disable drone mode" : "Enable drone mode (WASD + right-click rotate)"}
               active={droneEnabled}
