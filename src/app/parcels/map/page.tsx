@@ -5,6 +5,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Protocol } from "pmtiles";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { ScenegraphLayer } from "@deck.gl/mesh-layers";
+import { LightingEffect, AmbientLight, DirectionalLight } from "@deck.gl/core";
 import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
@@ -3857,15 +3858,35 @@ function ParcelsMapPageInner() {
     // accepted by founder for this spike scope. Cleanup below removes
     // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
     try {
+      // PBR lighting effect — _lighting: "pbr" on the layer is a no-op
+      // without lights in the deck.gl scene; without this effect the
+      // model renders pure black (no ambient, no sun). Ambient gives
+      // baseline read; DirectionalLight gives shape via cast shadows /
+      // shading. Tuned bright enough that the dark-blue glass material
+      // doesn't go to black on the shaded side.
+      const lightingEffect = new LightingEffect({
+        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
+        dir: new DirectionalLight({
+          color: [255, 245, 230],
+          intensity: 2.0,
+          direction: [-1, -3, -1],
+        }),
+      });
       const overlay = new MapboxOverlay({
         interleaved: true,
+        effects: [lightingEffect],
         layers: [
           new ScenegraphLayer({
             id: "hero-millennium-tower",
             data: [{ position: HERO_COORDS }],
             scenegraph: HERO_GLB_URL,
             getPosition: (d: { position: [number, number] }) => d.position,
-            getOrientation: [0, 0, 0],
+            // Y-up GLB → Z-up deck.gl world. Roll the model 90° around
+            // its Z so its built-in vertical axis stands upright on
+            // the map plane (founder spec 2026-05-25). Yaw stays 0 —
+            // the building was already rotated 40.1° from north inside
+            // the Blender model itself, so no additional yaw needed.
+            getOrientation: [0, 0, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
