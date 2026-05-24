@@ -3866,6 +3866,13 @@ function ParcelsMapPageInner() {
             scenegraph: HERO_GLB_URL,
             getPosition: (d: { position: [number, number] }) => d.position,
             getOrientation: [0, 0, 0],
+            // sizeScale 1.0 — the GLB was authored in real-world metres
+            // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
+            // with default coordinateSystem LNGLAT interprets model coords
+            // as metres at the anchor's WebMercator projection. At Dubai
+            // latitude (25.19° N) Mercator stretches horizontal distances
+            // by 1/cos(25°) ≈ +10 %, so the footprint reads ~10 % wider
+            // than reality on screen — acceptable for the spike.
             sizeScale: 1,
             _lighting: "pbr",
             pickable: false,
