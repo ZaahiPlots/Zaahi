@@ -43,6 +43,11 @@
     <div class="stat"><span class="k">Tallest (m)</span><span class="v">288</span></div>
     <div class="stat"><span class="k">FPS</span><span class="v" id="fps">—</span></div>
     <div class="hint">Drag = orbit · scroll = zoom · right-drag = pan</div>
+    <select id="model-picker" style="display:block;width:100%;margin-top:6px;padding:6px;background:rgba(10,22,40,0.85);color:var(--gold);border:1px solid rgba(200,169,110,0.4);border-radius:5px;font-size:11px;">
+      <option value="business-bay-buildings.glb">OSM bulk (454 buildings, 396 KB)</option>
+      <option value="millennium-osm-baseline.glb">OSM baseline — Millennium only (1.3 KB)</option>
+      <option value="blender-hero-building.glb">Blender hero — ZAAHI Signature (4.2 KB)</option>
+    </select>
     <button id="reset">Reset camera</button>
     <button id="screenshot">📸 Screenshot PNG</button>
     <button id="toggle-wire">Toggle wireframe</button>
@@ -105,34 +110,42 @@
     let wire = false;
     let model = null;
     const loader = new GLTFLoader();
-    loader.load(
-      "./business-bay-buildings.glb",
-      (gltf) => {
-        model = gltf.scene;
-        model.traverse((o) => {
-          if (o.isMesh) {
-            o.material = new THREE.MeshStandardMaterial({
-              color: 0xd6cebd,
-              roughness: 0.85,
-              metalness: 0.05,
-              flatShading: true,
-            });
-            o.material.wireframe = false;
-            o.castShadow = false;
-            o.receiveShadow = false;
-          }
-        });
-        scene.add(model);
-      },
-      undefined,
-      (err) => {
-        console.error("[viewer] GLB load failed:", err);
-        document.getElementById("sidebar").insertAdjacentHTML(
-          "beforeend",
-          `<div style="margin-top:10px;color:#E74C3C;font-size:11px">GLB load failed — see console.</div>`,
-        );
-      },
-    );
+    function load(url) {
+      if (model) { scene.remove(model); model = null; }
+      loader.load(
+        url,
+        (gltf) => {
+          model = gltf.scene;
+          model.traverse((o) => {
+            if (o.isMesh) {
+              // Respect the GLB's own material when present (the Blender
+              // hero ships podium/body/crown PBR materials); only fall
+              // back to a uniform off-white shell for the OSM extrusions
+              // which all share one material.
+              const hasOwn = o.material && o.material.color && (o.material.color.r + o.material.color.g + o.material.color.b) < 2.8;
+              if (!hasOwn) {
+                o.material = new THREE.MeshStandardMaterial({
+                  color: 0xd6cebd,
+                  roughness: 0.85,
+                  metalness: 0.05,
+                  flatShading: true,
+                });
+              }
+              o.material.wireframe = wire;
+            }
+          });
+          scene.add(model);
+        },
+        undefined,
+        (err) => {
+          console.error("[viewer] GLB load failed:", err);
+        },
+      );
+    }
+    load("./business-bay-buildings.glb");
+    document.getElementById("model-picker").addEventListener("change", (e) => {
+      load(`./${e.target.value}`);
+    });
 
     document.getElementById("reset").addEventListener("click", () => {
       camera.position.copy(DEFAULT_CAM);
