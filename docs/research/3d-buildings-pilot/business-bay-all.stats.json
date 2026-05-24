@@ -1,0 +1,74 @@
+{
+  "buildings_kept": 454,
+  "named": 156,
+  "with_explicit_height": 179,
+  "fallback_height_15m": 275,
+  "heroes_matched": 13,
+  "total_vertices": 32746,
+  "total_triangles": 57860,
+  "combined_glb_kb": 3230.2,
+  "heroes": [
+    {
+      "slug": "millenium-tower",
+      "objs": 68,
+      "kb": 75.8984375
+    },
+    {
+      "slug": "tiara-united-tower-2",
+      "objs": 55,
+      "kb": 62.12890625
+    },
+    {
+      "slug": "executive-tower-b",
+      "objs": 47,
+      "kb": 53.1640625
+    },
+    {
+      "slug": "executive-tower-k",
+      "objs": 46,
+      "kb": 52.12890625
+    },
+    {
+      "slug": "executive-tower-m",
+      "objs": 51,
+      "kb": 64.6640625
+    },
+    {
+      "slug": "vision-tower",
+      "objs": 7,
+      "kb": 13.99609375
+    },
+    {
+      "slug": "mbk-tower",
+      "objs": 49,
+      "kb": 55.5078125
+    },
+    {
+      "slug": "manazel-al-safa-tower",
+      "objs": 60,
+      "kb": 67.3515625
+    },
+    {
+      "slug": "blvd-heights-tower-1",
+      "objs": 49,
+      "kb": 55.42578125
+    },
+    {
+      "slug": "opera-grand",
+      "objs": 70,
+      "kb": 182.8203125
+    },
+    {
+      "slug": "grande-signature-residences",
+      "objs": 64,
+      "kb": 71.48828125
+    },
+    {
+      "slug": "paramount-hotel-midtown",
+      "objs": 62,
+      "kb": 69.41796875
+    }
+  ],
+  "build_seconds": 0.2,
+  "elapsed_total_seconds": 3.8
+}
