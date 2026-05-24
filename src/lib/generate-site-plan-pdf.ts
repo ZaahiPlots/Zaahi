@@ -13,6 +13,8 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import type { Map as MLMap } from 'maplibre-gl';
+import { stripInternalLines } from './notes-strip';
+import { explainNotes } from './notes-explanations';
 
 type RGB = [number, number, number];
 const GOLD: RGB = [200, 169, 110];
@@ -67,6 +69,14 @@ export interface SitePlanArgs {
   // captured as the left-column image. Without it, a polygon preview
   // is drawn from `parcel.geometry`.
   map?: MLMap | null;
+  // Optional 2D locator snapshot (JPEG data-URL) from the MiniMap.
+  // When provided, the left column is split: the 3D capture occupies
+  // the top ~65%, and this locator fills the bottom ~30% (mirrors the
+  // DDA reference plan's Location Map pane). When omitted, the 3D
+  // capture uses the full left column — backwards-compatible with
+  // any caller that hasn't wired the MiniMap snapshot yet.
+  // Phase B 2026-05-24.
+  locationMapImage?: string | null;
 }
 
 // ── Map snapshot helpers ────────────────────────────────────────────
@@ -197,7 +207,7 @@ function aedFromFils(fils: string | null | undefined): number | null {
 // ── Main ────────────────────────────────────────────────────────────
 
 export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
-  const { parcel, plan, authority, map } = args;
+  const { parcel, plan, authority, map, locationMapImage } = args;
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
   const W = 297, H = 210, M = 12;
@@ -244,14 +254,25 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
   const bodyY = 32;
   const bodyH = H - bodyY - 22; // leave room for footer
 
-  // ── Left column: map snapshot or polygon preview ──
+  // ── Left column: 3D snapshot (top) + optional Location Map (bottom) ──
+  //
+  // Phase B 2026-05-24: when `locationMapImage` is supplied, the
+  // left column is split — 3D capture on top, locator on the bottom.
+  // The DDA reference plan uses the same split. When the locator
+  // image is missing, we fall back to the v1 behaviour: 3D snapshot
+  // fills the entire left column.
   let mapImg: string | null = null;
   if (map) {
     mapImg = await captureMap(map, parcel.geometry);
   }
   if (!mapImg) mapImg = drawPolygonPreview(parcel.geometry);
 
-  const mapH = bodyH - 10;
+  const fullMapH = bodyH - 10;
+  const hasLocator = !!locationMapImage;
+  const mapH = hasLocator ? Math.round(fullMapH * 0.66) : fullMapH;
+  const locatorGap = 4;
+  const locatorH = hasLocator ? fullMapH - mapH - locatorGap : 0;
+
   if (mapImg) {
     try {
       doc.addImage(mapImg, 'JPEG', leftX, bodyY, leftW, mapH, undefined, 'FAST');
@@ -266,7 +287,30 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
     doc.setTextColor(...GRAY);
     doc.text('No geometry available', leftX + leftW / 2, bodyY + mapH / 2, { align: 'center' });
   }
-  // Map caption: centroid (lng,lat)
+
+  // Location Map pane — only when the caller provided a snapshot.
+  if (hasLocator) {
+    const locY = bodyY + mapH + locatorGap;
+    try {
+      doc.addImage(locationMapImage as string, 'JPEG', leftX, locY, leftW, locatorH, undefined, 'FAST');
+    } catch (e) {
+      console.warn('[site-plan-pdf] addImage (locator) failed:', e);
+      // Outline the empty slot rather than leaving a blank gap.
+      doc.setDrawColor(...FAINT);
+      doc.setLineWidth(0.2);
+      doc.rect(leftX, locY, leftW, locatorH);
+    }
+    // Label the locator pane so the reader knows it's an orientation
+    // map, not a duplicate of the 3D view.
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...GOLD);
+    doc.text('LOCATION', leftX + 2, locY + 5);
+  }
+
+  // Map caption: centroid (lng,lat). Anchors below whichever pane
+  // sits at the bottom of the left column.
+  const captionY = bodyY + fullMapH + 4;
   const lat = parcel.latitude ?? null;
   const lng = parcel.longitude ?? null;
   doc.setFont('helvetica', 'normal');
@@ -275,10 +319,10 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
   if (lng != null && lat != null) {
     doc.text(
       `Centroid: ${lng.toFixed(6)}°E, ${lat.toFixed(6)}°N`,
-      leftX, bodyY + mapH + 4,
+      leftX, captionY,
     );
   }
-  doc.text('Source: ZAAHI parcel geometry', leftX + leftW, bodyY + mapH + 4, { align: 'right' });
+  doc.text('Source: ZAAHI parcel geometry', leftX + leftW, captionY, { align: 'right' });
 
   // ── Right column: data blocks ──
   let ry = bodyY + 2;
@@ -375,10 +419,61 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
     rgap();
   }
 
-  // NOTES (truncated if long)
-  if (plan?.notes && plan.notes.trim().length > 0) {
+  // NOTES — Phase B (2026-05-24):
+  //  1) Strip ZAAHI-internal lines (debug prefixes, geometry asides,
+  //     "ZAAHI: ..." service text) before anything else. The raw DB
+  //     value is preserved as `notesOriginal` in the API; the
+  //     PDF renders the cleaned version only.
+  //  2) Split into sentences and attach a plain-English ZAAHI
+  //     explanation per matched pattern (13 patterns; see
+  //     src/lib/notes-explanations.ts). Sentences without a
+  //     matching pattern render officially-only — no inventing.
+  //  3) Each tuple becomes one official line + an indented italic
+  //     "↳ ZAAHI:" line beneath. Hard 3-wrap-line cap per
+  //     explanation. Total block budget ~18 lines (was 10 in v1).
+  const cleanedNotes = stripInternalLines(plan?.notes ?? null);
+  if (cleanedNotes && cleanedNotes.trim().length > 0) {
     rh('General Notes');
-    rwrap(plan.notes.trim(), 10);
+    const notesBudget = 18;
+    let linesUsed = 0;
+    const items = explainNotes(cleanedNotes);
+    for (const { official, explanation } of items) {
+      if (linesUsed >= notesBudget) break;
+      // Official line — dark, 7.5pt, same look as before.
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...DARK);
+      const oLines = doc.splitTextToSize(official, rightW);
+      for (const line of oLines) {
+        if (linesUsed >= notesBudget) break;
+        if (ry > bodyY + bodyH - 3) break;
+        doc.text(line, rightX, ry);
+        ry += 3.2;
+        linesUsed += 1;
+      }
+      // Explanation line — italic, 7pt, gray, indented under the
+      // official sentence. Hard-cap at 3 wrapped lines per
+      // explanation so a single verbose entry can't eat the budget.
+      if (explanation && linesUsed < notesBudget) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        const eLead = '↳ ZAAHI: ';
+        const eFirst = eLead + explanation;
+        const eLines = doc.splitTextToSize(eFirst, rightW - 3).slice(0, 3);
+        for (let i = 0; i < eLines.length; i++) {
+          if (linesUsed >= notesBudget) break;
+          if (ry > bodyY + bodyH - 3) break;
+          // Subsequent wrapped lines get a 3mm hanging indent so the
+          // arrow visually owns its sentence.
+          const x = i === 0 ? rightX : rightX + 3;
+          doc.text(eLines[i], x, ry);
+          ry += 3;
+          linesUsed += 1;
+        }
+      }
+      ry += 0.8; // micro-gap between tuples
+    }
   }
 
   // ── Footer ─────────────────────────────────────────────────

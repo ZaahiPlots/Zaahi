@@ -3,6 +3,7 @@ import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getApprovedUserId } from '@/lib/auth';
 import { rewriteNotes } from '@/lib/notes-rewriter';
+import { stripInternalLines } from '@/lib/notes-strip';
 
 function serialize<T>(value: T): T {
   return JSON.parse(
@@ -16,12 +17,19 @@ type Ctx = { params: Promise<{ id: string }> };
 //
 // The DDA "General Notes" are rewritten into plain English on the way
 // out (jargon expansion, abbreviation expansion, terms like "subject to"
-// → "must follow"). The DB still stores the raw DDA string verbatim;
-// the response carries both:
-//   plan.notes         → rewritten, plain-English version
-//   plan.notesOriginal → raw DDA string
+// → "must follow"). Phase B 2026-05-24 adds an upstream
+// `stripInternalLines` pass that removes ZAAHI debug prefixes (e.g.
+// "ZAAHI: land use defaulted…", "Plot 6817016 · …", geometry asides)
+// so the side panel + PDF never show service text. Founder spec: no
+// admin bypass — internal lines are hidden everywhere identically.
+//
+// The DB still stores the raw DDA string verbatim; the response
+// carries both:
+//   plan.notes         → stripped + rewritten, plain-English version
+//   plan.notesOriginal → raw DDA string (untouched, audit-trail)
 // Side panel renders the friendly version. Source-of-truth for the
-// transform is `src/lib/notes-rewriter.ts`.
+// transforms are `src/lib/notes-strip.ts` (filter) and
+// `src/lib/notes-rewriter.ts` (lexical rewrite).
 export async function GET(req: NextRequest, { params }: Ctx) {
   const userId = await getApprovedUserId(req);
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -33,15 +41,17 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   });
   if (!parcel) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  // Apply the plain-language rewriter to every affection plan note.
+  // Apply the strip-then-rewrite pipeline to every affection plan note.
   // The serialiser handles BigInts; we attach `notesOriginal` and
-  // overwrite `notes` per plan in place before serialising.
+  // overwrite `notes` per plan in place before serialising. Strip
+  // runs first so the rewriter doesn't waste cycles on ZAAHI debug
+  // lines that will be discarded anyway.
   const decorated = {
     ...parcel,
     affectionPlans: parcel.affectionPlans.map((p) => ({
       ...p,
       notesOriginal: p.notes,
-      notes: rewriteNotes(p.notes),
+      notes: rewriteNotes(stripInternalLines(p.notes)),
     })),
   };
   return NextResponse.json(serialize(decorated));

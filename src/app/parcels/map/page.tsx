@@ -11,7 +11,7 @@ import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
 import { AddPlotWizardModal } from "./AddPlotWizardModal";
-import MiniMap from "./MiniMap";
+import MiniMap, { type MiniMapHandle } from "./MiniMap";
 import DroneHUD from "./DroneHUD";
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
@@ -1533,6 +1533,41 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     if (!selectedParcelId) return;
     void apiFetch(`/api/parcels/${selectedParcelId}/view`, { method: "POST" }).catch(() => { /* silent */ });
+  }, [selectedParcelId]);
+
+  // Locator-map data — Phase B 2026-05-24.
+  //
+  // The MiniMap rev2 (locator) recentres on the selected parcel and
+  // draws its polygon in gold. To do that we feed it the geometry,
+  // not just the id. Geometry is fetched on-demand from
+  // /api/parcels/[id] (already auth-gated by getApprovedUserId);
+  // the request piggy-backs on the same browser fetch cache as the
+  // side panel, so opening the same plot twice in a session costs
+  // one network round-trip total.
+  const [selectedParcelGeometry, setSelectedParcelGeometry] =
+    useState<GeoJSON.Polygon | null>(null);
+  // Ref into the MiniMap so the Site Plan PDF trigger can request a
+  // canvas snapshot for the new Location Map pane. See
+  // generate-site-plan-pdf.ts and the PDF button handler.
+  const miniMapRef = useRef<MiniMapHandle | null>(null);
+  useEffect(() => {
+    if (!selectedParcelId) {
+      setSelectedParcelGeometry(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      try {
+        const r = await apiFetch(`/api/parcels/${selectedParcelId}`);
+        if (!r.ok) return;
+        const data = (await r.json()) as { geometry?: GeoJSON.Polygon | null };
+        if (!alive) return;
+        setSelectedParcelGeometry(data.geometry ?? null);
+      } catch {
+        /* silent — locator just won't recentre */
+      }
+    })();
+    return () => { alive = false; };
   }, [selectedParcelId]);
 
   const [zaahiHover, setZaahiHover] = useState<{
@@ -5232,7 +5267,12 @@ function ParcelsMapPageInner() {
           </div>
 
           <div style={{ gridArea: "mid", display: "flex", flexDirection: "column", gap: 4 }}>
-            <MiniMap mainMapRef={mapRef} />
+            <MiniMap
+              ref={miniMapRef}
+              mainMapRef={mapRef}
+              selectedParcelId={selectedParcelId}
+              selectedParcelGeometry={selectedParcelGeometry}
+            />
             {/* Cursor coords + zoom footer under the minimap. Duplicates
                 the bottom-left readout on purpose: power users glance
                 here when the dock is open; the bottom-left version is
@@ -5477,6 +5517,7 @@ function ParcelsMapPageInner() {
       <SidePanel
         parcelId={selectedParcelId}
         mapRef={mapRef}
+        miniMapRef={miniMapRef}
         onClose={() => {
           sound.swooshClose();
           setSelectedParcelId(null);

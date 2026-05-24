@@ -10,6 +10,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
+import type { MiniMapHandle } from "./MiniMap";
 import { PdfProgressBar } from "./PdfProgressBar";
 
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
@@ -152,10 +153,17 @@ export default function SidePanel({
   parcelId,
   onClose,
   mapRef,
+  miniMapRef,
 }: {
   parcelId: string | null;
   onClose: () => void;
   mapRef?: { current: MLMap | null };
+  // Optional handle into the locator MiniMap so the Site Plan PDF
+  // can pull a 2D snapshot for the new Location Map pane. Phase B
+  // 2026-05-24. Without it the PDF still works — generateSitePlanPdf
+  // falls back to the single-pane layout when locationMapImage is
+  // omitted.
+  miniMapRef?: { current: MiniMapHandle | null };
 }) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -376,6 +384,19 @@ export default function SidePanel({
                 if (!data) return;
                 setPdfBusy(true);
                 try {
+                  // Phase B 2026-05-24: capture the locator MiniMap
+                  // first, then call the PDF generator with the
+                  // locator snapshot. The MiniMap already recentred
+                  // on the selected parcel via its props effect, so
+                  // captureCanvas() just needs to wait for idle.
+                  // Failure is non-fatal — the PDF falls back to the
+                  // single-pane layout.
+                  let locationMapImage: string | null = null;
+                  try {
+                    locationMapImage = (await miniMapRef?.current?.captureCanvas()) ?? null;
+                  } catch {
+                    locationMapImage = null;
+                  }
                   await generateSitePlanPdf({
                     parcel: {
                       id: data.id,
@@ -408,6 +429,7 @@ export default function SidePanel({
                       : null,
                     authority: plan?.raw?.authority ?? null,
                     map: mapRef?.current ?? null,
+                    locationMapImage,
                   });
                 } catch (e) {
                   console.error("[site-plan-pdf]", e);
