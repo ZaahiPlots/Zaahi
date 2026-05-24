@@ -3224,16 +3224,29 @@ function ParcelsMapPageInner() {
   function addLandTileSource(map: MLMap, srcId: string, fillId: string, lineId: string, extId: string, tilesUrl: string) {
     if (map.getSource(srcId)) return;
     // maxzoom: 18 — tippecanoe builds these tilesets with
-    // --maximum-zoom=16 (see scripts/update-tiles.sh), so MapLibre
-    // overzooms the z16 tile by 2 levels at most (4× stretch).
-    // Earlier values (22 then 24) let the camera overzoom 6–8 levels
-    // (64–256× stretch), and at that magnification: (a) tippecanoe's
-    // default 5px clip buffer effectively becomes 0px and polygons
-    // near tile edges drop out, (b) the camera near-plane gets close
-    // enough to building tops that fill-extrusion geometry is culled
-    // entirely. Founder fix 2026-05-23 (overzoom-band correction).
-    // If we ever rebuild with --maximum-zoom=18+, bump this in lockstep.
-    map.addSource(srcId, { type: "vector", url: `pmtiles://${tilesUrl}`, maxzoom: 18 });
+    // --maximum-zoom=18 (see scripts/update-tiles.sh) as of 2026-05-24,
+    // and the source value matches so MapLibre uses the deepest
+    // physical tile directly without any overzoom stretch. Earlier
+    // attempts pushed the source/camera to 22 then 24 against a z16
+    // tile cap, which forced 6–8 levels of overzoom = 64–256× stretch:
+    // (a) tippecanoe's default 5px clip buffer collapsed to ~0px so
+    // polygons near tile edges dropped out, (b) the camera near-plane
+    // crowded against building tops and fill-extrusion geometry got
+    // culled entirely. Bump in lockstep with the Map constructor
+    // maxZoom (currently 18 too) and the tippecanoe --maximum-zoom in
+    // scripts/update-tiles.sh on any deeper rebuild.
+    //
+    // tilesUrl is a path like "/tiles/dda-land.pmtiles". The PMTiles
+    // assets live on Cloudflare R2 in production; NEXT_PUBLIC_TILES_BASE_URL
+    // (set on Vercel to https://pub-eb193cdc5fe84cc6aac0373ef3dfa069.r2.dev)
+    // prefixes the URL there. Unset → empty prefix → relative path,
+    // which is what docker-compose self-host or any developer who
+    // still has the files locally needs. The .pmtiles themselves are
+    // gitignored as of 2026-05-24 (see docs/r2-migration-plan.md +
+    // memory project_pmtiles_overzoom_band for the rebuild history).
+    const tilesBase = process.env.NEXT_PUBLIC_TILES_BASE_URL ?? "";
+    const fullTilesUrl = tilesUrl.startsWith("http") ? tilesUrl : `${tilesBase}${tilesUrl}`;
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${fullTilesUrl}`, maxzoom: 18 });
     // 2D fill — only "flat" features (tier=flat, height=0)
     map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],

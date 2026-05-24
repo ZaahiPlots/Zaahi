@@ -100,7 +100,7 @@ mkdir -p public/tiles
 TIPPE_ARGS=(
   --layer=plots
   --minimum-zoom=10
-  --maximum-zoom=16
+  --maximum-zoom=18
   --drop-densest-as-needed
   --extend-zooms-if-still-dropping
   --force

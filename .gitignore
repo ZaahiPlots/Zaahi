@@ -6,10 +6,17 @@ tsconfig.tsbuildinfo
 # Reference PDFs in data/meydan/ are not needed at runtime, stay ignored.
 data/meydan/
 # Raw plot-level GeoJSON is too large for git (438MB). Kept on disk for
-# PMTiles generation only. Production serves pre-built .pmtiles from public/tiles/.
+# PMTiles generation only. Production serves the built .pmtiles via
+# Cloudflare R2 (NEXT_PUBLIC_TILES_BASE_URL on Vercel) — see
+# docs/r2-migration-plan.md. The .pmtiles files themselves are
+# gitignored below; only the rebuild + upload scripts are tracked.
 data/layers/dda-plots/
 data/layers/ad-plots/
 data/layers/oman-plots/
+# PMTiles assets moved to Cloudflare R2 on 2026-05-24 (a z18 rebuild
+# at 384MB total exceeded GitHub's 100MB per-file hard limit). To
+# rebuild + republish: scripts/rebuild-tiles-z18.sh + scripts/upload-tiles-r2.sh.
+public/tiles/*.pmtiles
 # Inset (negative-buffer) copy of the per-community plot GeoJSONs,
 # regenerated each pipeline run by scripts/inset-geojson.py. Same
 # rationale as data/layers/*-plots/ — too large for git, only used
