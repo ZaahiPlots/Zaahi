@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Protocol } from "pmtiles";
+import { MapboxOverlay } from "@deck.gl/mapbox";
+import { ScenegraphLayer } from "@deck.gl/mesh-layers";
 import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
@@ -206,6 +208,15 @@ const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
+
+// ── 3D-buildings spike (feat/3d-buildings-deckgl-spike, 2026-05-24) ──
+// Hero GLB hand-built in Blender 5.1 — see docs/research/3d-buildings-pilot/.
+// Drops a single Millennium Tower model onto the map via deck.gl's
+// ScenegraphLayer + MapboxOverlay. Always-on; no UI toggle (spike).
+// Z-fights with the OSM-derived PMTiles building at the same plot —
+// accepted for the spike per founder go.
+const HERO_GLB_URL = "/glb/millennium-tower-detailed.glb";
+const HERO_COORDS: [number, number] = [55.265898, 25.194813]; // Millennium Tower centroid (OSM way 203296254)
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1552,6 +1563,10 @@ function ParcelsMapPageInner() {
   } | null>(null);
   const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
+  // deck.gl MapboxOverlay carrying the spike's hero GLB. Created
+  // inside the map-init effect after the map instance is ready,
+  // torn down in that effect's cleanup. See HERO_GLB_URL above.
+  const deckOverlayRef = useRef<MapboxOverlay | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
@@ -3833,6 +3848,36 @@ function ParcelsMapPageInner() {
 
     mapRef.current = map;
 
+    // ── deck.gl spike — Millennium Tower hero GLB ───────────────────
+    // MapboxOverlay in `interleaved: true` mode shares MapLibre's
+    // WebGL context. ScenegraphLayer loads the GLB from /glb/ static
+    // assets and renders one instance at the building's centroid.
+    // No `beforeId` — overlay renders on top; the resulting z-fight
+    // with the underlying PMTiles building (OSM way 203296254) was
+    // accepted by founder for this spike scope. Cleanup below removes
+    // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
+    try {
+      const overlay = new MapboxOverlay({
+        interleaved: true,
+        layers: [
+          new ScenegraphLayer({
+            id: "hero-millennium-tower",
+            data: [{ position: HERO_COORDS }],
+            scenegraph: HERO_GLB_URL,
+            getPosition: (d: { position: [number, number] }) => d.position,
+            getOrientation: [0, 0, 0],
+            sizeScale: 1,
+            _lighting: "pbr",
+            pickable: false,
+          }),
+        ],
+      });
+      map.addControl(overlay as unknown as maplibregl.IControl);
+      deckOverlayRef.current = overlay;
+    } catch (e) {
+      console.warn("[deckgl-spike] overlay init failed:", e);
+    }
+
     // Toggleable WASD drone navigation (desktop only). Controller stays
     // installed for the map's lifetime; a separate effect drives
     // enable/disable based on `droneEnabled` state. Default is OFF so
@@ -3872,6 +3917,15 @@ function ParcelsMapPageInner() {
       droneCtrlRef.current = null;
       autoRotateCtrl.destroy();
       autoRotateCtrlRef.current = null;
+      // Detach deck.gl overlay before MapLibre.remove() so its WebGL
+      // resources release cleanly. Best-effort — ignore if MapLibre
+      // already torn down the map.
+      try {
+        if (deckOverlayRef.current) {
+          map.removeControl(deckOverlayRef.current as unknown as maplibregl.IControl);
+          deckOverlayRef.current = null;
+        }
+      } catch { /* map already gone, nothing to detach */ }
       popup.remove();
       map.remove();
       mapRef.current = null;
