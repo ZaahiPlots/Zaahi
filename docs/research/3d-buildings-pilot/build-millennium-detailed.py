@@ -47,37 +47,57 @@ D              = 33.0
 ROT_DEG        = 40.1
 
 GOLD_RGBA      = (0.78, 0.66, 0.43, 1.0)
-GLASS_RGBA     = (0.03, 0.06, 0.11, 1.0)
-WHITE_RGBA     = (0.92, 0.91, 0.87, 1.0)
-DARK_RGBA      = (0.32, 0.31, 0.30, 1.0)
-METAL_RGBA     = (0.20, 0.20, 0.22, 1.0)
+GLASS_RGBA     = (0.025, 0.05, 0.10, 1.0)     # very dark blue — reads as blue mirror glass
+WHITE_RGBA     = (0.93, 0.92, 0.88, 1.0)
+DARK_RGBA      = (0.16, 0.17, 0.20, 1.0)      # darker concrete for clear contrast
+SPANDREL_RGBA  = (0.62, 0.60, 0.55, 1.0)      # warm grey horizontal bands between floors
+METAL_RGBA     = (0.55, 0.56, 0.60, 1.0)      # brighter so spire reads as silver
 
 
 def make_material(name, base_rgba, metallic=0.05, roughness=0.7, transmission=0.0, glassy=False):
+    """Robust PBR material setup that works across Blender 4.x and 5.x.
+    Looks up the Principled BSDF by node type (not name), creates one
+    if absent, and assigns inputs by both name AND fallback index so a
+    renamed input ("Base Color" → "Color" etc.) still works.
+    """
     m = bpy.data.materials.new(name)
     m.use_nodes = True
-    n = m.node_tree.nodes.get("Principled BSDF")
-    if n:
-        n.inputs["Base Color"].default_value = base_rgba
-        if "Roughness" in n.inputs:
-            n.inputs["Roughness"].default_value = roughness
-        if "Metallic" in n.inputs:
-            n.inputs["Metallic"].default_value = metallic
-        for tname in ("Transmission Weight", "Transmission"):
-            if tname in n.inputs and transmission > 0:
-                n.inputs[tname].default_value = transmission
-                break
-        if glassy and "Alpha" in n.inputs:
-            n.inputs["Alpha"].default_value = 0.55
-            m.blend_method = "BLEND"
+    nt = m.node_tree
+    bsdf = None
+    for node in nt.nodes:
+        if node.bl_idname == "ShaderNodeBsdfPrincipled":
+            bsdf = node; break
+    if bsdf is None:
+        bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
+        out = next((nd for nd in nt.nodes if nd.bl_idname == "ShaderNodeOutputMaterial"), None)
+        if out is None:
+            out = nt.nodes.new("ShaderNodeOutputMaterial")
+        nt.links.new(bsdf.outputs[0], out.inputs[0])
+
+    def set_input(names, value):
+        for n in names:
+            if n in bsdf.inputs:
+                bsdf.inputs[n].default_value = value
+                return True
+        return False
+
+    set_input(["Base Color", "Color"], base_rgba)
+    set_input(["Roughness"], roughness)
+    set_input(["Metallic"], metallic)
+    if transmission > 0:
+        set_input(["Transmission Weight", "Transmission"], transmission)
+    # Debug print so we can see what's actually on the material
+    bc = bsdf.inputs.get("Base Color") or bsdf.inputs.get("Color")
+    print("[mat] %-22s base=%s metal=%.2f rough=%.2f" % (name, tuple(round(c, 3) for c in bc.default_value), metallic, roughness))
     return m
 
 
-MAT_GLASS = make_material("Glass_BlueGrey", (0.10, 0.16, 0.24, 1.0), metallic=0.05, roughness=0.65, transmission=0.0, glassy=False)
-MAT_FRAME = make_material("Frame_White",    WHITE_RGBA, metallic=0.05, roughness=0.82)
-MAT_DARK  = make_material("Concrete_Dark",  DARK_RGBA,  metallic=0.05, roughness=0.85)
-MAT_GOLD  = make_material("ZAAHI_Gold",     GOLD_RGBA,  metallic=0.65, roughness=0.30)
-MAT_METAL = make_material("Antenna_Metal",  METAL_RGBA, metallic=0.85, roughness=0.30)
+MAT_GLASS    = make_material("Glass_BlueGrey", GLASS_RGBA,    metallic=0.15, roughness=0.45)
+MAT_FRAME    = make_material("Frame_White",    WHITE_RGBA,    metallic=0.05, roughness=0.78)
+MAT_DARK     = make_material("Concrete_Dark",  DARK_RGBA,     metallic=0.05, roughness=0.82)
+MAT_SPANDREL = make_material("Spandrel_Warm",  SPANDREL_RGBA, metallic=0.10, roughness=0.65)
+MAT_GOLD     = make_material("ZAAHI_Gold",     GOLD_RGBA,     metallic=0.85, roughness=0.22)
+MAT_METAL    = make_material("Antenna_Metal",  METAL_RGBA,    metallic=0.92, roughness=0.18)
 
 rot_rad = math.radians(ROT_DEG)
 cR, sR  = math.cos(rot_rad), math.sin(rot_rad)
@@ -137,34 +157,103 @@ for side_sign in (+1, -1):
         bmf = box_bmesh(cx_w, cy_w, 0, BODY_TOP, FRAME_THICK, FRAME_PROUD, rot_rad)
         make_object("Frame_%d_%d" % (side_sign, int(x_local)), bmf, [MAT_FRAME])
 
-# Subtle horizontal floor bands on broad face — light grey spandrels
-# every 5 floors, slightly proud of the glass. Reads as "this tower has
-# articulated floors", much cleaner than the prior X-bracing experiment.
-BAND_PROUD = 0.10
-BAND_HEIGHT = 0.6
-for f in range(2, FLOORS, 5):
-    z_mid = f * FLOOR_H
+# Per-floor spandrel bands — warm-grey horizontal strip at the BOTTOM
+# of every floor (1.0 m tall, 0.08 m proud of the glass). On both
+# broad faces (between the two white frames) AND both short faces.
+BAND_PROUD = 0.08
+BAND_HEIGHT = 1.0
+broad_band_len = (FRAME_OFFSET * 2) - FRAME_THICK  # between the two frames
+short_band_len = D - 0.4  # short face length
+
+for f in range(1, FLOORS):  # floor 1..59 (skip ground + roof line)
+    z_bot = f * FLOOR_H
+    z_mid = z_bot + BAND_HEIGHT / 2
+    # broad faces (y=±D/2)
     for side_sign in (+1, -1):
         cy_local = side_sign * (D / 2 + BAND_PROUD / 2)
         cx_w, cy_w = to_world(0.0, cy_local)
-        # Run band only between the two frames (don't overlap them)
-        band_len = (FRAME_OFFSET * 2) - FRAME_THICK
         bm_b = bmesh.new()
-        hx, hy, hz = band_len / 2, BAND_PROUD / 2, BAND_HEIGHT / 2
-        verts_local = [
-            (-hx, -hy, z_mid - hz), (hx, -hy, z_mid - hz), (hx, hy, z_mid - hz), (-hx, hy, z_mid - hz),
-            (-hx, -hy, z_mid + hz), (hx, -hy, z_mid + hz), (hx, hy, z_mid + hz), (-hx, hy, z_mid + hz),
-        ]
+        hx, hy, hz = broad_band_len / 2, BAND_PROUD / 2, BAND_HEIGHT / 2
+        vl = [(-hx, -hy, z_mid - hz), (hx, -hy, z_mid - hz), (hx, hy, z_mid - hz), (-hx, hy, z_mid - hz),
+              (-hx, -hy, z_mid + hz), (hx, -hy, z_mid + hz), (hx, hy, z_mid + hz), (-hx, hy, z_mid + hz)]
         bv = []
-        for x, y, z in verts_local:
-            rx = cR * x - sR * y + cx_w
-            ry = sR * x + cR * y + cy_w
+        for x, y, z in vl:
+            rx = cR * x - sR * y + cx_w; ry = sR * x + cR * y + cy_w
             bv.append(bm_b.verts.new((rx, ry, z)))
         bm_b.verts.ensure_lookup_table()
         for fi in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]:
             bm_b.faces.new([bv[i] for i in fi])
         bm_b.normal_update()
-        make_object("FloorBand_%d_%d" % (side_sign, f), bm_b, [MAT_FRAME])
+        make_object("SpandrelB_%d_%d" % (side_sign, f), bm_b, [MAT_SPANDREL])
+    # short faces (x=±W/2)
+    for side_sign in (+1, -1):
+        cx_local = side_sign * (W / 2 + BAND_PROUD / 2)
+        cx_w, cy_w = to_world(cx_local, 0.0)
+        bm_b = bmesh.new()
+        # short-face spandrel: oriented along Y (short axis)
+        hx, hy, hz = BAND_PROUD / 2, short_band_len / 2, BAND_HEIGHT / 2
+        vl = [(-hx, -hy, z_mid - hz), (hx, -hy, z_mid - hz), (hx, hy, z_mid - hz), (-hx, hy, z_mid - hz),
+              (-hx, -hy, z_mid + hz), (hx, -hy, z_mid + hz), (hx, hy, z_mid + hz), (-hx, hy, z_mid + hz)]
+        bv = []
+        for x, y, z in vl:
+            rx = cR * x - sR * y + cx_w; ry = sR * x + cR * y + cy_w
+            bv.append(bm_b.verts.new((rx, ry, z)))
+        bm_b.verts.ensure_lookup_table()
+        for fi in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]:
+            bm_b.faces.new([bv[i] for i in fi])
+        bm_b.normal_update()
+        make_object("SpandrelS_%d_%d" % (side_sign, f), bm_b, [MAT_SPANDREL])
+
+# Vertical mullions — thin white-concrete strips running full height
+# between the spandrel bands. 5 per broad face + 3 per short face.
+MULLION_PROUD = 0.10
+MULLION_WIDTH = 0.30
+
+# broad face mullions: between the two frames at -FRAME_OFFSET..+FRAME_OFFSET,
+# excluding the frames themselves
+n_broad = 5
+broad_inner_w = (FRAME_OFFSET * 2) - FRAME_THICK
+broad_pitch = broad_inner_w / (n_broad + 1)
+broad_xs = [-broad_inner_w / 2 + (i + 1) * broad_pitch for i in range(n_broad)]
+for side_sign in (+1, -1):
+    for x_local in broad_xs:
+        cy_local = side_sign * (D / 2 + MULLION_PROUD / 2)
+        cx_w, cy_w = to_world(x_local, cy_local)
+        bm_m = bmesh.new()
+        hx, hy, hz_z = MULLION_WIDTH / 2, MULLION_PROUD / 2, BODY_TOP / 2
+        vl = [(-hx, -hy, 0), (hx, -hy, 0), (hx, hy, 0), (-hx, hy, 0),
+              (-hx, -hy, BODY_TOP), (hx, -hy, BODY_TOP), (hx, hy, BODY_TOP), (-hx, hy, BODY_TOP)]
+        bv = []
+        for x, y, z in vl:
+            rx = cR * x - sR * y + cx_w; ry = sR * x + cR * y + cy_w
+            bv.append(bm_m.verts.new((rx, ry, z)))
+        bm_m.verts.ensure_lookup_table()
+        for fi in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]:
+            bm_m.faces.new([bv[i] for i in fi])
+        bm_m.normal_update()
+        make_object("MullionB_%d_%d" % (side_sign, int(x_local * 10)), bm_m, [MAT_FRAME])
+
+# short face mullions: 3 evenly spaced
+n_short = 3
+short_pitch = (D - 1.0) / (n_short + 1)
+short_ys = [-D / 2 + 0.5 + (i + 1) * short_pitch for i in range(n_short)]
+for side_sign in (+1, -1):
+    for y_local in short_ys:
+        cx_local = side_sign * (W / 2 + MULLION_PROUD / 2)
+        cx_w, cy_w = to_world(cx_local, y_local)
+        bm_m = bmesh.new()
+        hx, hy = MULLION_PROUD / 2, MULLION_WIDTH / 2
+        vl = [(-hx, -hy, 0), (hx, -hy, 0), (hx, hy, 0), (-hx, hy, 0),
+              (-hx, -hy, BODY_TOP), (hx, -hy, BODY_TOP), (hx, hy, BODY_TOP), (-hx, hy, BODY_TOP)]
+        bv = []
+        for x, y, z in vl:
+            rx = cR * x - sR * y + cx_w; ry = sR * x + cR * y + cy_w
+            bv.append(bm_m.verts.new((rx, ry, z)))
+        bm_m.verts.ensure_lookup_table()
+        for fi in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]:
+            bm_m.faces.new([bv[i] for i in fi])
+        bm_m.normal_update()
+        make_object("MullionS_%d_%d" % (side_sign, int(y_local * 10)), bm_m, [MAT_FRAME])
 
 # Gold ZAAHI accent ring
 gold_bm = box_bmesh(0, 0, BODY_TOP - 0.5, BODY_TOP + 0.3, W + 0.4, D + 0.4, rot_rad)
@@ -210,27 +299,36 @@ for face_idx in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 
 bm_s.normal_update()
 make_object("Antenna_Spire", bm_s, [MAT_METAL])
 
-# Floor accent lines (every 5 floors)
-for f in range(5, FLOORS, 5):
-    z = f * FLOOR_H
-    bm_l = box_bmesh(0, 0, z - 0.08, z + 0.08, W + 0.12, D + 0.12, rot_rad)
-    make_object("FloorLine_%d" % f, bm_l, [MAT_DARK])
+# (Per-floor spandrels above replace the every-5-floor accent rings.)
 
 # Ground plane — sandy concrete grey, contrasts the building cleanly
 import mathutils
 bpy.ops.mesh.primitive_plane_add(size=2000, location=(0, 0, -0.05))
 ground = bpy.context.object
 ground.name = "Ground"
-ground_mat = make_material("Ground_Sand", (0.28, 0.26, 0.22, 1.0), metallic=0.0, roughness=0.95)
+ground_mat = make_material("Ground_DarkGrey", (0.10, 0.10, 0.11, 1.0), metallic=0.0, roughness=0.92)
 ground.data.materials.append(ground_mat)
 
-# Sun — single key light, moderate energy
-sun = bpy.data.lights.new("Sun", type="SUN")
-sun.energy = 1.5
-sun.angle = math.radians(2.5)
-sun_obj = bpy.data.objects.new("Sun", sun)
-sun_obj.rotation_euler = (math.radians(50), math.radians(10), math.radians(40))
-bpy.context.collection.objects.link(sun_obj)
+# ── 3-point studio lighting ──
+key = bpy.data.lights.new("Key", type="SUN")
+key.energy = 1.8
+key.angle = math.radians(1.2)
+key.color = (1.0, 0.94, 0.88)
+key_obj = bpy.data.objects.new("Key", key)
+key_obj.rotation_euler = (math.radians(48), math.radians(12), math.radians(50))
+bpy.context.collection.objects.link(key_obj)
+fill = bpy.data.lights.new("Fill", type="SUN")
+fill.energy = 0.4
+fill.color = (0.78, 0.85, 1.0)
+fill_obj = bpy.data.objects.new("Fill", fill)
+fill_obj.rotation_euler = (math.radians(70), 0, math.radians(-130))
+bpy.context.collection.objects.link(fill_obj)
+rim = bpy.data.lights.new("Rim", type="SUN")
+rim.energy = 0.7
+rim.color = (1.0, 0.9, 0.7)
+rim_obj = bpy.data.objects.new("Rim", rim)
+rim_obj.rotation_euler = (math.radians(85), 0, math.radians(160))
+bpy.context.collection.objects.link(rim_obj)
 
 # Camera — close enough to fill frame; aimed at upper third (more sky context)
 cam = bpy.data.cameras.new("Camera")
@@ -257,22 +355,19 @@ scn.render.resolution_y = 1200
 scn.render.resolution_percentage = 100
 scn.render.film_transparent = False
 scn.view_settings.view_transform = "AgX"
-scn.view_settings.exposure = -1.4
+scn.view_settings.exposure = 0.0
+scn.view_settings.look = "None"
 scn.world.use_nodes = True
-# Replace plain background with a procedural Sky Texture so the scene
-# gets proper IBL falloff — that's what makes glass-like materials
-# show contrast against the sky (real photo-style lighting).
+# Plain dark world — no sky IBL. The 3-point lighting above is what
+# carves out form. Removing the sky IBL is essential — the procedural
+# sky was blasting glass + frames with so much ambient light that
+# every material read white regardless of base color.
 ntree = scn.world.node_tree
 ntree.nodes.clear()
-sky_node = ntree.nodes.new("ShaderNodeTexSky")
-sky_node.sky_type = "MULTIPLE_SCATTERING"
-sky_node.sun_elevation = math.radians(40)
-sky_node.sun_rotation = math.radians(120)
-sky_node.air_density = 1.2
 bg_node = ntree.nodes.new("ShaderNodeBackground")
-bg_node.inputs["Strength"].default_value = 0.6
+bg_node.inputs["Color"].default_value = (0.06, 0.07, 0.10, 1.0)
+bg_node.inputs["Strength"].default_value = 0.3
 out_node = ntree.nodes.new("ShaderNodeOutputWorld")
-ntree.links.new(sky_node.outputs["Color"], bg_node.inputs["Color"])
 ntree.links.new(bg_node.outputs["Background"], out_node.inputs["Surface"])
 
 render_path = os.path.join(OUT_DIR, "millennium-tower-render.png")
