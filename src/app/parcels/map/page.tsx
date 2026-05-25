@@ -1576,6 +1576,8 @@ function ParcelsMapPageInner() {
   const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
   const [glbYaw, setGlbYaw] = useState<number>(0);
+  const [glbPitch, setGlbPitch] = useState<number>(0);
+  const [glbRoll, setGlbRoll] = useState<number>(0);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4007,7 +4009,9 @@ function ParcelsMapPageInner() {
     console.log("[GLB] creating ScenegraphLayer:", {
       url: HERO_GLB_URL,
       coords: [glbLng, glbLat],
+      pitch: glbPitch,
       yaw: glbYaw,
+      roll: glbRoll,
       sizeScale: 1.0,
     });
     overlay.setProps({
@@ -4017,7 +4021,7 @@ function ParcelsMapPageInner() {
           data: [{ position: [glbLng, glbLat] as [number, number] }],
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number] }) => d.position,
-          getOrientation: [0, glbYaw, 0],
+          getOrientation: [glbPitch, glbYaw, glbRoll],
           sizeScale: 1.0,
           _lighting: "pbr",
           pickable: false,
@@ -4025,7 +4029,7 @@ function ParcelsMapPageInner() {
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbActive, devMode, overlayReady]);
+  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
@@ -4085,7 +4089,7 @@ function ParcelsMapPageInner() {
   };
 
   const copyGlbConfig = () => {
-    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}] }],\ngetOrientation: [0, ${glbYaw}, 90],`;
+    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4491,6 +4495,44 @@ function ParcelsMapPageInner() {
         <div style={{ fontSize: 9, opacity: 0.6, marginTop: 4 }}>
           Shift+wheel on map for fine yaw
         </div>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          pitch: {glbPitch}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={glbPitch}
+          onChange={(e) => setGlbPitch(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          roll: {glbRoll}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={glbRoll}
+          onChange={(e) => setGlbRoll(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
         <button
           type="button"
           onClick={copyGlbConfig}
