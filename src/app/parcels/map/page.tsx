@@ -1598,6 +1598,10 @@ function ParcelsMapPageInner() {
   const [khalifaRoll, setKhalifaRoll] = useState<number>(HERO_ORIENTATION_KHALIFA[2]);
   const [khalifaSize, setKhalifaSize] = useState<number>(HERO_SIZE_SCALE_KHALIFA);
   const [khalifaElev, setKhalifaElev] = useState<number>(HERO_COORDS_KHALIFA[2]);
+  const [khalifaLng, setKhalifaLng] = useState<number>(HERO_COORDS_KHALIFA[0]);
+  const [khalifaLat, setKhalifaLat] = useState<number>(HERO_COORDS_KHALIFA[1]);
+  const [khalifaHandlePx, setKhalifaHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingKhalifaRef = useRef(false);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4049,7 +4053,7 @@ function ParcelsMapPageInner() {
         }),
         new ScenegraphLayer({
           id: "hero-burj-khalifa",
-          data: [{ position: [HERO_COORDS_KHALIFA[0], HERO_COORDS_KHALIFA[1], khalifaElev] as [number, number, number] }],
+          data: [{ position: [khalifaLng, khalifaLat, khalifaElev] as [number, number, number] }],
           scenegraph: HERO_GLB_URL_KHALIFA,
           getPosition: (d: { position: [number, number, number] }) => d.position,
           getOrientation: [khalifaPitch, khalifaYaw, khalifaRoll],
@@ -4061,7 +4065,7 @@ function ParcelsMapPageInner() {
       ],
     });
   }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
-      khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
+      khalifaLng, khalifaLat, khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
       glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
@@ -4121,6 +4125,48 @@ function ParcelsMapPageInner() {
     document.addEventListener("mouseup", onUp);
   };
 
+  // Burj Khalifa handle — independent screen-space projection of its
+  // own [lng, lat] so the drag circle stays anchored to the building.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([khalifaLng, khalifaLat]);
+      setKhalifaHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => {
+      map.off("move", project);
+    };
+  }, [khalifaLng, khalifaLat, mapStyleReady, devMode]);
+
+  const onKhalifaHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const map = mapRef.current;
+    if (!map) return;
+    map.dragPan.disable();
+    draggingKhalifaRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      ]);
+      setKhalifaLng(ll.lng);
+      setKhalifaLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable();
+      draggingKhalifaRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
   const copyGlbConfig = () => {
     const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
     try {
@@ -4131,7 +4177,7 @@ function ParcelsMapPageInner() {
   };
 
   const copyKhalifaConfig = () => {
-    const text = `// Burj Khalifa\ndata: [{ position: [${HERO_COORDS_KHALIFA[0]}, ${HERO_COORDS_KHALIFA[1]}, ${khalifaElev}] }],\ngetOrientation: [${khalifaPitch}, ${khalifaYaw}, ${khalifaRoll}],\nsizeScale: ${khalifaSize},`;
+    const text = `// Burj Khalifa\ndata: [{ position: [${khalifaLng.toFixed(6)}, ${khalifaLat.toFixed(6)}, ${khalifaElev}] }],\ngetOrientation: [${khalifaPitch}, ${khalifaYaw}, ${khalifaRoll}],\nsizeScale: ${khalifaSize},`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4461,7 +4507,7 @@ function ParcelsMapPageInner() {
       {devMode && glbHandlePx && glbActive && (
         <div
           onMouseDown={onGlbHandleMouseDown}
-          title="Drag to move GLB anchor"
+          title="Drag to move Burj Crown anchor"
           style={{
             position: "absolute",
             left: glbHandlePx.x - 12,
@@ -4469,6 +4515,27 @@ function ParcelsMapPageInner() {
             width: 24,
             height: 24,
             cursor: draggingGlbRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E",
+            borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow:
+              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50,
+            pointerEvents: "auto",
+          }}
+        />
+      )}
+      {devMode && khalifaHandlePx && glbActive && (
+        <div
+          onMouseDown={onKhalifaHandleMouseDown}
+          title="Drag to move Burj Khalifa anchor"
+          style={{
+            position: "absolute",
+            left: khalifaHandlePx.x - 12,
+            top: khalifaHandlePx.y - 12,
+            width: 24,
+            height: 24,
+            cursor: draggingKhalifaRef.current ? "grabbing" : "grab",
             border: "2px solid #C8A96E",
             borderRadius: "50%",
             background: "rgba(200,169,110,0.2)",
@@ -4676,10 +4743,10 @@ function ParcelsMapPageInner() {
           BURJ KHALIFA (dev)
         </div>
         <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {HERO_COORDS_KHALIFA[0].toFixed(6)}
+          lng: {khalifaLng.toFixed(6)}
         </div>
         <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {HERO_COORDS_KHALIFA[1].toFixed(6)}
+          lat: {khalifaLat.toFixed(6)}
         </div>
         <div
           style={{
