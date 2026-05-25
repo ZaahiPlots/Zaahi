@@ -210,15 +210,15 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
-// ── 3D-buildings — Millennium Tower v12 hero (2026-05-25) ──
-// v12 build — best parametric ceiling from 7-iteration vision-compare
-// loop (45 % similarity vs reference photos, see BB_HEROES_RESEARCH.md
-// + image-compare.py). Footprint baked in real-world OSM dimensions
-// 43 × 33 m, ROT_DEG 40.1° preserved. Anchor coords founder-locked via
-// in-map GLB dev-tool drag-handle 2026-05-25. yaw +10° aligns broad
-// face with Sheikh Zayed Road (SW→NE).
-const HERO_GLB_URL = "/glb/millennium-tower-detailed.glb";
-const HERO_COORDS: [number, number] = [55.265873, 25.194853]; // Founder dev-tool r2 (2026-05-25)
+// ── 3D-buildings — Burj Khalifa hero from Sketchfab (2026-05-25) ──
+// Original 22 MB / 661K-triangle model from Sketchfab, NOT decimated
+// per founder spec. Lazy-loaded only at zoom ≥ 14 within 5 km of
+// Downtown Dubai (see lazy-gate effect below). sizeScale 0.33
+// compensates for the Sketchfab artist's 3× footprint scaling so the
+// model's 154 m footprint renders as the real Burj's ~50 m on map.
+// Founder will dial yaw + fine-tune position via ?dev=1 dev-tool.
+const HERO_GLB_URL = "/glb/buildings/burj-khalifa.glb";
+const HERO_COORDS: [number, number] = [55.274288, 25.197525]; // WGS84 Mohammed Bin Rashid Boulevard
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1575,7 +1575,7 @@ function ParcelsMapPageInner() {
   // current production yaw (+10°), so first paint matches prod exactly.
   const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
-  const [glbYaw, setGlbYaw] = useState<number>(12);
+  const [glbYaw, setGlbYaw] = useState<number>(0);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -3877,29 +3877,29 @@ function ParcelsMapPageInner() {
     // with the underlying PMTiles building (OSM way 203296254) was
     // accepted by founder for this spike scope. Cleanup below removes
     // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
-    // Default route: skip deck.gl GLB overlay entirely. Only initialise
-    // when ?dev=1 is present in the URL (founder dev mode for hero
-    // building model iteration).
-    if (devMode) {
-      try {
-        const lightingEffect = new LightingEffect({
-          ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
-          dir: new DirectionalLight({
-            color: [255, 245, 230],
-            intensity: 2.0,
-            direction: [-1, -3, -1],
-          }),
-        });
-        const overlay = new MapboxOverlay({
-          interleaved: true,
-          effects: [lightingEffect],
-          layers: [],
-        });
-        map.addControl(overlay as unknown as maplibregl.IControl);
-        deckOverlayRef.current = overlay;
-      } catch (e) {
-        console.warn("[deckgl-spike] overlay init failed:", e);
-      }
+    // deck.gl overlay always created. ScenegraphLayer is added by the
+    // sync effect below ONLY when the lazy-gate effect flips glbActive
+    // (zoom ≥ 14 + within 5 km of Downtown Dubai). Default route gets
+    // the empty MapboxOverlay; ?dev=1 additionally enables drag handle
+    // and yaw slider for live position tuning.
+    try {
+      const lightingEffect = new LightingEffect({
+        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
+        dir: new DirectionalLight({
+          color: [255, 245, 230],
+          intensity: 2.0,
+          direction: [-1, -3, -1],
+        }),
+      });
+      const overlay = new MapboxOverlay({
+        interleaved: true,
+        effects: [lightingEffect],
+        layers: [],
+      });
+      map.addControl(overlay as unknown as maplibregl.IControl);
+      deckOverlayRef.current = overlay;
+    } catch (e) {
+      console.warn("[deckgl-spike] overlay init failed:", e);
     }
 
     // Toggleable WASD drone navigation (desktop only). Controller stays
@@ -3961,16 +3961,18 @@ function ParcelsMapPageInner() {
   // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !devMode) return;
-    const BB_LNG = 55.271;
-    const BB_LAT = 25.1875;
+    if (!map) return;
+    // Anchor recentered to Burj Khalifa (was BB). 5 km radius still covers
+    // BB + DIFC + Downtown for future heroes layered onto this overlay.
+    const BURJ_LNG = 55.274288;
+    const BURJ_LAT = 25.197525;
     const MAX_KM = 5;
     const MIN_ZOOM = 14;
     const evaluate = () => {
       const z = map.getZoom();
       const c = map.getCenter();
-      const dx = (c.lng - BB_LNG) * 111 * Math.cos(BB_LAT * Math.PI / 180);
-      const dy = (c.lat - BB_LAT) * 111;
+      const dx = (c.lng - BURJ_LNG) * 111 * Math.cos(BURJ_LAT * Math.PI / 180);
+      const dy = (c.lat - BURJ_LAT) * 111;
       const distKm = Math.hypot(dx, dy);
       const next = z >= MIN_ZOOM && distKm <= MAX_KM;
       setGlbActive((prev) => (prev === next ? prev : next));
@@ -3982,14 +3984,14 @@ function ParcelsMapPageInner() {
       map.off("moveend", evaluate);
       map.off("zoomend", evaluate);
     };
-  }, [mapStyleReady, devMode]);
+  }, [mapStyleReady]);
 
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
   // Also lazy-gated by glbActive — when false, layers cleared (no GLB
   // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
-    if (!overlay || !devMode) return;
+    if (!overlay) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
@@ -4002,13 +4004,13 @@ function ParcelsMapPageInner() {
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number] }) => d.position,
           getOrientation: [0, glbYaw, 90],
-          sizeScale: 1,
+          sizeScale: 0.33,
           _lighting: "pbr",
           pickable: false,
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbActive, devMode]);
+  }, [glbLng, glbLat, glbYaw, glbActive]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
