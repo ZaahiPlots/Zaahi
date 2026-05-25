@@ -218,7 +218,7 @@ const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 // in-map GLB dev-tool drag-handle 2026-05-25. yaw +10° aligns broad
 // face with Sheikh Zayed Road (SW→NE).
 const HERO_GLB_URL = "/glb/millennium-tower-detailed.glb";
-const HERO_COORDS: [number, number] = [55.266357, 25.195364]; // Founder-locked (dev-tool tuned)
+const HERO_COORDS: [number, number] = [55.265873, 25.194853]; // Founder dev-tool r2 (2026-05-25)
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1575,7 +1575,7 @@ function ParcelsMapPageInner() {
   // current production yaw (+10°), so first paint matches prod exactly.
   const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
-  const [glbYaw, setGlbYaw] = useState<number>(10);
+  const [glbYaw, setGlbYaw] = useState<number>(12);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -3893,12 +3893,11 @@ function ParcelsMapPageInner() {
             getPosition: (d: { position: [number, number] }) => d.position,
             // [pitch, yaw, roll] in degrees.
             //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  +10  → counter-clockwise (viewed from above) so the
-            //     building's broad face lines up parallel to Sheikh
-            //     Zayed Road (SW→NE). Founder iterated via the in-map
-            //     dev-tool (drag handle + yaw slider): -50 → -30 → +10.
-            //     Final value 2026-05-25.
-            getOrientation: [0, 10, 90],
+            //   yaw  +12  → counter-clockwise so the broad face lines
+            //     up parallel to Sheikh Zayed Road (SW→NE). Founder
+            //     iterated via in-map dev-tool: -50 → -30 → +10 → +12.
+            //     Current value 2026-05-25 r2.
+            getOrientation: [0, 12, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
