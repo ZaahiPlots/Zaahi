@@ -218,7 +218,12 @@ const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 // Lazy-loaded at zoom ≥ 14 within 5 km of Downtown Dubai. Hero gated
 // behind ?dev=1 while founder evaluates model bank quality.
 const HERO_GLB_URL = "/glb/buildings/burj-crown.glb";
-const HERO_COORDS: [number, number] = [55.270, 25.190]; // Downtown Dubai Boulevard
+// Founder-locked Burj Crown placement on Downtown Boulevard (2026-05-26).
+// Position is [lng, lat, elev_meters]; orientation is [pitch, yaw, roll]
+// in degrees fed to deck.gl ScenegraphLayer.getOrientation.
+const HERO_COORDS: [number, number, number] = [55.268903, 25.193977, 500];
+const HERO_ORIENTATION: [number, number, number] = [1, -80, -86];
+const HERO_SIZE_SCALE = 2.40;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1575,11 +1580,11 @@ function ParcelsMapPageInner() {
   // current production yaw (+10°), so first paint matches prod exactly.
   const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
-  const [glbYaw, setGlbYaw] = useState<number>(0);
-  const [glbPitch, setGlbPitch] = useState<number>(0);
-  const [glbRoll, setGlbRoll] = useState<number>(0);
-  const [glbSize, setGlbSize] = useState<number>(1.0);
-  const [glbElev, setGlbElev] = useState<number>(0);
+  const [glbYaw, setGlbYaw] = useState<number>(HERO_ORIENTATION[1]);
+  const [glbPitch, setGlbPitch] = useState<number>(HERO_ORIENTATION[0]);
+  const [glbRoll, setGlbRoll] = useState<number>(HERO_ORIENTATION[2]);
+  const [glbSize, setGlbSize] = useState<number>(HERO_SIZE_SCALE);
+  const [glbElev, setGlbElev] = useState<number>(HERO_COORDS[2]);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
