@@ -1580,6 +1580,13 @@ function ParcelsMapPageInner() {
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
   const [glbActive, setGlbActive] = useState(false);
+  // URL gate — default route ships zero deck.gl. ?dev=1 enables the GLB
+  // hero + drag-handle / yaw-slider / Copy-Config panel.
+  const [devMode, setDevMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setDevMode(new URLSearchParams(window.location.search).get("dev") === "1");
+  }, []);
   const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
@@ -3870,33 +3877,29 @@ function ParcelsMapPageInner() {
     // with the underlying PMTiles building (OSM way 203296254) was
     // accepted by founder for this spike scope. Cleanup below removes
     // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
-    try {
-      // PBR lighting effect — _lighting: "pbr" on the layer is a no-op
-      // without lights in the deck.gl scene; without this effect the
-      // model renders pure black (no ambient, no sun). Ambient gives
-      // baseline read; DirectionalLight gives shape via cast shadows /
-      // shading. Tuned bright enough that the dark-blue glass material
-      // doesn't go to black on the shaded side.
-      const lightingEffect = new LightingEffect({
-        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
-        dir: new DirectionalLight({
-          color: [255, 245, 230],
-          intensity: 2.0,
-          direction: [-1, -3, -1],
-        }),
-      });
-      // Lazy: start with empty layers. The sync effect below populates
-      // the ScenegraphLayer only when glbActive is true (zoom ≥ 14 + within
-      // ~5 km of BB centroid). Saves the 1.2 MB GLB fetch on city-wide views.
-      const overlay = new MapboxOverlay({
-        interleaved: true,
-        effects: [lightingEffect],
-        layers: [],
-      });
-      map.addControl(overlay as unknown as maplibregl.IControl);
-      deckOverlayRef.current = overlay;
-    } catch (e) {
-      console.warn("[deckgl-spike] overlay init failed:", e);
+    // Default route: skip deck.gl GLB overlay entirely. Only initialise
+    // when ?dev=1 is present in the URL (founder dev mode for hero
+    // building model iteration).
+    if (devMode) {
+      try {
+        const lightingEffect = new LightingEffect({
+          ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
+          dir: new DirectionalLight({
+            color: [255, 245, 230],
+            intensity: 2.0,
+            direction: [-1, -3, -1],
+          }),
+        });
+        const overlay = new MapboxOverlay({
+          interleaved: true,
+          effects: [lightingEffect],
+          layers: [],
+        });
+        map.addControl(overlay as unknown as maplibregl.IControl);
+        deckOverlayRef.current = overlay;
+      } catch (e) {
+        console.warn("[deckgl-spike] overlay init failed:", e);
+      }
     }
 
     // Toggleable WASD drone navigation (desktop only). Controller stays
@@ -3958,7 +3961,7 @@ function ParcelsMapPageInner() {
   // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !devMode) return;
     const BB_LNG = 55.271;
     const BB_LAT = 25.1875;
     const MAX_KM = 5;
@@ -3979,14 +3982,14 @@ function ParcelsMapPageInner() {
       map.off("moveend", evaluate);
       map.off("zoomend", evaluate);
     };
-  }, [mapStyleReady]);
+  }, [mapStyleReady, devMode]);
 
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
   // Also lazy-gated by glbActive — when false, layers cleared (no GLB
   // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
-    if (!overlay) return;
+    if (!overlay || !devMode) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
@@ -4005,14 +4008,14 @@ function ParcelsMapPageInner() {
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbActive]);
+  }, [glbLng, glbLat, glbYaw, glbActive, devMode]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
   // Shift+wheel on the map container for ±1° yaw nudge.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !devMode) return;
     const project = () => {
       const p = map.project([glbLng, glbLat]);
       setGlbHandlePx({ x: p.x, y: p.y });
@@ -4032,7 +4035,7 @@ function ParcelsMapPageInner() {
       map.off("move", project);
       container.removeEventListener("wheel", onWheel);
     };
-  }, [glbLng, glbLat, mapStyleReady]);
+  }, [glbLng, glbLat, mapStyleReady, devMode]);
 
   // ── GLB dev-tool — pointer drag of the GLB anchor. Hooks into the
   // crosshair handle's onMouseDown; the rest of the drag is tracked
@@ -4390,8 +4393,9 @@ function ParcelsMapPageInner() {
           yaw slider or Shift+wheel on the map for rotation; Copy
           Config writes a drop-in HERO_COORDS + getOrientation snippet
           to the clipboard. Removable in one diff once positions are
-          finalised. Glassmorphism per CLAUDE.md UI Style Guide. */}
-      {glbHandlePx && glbActive && (
+          finalised. Glassmorphism per CLAUDE.md UI Style Guide.
+          v.2: gated behind ?dev=1 — default route ships no dev-tool. */}
+      {devMode && glbHandlePx && glbActive && (
         <div
           onMouseDown={onGlbHandleMouseDown}
           title="Drag to move GLB anchor"
@@ -4412,7 +4416,7 @@ function ParcelsMapPageInner() {
           }}
         />
       )}
-      <div
+      {devMode && <div
         style={{
           position: "absolute",
           top: 80,
@@ -4500,7 +4504,7 @@ function ParcelsMapPageInner() {
         >
           Copy Config
         </button>
-      </div>
+      </div>}
 
       {/* Sun-time override slider — visible only when the ☀ button in
           the right stack is toggled on. Drives the directional-light
