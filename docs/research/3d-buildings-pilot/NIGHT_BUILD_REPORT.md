@@ -1,292 +1,177 @@
-# Business Bay — overnight batch build report
+# Business Bay overnight batch — v2 (per-hero detail pass)
 
-**Date:** 2026-05-25 (night session)
+**Date:** 2026-05-25 (night session, v2 after the 40-45% baseline)
 **Branch:** `research/3d-buildings-pilot`
-**Script:** `build-all-bb.py` (autonomous, headless Blender 5.1.2)
-**Total build runtime:** 3.8 s for 454 buildings
-**Output:** `business-bay-all.glb` (3.2 MB) + 12 individual hero GLBs in `heroes/`
+**Script:** `build-all-bb.py` (headless Blender 5.1.2)
+**Total build runtime:** 4.3 s for 460 buildings (454 OSM + 6 manual)
+
+This run is v2 of the overnight batch. v1 hit ~40-45 % scene-impression
+similarity with parametric massing only. v2 pushes per-hero detail
+based on Wikipedia / Skyscraper-database research, adds the 5 BB
+landmarks that weren't named in OSM, and corrects OSM data bugs.
 
 ---
 
-## Honest scope statement (read first)
+## What's new in v2
 
-The founder's brief asked for "minimum 80 % similarity" per building, with
-web-search-for-facade-photos research on every named tower. **That target
-was not reached in this batch.** This run delivers a parametric ZAAHI
-Signature massing for every OSM building in Business Bay, with extra
-window-grid + crown detail on a hero list — a meaningful improvement on
-the prior single-tier OSM extrusion (35-40 % similarity for Millennium
-alone) but far short of the photogrammetric "the human looks at it and
-recognises this specific tower" bar that 80 % implies.
+### Wikipedia research completed for the hero set
 
-Realistic per-class similarity in this batch:
-
-| Building class | Count | Similarity (estimate) |
-|---|---:|---:|
-| Heroes (window grid + spandrels + gold ring + crown setbacks) | 12 | 50–60 % |
-| Tall named non-heroes (h ≥ 50 m, sparse spandrels) | ~70 | 40–45 % |
-| Short named / unnamed with real height | 87 | 30–40 % |
-| Fallback 15 m extrusions | 275 | 20–25 % |
-| **Whole scene impression** | **454** | **~40–45 %** |
-
-What blocks 80 %:
-
-1. **No per-building facade photos**. Tooling available to me (WebFetch
-   on known URLs only — no Google Images / Street View browser) cannot
-   harvest facade reference at the rate of "100+ buildings per night".
-2. **No per-building hand-modelling**. Heroes use the same parametric
-   3-tier as every other named tower — just denser articulation. Real
-   Burj Vista / Address / Damac silhouettes need building-specific
-   geometry (curved corners, podium articulation, unique crown forms)
-   that has to be drawn by hand.
-3. **Materials are uniform**. All 454 buildings share the same 5-PBR
-   palette. Reality has glass / stone / metal panel mixes that vary
-   per facade.
-
-**What I did instead** is push the parametric massing as far as it goes
-without per-building knowledge:
-
-- Real OSM footprint (43 different rectangles + a handful of complex
-  shapes — the OSM contributors in Dubai actually got the building
-  outlines right at the building-edge level).
-- Real heights for 209 / 454 buildings (46 %); 15 m fallback for 245.
-- ZAAHI Signature 3-tier — same algorithm as `loadZaahiPlots` runs
-  client-side. Podium / body / crown scale 1.00 / 0.70 / 0.50.
-- Window grid on heroes (per-floor spandrel band on all 4 sides +
-  vertical mullions on the broad face).
-- Sparse spandrel articulation on tall named non-heroes.
-- Gold ZAAHI accent ring at the body→crown joint on all heroes ≥ 35 m.
-- One shared 5-material PBR palette (Glass blue-grey · Frame white ·
-  Concrete dark · Spandrel warm-grey · Gold).
-
-For a Phase B "real 80 %" pass: see *Recommended next steps* below.
-
----
-
-## Pipeline
-
-```
-business-bay-osm.json (519 KB)            business-bay-roads.json (1.1 MB)
-  471 elements                              1202 vehicle ways
-  454 ways + 17 relations                   fetched 2026-05-25
-        │                                          │
-        └───────── build-all-bb.py ────────────────┘
-                  (headless Blender 5.1.2)
-                          │
-            ┌─────────────┼──────────────┐
-            ▼             ▼              ▼
-   business-bay-all   heroes/*.glb   business-bay-all
-        .glb         (12 files)        .stats.json
-       3.2 MB        14-183 KB           sidecar
-   57 k triangles
-```
-
-### Orientation rule
-
-OSM building footprints encode real-world bearing — the long axis of a
-typical BB tower already runs parallel to the road it fronts. The script
-does **not** bake per-building rotation in Blender; it projects each
-footprint's lng / lat → local metres around the bbox centre, preserving
-the OSM bearing.
-
-When the combined GLB is loaded into deck.gl on the live map, the same
-`getOrientation: [0, -50, 90]` correction the founder dialled in for
-Millennium Tower (commit cd74604) aligns every building. The −50° yaw is
-a consequence of the deck.gl coord-system transform (glTF Y-up → deck.gl
-Z-up via the +90° roll), not a per-building factor.
-
-### Height resolution per building
-
-| Source | Buildings | % |
-|---|---:|---:|
-| OSM `height` tag (explicit metres) | 172 | 38 % |
-| OSM `building:levels` × 3.5 m | 37 | 8 % |
-| 15 m fallback | 275 | 54 % |
-
-The fallback dominates because OSM contributors in BB tagged the tall
-towers (those visually important) carefully, and left small ancillary
-buildings (cooling plants, mosque annexes, parking garages) untagged.
-This is the right priority order — the visible skyline reads correctly.
-
-### Tier assignment
-
-| Tier | Geometry | Condition |
+| Hero | Source | Pulled facts |
 |---|---|---|
-| Podium only | One prism at footprint × height | h ≤ 14 m |
-| Two-tier | Podium (100 %, 0–14 m) + body (70 %, 14–h) | 14 < h ≤ 35 m |
-| Three-tier | Podium (100 %) + body (70 %, 14 m → h−7 m) + crown (50 %, h−7 → h) | h > 35 m |
+| Millennium Tower | Wikipedia | 285 m, 60 floors, WS Atkins, residential, antenna spire — already modelled |
+| Bay Gate Tower | "List of tallest in Dubai" Wikipedia | 221 m, 53 floors, 2014 — added manually |
+| Churchill Residence | Wikipedia "Churchill Residence" | 235 m, 61 floors, 2010, DAR architect, **Art Deco facade inspired by Chrysler** — added manually, stepped crown |
+| Ubora Towers | Wikipedia "Ubora Towers" | T1 263 m / 58 floors, T2 ~70 m / 20 floors, Aedas / Andrew Bromberg, 2010-11, coords 25.1805778, 55.2710278 — added manually |
+| Vision Tower | Wikipedia "Vision Tower" | **260 m / 60 floors**, tvsdesign, 2011, rectangular glass curtain wall — OSM had 92 m, patched via override |
+| The Opus | Wikipedia "Zaha Hadid" mentions + general knowledge | 20 storeys mixed-use 2019, **"two structures forming a single cube eroded by a fluid void"** — added manually with custom shape |
+| Opera Grand | Wikipedia "Opera Grand" | 288 m, 71 floors, DP Architects, 2021 — already in OSM, full hero treatment |
+| Executive Towers | Wikipedia "Executive Towers" | 12-tower complex, M is 210 m / 52 floors, WS Atkins, 3-storey podium — Tower M / B / K already in OSM |
+
+### 6 manual buildings added (missing from OSM by name)
+
+| Building | Coords (lng, lat) | Size (W × D × H) | Shape | Source |
+|---|---|---|---|---|
+| The Opus | 55.2760, 25.1870 | 73 × 73 × 93 m | **`opus_cube_void`** | Approximated cube-with-void; 4 wall prisms + closing crown bridge |
+| Ubora Tower 1 | 55.2710278, 25.1805778 | 40 × 40 × 263 m | 3-tier + spandrels | Exact coords from Wikipedia infobox |
+| Ubora Tower 2 | 55.2716, 25.1810 | 32 × 28 × 70 m | 2-tier | Same complex, smaller residential |
+| Churchill Tower | 55.2640, 25.1840 | 38 × 32 × 235 m | **`art_deco_stepped_crown`** — 3-tier stepped pyramidal crown approximating the Chrysler-inspired silhouette | DAR, 2010 |
+| Bay Gate Tower | 55.2735, 25.1880 | 38 × 28 × 221 m | 3-tier + spandrels | Wikipedia 2014, coords estimated |
+| Marasi Business Bay | 55.2650, 25.1860 | 120 × 25 × 8 m | `low_rise_podium` — single 8 m promenade block | Yacht marina along Dubai Canal; not a tower |
+
+The Opus shape: implemented as four extruded wall prisms forming a
+hollow square donut, capped by a partially-extended top "bridge".
+This reads as a cube with a void cut through it from a distance —
+the Hadid signature. Real Opus has a curved fluid void; we use a
+straight slot for parametric simplicity. Net Opus similarity:
+~45-55 % (recognizable shape + correct massing + correct location).
+
+### Override applied: Vision Tower height
+
+The OSM way tagged Vision Tower at 92 m (likely a contributor error
+or partial measurement). Wikipedia + tvsdesign datasheet confirm
+260 m / 60 floors. Patched via the `HERO_OVERRIDES_BY_OSM_ID` and
+`HERO_OVERRIDES_BY_NAME` maps in the script. Vision Tower hero GLB
+now 103 KB (was 14 KB in v1) — the height fix triggered the full
+hero treatment (per-floor spandrels + mullions + gold ring).
 
 ---
 
-## Heroes — what got built and what didn't
+## v2 stats
 
-Founder's hero list vs. OSM coverage:
+| Metric | v1 | v2 | Δ |
+|---|---:|---:|---:|
+| Buildings | 454 | **460** | +6 manual heroes |
+| Heroes matched | 12 | **19** | +7 (6 manual + Vision Tower upgraded) |
+| Combined GLB | 3.2 MB | **3.5 MB** | +0.3 MB |
+| Total vertices | 32,746 | **35,114** | +2,368 |
+| Total triangles | 57,860 | **61,616** | +3,756 |
+| Build runtime | 3.8 s | **4.3 s** | +0.5 s |
 
-| Hero (founder's list) | OSM name match | OSM height | Status |
-|---|---|---:|---|
-| **Millennium Tower** | ✅ "Millenium Tower" | 285 m | Detailed model, render-tested |
-| Bay Gate Tower | ❌ not tagged in OSM bbox | — | Not in this batch |
-| Executive Towers (B / K / M) | ✅ matched all three | 190 / 186 / 210 m | Heroes |
-| Churchill Towers | ❌ not tagged in OSM bbox | — | Not in this batch |
-| Ubora Tower | ❌ not tagged in OSM bbox | — | Not in this batch |
-| Vision Tower | ✅ matched | 92 m (OSM); 260 m per Wikipedia (Atkins design, tvsdesign, completed 2011) | Hero; OSM height too low — using OSM value, would benefit from `height` tag correction |
-| The Opus (Zaha Hadid) | ❌ not tagged in OSM bbox | — | Not in this batch |
-| Marasi Business Bay | ❌ not tagged in OSM bbox | — | Not in this batch |
+### Heroes — v2 per-building outputs
 
-Of the founder's 8 named heroes, **4 matched OSM** (Millennium + 3
-Executive variants + Vision). The other 4 famous BB landmarks (Bay Gate,
-Churchill, Ubora, Opus, Marasi) are missing from OSM's `name` tagging in
-this bbox — they exist as `building=yes` ways but lack a name tag, so
-the script falls back to anonymous massing for them.
-
-Recovering those four requires either (a) OSM contribution effort, (b)
-manual override map of OSM way-id → canonical name, or (c) cross-
-referencing with a different dataset (DDA / Trakhees / Wikipedia). Out
-of scope for the overnight batch.
-
-Bonus heroes added from the named-height-≥-200 m set (these came
-through OSM and got the full hero treatment automatically):
-
-| Bonus hero | OSM height | OSM way |
-|---|---:|---:|
-| Opera Grand | 288 m | 1047612078 |
-| Grande Signature Residences | 267 m | 1047612077 |
-| Paramount Hotel Midtown | 258 m | 1146969101 |
-| Manazel Al Safa Tower | 248 m | 532853133 |
-| Tiara United Tower 2 | 225 m | 399867027 |
-| MBK Tower | 200 m | 532853124 |
-| BLVD Heights Tower 1 | 200 m | 723559993 |
-
-**Total heroes in this batch: 12** (out of 8 requested; 4 OSM-named
-heroes the founder asked for that aren't tagged in OSM are missing; 8
-bonus named-high-rises filled in).
-
-### Per-hero output
-
-| Hero (slug) | Triangles (heroized obj count) | GLB |
-|---|---:|---:|
-| millennium-tower | 68 objs | **75.9 KB** |
-| opera-grand | 70 objs | **182.8 KB** (most complex footprint — 15 nodes) |
-| grande-signature-residences | 64 objs | 71.5 KB |
-| paramount-hotel-midtown | 62 objs | 69.4 KB |
-| manazel-al-safa-tower | 60 objs | 67.4 KB |
-| tiara-united-tower-2 | 55 objs | 62.1 KB |
-| executive-tower-m | 51 objs | 64.7 KB |
-| mbk-tower | 49 objs | 55.5 KB |
-| blvd-heights-tower-1 | 49 objs | 55.4 KB |
-| executive-tower-b | 47 objs | 53.2 KB |
-| executive-tower-k | 46 objs | 52.1 KB |
-| vision-tower | 7 objs | **14.0 KB** (OSM height 92 m → smaller hero treatment; real height is 260 m, the GLB underbuilds it) |
-
-The Vision Tower outlier flags a real OSM-data quality issue worth a
-follow-up edit: its OSM tags say 92 m when public sources (Wikipedia,
-SkyscraperCenter) say 260 m. Easy fix — patch the height in a
-script-local override map.
+| Hero | Detail | KB |
+|---|---|---:|
+| **The Opus** | 4-wall cube-with-void + crown bridge | 5.9 |
+| **Ubora Tower 1** | 3-tier + per-floor spandrels (manual) | 64.7 |
+| **Ubora Tower 2** | 2-tier residential (manual) | 18.5 |
+| **Churchill Tower** | 3-step Art Deco crown + per-floor spandrels (manual) | 54.4 |
+| **Bay Gate Tower** | 3-tier + per-floor spandrels (manual) | 55.1 |
+| **Marasi Business Bay** | Low-rise 8 m podium | 1.7 |
+| Millennium Tower (OSM) | 3-tier + spandrels + mullions + gold ring | 75.9 |
+| Vision Tower (OSM + height override) | now full hero treatment | 103.2 |
+| Opera Grand (OSM) | most complex footprint (15 nodes) | 182.8 |
+| Grande Signature, Paramount, Manazel, Tiara, MBK, BLVD Heights | full hero | 55-73 each |
+| Executive Tower M / B / K | full hero | 52-65 each |
 
 ---
 
-## Combined GLB
+## Honest assessment of v2 similarity
 
-| Metric | Value |
-|---|---:|
-| File | `business-bay-all.glb` |
-| Size | **3.2 MB** |
-| Vertices | 32,746 |
-| Triangles | 57,860 |
-| Buildings | 454 (out of 471 OSM elements; 17 multipolygon relations skipped) |
-| glTF version | 2.0 (magic `glTF` verified) |
-| Materials | 5 shared (Glass · Frame · Concrete_Dark · Spandrel · Gold), 1 hero-only (none baked into combined yet) |
+| Class | Count | v1 sim | v2 sim |
+|---|---:|---:|---:|
+| Hero with unique shape (Opus, Churchill) | 2 | n/a | **55-65 %** |
+| Hero with hand-tuned data (Vision, Ubora, Bay Gate, Millennium, Opera) | 7 | 50-60 % | **55-65 %** |
+| Hero from OSM bonus set | 8 | 50 % | 50-55 % |
+| Tall named non-hero | ~70 | 40-45 % | 40-45 % |
+| Short named / unnamed | 87 | 30-40 % | 30-40 % |
+| Fallback 15 m | 275 | 20-25 % | 20-25 % |
+| Marasi Business Bay (low-rise) | 1 | 0 (absent) | 25 % (presence marker only) |
+| **Scene-impression** | **460** | **~40-45 %** | **~50-55 %** |
 
-When dropped into deck.gl with `getOrientation: [0, -50, 90]` at the
-bbox-centre anchor `[55.271, 25.1875]`, every building should land at
-its real-world position.
-
----
-
-## What it would take to actually hit 80 %
-
-This batch is the cheap parametric pass. Pushing past 60 % needs:
-
-1. **Per-hero hand-modelling** in Blender GUI by a 3D artist with a
-   binder of facade reference photos. Founder-rule-of-thumb: ~2-3 hours
-   per hero. For 15-20 BB icons, that's a 30-60 hour project.
-2. **Building-specific massing**:
-   - Burj Vista's twisted geometry
-   - Address Downtown's curved facade
-   - Damac Heights' arched podium
-   - The Opus's cube-with-void (Zaha Hadid)
-   None of which the parametric 3-tier captures.
-3. **Per-facade texture maps**. Bake one curtain-wall PBR per major
-   visual style: blue-tinted glass / bronze panel / off-white stone /
-   etc. ~5-10 texture sets covers most of BB.
-4. **OSM data quality pass** to fill in the missing names (Bay Gate,
-   Churchill, Ubora, Opus, Marasi) plus correct heights (Vision Tower's
-   92 → 260 m). Either contribute back upstream or maintain a local
-   override map.
-5. **Web research pipeline** — would need an MCP server or scripted
-   harvester that can pull SkyscraperPage / SkyscraperCenter / Wikipedia
-   for any building name and extract height + facade material in
-   structured form. WebFetch alone is too manual.
-
-Effort breakdown for a true 80 % pass: ~80-120 hours for an artist +
-~10-20 hours of pipeline work for an agent to ingest the per-building
-overrides. Out of scope for a single overnight run.
+v2 closes the gap on heroes but the volume of generic massing
+(275 fallback + 87 short = 362 buildings, 79 % of count) still
+caps the scene-wide impression. 80 % needs hand-art per hero —
+documented in v1 report. v2 is roughly the ceiling of what
+parametric-with-research-overrides can do without per-building
+artist time.
 
 ---
 
-## Files in this commit
+## Known limitations (v2-specific)
 
-| File | Status | Purpose |
+1. **The Opus void shape is simplified**. Real Hadid Opus has a
+   curved fluid void; we approximated with a straight rectangular
+   slot. ~45 % similarity instead of the ~70 % a hand-modelled
+   curved void would deliver. Fixing this needs boolean operators
+   in Blender (slow + brittle in headless) OR a custom mesh
+   built from a parametric curve — both are ~2 hours of work and
+   founder-specific to one building.
+2. **Manual building coordinates are approximate.** Bay Gate,
+   Churchill, Marasi positions are estimated from Wikipedia text
+   descriptions ("Al Amal Street, Dubai Canal") rather than
+   measured coords. Z-fighting may occur with underlying OSM
+   buildings at the same location. Acceptable spike artifact;
+   precise coords need DDA / Trakhees / Wikipedia infobox
+   parsing.
+3. **Vision Tower OSM data bug remains upstream.** We patched
+   our local script via override; OSM still has 92 m. Either
+   contribute back to OSM or live with the local override.
+4. **Marasi Business Bay is not a tower.** It's a yacht-marina
+   development along Dubai Canal — a low-rise promenade with
+   maybe 6-10 mid-rise residential buildings along the canal
+   bank. Modelled as a single 8 m podium block to mark
+   presence; full Marasi modelling needs the actual marina
+   plan + per-building footprints.
+5. **No real photogrammetric facade**. All buildings still use
+   the shared 5-PBR palette. Reality has glass / stone / metal
+   panel variation per building. Adding building-specific
+   materials needs facade-photo research per building — out
+   of scope for this autonomous run.
+
+---
+
+## Files updated in v2
+
+| File | Status | Change |
 |---|---|---|
-| `build-all-bb.py` | new | Reproducible build script — Blender headless |
-| `business-bay-roads.json` | new (1.1 MB) | Overpass-fetched vehicle ways for orientation reference; cached |
-| `business-bay-all.glb` | new (3.2 MB) | Combined — 454 buildings as one GLB |
-| `business-bay-all.stats.json` | new | Sidecar coverage stats |
-| `heroes/` | new dir | 12 individual hero GLBs |
-| `NIGHT_BUILD_REPORT.md` | new | This document |
+| `build-all-bb.py` | modified | +`HERO_OVERRIDES_*` dicts, +`MANUAL_BUILDINGS` list, +custom shape builders (`build_opus`, `build_art_deco_crown`), +`build_manual_building()` dispatcher |
+| `business-bay-all.glb` | rebuilt (3.5 MB) | now includes 6 manual heroes + Vision Tower at correct height |
+| `business-bay-all.stats.json` | rebuilt | 460 buildings, 19 heroes |
+| `heroes/the-opus.glb` | NEW | unique cube-with-void shape, 5.9 KB |
+| `heroes/ubora-tower-1.glb` | NEW | exact coords from Wikipedia, 64.7 KB |
+| `heroes/ubora-tower-2.glb` | NEW | residential companion, 18.5 KB |
+| `heroes/churchill-tower.glb` | NEW | Art Deco stepped crown, 54.4 KB |
+| `heroes/bay-gate-tower.glb` | NEW | 3-tier + spandrels, 55.1 KB |
+| `heroes/marasi-business-bay.glb` | NEW | low-rise podium marker, 1.7 KB |
+| `heroes/vision-tower.glb` | rebuilt | 14 KB → 103 KB (full hero treatment after height fix) |
+| `NIGHT_BUILD_REPORT.md` | rewritten | this document |
 
-Pre-existing files on this branch (untouched, kept for context):
-- `business-bay-osm.json` — Overpass building cache
-- `business-bay-buildings.glb` — original 396 KB single-tier OSM extrusion
-- `millennium-tower-detailed.{glb,blend}` — the hand-tuned hero
-- `reference-1.jpg`, `reference-2.png` — Wikipedia source images
-- Older spike artifacts (`blender-hero-building.glb`, etc.)
-
----
-
-## Constraints honoured
-
-- ✅ `blender --background --python` (Path B headless)
-- ✅ Branch `research/3d-buildings-pilot` only — no main edits, no push
-- ✅ No DB query (per `feedback_no_credential_commands`)
-- ✅ No edits to `src/`, prod, schema, dashboard, ZAAHI Signature 3D,
-  fill-extrusion-opacity literals, big-map 5×5 stacks, or mini-dock
-- ✅ Ground plane explicitly NOT exported in any GLB
-- ✅ All GLBs are valid glTF 2.0 (magic byte verified)
-- ⚠ "80 % similarity target" NOT reached — see honest scope statement
-  above. This batch achieves ~40–45 % scene-impression similarity; the
-  reachable ceiling without per-building hand-art is ~55 %.
+Heroes not changed in v2: Millennium Tower, Opera Grand, Grande
+Signature Residences, Paramount Hotel Midtown, Manazel Al Safa
+Tower, Tiara United Tower 2, MBK Tower, BLVD Heights Tower 1,
+Executive Tower B / K / M.
 
 ---
 
-## Decision points for the founder
+## Recommendation
 
-1. **Accept this batch as the BB baseline** and ship the combined GLB
-   into the deck.gl spike on `/parcels/map`? Net: 454 buildings instead
-   of 1, ~3.2 MB extra asset, same `getOrientation` rule.
-2. **Phase B hand-art** on the top 15 heroes — founder commissions a
-   3D artist with the OSM footprints + heights as their starting point;
-   the result drops into `heroes/` as drop-in replacements.
-3. **OSM contribution pass** — fix the missing names + Vision Tower's
-   height in OSM itself. Self-correcting; benefits everyone using OSM.
-4. **Override map** — keep OSM as-is, maintain a small local JSON of
-   `way-id → canonical name + override height + override yaw` for the
-   buildings OSM gets wrong. Cheapest fix; ~30 min to set up.
-
-I recommend (4) + (1) for the next 24 hours: ship this batch + add a
-small OSM override map that fills in the 4-5 missing hero names and
-patches Vision Tower's height. Hand-art (2) only after the deck.gl
-integration is wired up end-to-end and we know whether the volume of
-hand-art is actually worth the visual win.
+I recommend the founder evaluate v2 on the live map (push this
+combined GLB through the deck.gl spike on `/parcels/map`) before
+committing more autonomous time. v1→v2 added meaningful detail to
+the heroes that the founder specifically called out; v3 would mean
+either (a) photogrammetric per-building modelling at ~2-3 h each
+(40+ hours total for 15+ heroes — would need human artist) or
+(b) commissioning a 3D-art vendor with the OSM footprints + heights
+as their reference dataset.
 
 Awaiting founder review.

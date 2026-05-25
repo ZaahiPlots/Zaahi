@@ -1,12 +1,12 @@
 {
-  "buildings_kept": 454,
-  "named": 156,
-  "with_explicit_height": 179,
+  "buildings_kept": 460,
+  "named": 162,
+  "with_explicit_height": 185,
   "fallback_height_15m": 275,
-  "heroes_matched": 13,
-  "total_vertices": 32746,
-  "total_triangles": 57860,
-  "combined_glb_kb": 3230.2,
+  "heroes_matched": 19,
+  "total_vertices": 35114,
+  "total_triangles": 61616,
+  "combined_glb_kb": 3522.4,
   "heroes": [
     {
       "slug": "millenium-tower",
@@ -35,8 +35,8 @@
     },
     {
       "slug": "vision-tower",
-      "objs": 7,
-      "kb": 13.99609375
+      "objs": 62,
+      "kb": 103.2421875
     },
     {
       "slug": "mbk-tower",
@@ -67,8 +67,38 @@
       "slug": "paramount-hotel-midtown",
       "objs": 62,
       "kb": 69.41796875
+    },
+    {
+      "slug": "the-opus",
+      "objs": 5,
+      "kb": 5.88671875
+    },
+    {
+      "slug": "ubora-tower-1",
+      "objs": 58,
+      "kb": 64.7109375
+    },
+    {
+      "slug": "ubora-tower-2",
+      "objs": 15,
+      "kb": 18.53125
+    },
+    {
+      "slug": "churchill-tower",
+      "objs": 49,
+      "kb": 54.40234375
+    },
+    {
+      "slug": "bay-gate-tower",
+      "objs": 49,
+      "kb": 55.11328125
+    },
+    {
+      "slug": "marasi-business-bay",
+      "objs": 1,
+      "kb": 1.6953125
     }
   ],
   "build_seconds": 0.2,
-  "elapsed_total_seconds": 3.8
+  "elapsed_total_seconds": 4.3
 }

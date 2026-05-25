@@ -114,6 +114,92 @@ HERO_NAMES = [
 ]
 HERO_KEYS = set(s.lower() for s in HERO_NAMES)
 
+# ── Per-hero overrides (from Wikipedia research 2026-05-25) ───────
+# Use OSM way_id as the key when the building IS in OSM; for missing
+# heroes (The Opus etc.) see MANUAL_BUILDINGS below.
+HERO_OVERRIDES_BY_OSM_ID = {
+    # Vision Tower — OSM has 92 m but Wikipedia & tvsdesign datasheet
+    # both confirm 260 m (60 floors). Patch the height. Found via
+    # Wikipedia search for "Vision Tower Dubai".
+    532853132: {"height_override": 260.0, "note": "OSM 92m → Wikipedia 260m"},
+}
+
+# Lookup by OSM name in case the id changes between Overpass refreshes.
+HERO_OVERRIDES_BY_NAME = {
+    "vision tower": {"height_override": 260.0, "note": "OSM 92m → Wikipedia 260m"},
+}
+
+# ── Manual buildings (founder-listed heroes that have NO OSM `name` tag) ──
+# Coordinates approximated from Wikipedia + general BB knowledge. Sizes
+# from Wikipedia where present, otherwise estimated from "20-storey
+# mixed-use" / "12-tower complex" descriptions.
+MANUAL_BUILDINGS = [
+    {
+        # The Opus — Zaha Hadid 2019. 20 storeys mixed-use. Two
+        # structures forming a single cube "eroded by a fluid void".
+        # We model as a 73×73×93 m cube with a 30×30 m vertical
+        # slot cut through the middle (approximates the fluid void).
+        "name": "The Opus",
+        "lng": 55.2760, "lat": 25.1870,
+        "footprint_w": 73.0, "footprint_d": 73.0,
+        "height": 93.0,
+        "shape": "opus_cube_void",
+        "rotation_deg": 0.0,
+    },
+    {
+        # Ubora Towers — Aedas / Andrew Bromberg, 2010-11. Tower 1
+        # (Commercial) 263 m / 58 floors. Exact coords from Wikipedia.
+        "name": "Ubora Tower 1",
+        "lng": 55.2710278, "lat": 25.1805778,
+        "footprint_w": 40.0, "footprint_d": 40.0,
+        "height": 263.0,
+        "shape": "standard_3tier",
+        "rotation_deg": 25.0,
+    },
+    {
+        # Ubora Tower 2 (Residential) — same complex, lower
+        "name": "Ubora Tower 2",
+        "lng": 55.2716, "lat": 25.1810,
+        "footprint_w": 32.0, "footprint_d": 28.0,
+        "height": 70.0,
+        "shape": "standard_2tier",
+        "rotation_deg": 25.0,
+    },
+    {
+        # Churchill Residence — DAR, 2010. 235 m / 61 floors.
+        # Art Deco facade inspired by Chrysler Building → stepped
+        # crown. Footprint from typical BB residential slab.
+        "name": "Churchill Tower",
+        "lng": 55.2640, "lat": 25.1840,
+        "footprint_w": 38.0, "footprint_d": 32.0,
+        "height": 235.0,
+        "shape": "art_deco_stepped_crown",
+        "rotation_deg": 50.0,
+    },
+    {
+        # Bay Gate Tower — 2014. 221 m / 53 floors. Limited Wikipedia
+        # data on facade; standard 3-tier slab. Position estimated.
+        "name": "Bay Gate Tower",
+        "lng": 55.2735, "lat": 25.1880,
+        "footprint_w": 38.0, "footprint_d": 28.0,
+        "height": 221.0,
+        "shape": "standard_3tier",
+        "rotation_deg": 40.0,
+    },
+    {
+        # Marasi Business Bay — yacht-marina development along
+        # Dubai Canal. Not a tower; a low-rise promenade. We model
+        # as a single 8 m podium block to mark presence.
+        "name": "Marasi Business Bay",
+        "lng": 55.2650, "lat": 25.1860,
+        "footprint_w": 120.0, "footprint_d": 25.0,
+        "height": 8.0,
+        "shape": "low_rise_podium",
+        "rotation_deg": 130.0,
+    },
+]
+MANUAL_NAMES = set(b["name"].lower() for b in MANUAL_BUILDINGS)
+
 def slugify(name):
     out = []
     for c in name.lower():
@@ -312,9 +398,14 @@ def build_building(way):
 
     h = parse_height(tags)
     name = tags.get("name") or tags.get("name:en")
+    way_id = way["id"]
+    # Apply overrides (height, etc.)
+    ovr = HERO_OVERRIDES_BY_OSM_ID.get(way_id) or HERO_OVERRIDES_BY_NAME.get((name or "").lower())
+    if ovr:
+        if "height_override" in ovr:
+            h = ovr["height_override"]
     is_hero = (name or "").lower() in HERO_KEYS
     is_tall_named = bool(name) and h >= 50.0
-    way_id = way["id"]
     coll = bpy.context.collection  # everything in scene collection
 
     # ── 1. Core massing ──
@@ -411,6 +502,184 @@ def build_building(way):
     }
     return obj, info
 
+# ── Custom shape builders ─────────────────────────────────────────
+def rect_ring_centered(cx, cy, w, d, rot_rad=0.0):
+    """Axis-aligned rectangle centred at (cx, cy), rotated rot_rad."""
+    hx, hy = w / 2, d / 2
+    corners = [(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)]
+    c, s = math.cos(rot_rad), math.sin(rot_rad)
+    return [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in corners]
+
+def build_opus(centroid_xy, w, d, h, rot_rad):
+    """Cube-with-void (Zaha Hadid). Approximation: 4 vertical prisms
+    arranged as a hollow square frame, leaving a central void. NOT a
+    boolean subtraction (slow + brittle in headless); a 4-piece
+    construction reads correctly from a distance.
+    """
+    cx, cy = centroid_xy
+    objs = []
+    # Outer cube wall thickness
+    wall = min(w, d) * 0.28
+    # 4 wall prisms in a square donut
+    half_w, half_d = w / 2, d / 2
+    # Construct in local coords then rotate
+    pieces = [
+        # bottom strip (south face)
+        ((-half_w,    -half_d), ( half_w,    -half_d), ( half_w,    -half_d + wall), (-half_w,    -half_d + wall)),
+        # top strip (north face)
+        ((-half_w,     half_d - wall), ( half_w,     half_d - wall), ( half_w,     half_d), (-half_w,     half_d)),
+        # left strip
+        ((-half_w,    -half_d + wall), (-half_w + wall, -half_d + wall), (-half_w + wall,  half_d - wall), (-half_w,     half_d - wall)),
+        # right strip
+        (( half_w - wall, -half_d + wall), ( half_w,    -half_d + wall), ( half_w,     half_d - wall), ( half_w - wall,  half_d - wall)),
+    ]
+    c, s = math.cos(rot_rad), math.sin(rot_rad)
+    for piece in pieces:
+        world = [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in piece]
+        bm = bmesh.new()
+        extrude_prism(bm, world, 0.0, h)
+        mesh = bpy.data.meshes.new("opus_part_mesh")
+        bm.to_mesh(mesh); bm.free()
+        mesh.materials.append(MAT_GLASS)
+        obj = bpy.data.objects.new("opus_part", mesh)
+        bpy.context.collection.objects.link(obj)
+        objs.append(obj)
+    # Crown bridge — closes the top of the void so the cube reads
+    # as a cube-with-side-void rather than a chimney
+    bridge_top_h = h * 0.20
+    bridge_z0 = h - bridge_top_h
+    bridge_ring = rect_ring_centered(cx, cy, w - 2 * wall * 0.4, d - 2 * wall * 0.4, rot_rad)
+    bm_b = bmesh.new()
+    extrude_prism(bm_b, bridge_ring, bridge_z0, h)
+    mesh_b = bpy.data.meshes.new("opus_crown_mesh")
+    bm_b.to_mesh(mesh_b); bm_b.free()
+    mesh_b.materials.append(MAT_GLASS)
+    obj_b = bpy.data.objects.new("opus_crown", mesh_b)
+    bpy.context.collection.objects.link(obj_b)
+    objs.append(obj_b)
+    return objs
+
+def build_art_deco_crown(centroid_xy, ring_xy, body_top_z, h, mat=MAT_FRAME):
+    """Stepped Art Deco crown — three concentric setbacks above the
+    body, each smaller than the last. Stand-in for the Chrysler-
+    inspired Churchill Tower silhouette."""
+    objs = []
+    crown_h = h - body_top_z
+    steps = 3
+    step_h = crown_h / steps
+    for i in range(steps):
+        scale = 0.85 - i * 0.20
+        z0 = body_top_z + i * step_h
+        z1 = body_top_z + (i + 1) * step_h
+        step_ring = scale_ring(ring_xy, scale)
+        bm = bmesh.new()
+        extrude_prism(bm, step_ring, z0, z1)
+        mesh = bpy.data.meshes.new("artdeco_step_mesh")
+        bm.to_mesh(mesh); bm.free()
+        mesh.materials.append(mat)
+        obj = bpy.data.objects.new("artdeco_step_%d" % i, mesh)
+        bpy.context.collection.objects.link(obj)
+        objs.append(obj)
+    return objs
+
+def build_manual_building(spec):
+    """Build a building from MANUAL_BUILDINGS spec (no OSM way)."""
+    cx, cy = lnglat_to_xy(spec["lng"], spec["lat"])
+    w, d = spec["footprint_w"], spec["footprint_d"]
+    h = spec["height"]
+    rot_rad = math.radians(spec.get("rotation_deg", 0.0))
+    shape = spec.get("shape", "standard_3tier")
+    name = spec["name"]
+    coll = bpy.context.collection
+    parent_objs = []
+
+    if shape == "opus_cube_void":
+        parent_objs.extend(build_opus((cx, cy), w, d, h, rot_rad))
+        # First piece is the "trunk" for parenting
+        trunk = parent_objs[0]
+    elif shape == "art_deco_stepped_crown":
+        # Build trunk (podium + body) + stepped crown
+        ring = rect_ring_centered(cx, cy, w, d, rot_rad)
+        bm = bmesh.new()
+        extrude_prism(bm, ring, 0.0, PODIUM_TOP_M)
+        body_ring = scale_ring(ring, 0.85)
+        body_top_z = h - 30.0  # 30 m of stepped crown
+        extrude_prism(bm, body_ring, PODIUM_TOP_M, body_top_z)
+        mesh = bpy.data.meshes.new("artdeco_trunk_mesh")
+        bm.to_mesh(mesh); bm.free()
+        mesh.materials.append(MAT_GLASS)
+        trunk = bpy.data.objects.new(slugify(name) + "_trunk", mesh)
+        coll.objects.link(trunk)
+        parent_objs.append(trunk)
+        # Per-floor spandrels
+        for f in range(1, int(h / 4.5)):
+            z = f * 4.5
+            if z >= body_top_z - 1: break
+            ring_for_band = ring if z < PODIUM_TOP_M else body_ring
+            band = add_horizontal_floor_band(coll, ring_for_band, z, height=0.6, proud=0.10, mat=MAT_SPANDREL)
+            parent_objs.append(band)
+        # Stepped crown
+        parent_objs.extend(build_art_deco_crown((cx, cy), body_ring, body_top_z, h, mat=MAT_FRAME))
+    elif shape == "low_rise_podium":
+        ring = rect_ring_centered(cx, cy, w, d, rot_rad)
+        bm = bmesh.new()
+        extrude_prism(bm, ring, 0.0, h)
+        mesh = bpy.data.meshes.new("podium_mesh")
+        bm.to_mesh(mesh); bm.free()
+        mesh.materials.append(MAT_DARK)
+        trunk = bpy.data.objects.new(slugify(name) + "_podium", mesh)
+        coll.objects.link(trunk)
+        parent_objs.append(trunk)
+    else:
+        # standard_3tier or standard_2tier
+        ring = rect_ring_centered(cx, cy, w, d, rot_rad)
+        bm = bmesh.new()
+        if h <= SIGNATURE_BODY_FLOOR:
+            extrude_prism(bm, ring, 0.0, h)
+            body_top_z = h
+        else:
+            extrude_prism(bm, ring, 0.0, PODIUM_TOP_M)
+            body_ring = scale_ring(ring, 0.70)
+            if h > 35.0:
+                body_top_z = h - CROWN_H_M
+                extrude_prism(bm, body_ring, PODIUM_TOP_M, body_top_z)
+                crown_ring = scale_ring(ring, 0.50)
+                extrude_prism(bm, crown_ring, body_top_z, h)
+            else:
+                extrude_prism(bm, body_ring, PODIUM_TOP_M, h)
+                body_top_z = h
+        mesh = bpy.data.meshes.new("manual_mesh")
+        bm.to_mesh(mesh); bm.free()
+        mesh.materials.append(MAT_GLASS)
+        trunk = bpy.data.objects.new(slugify(name) + "_trunk", mesh)
+        coll.objects.link(trunk)
+        parent_objs.append(trunk)
+        # Hero detail: per-floor spandrels + mullions
+        if h > 35.0:
+            for f in range(1, int(h / 4.5)):
+                z = f * 4.5
+                if z >= body_top_z - 1: break
+                ring_for_band = ring if z < PODIUM_TOP_M else scale_ring(ring, 0.70)
+                band = add_horizontal_floor_band(coll, ring_for_band, z, height=0.6, proud=0.10, mat=MAT_SPANDREL)
+                parent_objs.append(band)
+            # Gold ZAAHI accent ring
+            bm_g = bmesh.new()
+            ring_infl = scale_ring(ring, 1.02)
+            extrude_prism(bm_g, ring_infl, body_top_z - 0.5, body_top_z + 0.3)
+            mg = bpy.data.meshes.new("gold_mesh")
+            bm_g.to_mesh(mg); bm_g.free()
+            mg.materials.append(MAT_GOLD)
+            og = bpy.data.objects.new(slugify(name) + "_gold", mg)
+            coll.objects.link(og)
+            parent_objs.append(og)
+
+    # Rename trunk for hero export matching
+    trunk.name = "M_%s" % slugify(name)
+    for p in parent_objs[1:]:
+        p.parent = trunk
+
+    return trunk, parent_objs, {"name": name, "height_m": h, "shape": shape}
+
 # ── Process all ways ──────────────────────────────────────────────
 ways = [e for e in OSM["elements"] if e["type"] == "way"]
 print("[zaahi] processing %d ways" % len(ways))
@@ -427,6 +696,24 @@ for w in ways:
     if info["hero"] and info["name"]:
         slug = slugify(info["name"])
         hero_objs.setdefault(slug, []).extend(info["objs"])
+
+# ── Add manual buildings (founder-listed heroes missing from OSM) ─
+print("[zaahi] adding %d manual buildings" % len(MANUAL_BUILDINGS))
+for spec in MANUAL_BUILDINGS:
+    trunk, objs, info = build_manual_building(spec)
+    per_building_info.append({
+        "way_id": None,
+        "name": info["name"],
+        "height_m": info["height_m"],
+        "hero": True,
+        "tall_named": info["height_m"] >= 50,
+        "tier": info["shape"],
+        "detail_level": "manual_hero",
+        "objs": objs,
+    })
+    slug = slugify(info["name"])
+    hero_objs[slug] = objs
+
 build_secs = time.time() - bt0
 print("[zaahi] geometry built: %d objects in %.1fs" % (len(per_building_info), build_secs))
 
