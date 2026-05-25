@@ -1578,6 +1578,8 @@ function ParcelsMapPageInner() {
   const [glbYaw, setGlbYaw] = useState<number>(0);
   const [glbPitch, setGlbPitch] = useState<number>(0);
   const [glbRoll, setGlbRoll] = useState<number>(0);
+  const [glbSize, setGlbSize] = useState<number>(1.0);
+  const [glbElev, setGlbElev] = useState<number>(0);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4008,28 +4010,28 @@ function ParcelsMapPageInner() {
     }
     console.log("[GLB] creating ScenegraphLayer:", {
       url: HERO_GLB_URL,
-      coords: [glbLng, glbLat],
+      coords: [glbLng, glbLat, glbElev],
       pitch: glbPitch,
       yaw: glbYaw,
       roll: glbRoll,
-      sizeScale: 1.0,
+      sizeScale: glbSize,
     });
     overlay.setProps({
       layers: [
         new ScenegraphLayer({
           id: "hero-millennium-tower",
-          data: [{ position: [glbLng, glbLat] as [number, number] }],
+          data: [{ position: [glbLng, glbLat, glbElev] as [number, number, number] }],
           scenegraph: HERO_GLB_URL,
-          getPosition: (d: { position: [number, number] }) => d.position,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
           getOrientation: [glbPitch, glbYaw, glbRoll],
-          sizeScale: 1.0,
+          sizeScale: glbSize,
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB] ScenegraphLayer error:", err),
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbActive, devMode, overlayReady]);
+  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev, glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
@@ -4089,7 +4091,7 @@ function ParcelsMapPageInner() {
   };
 
   const copyGlbConfig = () => {
-    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],`;
+    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4531,6 +4533,44 @@ function ParcelsMapPageInner() {
           step={1}
           value={glbRoll}
           onChange={(e) => setGlbRoll(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          size: {glbSize.toFixed(2)}×
+        </div>
+        <input
+          type="range"
+          min={0.1}
+          max={5}
+          step={0.1}
+          value={glbSize}
+          onChange={(e) => setGlbSize(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          elev: {glbElev} m
+        </div>
+        <input
+          type="range"
+          min={-200}
+          max={500}
+          step={1}
+          value={glbElev}
+          onChange={(e) => setGlbElev(Number(e.target.value))}
           style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
         />
         <button
