@@ -210,15 +210,15 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
-// ── 3D-buildings — Burj Khalifa hero from Sketchfab (2026-05-25) ──
-// Original 22 MB / 661K-triangle model from Sketchfab, NOT decimated
-// per founder spec. Lazy-loaded only at zoom ≥ 14 within 5 km of
-// Downtown Dubai (see lazy-gate effect below). sizeScale 0.33
-// compensates for the Sketchfab artist's 3× footprint scaling so the
-// model's 154 m footprint renders as the real Burj's ~50 m on map.
-// Founder will dial yaw + fine-tune position via ?dev=1 dev-tool.
-const HERO_GLB_URL = "/glb/buildings/burj-khalifa.glb";
-const HERO_COORDS: [number, number] = [55.274288, 25.197525]; // WGS84 Mohammed Bin Rashid Boulevard
+// ── 3D-buildings — Burj Crown (Emaar) hero from Sketchfab (2026-05-25) ──
+// CC-BY-4.0 model by Alnazir (sketchfab.com/Nzr.3d). 16K triangles, PBR
+// textures, Y-up source rescaled via Blender pipeline to real Burj Crown
+// dimensions ~30 × 30 × 203 m. License credit file required —
+// see public/glb/buildings/burj-crown.LICENSE.txt.
+// Lazy-loaded at zoom ≥ 14 within 5 km of Downtown Dubai. Hero gated
+// behind ?dev=1 while founder evaluates model bank quality.
+const HERO_GLB_URL = "/glb/buildings/burj-crown.glb";
+const HERO_COORDS: [number, number] = [55.270, 25.190]; // Downtown Dubai Boulevard
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
