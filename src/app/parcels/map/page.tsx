@@ -4017,7 +4017,7 @@ function ParcelsMapPageInner() {
           data: [{ position: [glbLng, glbLat] as [number, number] }],
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number] }) => d.position,
-          getOrientation: [0, glbYaw, 90],
+          getOrientation: [90, glbYaw, 0],
           sizeScale: 1.0,
           _lighting: "pbr",
           pickable: false,
