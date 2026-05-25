@@ -4004,7 +4004,7 @@ function ParcelsMapPageInner() {
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number] }) => d.position,
           getOrientation: [0, glbYaw, 90],
-          sizeScale: 0.33,
+          sizeScale: 1.0,
           _lighting: "pbr",
           pickable: false,
         }),
