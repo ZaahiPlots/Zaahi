@@ -3877,36 +3877,35 @@ function ParcelsMapPageInner() {
     // with the underlying PMTiles building (OSM way 203296254) was
     // accepted by founder for this spike scope. Cleanup below removes
     // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
-    // deck.gl overlay always created. ScenegraphLayer is added by the
-    // sync effect below ONLY when the lazy-gate effect flips glbActive
-    // (zoom ≥ 14 + within 5 km of Downtown Dubai). Default route gets
-    // the empty MapboxOverlay; ?dev=1 additionally enables drag handle
-    // and yaw slider for live position tuning.
-    try {
-      const lightingEffect = new LightingEffect({
-        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 3.0 }),
-        dir: new DirectionalLight({
-          color: [255, 245, 230],
-          intensity: 4.0,
-          direction: [-1, -3, -1],
-        }),
-        // Second directional from opposite side — fills shadowed face so
-        // the model doesn't read black under map basemap lighting.
-        dir2: new DirectionalLight({
-          color: [220, 230, 255],
-          intensity: 2.5,
-          direction: [1, 3, 1],
-        }),
-      });
-      const overlay = new MapboxOverlay({
-        interleaved: true,
-        effects: [lightingEffect],
-        layers: [],
-      });
-      map.addControl(overlay as unknown as maplibregl.IControl);
-      deckOverlayRef.current = overlay;
-    } catch (e) {
-      console.warn("[deckgl-spike] overlay init failed:", e);
+    // Default route: NO deck.gl overlay init, NO GLB fetch. Hero GLB
+    // rendering is gated behind ?dev=1 while we evaluate hero models
+    // one-by-one (Burj Khalifa was unsatisfactory — model bank rebuild
+    // in progress). Founder triggers via /parcels/map?dev=1.
+    if (devMode) {
+      try {
+        const lightingEffect = new LightingEffect({
+          ambient: new AmbientLight({ color: [255, 255, 255], intensity: 3.0 }),
+          dir: new DirectionalLight({
+            color: [255, 245, 230],
+            intensity: 4.0,
+            direction: [-1, -3, -1],
+          }),
+          dir2: new DirectionalLight({
+            color: [220, 230, 255],
+            intensity: 2.5,
+            direction: [1, 3, 1],
+          }),
+        });
+        const overlay = new MapboxOverlay({
+          interleaved: true,
+          effects: [lightingEffect],
+          layers: [],
+        });
+        map.addControl(overlay as unknown as maplibregl.IControl);
+        deckOverlayRef.current = overlay;
+      } catch (e) {
+        console.warn("[deckgl-spike] overlay init failed:", e);
+      }
     }
 
     // Toggleable WASD drone navigation (desktop only). Controller stays
@@ -3968,8 +3967,8 @@ function ParcelsMapPageInner() {
   // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    // Anchor recentered to Burj Khalifa (was BB). 5 km radius still covers
+    if (!map || !devMode) return;
+    // Anchor centered on Burj Khalifa (Downtown). 5 km radius covers
     // BB + DIFC + Downtown for future heroes layered onto this overlay.
     const BURJ_LNG = 55.274288;
     const BURJ_LAT = 25.197525;
@@ -3991,14 +3990,14 @@ function ParcelsMapPageInner() {
       map.off("moveend", evaluate);
       map.off("zoomend", evaluate);
     };
-  }, [mapStyleReady]);
+  }, [mapStyleReady, devMode]);
 
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
   // Also lazy-gated by glbActive — when false, layers cleared (no GLB
   // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
-    if (!overlay) return;
+    if (!overlay || !devMode) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
@@ -4017,7 +4016,7 @@ function ParcelsMapPageInner() {
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbActive]);
+  }, [glbLng, glbLat, glbYaw, glbActive, devMode]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
