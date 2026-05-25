@@ -1568,6 +1568,15 @@ function ParcelsMapPageInner() {
   // inside the map-init effect after the map instance is ready,
   // torn down in that effect's cleanup. See HERO_GLB_URL above.
   const deckOverlayRef = useRef<MapboxOverlay | null>(null);
+  // ── GLB dev-tool state (founder dev mode, always-on while spike) ────
+  // Drives both the deck.gl ScenegraphLayer position/yaw and the
+  // crosshair overlay handle. Defaults come from HERO_COORDS + the
+  // current production yaw (-30°), so first paint matches prod exactly.
+  const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
+  const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
+  const [glbYaw, setGlbYaw] = useState<number>(-30);
+  const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
@@ -3961,6 +3970,96 @@ function ParcelsMapPageInner() {
     };
   }, []);
 
+  // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
+  // The map-init effect creates the layer once with initial constants;
+  // this effect calls setProps with a fresh ScenegraphLayer whenever
+  // the founder drags the crosshair or scrubs the yaw slider, so
+  // changes appear live without re-mounting the MapboxOverlay.
+  useEffect(() => {
+    const overlay = deckOverlayRef.current;
+    if (!overlay) return;
+    overlay.setProps({
+      layers: [
+        new ScenegraphLayer({
+          id: "hero-millennium-tower",
+          data: [{ position: [glbLng, glbLat] as [number, number] }],
+          scenegraph: HERO_GLB_URL,
+          getPosition: (d: { position: [number, number] }) => d.position,
+          getOrientation: [0, glbYaw, 90],
+          sizeScale: 1,
+          _lighting: "pbr",
+          pickable: false,
+        }),
+      ],
+    });
+  }, [glbLng, glbLat, glbYaw]);
+
+  // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
+  // space (re-project on every map move + on state change) and wire
+  // Shift+wheel on the map container for ±1° yaw nudge.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const project = () => {
+      const p = map.project([glbLng, glbLat]);
+      setGlbHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    const container = map.getContainer();
+    const onWheel = (e: WheelEvent) => {
+      if (!e.shiftKey) return;
+      e.preventDefault();
+      setGlbYaw((y) =>
+        Math.max(-180, Math.min(180, y + (e.deltaY > 0 ? 1 : -1)))
+      );
+    };
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      map.off("move", project);
+      container.removeEventListener("wheel", onWheel);
+    };
+  }, [glbLng, glbLat, mapStyleReady]);
+
+  // ── GLB dev-tool — pointer drag of the GLB anchor. Hooks into the
+  // crosshair handle's onMouseDown; the rest of the drag is tracked
+  // at the document level so the cursor can leave the small handle
+  // while dragging.
+  const onGlbHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const map = mapRef.current;
+    if (!map) return;
+    map.dragPan.disable();
+    draggingGlbRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      ]);
+      setGlbLng(ll.lng);
+      setGlbLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable();
+      draggingGlbRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyGlbConfig = () => {
+    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}] }],\ngetOrientation: [0, ${glbYaw}, 90],`;
+    try {
+      void navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — silent */
+    }
+  };
+
   // Drive the drone controller from React state. Persists choice and
   // flashes the on-enable toast. Keeps WASD behaviour strictly opt-in.
   useEffect(() => {
@@ -4271,6 +4370,124 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* ── GLB dev-tool — crosshair handle + control panel ──────────
+          Always-on while the 3D-buildings spike is active. Drag the
+          gold crosshair to reposition the hero GLB anchor; scrub the
+          yaw slider or Shift+wheel on the map for rotation; Copy
+          Config writes a drop-in HERO_COORDS + getOrientation snippet
+          to the clipboard. Removable in one diff once positions are
+          finalised. Glassmorphism per CLAUDE.md UI Style Guide. */}
+      {glbHandlePx && (
+        <div
+          onMouseDown={onGlbHandleMouseDown}
+          title="Drag to move GLB anchor"
+          style={{
+            position: "absolute",
+            left: glbHandlePx.x - 12,
+            top: glbHandlePx.y - 12,
+            width: 24,
+            height: 24,
+            cursor: draggingGlbRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E",
+            borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow:
+              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50,
+            pointerEvents: "auto",
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: "absolute",
+          top: 80,
+          right: 16,
+          width: 260,
+          padding: 16,
+          background: "rgba(10,22,40,0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 12,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          color: "#C8A96E",
+          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          zIndex: 51,
+        }}
+      >
+        <div
+          style={{
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 8,
+            letterSpacing: "0.08em",
+          }}
+        >
+          GLB Position (dev)
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lng: {glbLng.toFixed(6)}
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lat: {glbLat.toFixed(6)}
+        </div>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          yaw: {glbYaw}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={glbYaw}
+          onChange={(e) => setGlbYaw(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div style={{ fontSize: 9, opacity: 0.6, marginTop: 4 }}>
+          Shift+wheel on map for fine yaw
+        </div>
+        <button
+          type="button"
+          onClick={copyGlbConfig}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
+            e.currentTarget.style.borderColor = "#C8A96E";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
+          }}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(200,169,110,0.3)",
+            borderRadius: 8,
+            color: "#C8A96E",
+            cursor: "pointer",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            fontFamily: "inherit",
+            textTransform: "uppercase",
+            transition:
+              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
+          }}
+        >
+          Copy Config
+        </button>
+      </div>
 
       {/* Sun-time override slider — visible only when the ☀ button in
           the right stack is toggled on. Drives the directional-light
