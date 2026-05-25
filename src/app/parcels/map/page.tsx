@@ -1585,7 +1585,9 @@ function ParcelsMapPageInner() {
   const [devMode, setDevMode] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setDevMode(new URLSearchParams(window.location.search).get("dev") === "1");
+    const dev = new URLSearchParams(window.location.search).get("dev") === "1";
+    setDevMode(dev);
+    if (dev) console.log("[GLB] dev mode active");
   }, []);
   const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -3903,6 +3905,7 @@ function ParcelsMapPageInner() {
         });
         map.addControl(overlay as unknown as maplibregl.IControl);
         deckOverlayRef.current = overlay;
+        console.log("[GLB] MapboxOverlay attached");
       } catch (e) {
         console.warn("[deckgl-spike] overlay init failed:", e);
       }
@@ -3966,30 +3969,13 @@ function ParcelsMapPageInner() {
   // close to Business Bay. Saves bandwidth + WebGL memory on initial /
   // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    // Anchor centered on Burj Khalifa (Downtown). 5 km radius covers
-    // BB + DIFC + Downtown for future heroes layered onto this overlay.
-    const BURJ_LNG = 55.274288;
-    const BURJ_LAT = 25.197525;
-    const MAX_KM = 5;
-    const MIN_ZOOM = 14;
-    const evaluate = () => {
-      const z = map.getZoom();
-      const c = map.getCenter();
-      const dx = (c.lng - BURJ_LNG) * 111 * Math.cos(BURJ_LAT * Math.PI / 180);
-      const dy = (c.lat - BURJ_LAT) * 111;
-      const distKm = Math.hypot(dx, dy);
-      const next = z >= MIN_ZOOM && distKm <= MAX_KM;
-      setGlbActive((prev) => (prev === next ? prev : next));
-    };
-    evaluate();
-    map.on("moveend", evaluate);
-    map.on("zoomend", evaluate);
-    return () => {
-      map.off("moveend", evaluate);
-      map.off("zoomend", evaluate);
-    };
+    if (!devMode) return;
+    // DIAGNOSTIC mode: skip lazy-gate (zoom + distance check). Force
+    // glbActive=true unconditionally so we can verify if GLB loads at
+    // all, regardless of where the camera is pointing. Restore lazy-gate
+    // once founder confirms GLB is visible on map.
+    console.log("[GLB] diagnostic mode — forcing glbActive=true (no zoom/distance check)");
+    setGlbActive(true);
   }, [mapStyleReady, devMode]);
 
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
@@ -3997,11 +3983,18 @@ function ParcelsMapPageInner() {
   // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
+    console.log("[GLB] sync:", { devMode, hasOverlay: !!overlay, glbActive });
     if (!overlay || !devMode) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
     }
+    console.log("[GLB] creating ScenegraphLayer:", {
+      url: HERO_GLB_URL,
+      coords: [glbLng, glbLat],
+      yaw: glbYaw,
+      sizeScale: 1.0,
+    });
     overlay.setProps({
       layers: [
         new ScenegraphLayer({
@@ -4013,6 +4006,7 @@ function ParcelsMapPageInner() {
           sizeScale: 1.0,
           _lighting: "pbr",
           pickable: false,
+          onError: (err: unknown) => console.error("[GLB] ScenegraphLayer error:", err),
         }),
       ],
     });
