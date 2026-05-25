@@ -3884,11 +3884,18 @@ function ParcelsMapPageInner() {
     // and yaw slider for live position tuning.
     try {
       const lightingEffect = new LightingEffect({
-        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
+        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 3.0 }),
         dir: new DirectionalLight({
           color: [255, 245, 230],
-          intensity: 2.0,
+          intensity: 4.0,
           direction: [-1, -3, -1],
+        }),
+        // Second directional from opposite side — fills shadowed face so
+        // the model doesn't read black under map basemap lighting.
+        dir2: new DirectionalLight({
+          color: [220, 230, 255],
+          intensity: 2.5,
+          direction: [1, 3, 1],
         }),
       });
       const overlay = new MapboxOverlay({
@@ -4004,7 +4011,7 @@ function ParcelsMapPageInner() {
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number] }) => d.position,
           getOrientation: [0, glbYaw, 90],
-          sizeScale: 1.0,
+          sizeScale: 1.23,
           _lighting: "pbr",
           pickable: false,
         }),
