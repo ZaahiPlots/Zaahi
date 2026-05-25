@@ -1571,10 +1571,10 @@ function ParcelsMapPageInner() {
   // ── GLB dev-tool state (founder dev mode, always-on while spike) ────
   // Drives both the deck.gl ScenegraphLayer position/yaw and the
   // crosshair overlay handle. Defaults come from HERO_COORDS + the
-  // current production yaw (-30°), so first paint matches prod exactly.
+  // current production yaw (+10°), so first paint matches prod exactly.
   const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
-  const [glbYaw, setGlbYaw] = useState<number>(-30);
+  const [glbYaw, setGlbYaw] = useState<number>(10);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -3892,11 +3892,12 @@ function ParcelsMapPageInner() {
             getPosition: (d: { position: [number, number] }) => d.position,
             // [pitch, yaw, roll] in degrees.
             //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  -30  → clockwise (viewed from above) so the
+            //   yaw  +10  → counter-clockwise (viewed from above) so the
             //     building's broad face lines up parallel to Sheikh
-            //     Zayed Road (SW→NE). -50 was over-rotated against
-            //     the live basemap; founder dialled to -30 2026-05-25.
-            getOrientation: [0, -30, 90],
+            //     Zayed Road (SW→NE). Founder iterated via the in-map
+            //     dev-tool (drag handle + yaw slider): -50 → -30 → +10.
+            //     Final value 2026-05-25.
+            getOrientation: [0, 10, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
