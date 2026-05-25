@@ -1580,6 +1580,9 @@ function ParcelsMapPageInner() {
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
   const [glbActive, setGlbActive] = useState(false);
+  // True once the deferred MapboxOverlay has been .addControl()-ed.
+  // Needed because deckOverlayRef is a ref and won't trigger sync re-run.
+  const [overlayReady, setOverlayReady] = useState(false);
   // URL gate — default route ships zero deck.gl. ?dev=1 enables the GLB
   // hero + drag-handle / yaw-slider / Copy-Config panel.
   const [devMode, setDevMode] = useState(false);
@@ -3970,6 +3973,7 @@ function ParcelsMapPageInner() {
       });
       map.addControl(overlay as unknown as maplibregl.IControl);
       deckOverlayRef.current = overlay;
+      setOverlayReady(true);
       console.log("[GLB] MapboxOverlay attached (deferred init)");
     } catch (e) {
       console.warn("[deckgl-spike] overlay init failed:", e);
@@ -3994,7 +3998,7 @@ function ParcelsMapPageInner() {
   // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
-    console.log("[GLB] sync:", { devMode, hasOverlay: !!overlay, glbActive });
+    console.log("[GLB] sync:", { devMode, hasOverlay: !!overlay, glbActive, overlayReady });
     if (!overlay || !devMode) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
@@ -4021,7 +4025,7 @@ function ParcelsMapPageInner() {
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbActive, devMode]);
+  }, [glbLng, glbLat, glbYaw, glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
