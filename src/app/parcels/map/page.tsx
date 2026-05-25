@@ -3883,12 +3883,11 @@ function ParcelsMapPageInner() {
             getPosition: (d: { position: [number, number] }) => d.position,
             // [pitch, yaw, roll] in degrees.
             //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  -50  → clockwise (viewed from above) so the
-            //     building's broad face lines up parallel to the
-            //     SW→NE road that runs along the plot. -40 left the
-            //     facade slightly off; founder dialled to -50 against
-            //     the live basemap 2026-05-25.
-            getOrientation: [0, -50, 90],
+            //   yaw  -30  → clockwise (viewed from above) so the
+            //     building's broad face lines up parallel to Sheikh
+            //     Zayed Road (SW→NE). -50 was over-rotated against
+            //     the live basemap; founder dialled to -30 2026-05-25.
+            getOrientation: [0, -30, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
