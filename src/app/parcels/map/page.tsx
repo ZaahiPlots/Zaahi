@@ -3879,37 +3879,12 @@ function ParcelsMapPageInner() {
     // with the underlying PMTiles building (OSM way 203296254) was
     // accepted by founder for this spike scope. Cleanup below removes
     // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
-    // Default route: NO deck.gl overlay init, NO GLB fetch. Hero GLB
-    // rendering is gated behind ?dev=1 while we evaluate hero models
-    // one-by-one (Burj Khalifa was unsatisfactory — model bank rebuild
-    // in progress). Founder triggers via /parcels/map?dev=1.
-    if (devMode) {
-      try {
-        const lightingEffect = new LightingEffect({
-          ambient: new AmbientLight({ color: [255, 255, 255], intensity: 3.0 }),
-          dir: new DirectionalLight({
-            color: [255, 245, 230],
-            intensity: 4.0,
-            direction: [-1, -3, -1],
-          }),
-          dir2: new DirectionalLight({
-            color: [220, 230, 255],
-            intensity: 2.5,
-            direction: [1, 3, 1],
-          }),
-        });
-        const overlay = new MapboxOverlay({
-          interleaved: true,
-          effects: [lightingEffect],
-          layers: [],
-        });
-        map.addControl(overlay as unknown as maplibregl.IControl);
-        deckOverlayRef.current = overlay;
-        console.log("[GLB] MapboxOverlay attached");
-      } catch (e) {
-        console.warn("[deckgl-spike] overlay init failed:", e);
-      }
-    }
+    // Overlay creation MOVED to a dedicated useEffect below ([devMode,
+    // mapStyleReady] deps). This map-init effect has [] deps and runs
+    // once at mount when devMode is still the initial `false` value
+    // (URL-detection useEffect sets it on a later render). Stale
+    // closure meant the GLB overlay never attached on ?dev=1. The
+    // separate effect fires when both gates are open.
 
     // Toggleable WASD drone navigation (desktop only). Controller stays
     // installed for the map's lifetime; a separate effect drives
@@ -3964,6 +3939,42 @@ function ParcelsMapPageInner() {
       mapRef.current = null;
     };
   }, []);
+
+  // ── deck.gl overlay init — deferred. Fires when devMode AND
+  // mapStyleReady are both true. Map-init useEffect has [] deps so
+  // it can't see devMode flip from false (initial) to true (after
+  // URL detection effect). This deferred effect is the only path
+  // that actually attaches the overlay.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode || !mapStyleReady) return;
+    if (deckOverlayRef.current) return;     // already attached
+    try {
+      const lightingEffect = new LightingEffect({
+        ambient: new AmbientLight({ color: [255, 255, 255], intensity: 3.0 }),
+        dir: new DirectionalLight({
+          color: [255, 245, 230],
+          intensity: 4.0,
+          direction: [-1, -3, -1],
+        }),
+        dir2: new DirectionalLight({
+          color: [220, 230, 255],
+          intensity: 2.5,
+          direction: [1, 3, 1],
+        }),
+      });
+      const overlay = new MapboxOverlay({
+        interleaved: true,
+        effects: [lightingEffect],
+        layers: [],
+      });
+      map.addControl(overlay as unknown as maplibregl.IControl);
+      deckOverlayRef.current = overlay;
+      console.log("[GLB] MapboxOverlay attached (deferred init)");
+    } catch (e) {
+      console.warn("[deckgl-spike] overlay init failed:", e);
+    }
+  }, [devMode, mapStyleReady]);
 
   // ── Lazy gate — watch zoom + center, only enable GLB when zoomed in
   // close to Business Bay. Saves bandwidth + WebGL memory on initial /
