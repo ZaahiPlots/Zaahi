@@ -126,7 +126,11 @@ HERO_OVERRIDES_BY_OSM_ID = {
 
 # Lookup by OSM name in case the id changes between Overpass refreshes.
 HERO_OVERRIDES_BY_NAME = {
-    "vision tower": {"height_override": 260.0, "note": "OSM 92m → Wikipedia 260m"},
+    "vision tower": {
+        "height_override": 260.0,
+        "shape_override": "vision_bent",  # per Dewan / Architizer "bent glass façade"
+        "note": "OSM 92m → Wikipedia 260m; shape per research (double-tilted glass)",
+    },
 }
 
 # ── Manual buildings (founder-listed heroes that have NO OSM `name` tag) ──
@@ -135,15 +139,16 @@ HERO_OVERRIDES_BY_NAME = {
 # mixed-use" / "12-tower complex" descriptions.
 MANUAL_BUILDINGS = [
     {
-        # The Opus — Zaha Hadid 2019. 20 storeys mixed-use. Two
-        # structures forming a single cube "eroded by a fluid void".
-        # We model as a 73×73×93 m cube with a 30×30 m vertical
-        # slot cut through the middle (approximates the fluid void).
+        # The Opus — Zaha Hadid 2019. v3 research: "two 20-story
+        # towers connected by a bridge" + "fluid void sweeps through
+        # the heart" + "melted-ice" inner glass. Modelled as two
+        # parallel slabs with a curved-approximation void between
+        # them, capped by a bridge near the top.
         "name": "The Opus",
         "lng": 55.2760, "lat": 25.1870,
         "footprint_w": 73.0, "footprint_d": 73.0,
         "height": 93.0,
-        "shape": "opus_cube_void",
+        "shape": "opus_two_towers",
         "rotation_deg": 0.0,
     },
     {
@@ -250,6 +255,11 @@ MAT_DARK     = make_material("Concrete_Dark",   (0.16, 0.17, 0.20, 1.0),  metall
 MAT_SPANDREL = make_material("Spandrel_Warm",   (0.62, 0.60, 0.55, 1.0),  metallic=0.10, roughness=0.65)
 MAT_GOLD     = make_material("ZAAHI_Gold",      (0.78, 0.66, 0.43, 1.0),  metallic=0.85, roughness=0.22)
 MAT_METAL    = make_material("Antenna_Metal",   (0.55, 0.56, 0.60, 1.0),  metallic=0.92, roughness=0.18)
+# Per-hero materials (research-driven, v3 2026-05-25)
+MAT_OPUS_GLASS    = make_material("Opus_FluidGlass",  (0.42, 0.46, 0.52, 1.0), metallic=0.65, roughness=0.10)  # silver "melted ice"
+MAT_OPUS_BRIDGE   = make_material("Opus_Bridge",      (0.85, 0.86, 0.84, 1.0), metallic=0.55, roughness=0.18)
+MAT_CHURCHILL_BEIGE = make_material("Churchill_Stone", (0.78, 0.71, 0.58, 1.0), metallic=0.05, roughness=0.75)  # warm Chrysler-stone
+MAT_VISION_GLASS  = make_material("Vision_BentGlass", (0.10, 0.15, 0.22, 1.0), metallic=0.40, roughness=0.20)  # cooler / more reflective
 
 # ── Geometry helpers ──────────────────────────────────────────────
 def ring_strip_closing(ring):
@@ -406,6 +416,38 @@ def build_building(way):
             h = ovr["height_override"]
     is_hero = (name or "").lower() in HERO_KEYS
     is_tall_named = bool(name) and h >= 50.0
+
+    # Custom-shape override: divert to manual builder for OSM-matched
+    # heroes that we know have a non-rectangular silhouette.
+    if ovr and "shape_override" in ovr:
+        # Build via manual builder using OSM centroid + footprint bbox
+        centroid_x = sum(p[0] for p in ring_xy) / len(ring_xy)
+        centroid_y = sum(p[1] for p in ring_xy) / len(ring_xy)
+        xs = [p[0] for p in ring_xy]
+        ys = [p[1] for p in ring_xy]
+        bbox_w = max(xs) - min(xs)
+        bbox_d = max(ys) - min(ys)
+        spec = {
+            "name": name,
+            "lng": LNG0 + centroid_x / MPD_LNG,
+            "lat": LAT0 + centroid_y / MPD_LAT,
+            "footprint_w": max(bbox_w, 20.0),
+            "footprint_d": max(bbox_d, 20.0),
+            "height": h,
+            "shape": ovr["shape_override"],
+            "rotation_deg": 0.0,
+        }
+        trunk, objs, info = build_manual_building(spec)
+        return trunk, {
+            "way_id": way_id,
+            "name": name,
+            "height_m": h,
+            "hero": True,
+            "tall_named": True,
+            "tier": ovr["shape_override"],
+            "detail_level": "custom_shape",
+            "objs": objs,
+        }
     coll = bpy.context.collection  # everything in scene collection
 
     # ── 1. Core massing ──
@@ -510,53 +552,138 @@ def rect_ring_centered(cx, cy, w, d, rot_rad=0.0):
     c, s = math.cos(rot_rad), math.sin(rot_rad)
     return [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in corners]
 
-def build_opus(centroid_xy, w, d, h, rot_rad):
-    """Cube-with-void (Zaha Hadid). Approximation: 4 vertical prisms
-    arranged as a hollow square frame, leaving a central void. NOT a
-    boolean subtraction (slow + brittle in headless); a 4-piece
-    construction reads correctly from a distance.
+def build_opus_two_towers(centroid_xy, w, d, h, rot_rad):
+    """Opus v3: two parallel slabs (the two 20-storey towers) sharing
+    the cube outline, with a curved-approximation void between them
+    and a bridge cap near the top. Per Koltay Facades + Wikipedia
+    descriptions: 'two structures forming a single cube eroded by a
+    fluid void'.
+
+    Geometry:
+      - Slab L: occupies left third of cube
+      - Slab R: occupies right third of cube
+      - Centre: 8-segment polygonal arc approximating the curved void
+      - Bridge: top 18% of height closing the gap (the 'connected at top')
     """
     cx, cy = centroid_xy
     objs = []
-    # Outer cube wall thickness
-    wall = min(w, d) * 0.28
-    # 4 wall prisms in a square donut
     half_w, half_d = w / 2, d / 2
-    # Construct in local coords then rotate
-    pieces = [
-        # bottom strip (south face)
-        ((-half_w,    -half_d), ( half_w,    -half_d), ( half_w,    -half_d + wall), (-half_w,    -half_d + wall)),
-        # top strip (north face)
-        ((-half_w,     half_d - wall), ( half_w,     half_d - wall), ( half_w,     half_d), (-half_w,     half_d)),
-        # left strip
-        ((-half_w,    -half_d + wall), (-half_w + wall, -half_d + wall), (-half_w + wall,  half_d - wall), (-half_w,     half_d - wall)),
-        # right strip
-        (( half_w - wall, -half_d + wall), ( half_w,    -half_d + wall), ( half_w,     half_d - wall), ( half_w - wall,  half_d - wall)),
-    ]
+    slab_w = w * 0.32   # each tower is ~1/3 of cube width
+    bridge_h_frac = 0.18
+    void_w = w - 2 * slab_w
+
+    # Inner-edge curve (8-segment arc, approximates "fluid void")
+    arc_x_amp = void_w * 0.18  # how much the inner edge bows inward
+    arc_segments = 8
+    def inner_edge_xs(side_sign):
+        # For each of arc_segments+1 points along the depth, compute
+        # an X that bows inward then back out. side_sign=+1 means
+        # left tower's right edge; -1 means right tower's left edge.
+        pts = []
+        for i in range(arc_segments + 1):
+            t = i / arc_segments
+            # cosine bow — symmetric arc, max amplitude at t=0.5
+            bow = math.sin(t * math.pi) * arc_x_amp * side_sign
+            y = -half_d + t * d
+            x_outer = side_sign * (half_w - slab_w)   # straight inner edge would sit here
+            pts.append((x_outer - bow, y))
+        return pts
+
     c, s = math.cos(rot_rad), math.sin(rot_rad)
-    for piece in pieces:
-        world = [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in piece]
+    def world(pts_local):
+        return [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in pts_local]
+
+    # ── Left tower polygon (outer left edge + curved inner edge) ──
+    left_outer = [(-half_w, -half_d), (-half_w, half_d)]
+    left_inner = list(reversed(inner_edge_xs(+1)))   # walk back along depth from +half_d to -half_d
+    left_ring_local = left_outer + left_inner
+    left_ring_world = world(left_ring_local)
+    bm_l = bmesh.new()
+    extrude_prism(bm_l, left_ring_world, 0.0, h)
+    me = bpy.data.meshes.new("opus_left_mesh")
+    bm_l.to_mesh(me); bm_l.free()
+    me.materials.append(MAT_OPUS_GLASS)
+    o = bpy.data.objects.new("opus_left", me)
+    bpy.context.collection.objects.link(o)
+    objs.append(o)
+
+    # ── Right tower polygon ──
+    right_inner = inner_edge_xs(-1)   # forward depth -d/2 → +d/2
+    right_outer = [(half_w, half_d), (half_w, -half_d)]
+    right_ring_local = right_inner + right_outer
+    right_ring_world = world(right_ring_local)
+    bm_r = bmesh.new()
+    extrude_prism(bm_r, right_ring_world, 0.0, h)
+    me = bpy.data.meshes.new("opus_right_mesh")
+    bm_r.to_mesh(me); bm_r.free()
+    me.materials.append(MAT_OPUS_GLASS)
+    o = bpy.data.objects.new("opus_right", me)
+    bpy.context.collection.objects.link(o)
+    objs.append(o)
+
+    # ── Bridge connecting the two towers at the top (closes the void) ──
+    bridge_z0 = h * (1.0 - bridge_h_frac)
+    bridge_ring_local = rect_ring_centered(0, 0, w * 0.96, d * 0.94, 0)
+    bridge_ring_world = world(bridge_ring_local)
+    bm_br = bmesh.new()
+    extrude_prism(bm_br, bridge_ring_world, bridge_z0, h)
+    me = bpy.data.meshes.new("opus_bridge_mesh")
+    bm_br.to_mesh(me); bm_br.free()
+    me.materials.append(MAT_OPUS_BRIDGE)
+    o = bpy.data.objects.new("opus_bridge", me)
+    bpy.context.collection.objects.link(o)
+    objs.append(o)
+
+    return objs
+
+def build_vision_bent(centroid_xy, w, d, h, rot_rad):
+    """Vision Tower v3: double-tilted bent glass façade per Dewan +
+    Architizer description. Two parallelepipeds tilted slightly
+    inward, sharing a meeting edge at the front.
+    """
+    cx, cy = centroid_xy
+    objs = []
+    half_w, half_d = w / 2, d / 2
+    tilt = 0.06   # 6% lean toward each other at the front face
+    c, s = math.cos(rot_rad), math.sin(rot_rad)
+
+    # Two slabs sharing the back wall, meeting at the front centre.
+    # Each slab is a trapezoid in plan (back wider, front converging).
+    for side_sign in (+1, -1):
+        x_back  = side_sign * (-half_w + (1.0 - tilt) * half_w * 0)  # back-outer X
+        x_front = side_sign * half_w * tilt                            # front-inner X
+        x_outer_back = side_sign * half_w
+        x_outer_front = side_sign * (half_w * (1 - tilt))
+        # plan: 4 corners (back-outer, back-inner=meeting, front-meeting, front-outer)
+        ring_local = [
+            (x_outer_back, -half_d),   # back outer
+            (0.0,          -half_d),   # back middle (meeting at back)
+            (0.0,           half_d),   # front middle (meeting at front)
+            (x_outer_front, half_d),   # front outer
+        ]
+        # Reverse for CCW depending on side
+        if side_sign < 0:
+            ring_local = list(reversed(ring_local))
+        ring_world = [(c * x - s * y + cx, s * x + c * y + cy) for (x, y) in ring_local]
         bm = bmesh.new()
-        extrude_prism(bm, world, 0.0, h)
-        mesh = bpy.data.meshes.new("opus_part_mesh")
-        bm.to_mesh(mesh); bm.free()
-        mesh.materials.append(MAT_GLASS)
-        obj = bpy.data.objects.new("opus_part", mesh)
-        bpy.context.collection.objects.link(obj)
-        objs.append(obj)
-    # Crown bridge — closes the top of the void so the cube reads
-    # as a cube-with-side-void rather than a chimney
-    bridge_top_h = h * 0.20
-    bridge_z0 = h - bridge_top_h
-    bridge_ring = rect_ring_centered(cx, cy, w - 2 * wall * 0.4, d - 2 * wall * 0.4, rot_rad)
-    bm_b = bmesh.new()
-    extrude_prism(bm_b, bridge_ring, bridge_z0, h)
-    mesh_b = bpy.data.meshes.new("opus_crown_mesh")
-    bm_b.to_mesh(mesh_b); bm_b.free()
-    mesh_b.materials.append(MAT_GLASS)
-    obj_b = bpy.data.objects.new("opus_crown", mesh_b)
-    bpy.context.collection.objects.link(obj_b)
-    objs.append(obj_b)
+        extrude_prism(bm, ring_world, 0.0, h)
+        me = bpy.data.meshes.new("vision_slab_mesh")
+        bm.to_mesh(me); bm.free()
+        me.materials.append(MAT_VISION_GLASS)
+        o = bpy.data.objects.new("vision_slab_%d" % side_sign, me)
+        bpy.context.collection.objects.link(o)
+        objs.append(o)
+
+    # Subtle crown — small set-back top
+    top_ring = rect_ring_centered(cx, cy, w * 0.6, d * 0.7, rot_rad)
+    bm_t = bmesh.new()
+    extrude_prism(bm_t, top_ring, h - 8.0, h)
+    me = bpy.data.meshes.new("vision_crown_mesh")
+    bm_t.to_mesh(me); bm_t.free()
+    me.materials.append(MAT_DARK)
+    o = bpy.data.objects.new("vision_crown", me)
+    bpy.context.collection.objects.link(o)
+    objs.append(o)
     return objs
 
 def build_art_deco_crown(centroid_xy, ring_xy, body_top_z, h, mat=MAT_FRAME):
@@ -593,12 +720,14 @@ def build_manual_building(spec):
     coll = bpy.context.collection
     parent_objs = []
 
-    if shape == "opus_cube_void":
-        parent_objs.extend(build_opus((cx, cy), w, d, h, rot_rad))
-        # First piece is the "trunk" for parenting
+    if shape == "opus_two_towers":
+        parent_objs.extend(build_opus_two_towers((cx, cy), w, d, h, rot_rad))
+        trunk = parent_objs[0]
+    elif shape == "vision_bent":
+        parent_objs.extend(build_vision_bent((cx, cy), w, d, h, rot_rad))
         trunk = parent_objs[0]
     elif shape == "art_deco_stepped_crown":
-        # Build trunk (podium + body) + stepped crown
+        # Churchill — warm Chrysler-stone trunk + stepped crown
         ring = rect_ring_centered(cx, cy, w, d, rot_rad)
         bm = bmesh.new()
         extrude_prism(bm, ring, 0.0, PODIUM_TOP_M)
@@ -611,15 +740,15 @@ def build_manual_building(spec):
         trunk = bpy.data.objects.new(slugify(name) + "_trunk", mesh)
         coll.objects.link(trunk)
         parent_objs.append(trunk)
-        # Per-floor spandrels
+        # Per-floor spandrels using warm Chrysler-stone material
         for f in range(1, int(h / 4.5)):
             z = f * 4.5
             if z >= body_top_z - 1: break
             ring_for_band = ring if z < PODIUM_TOP_M else body_ring
-            band = add_horizontal_floor_band(coll, ring_for_band, z, height=0.6, proud=0.10, mat=MAT_SPANDREL)
+            band = add_horizontal_floor_band(coll, ring_for_band, z, height=0.6, proud=0.10, mat=MAT_CHURCHILL_BEIGE)
             parent_objs.append(band)
-        # Stepped crown
-        parent_objs.extend(build_art_deco_crown((cx, cy), body_ring, body_top_z, h, mat=MAT_FRAME))
+        # Stepped crown — beige stone
+        parent_objs.extend(build_art_deco_crown((cx, cy), body_ring, body_top_z, h, mat=MAT_CHURCHILL_BEIGE))
     elif shape == "low_rise_podium":
         ring = rect_ring_centered(cx, cy, w, d, rot_rad)
         bm = bmesh.new()

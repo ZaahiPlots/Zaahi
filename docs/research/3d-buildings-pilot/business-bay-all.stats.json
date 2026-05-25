@@ -4,9 +4,9 @@
   "with_explicit_height": 185,
   "fallback_height_15m": 275,
   "heroes_matched": 19,
-  "total_vertices": 35114,
-  "total_triangles": 61616,
-  "combined_glb_kb": 3522.4,
+  "total_vertices": 34166,
+  "total_triangles": 59972,
+  "combined_glb_kb": 3423.8,
   "heroes": [
     {
       "slug": "millenium-tower",
@@ -35,43 +35,43 @@
     },
     {
       "slug": "vision-tower",
-      "objs": 62,
-      "kb": 103.2421875
+      "objs": 3,
+      "kb": 4.015625
     },
     {
       "slug": "mbk-tower",
       "objs": 49,
-      "kb": 55.5078125
+      "kb": 56.15234375
     },
     {
       "slug": "manazel-al-safa-tower",
       "objs": 60,
-      "kb": 67.3515625
+      "kb": 68.0
     },
     {
       "slug": "blvd-heights-tower-1",
       "objs": 49,
-      "kb": 55.42578125
+      "kb": 56.07421875
     },
     {
       "slug": "opera-grand",
       "objs": 70,
-      "kb": 182.8203125
+      "kb": 183.46875
     },
     {
       "slug": "grande-signature-residences",
       "objs": 64,
-      "kb": 71.48828125
+      "kb": 72.140625
     },
     {
       "slug": "paramount-hotel-midtown",
       "objs": 62,
-      "kb": 69.41796875
+      "kb": 70.0703125
     },
     {
       "slug": "the-opus",
-      "objs": 5,
-      "kb": 5.88671875
+      "objs": 3,
+      "kb": 6.6953125
     },
     {
       "slug": "ubora-tower-1",
@@ -86,12 +86,12 @@
     {
       "slug": "churchill-tower",
       "objs": 49,
-      "kb": 54.40234375
+      "kb": 54.17578125
     },
     {
       "slug": "bay-gate-tower",
       "objs": 49,
-      "kb": 55.11328125
+      "kb": 55.0234375
     },
     {
       "slug": "marasi-business-bay",
@@ -100,5 +100,5 @@
     }
   ],
   "build_seconds": 0.2,
-  "elapsed_total_seconds": 4.3
+  "elapsed_total_seconds": 4.2
 }
