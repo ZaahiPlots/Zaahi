@@ -210,14 +210,16 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
-// ── 3D-buildings spike (feat/3d-buildings-deckgl-spike, 2026-05-24) ──
-// Hero GLB hand-built in Blender 5.1 — see docs/research/3d-buildings-pilot/.
-// Drops a single Millennium Tower model onto the map via deck.gl's
-// ScenegraphLayer + MapboxOverlay. Always-on; no UI toggle (spike).
-// Z-fights with the OSM-derived PMTiles building at the same plot —
-// accepted for the spike per founder go.
-const HERO_GLB_URL = "/glb/millennium-tower-detailed.glb";
-const HERO_COORDS: [number, number] = [55.265898, 25.194813]; // Millennium Tower centroid (OSM way 203296254)
+// ── 3D-buildings spike — Business Bay full scene v3 (2026-05-25) ──
+// Combined GLB built in Blender 5.1 headless — see docs/research/3d-buildings-pilot/.
+// Drops the full Business Bay 3D scene (460 buildings, 19 heroes with
+// custom shapes: Opus two-towers, Vision bent, Churchill stepped) onto
+// the map via deck.gl's ScenegraphLayer + MapboxOverlay. Always-on; no
+// UI toggle (spike). Anchor MUST match the build script's LAT0/LNG0 in
+// build-all-bb.py so per-building offsets baked into the GLB resolve to
+// real world coords. Z-fights with PMTiles 3D buildings accepted per spike.
+const HERO_GLB_URL = "/glb/business-bay-all.glb";
+const HERO_COORDS: [number, number] = [55.271, 25.1875]; // BB bbox center — matches build-all-bb.py LAT0/LNG0
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -3877,18 +3879,16 @@ function ParcelsMapPageInner() {
         effects: [lightingEffect],
         layers: [
           new ScenegraphLayer({
-            id: "hero-millennium-tower",
+            id: "bb-all-buildings",
             data: [{ position: HERO_COORDS }],
             scenegraph: HERO_GLB_URL,
             getPosition: (d: { position: [number, number] }) => d.position,
             // [pitch, yaw, roll] in degrees.
-            //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  -50  → clockwise (viewed from above) so the
-            //     building's broad face lines up parallel to the
-            //     SW→NE road that runs along the plot. -40 left the
-            //     facade slightly off; founder dialled to -50 against
-            //     the live basemap 2026-05-25.
-            getOrientation: [0, -50, 90],
+            //   roll +90 → glTF Y-up → deck.gl Z-up (whole scene stands upright).
+            //   yaw   0  → keep buildings in natural OSM orientation; each
+            //              building's per-footprint rotation is already baked
+            //              into the GLB at bake time.
+            getOrientation: [0, 0, 90],
             // sizeScale 1.0 — the GLB was authored in real-world metres
             // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
             // with default coordinateSystem LNGLAT interprets model coords
