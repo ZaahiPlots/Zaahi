@@ -210,14 +210,15 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
-// ── 3D-buildings spike (feat/3d-buildings-deckgl-spike, 2026-05-24) ──
-// Hero GLB hand-built in Blender 5.1 — see docs/research/3d-buildings-pilot/.
-// Drops a single Millennium Tower model onto the map via deck.gl's
-// ScenegraphLayer + MapboxOverlay. Always-on; no UI toggle (spike).
-// Z-fights with the OSM-derived PMTiles building at the same plot —
-// accepted for the spike per founder go.
+// ── 3D-buildings — Millennium Tower v12 hero (2026-05-25) ──
+// v12 build — best parametric ceiling from 7-iteration vision-compare
+// loop (45 % similarity vs reference photos, see BB_HEROES_RESEARCH.md
+// + image-compare.py). Footprint baked in real-world OSM dimensions
+// 43 × 33 m, ROT_DEG 40.1° preserved. Anchor coords founder-locked via
+// in-map GLB dev-tool drag-handle 2026-05-25. yaw +10° aligns broad
+// face with Sheikh Zayed Road (SW→NE).
 const HERO_GLB_URL = "/glb/millennium-tower-detailed.glb";
-const HERO_COORDS: [number, number] = [55.265898, 25.194813]; // Millennium Tower centroid (OSM way 203296254)
+const HERO_COORDS: [number, number] = [55.266357, 25.195364]; // Founder-locked (dev-tool tuned)
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
