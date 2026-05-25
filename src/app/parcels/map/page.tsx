@@ -224,6 +224,12 @@ const HERO_GLB_URL = "/glb/buildings/burj-crown.glb";
 const HERO_COORDS: [number, number, number] = [55.268903, 25.193977, 500];
 const HERO_ORIENTATION: [number, number, number] = [1, -80, -86];
 const HERO_SIZE_SCALE = 2.40;
+// Burj Khalifa (Sketchfab CC-BY-4.0 by SDC PERFORMANCE™ — Downtown Dubai).
+// Position constants are baseline; orientation/size/elev tuned via dev-tool.
+const HERO_GLB_URL_KHALIFA = "/glb/buildings/burj-khalifa.glb";
+const HERO_COORDS_KHALIFA: [number, number, number] = [55.274288, 25.197525, 0];
+const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 0, 0];
+const HERO_SIZE_SCALE_KHALIFA = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1585,6 +1591,13 @@ function ParcelsMapPageInner() {
   const [glbRoll, setGlbRoll] = useState<number>(HERO_ORIENTATION[2]);
   const [glbSize, setGlbSize] = useState<number>(HERO_SIZE_SCALE);
   const [glbElev, setGlbElev] = useState<number>(HERO_COORDS[2]);
+  // Burj Khalifa dev state — pitch/yaw/roll/size/elev tuned via panel.
+  // Position (lng, lat) fixed via HERO_COORDS_KHALIFA — no drag handle.
+  const [khalifaYaw, setKhalifaYaw] = useState<number>(HERO_ORIENTATION_KHALIFA[1]);
+  const [khalifaPitch, setKhalifaPitch] = useState<number>(HERO_ORIENTATION_KHALIFA[0]);
+  const [khalifaRoll, setKhalifaRoll] = useState<number>(HERO_ORIENTATION_KHALIFA[2]);
+  const [khalifaSize, setKhalifaSize] = useState<number>(HERO_SIZE_SCALE_KHALIFA);
+  const [khalifaElev, setKhalifaElev] = useState<number>(HERO_COORDS_KHALIFA[2]);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4034,9 +4047,22 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB] ScenegraphLayer error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-burj-khalifa",
+          data: [{ position: [HERO_COORDS_KHALIFA[0], HERO_COORDS_KHALIFA[1], khalifaElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_KHALIFA,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [khalifaPitch, khalifaYaw, khalifaRoll],
+          sizeScale: khalifaSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Khalifa] error:", err),
+        }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev, glbActive, devMode, overlayReady]);
+  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
+      khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
+      glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
@@ -4097,6 +4123,15 @@ function ParcelsMapPageInner() {
 
   const copyGlbConfig = () => {
     const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
+    try {
+      void navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — silent */
+    }
+  };
+
+  const copyKhalifaConfig = () => {
+    const text = `// Burj Khalifa\ndata: [{ position: [${HERO_COORDS_KHALIFA[0]}, ${HERO_COORDS_KHALIFA[1]}, ${khalifaElev}] }],\ngetOrientation: [${khalifaPitch}, ${khalifaYaw}, ${khalifaRoll}],\nsizeScale: ${khalifaSize},`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4472,7 +4507,7 @@ function ParcelsMapPageInner() {
             letterSpacing: "0.08em",
           }}
         >
-          GLB Position (dev)
+          BURJ CROWN (dev)
         </div>
         <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
           lng: {glbLng.toFixed(6)}
@@ -4581,6 +4616,169 @@ function ParcelsMapPageInner() {
         <button
           type="button"
           onClick={copyGlbConfig}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
+            e.currentTarget.style.borderColor = "#C8A96E";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
+          }}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(200,169,110,0.3)",
+            borderRadius: 8,
+            color: "#C8A96E",
+            cursor: "pointer",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            fontFamily: "inherit",
+            textTransform: "uppercase",
+            transition:
+              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
+          }}
+        >
+          Copy Config
+        </button>
+      </div>}
+
+      {devMode && <div
+        style={{
+          position: "absolute",
+          top: 80,
+          right: 290,
+          width: 260,
+          padding: 16,
+          background: "rgba(10,22,40,0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 12,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          color: "#C8A96E",
+          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          zIndex: 51,
+        }}
+      >
+        <div
+          style={{
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 8,
+            letterSpacing: "0.08em",
+          }}
+        >
+          BURJ KHALIFA (dev)
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lng: {HERO_COORDS_KHALIFA[0].toFixed(6)}
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lat: {HERO_COORDS_KHALIFA[1].toFixed(6)}
+        </div>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          yaw: {khalifaYaw}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={khalifaYaw}
+          onChange={(e) => setKhalifaYaw(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          pitch: {khalifaPitch}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={khalifaPitch}
+          onChange={(e) => setKhalifaPitch(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          roll: {khalifaRoll}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={khalifaRoll}
+          onChange={(e) => setKhalifaRoll(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          size: {khalifaSize.toFixed(2)}×
+        </div>
+        <input
+          type="range"
+          min={0.1}
+          max={20}
+          step={0.1}
+          value={khalifaSize}
+          onChange={(e) => setKhalifaSize(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          elev: {khalifaElev} m
+        </div>
+        <input
+          type="range"
+          min={-200}
+          max={1500}
+          step={1}
+          value={khalifaElev}
+          onChange={(e) => setKhalifaElev(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <button
+          type="button"
+          onClick={copyKhalifaConfig}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(200,169,110,0.25)";
             e.currentTarget.style.borderColor = "#C8A96E";
