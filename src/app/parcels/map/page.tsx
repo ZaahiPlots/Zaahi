@@ -1577,6 +1577,9 @@ function ParcelsMapPageInner() {
   const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
   const [glbYaw, setGlbYaw] = useState<number>(12);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
+  // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
+  // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
+  const [glbActive, setGlbActive] = useState(false);
   const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
@@ -3882,34 +3885,13 @@ function ParcelsMapPageInner() {
           direction: [-1, -3, -1],
         }),
       });
+      // Lazy: start with empty layers. The sync effect below populates
+      // the ScenegraphLayer only when glbActive is true (zoom ≥ 14 + within
+      // ~5 km of BB centroid). Saves the 1.2 MB GLB fetch on city-wide views.
       const overlay = new MapboxOverlay({
         interleaved: true,
         effects: [lightingEffect],
-        layers: [
-          new ScenegraphLayer({
-            id: "hero-millennium-tower",
-            data: [{ position: HERO_COORDS }],
-            scenegraph: HERO_GLB_URL,
-            getPosition: (d: { position: [number, number] }) => d.position,
-            // [pitch, yaw, roll] in degrees.
-            //   roll +90  → glTF Y-up → deck.gl Z-up (stands upright).
-            //   yaw  +12  → counter-clockwise so the broad face lines
-            //     up parallel to Sheikh Zayed Road (SW→NE). Founder
-            //     iterated via in-map dev-tool: -50 → -30 → +10 → +12.
-            //     Current value 2026-05-25 r2.
-            getOrientation: [0, 12, 90],
-            // sizeScale 1.0 — the GLB was authored in real-world metres
-            // in Blender (footprint 43×33 m, height 285 m). ScenegraphLayer
-            // with default coordinateSystem LNGLAT interprets model coords
-            // as metres at the anchor's WebMercator projection. At Dubai
-            // latitude (25.19° N) Mercator stretches horizontal distances
-            // by 1/cos(25°) ≈ +10 %, so the footprint reads ~10 % wider
-            // than reality on screen — acceptable for the spike.
-            sizeScale: 1,
-            _lighting: "pbr",
-            pickable: false,
-          }),
-        ],
+        layers: [],
       });
       map.addControl(overlay as unknown as maplibregl.IControl);
       deckOverlayRef.current = overlay;
@@ -3971,14 +3953,44 @@ function ParcelsMapPageInner() {
     };
   }, []);
 
+  // ── Lazy gate — watch zoom + center, only enable GLB when zoomed in
+  // close to Business Bay. Saves bandwidth + WebGL memory on initial /
+  // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const BB_LNG = 55.271;
+    const BB_LAT = 25.1875;
+    const MAX_KM = 5;
+    const MIN_ZOOM = 14;
+    const evaluate = () => {
+      const z = map.getZoom();
+      const c = map.getCenter();
+      const dx = (c.lng - BB_LNG) * 111 * Math.cos(BB_LAT * Math.PI / 180);
+      const dy = (c.lat - BB_LAT) * 111;
+      const distKm = Math.hypot(dx, dy);
+      const next = z >= MIN_ZOOM && distKm <= MAX_KM;
+      setGlbActive((prev) => (prev === next ? prev : next));
+    };
+    evaluate();
+    map.on("moveend", evaluate);
+    map.on("zoomend", evaluate);
+    return () => {
+      map.off("moveend", evaluate);
+      map.off("zoomend", evaluate);
+    };
+  }, [mapStyleReady]);
+
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
-  // The map-init effect creates the layer once with initial constants;
-  // this effect calls setProps with a fresh ScenegraphLayer whenever
-  // the founder drags the crosshair or scrubs the yaw slider, so
-  // changes appear live without re-mounting the MapboxOverlay.
+  // Also lazy-gated by glbActive — when false, layers cleared (no GLB
+  // fetch / GPU upload).
   useEffect(() => {
     const overlay = deckOverlayRef.current;
     if (!overlay) return;
+    if (!glbActive) {
+      overlay.setProps({ layers: [] });
+      return;
+    }
     overlay.setProps({
       layers: [
         new ScenegraphLayer({
@@ -3993,7 +4005,7 @@ function ParcelsMapPageInner() {
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw]);
+  }, [glbLng, glbLat, glbYaw, glbActive]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
   // space (re-project on every map move + on state change) and wire
@@ -4379,7 +4391,7 @@ function ParcelsMapPageInner() {
           Config writes a drop-in HERO_COORDS + getOrientation snippet
           to the clipboard. Removable in one diff once positions are
           finalised. Glassmorphism per CLAUDE.md UI Style Guide. */}
-      {glbHandlePx && (
+      {glbHandlePx && glbActive && (
         <div
           onMouseDown={onGlbHandleMouseDown}
           title="Drag to move GLB anchor"
