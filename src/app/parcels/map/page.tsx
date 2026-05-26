@@ -238,6 +238,16 @@ const HERO_GLB_URL_MILL = "/glb/buildings/millennium-tower.glb";
 const HERO_COORDS_MILL: [number, number, number] = [55.263728, 25.193823, -1];
 const HERO_ORIENTATION_MILL: [number, number, number] = [0, -41, 90];
 const HERO_SIZE_SCALE_MILL = 0.80;
+// Address Downtown — Meshy multi-image-to-3D from 4 ground-level photos
+// (Wikipedia + Bayut + addresshotels.com). Raw 1.25M tris → Blender
+// Decimate Collapse @ ratio 0.18 → 225K tris, then non-uniform scaled to
+// real dims 306m × 60×40m footprint. Position from Wikipedia infobox
+// (25.1936°N, 55.2768°E — Downtown Dubai, fountain side of Burj Khalifa).
+// Defaults [0,0,0] / 1.0 / elev 0 — tune via dev-tool sliders.
+const HERO_GLB_URL_ADDR = "/glb/buildings/address-downtown.glb";
+const HERO_COORDS_ADDR: [number, number, number] = [55.2768, 25.1936, 0];
+const HERO_ORIENTATION_ADDR: [number, number, number] = [0, 0, 0];
+const HERO_SIZE_SCALE_ADDR = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1621,6 +1631,17 @@ function ParcelsMapPageInner() {
   const [millLat, setMillLat] = useState<number>(HERO_COORDS_MILL[1]);
   const [millHandlePx, setMillHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingMillRef = useRef(false);
+  // Address Downtown dev state — same shape as khalifa/mill (lng/lat via drag
+  // handle + 5 sliders). Defaults from HERO_*_ADDR constants above.
+  const [addrYaw, setAddrYaw] = useState<number>(HERO_ORIENTATION_ADDR[1]);
+  const [addrPitch, setAddrPitch] = useState<number>(HERO_ORIENTATION_ADDR[0]);
+  const [addrRoll, setAddrRoll] = useState<number>(HERO_ORIENTATION_ADDR[2]);
+  const [addrSize, setAddrSize] = useState<number>(HERO_SIZE_SCALE_ADDR);
+  const [addrElev, setAddrElev] = useState<number>(HERO_COORDS_ADDR[2]);
+  const [addrLng, setAddrLng] = useState<number>(HERO_COORDS_ADDR[0]);
+  const [addrLat, setAddrLat] = useState<number>(HERO_COORDS_ADDR[1]);
+  const [addrHandlePx, setAddrHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingAddrRef = useRef(false);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4099,11 +4120,23 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Millennium] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-address-downtown",
+          data: [{ position: [addrLng, addrLat, addrElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_ADDR,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [addrPitch, addrYaw, addrRoll],
+          sizeScale: addrSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Address] error:", err),
+        }),
       ],
     });
   }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
       khalifaLng, khalifaLat, khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
       millLng, millLat, millYaw, millPitch, millRoll, millSize, millElev,
+      addrLng, addrLat, addrYaw, addrPitch, addrRoll, addrSize, addrElev,
       glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
@@ -4194,6 +4227,21 @@ function ParcelsMapPageInner() {
     };
   }, [millLng, millLat, mapStyleReady, devMode]);
 
+  // Address Downtown handle — same lng/lat projection pattern as khalifa/mill.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([addrLng, addrLat]);
+      setAddrHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => {
+      map.off("move", project);
+    };
+  }, [addrLng, addrLat, mapStyleReady, devMode]);
+
   const onKhalifaHandleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -4246,6 +4294,32 @@ function ParcelsMapPageInner() {
     document.addEventListener("mouseup", onUp);
   };
 
+  const onAddrHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const map = mapRef.current;
+    if (!map) return;
+    map.dragPan.disable();
+    draggingAddrRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      ]);
+      setAddrLng(ll.lng);
+      setAddrLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable();
+      draggingAddrRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
 
   const copyGlbConfig = () => {
     const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
@@ -4267,6 +4341,15 @@ function ParcelsMapPageInner() {
 
   const copyMillConfig = () => {
     const text = `// Millennium Tower\ndata: [{ position: [${millLng.toFixed(6)}, ${millLat.toFixed(6)}, ${millElev}] }],\ngetOrientation: [${millPitch}, ${millYaw}, ${millRoll}],\nsizeScale: ${millSize},`;
+    try {
+      void navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — silent */
+    }
+  };
+
+  const copyAddrConfig = () => {
+    const text = `// Address Downtown\ndata: [{ position: [${addrLng.toFixed(6)}, ${addrLat.toFixed(6)}, ${addrElev}] }],\ngetOrientation: [${addrPitch}, ${addrYaw}, ${addrRoll}],\nsizeScale: ${addrSize},`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4647,6 +4730,27 @@ function ParcelsMapPageInner() {
             width: 24,
             height: 24,
             cursor: draggingMillRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E",
+            borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow:
+              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50,
+            pointerEvents: "auto",
+          }}
+        />
+      )}
+      {devMode && addrHandlePx && glbActive && (
+        <div
+          onMouseDown={onAddrHandleMouseDown}
+          title="Drag to move Address Downtown anchor"
+          style={{
+            position: "absolute",
+            left: addrHandlePx.x - 12,
+            top: addrHandlePx.y - 12,
+            width: 24,
+            height: 24,
+            cursor: draggingAddrRef.current ? "grabbing" : "grab",
             border: "2px solid #C8A96E",
             borderRadius: "50%",
             background: "rgba(200,169,110,0.2)",
@@ -5120,6 +5224,169 @@ function ParcelsMapPageInner() {
         <button
           type="button"
           onClick={copyMillConfig}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
+            e.currentTarget.style.borderColor = "#C8A96E";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
+          }}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(200,169,110,0.3)",
+            borderRadius: 8,
+            color: "#C8A96E",
+            cursor: "pointer",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            fontFamily: "inherit",
+            textTransform: "uppercase",
+            transition:
+              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
+          }}
+        >
+          Copy Config
+        </button>
+      </div>}
+
+      {devMode && <div
+        style={{
+          position: "absolute",
+          top: 80,
+          right: 838,
+          width: 260,
+          padding: 16,
+          background: "rgba(10,22,40,0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 12,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          color: "#C8A96E",
+          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          zIndex: 51,
+        }}
+      >
+        <div
+          style={{
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 8,
+            letterSpacing: "0.08em",
+          }}
+        >
+          ADDRESS DOWNTOWN (dev)
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lng: {addrLng.toFixed(6)}
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lat: {addrLat.toFixed(6)}
+        </div>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          yaw: {addrYaw}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={addrYaw}
+          onChange={(e) => setAddrYaw(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          pitch: {addrPitch}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={addrPitch}
+          onChange={(e) => setAddrPitch(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          roll: {addrRoll}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={addrRoll}
+          onChange={(e) => setAddrRoll(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          size: {addrSize.toFixed(2)}×
+        </div>
+        <input
+          type="range"
+          min={0.1}
+          max={5}
+          step={0.1}
+          value={addrSize}
+          onChange={(e) => setAddrSize(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          elev: {addrElev} m
+        </div>
+        <input
+          type="range"
+          min={-200}
+          max={500}
+          step={1}
+          value={addrElev}
+          onChange={(e) => setAddrElev(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <button
+          type="button"
+          onClick={copyAddrConfig}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(200,169,110,0.25)";
             e.currentTarget.style.borderColor = "#C8A96E";
