@@ -221,15 +221,15 @@ const HERO_GLB_URL = "/glb/buildings/burj-crown.glb";
 // Founder-locked Burj Crown placement on Downtown Boulevard (2026-05-26).
 // Position is [lng, lat, elev_meters]; orientation is [pitch, yaw, roll]
 // in degrees fed to deck.gl ScenegraphLayer.getOrientation.
-const HERO_COORDS: [number, number, number] = [55.268903, 25.193977, 500];
+const HERO_COORDS: [number, number, number] = [55.268824, 25.193982, 500];
 const HERO_ORIENTATION: [number, number, number] = [1, -80, -86];
-const HERO_SIZE_SCALE = 2.40;
+const HERO_SIZE_SCALE = 2.50;
 // Burj Khalifa (Sketchfab CC-BY-4.0 by SDC PERFORMANCE™ — Downtown Dubai).
 // Position constants are baseline; orientation/size/elev tuned via dev-tool.
 const HERO_GLB_URL_KHALIFA = "/glb/buildings/burj-khalifa.glb";
-const HERO_COORDS_KHALIFA: [number, number, number] = [55.274288, 25.197525, 0];
-const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 0, 0];
-const HERO_SIZE_SCALE_KHALIFA = 1.0;
+const HERO_COORDS_KHALIFA: [number, number, number] = [55.274123, 25.197204, 0];
+const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 53, 90];
+const HERO_SIZE_SCALE_KHALIFA = 1.20;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
