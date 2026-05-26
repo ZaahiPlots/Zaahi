@@ -230,11 +230,6 @@ const HERO_GLB_URL_KHALIFA = "/glb/buildings/burj-khalifa.glb";
 const HERO_COORDS_KHALIFA: [number, number, number] = [55.274123, 25.197204, 0];
 const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 53, 90];
 const HERO_SIZE_SCALE_KHALIFA = 1.20;
-// SLS Dubai (Marasi Drive, Business Bay). Real height ~336m, 75 floors.
-const HERO_GLB_URL_SLS = "/glb/buildings/sls-dubai.glb";
-const HERO_COORDS_SLS: [number, number, number] = [55.2923476, 25.1846151, 0];
-const HERO_ORIENTATION_SLS: [number, number, number] = [0, 0, 0];
-const HERO_SIZE_SCALE_SLS = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1607,16 +1602,6 @@ function ParcelsMapPageInner() {
   const [khalifaLat, setKhalifaLat] = useState<number>(HERO_COORDS_KHALIFA[1]);
   const [khalifaHandlePx, setKhalifaHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingKhalifaRef = useRef(false);
-  // SLS Dubai dev state
-  const [slsYaw, setSlsYaw] = useState<number>(HERO_ORIENTATION_SLS[1]);
-  const [slsPitch, setSlsPitch] = useState<number>(HERO_ORIENTATION_SLS[0]);
-  const [slsRoll, setSlsRoll] = useState<number>(HERO_ORIENTATION_SLS[2]);
-  const [slsSize, setSlsSize] = useState<number>(HERO_SIZE_SCALE_SLS);
-  const [slsElev, setSlsElev] = useState<number>(HERO_COORDS_SLS[2]);
-  const [slsLng, setSlsLng] = useState<number>(HERO_COORDS_SLS[0]);
-  const [slsLat, setSlsLat] = useState<number>(HERO_COORDS_SLS[1]);
-  const [slsHandlePx, setSlsHandlePx] = useState<{ x: number; y: number } | null>(null);
-  const draggingSlsRef = useRef(false);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -3991,7 +3976,7 @@ function ParcelsMapPageInner() {
   // that actually attaches the overlay.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !devMode || !mapStyleReady) return;
+    if (!map || !mapStyleReady) return;
     if (deckOverlayRef.current) return;     // already attached
     try {
       const lightingEffect = new LightingEffect({
@@ -4019,20 +4004,27 @@ function ParcelsMapPageInner() {
     } catch (e) {
       console.warn("[deckgl-spike] overlay init failed:", e);
     }
-  }, [devMode, mapStyleReady]);
+  }, [mapStyleReady]);
 
-  // ── Lazy gate — watch zoom + center, only enable GLB when zoomed in
-  // close to Business Bay. Saves bandwidth + WebGL memory on initial /
-  // city-wide views. Threshold: zoom ≥ 14 AND within 5 km of BB centroid.
+  // ── Lazy gate — hero GLBs render only at zoom ≥ 14, matching the
+  // PMTiles 3D + ZAAHI Signature 3D threshold so the visibility band is
+  // consistent across all 3D layers. At zoom < 14 the ScenegraphLayers
+  // are cleared (no GLB fetch / GPU upload), so the city-wide view is
+  // unaffected by the multi-MB asset.
   useEffect(() => {
-    if (!devMode) return;
-    // DIAGNOSTIC mode: skip lazy-gate (zoom + distance check). Force
-    // glbActive=true unconditionally so we can verify if GLB loads at
-    // all, regardless of where the camera is pointing. Restore lazy-gate
-    // once founder confirms GLB is visible on map.
-    console.log("[GLB] diagnostic mode — forcing glbActive=true (no zoom/distance check)");
-    setGlbActive(true);
-  }, [mapStyleReady, devMode]);
+    const map = mapRef.current;
+    if (!map) return;
+    const ZOOM_GATE = 14;
+    const update = () => {
+      const active = map.getZoom() >= ZOOM_GATE;
+      setGlbActive((prev) => (prev === active ? prev : active));
+    };
+    update();
+    map.on("zoomend", update);
+    return () => {
+      map.off("zoomend", update);
+    };
+  }, [mapStyleReady]);
 
   // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
   // Also lazy-gated by glbActive — when false, layers cleared (no GLB
@@ -4040,7 +4032,7 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const overlay = deckOverlayRef.current;
     console.log("[GLB] sync:", { devMode, hasOverlay: !!overlay, glbActive, overlayReady });
-    if (!overlay || !devMode) return;
+    if (!overlay) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
@@ -4077,22 +4069,10 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Khalifa] error:", err),
         }),
-        new ScenegraphLayer({
-          id: "hero-sls-dubai",
-          data: [{ position: [slsLng, slsLat, slsElev] as [number, number, number] }],
-          scenegraph: HERO_GLB_URL_SLS,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: [slsPitch, slsYaw, slsRoll],
-          sizeScale: slsSize,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB SLS] error:", err),
-        }),
       ],
     });
   }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
       khalifaLng, khalifaLat, khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
-      slsLng, slsLat, slsYaw, slsPitch, slsRoll, slsSize, slsElev,
       glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
@@ -4194,46 +4174,6 @@ function ParcelsMapPageInner() {
     document.addEventListener("mouseup", onUp);
   };
 
-  // SLS Dubai handle — own screen-space projection + drag handler.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    const project = () => {
-      const p = map.project([slsLng, slsLat]);
-      setSlsHandlePx({ x: p.x, y: p.y });
-    };
-    project();
-    map.on("move", project);
-    return () => {
-      map.off("move", project);
-    };
-  }, [slsLng, slsLat, mapStyleReady, devMode]);
-
-  const onSlsHandleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const map = mapRef.current;
-    if (!map) return;
-    map.dragPan.disable();
-    draggingSlsRef.current = true;
-    const onMove = (ev: MouseEvent) => {
-      const rect = map.getContainer().getBoundingClientRect();
-      const ll = map.unproject([
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      ]);
-      setSlsLng(ll.lng);
-      setSlsLat(ll.lat);
-    };
-    const onUp = () => {
-      map.dragPan.enable();
-      draggingSlsRef.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
 
   const copyGlbConfig = () => {
     const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
@@ -4253,14 +4193,6 @@ function ParcelsMapPageInner() {
     }
   };
 
-  const copySlsConfig = () => {
-    const text = `// SLS Dubai\ndata: [{ position: [${slsLng.toFixed(6)}, ${slsLat.toFixed(6)}, ${slsElev}] }],\ngetOrientation: [${slsPitch}, ${slsYaw}, ${slsRoll}],\nsizeScale: ${slsSize},`;
-    try {
-      void navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — silent */
-    }
-  };
 
   // Drive the drone controller from React state. Persists choice and
   // flashes the on-enable toast. Keeps WASD behaviour strictly opt-in.
@@ -4623,27 +4555,6 @@ function ParcelsMapPageInner() {
           }}
         />
       )}
-      {devMode && slsHandlePx && glbActive && (
-        <div
-          onMouseDown={onSlsHandleMouseDown}
-          title="Drag to move SLS Dubai anchor"
-          style={{
-            position: "absolute",
-            left: slsHandlePx.x - 12,
-            top: slsHandlePx.y - 12,
-            width: 24,
-            height: 24,
-            cursor: draggingSlsRef.current ? "grabbing" : "grab",
-            border: "2px solid #C8A96E",
-            borderRadius: "50%",
-            background: "rgba(200,169,110,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-        />
-      )}
       {devMode && <div
         style={{
           position: "absolute",
@@ -4944,134 +4855,6 @@ function ParcelsMapPageInner() {
         <button
           type="button"
           onClick={copyKhalifaConfig}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-            e.currentTarget.style.borderColor = "#C8A96E";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
-          }}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(200,169,110,0.3)",
-            borderRadius: 8,
-            color: "#C8A96E",
-            cursor: "pointer",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            transition:
-              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
-          }}
-        >
-          Copy Config
-        </button>
-      </div>}
-
-      {devMode && <div
-        style={{
-          position: "absolute",
-          top: 80,
-          right: 564,
-          width: 260,
-          padding: 16,
-          background: "rgba(10,22,40,0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-          color: "#C8A96E",
-          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-          fontSize: 11,
-          letterSpacing: "0.04em",
-          zIndex: 51,
-        }}
-      >
-        <div
-          style={{
-            textTransform: "uppercase",
-            fontWeight: 600,
-            marginBottom: 8,
-            letterSpacing: "0.08em",
-          }}
-        >
-          SLS DUBAI (dev)
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {slsLng.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {slsLat.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-          yaw: {slsYaw}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={slsYaw}
-          onChange={(e) => setSlsYaw(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-          pitch: {slsPitch}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={slsPitch}
-          onChange={(e) => setSlsPitch(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-          roll: {slsRoll}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={slsRoll}
-          onChange={(e) => setSlsRoll(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-          size: {slsSize.toFixed(2)}×
-        </div>
-        <input
-          type="range"
-          min={0.1}
-          max={50}
-          step={0.1}
-          value={slsSize}
-          onChange={(e) => setSlsSize(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-          elev: {slsElev} m
-        </div>
-        <input
-          type="range"
-          min={-200}
-          max={1500}
-          step={1}
-          value={slsElev}
-          onChange={(e) => setSlsElev(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <button
-          type="button"
-          onClick={copySlsConfig}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(200,169,110,0.25)";
             e.currentTarget.style.borderColor = "#C8A96E";
