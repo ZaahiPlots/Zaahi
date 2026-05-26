@@ -230,6 +230,15 @@ const HERO_GLB_URL_KHALIFA = "/glb/buildings/burj-khalifa.glb";
 const HERO_COORDS_KHALIFA: [number, number, number] = [55.274123, 25.197204, 0];
 const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 53, 90];
 const HERO_SIZE_SCALE_KHALIFA = 1.20;
+// Millennium Tower (Business Bay) — Meshy multi-image-to-3D (2026-05-26).
+// 4 reference photos → 310K-tri GLB, non-uniform scaled in Blender to real
+// dimensions: 285 m height, 43×33 m footprint. Base at z=0, centred at
+// xy=(0,0). Defaults per founder spec 2026-05-26: orientation [0,0,0],
+// size 1.0, elev 0 — tune via dev-tool sliders.
+const HERO_GLB_URL_MILL = "/glb/buildings/millennium-tower.glb";
+const HERO_COORDS_MILL: [number, number, number] = [55.265873, 25.194813, 0];
+const HERO_ORIENTATION_MILL: [number, number, number] = [0, 0, 0];
+const HERO_SIZE_SCALE_MILL = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1602,6 +1611,17 @@ function ParcelsMapPageInner() {
   const [khalifaLat, setKhalifaLat] = useState<number>(HERO_COORDS_KHALIFA[1]);
   const [khalifaHandlePx, setKhalifaHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingKhalifaRef = useRef(false);
+  // Millennium Tower dev state — same shape as khalifa* (lng/lat via drag
+  // handle + 5 sliders). Defaults from HERO_*_MILL constants above.
+  const [millYaw, setMillYaw] = useState<number>(HERO_ORIENTATION_MILL[1]);
+  const [millPitch, setMillPitch] = useState<number>(HERO_ORIENTATION_MILL[0]);
+  const [millRoll, setMillRoll] = useState<number>(HERO_ORIENTATION_MILL[2]);
+  const [millSize, setMillSize] = useState<number>(HERO_SIZE_SCALE_MILL);
+  const [millElev, setMillElev] = useState<number>(HERO_COORDS_MILL[2]);
+  const [millLng, setMillLng] = useState<number>(HERO_COORDS_MILL[0]);
+  const [millLat, setMillLat] = useState<number>(HERO_COORDS_MILL[1]);
+  const [millHandlePx, setMillHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingMillRef = useRef(false);
   const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
   // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
   // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
@@ -4069,10 +4089,22 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Khalifa] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-millennium-tower-bb",
+          data: [{ position: [millLng, millLat, millElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_MILL,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [millPitch, millYaw, millRoll],
+          sizeScale: millSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Millennium] error:", err),
+        }),
       ],
     });
   }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
       khalifaLng, khalifaLat, khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
+      millLng, millLat, millYaw, millPitch, millRoll, millSize, millElev,
       glbActive, devMode, overlayReady]);
 
   // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
@@ -4148,6 +4180,21 @@ function ParcelsMapPageInner() {
     };
   }, [khalifaLng, khalifaLat, mapStyleReady, devMode]);
 
+  // Millennium Tower handle — same lng/lat projection pattern as khalifa.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([millLng, millLat]);
+      setMillHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => {
+      map.off("move", project);
+    };
+  }, [millLng, millLat, mapStyleReady, devMode]);
+
   const onKhalifaHandleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -4174,6 +4221,32 @@ function ParcelsMapPageInner() {
     document.addEventListener("mouseup", onUp);
   };
 
+  const onMillHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const map = mapRef.current;
+    if (!map) return;
+    map.dragPan.disable();
+    draggingMillRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      ]);
+      setMillLng(ll.lng);
+      setMillLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable();
+      draggingMillRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
 
   const copyGlbConfig = () => {
     const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
@@ -4186,6 +4259,15 @@ function ParcelsMapPageInner() {
 
   const copyKhalifaConfig = () => {
     const text = `// Burj Khalifa\ndata: [{ position: [${khalifaLng.toFixed(6)}, ${khalifaLat.toFixed(6)}, ${khalifaElev}] }],\ngetOrientation: [${khalifaPitch}, ${khalifaYaw}, ${khalifaRoll}],\nsizeScale: ${khalifaSize},`;
+    try {
+      void navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — silent */
+    }
+  };
+
+  const copyMillConfig = () => {
+    const text = `// Millennium Tower\ndata: [{ position: [${millLng.toFixed(6)}, ${millLat.toFixed(6)}, ${millElev}] }],\ngetOrientation: [${millPitch}, ${millYaw}, ${millRoll}],\nsizeScale: ${millSize},`;
     try {
       void navigator.clipboard.writeText(text);
     } catch {
@@ -4555,6 +4637,27 @@ function ParcelsMapPageInner() {
           }}
         />
       )}
+      {devMode && millHandlePx && glbActive && (
+        <div
+          onMouseDown={onMillHandleMouseDown}
+          title="Drag to move Millennium Tower anchor"
+          style={{
+            position: "absolute",
+            left: millHandlePx.x - 12,
+            top: millHandlePx.y - 12,
+            width: 24,
+            height: 24,
+            cursor: draggingMillRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E",
+            borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow:
+              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50,
+            pointerEvents: "auto",
+          }}
+        />
+      )}
       {devMode && <div
         style={{
           position: "absolute",
@@ -4855,6 +4958,169 @@ function ParcelsMapPageInner() {
         <button
           type="button"
           onClick={copyKhalifaConfig}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
+            e.currentTarget.style.borderColor = "#C8A96E";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
+          }}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(200,169,110,0.3)",
+            borderRadius: 8,
+            color: "#C8A96E",
+            cursor: "pointer",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            fontFamily: "inherit",
+            textTransform: "uppercase",
+            transition:
+              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
+          }}
+        >
+          Copy Config
+        </button>
+      </div>}
+
+      {devMode && <div
+        style={{
+          position: "absolute",
+          top: 80,
+          right: 564,
+          width: 260,
+          padding: 16,
+          background: "rgba(10,22,40,0.4)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 12,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+          color: "#C8A96E",
+          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          zIndex: 51,
+        }}
+      >
+        <div
+          style={{
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 8,
+            letterSpacing: "0.08em",
+          }}
+        >
+          MILLENNIUM TOWER (dev)
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lng: {millLng.toFixed(6)}
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
+          lat: {millLat.toFixed(6)}
+        </div>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          yaw: {millYaw}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={millYaw}
+          onChange={(e) => setMillYaw(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          pitch: {millPitch}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={millPitch}
+          onChange={(e) => setMillPitch(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          roll: {millRoll}°
+        </div>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={1}
+          value={millRoll}
+          onChange={(e) => setMillRoll(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          size: {millSize.toFixed(2)}×
+        </div>
+        <input
+          type="range"
+          min={0.1}
+          max={5}
+          step={0.1}
+          value={millSize}
+          onChange={(e) => setMillSize(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            marginTop: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          elev: {millElev} m
+        </div>
+        <input
+          type="range"
+          min={-200}
+          max={500}
+          step={1}
+          value={millElev}
+          onChange={(e) => setMillElev(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
+        />
+        <button
+          type="button"
+          onClick={copyMillConfig}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(200,169,110,0.25)";
             e.currentTarget.style.borderColor = "#C8A96E";
