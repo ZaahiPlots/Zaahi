@@ -233,12 +233,11 @@ const HERO_SIZE_SCALE_KHALIFA = 1.20;
 // Millennium Tower (Business Bay) — Meshy multi-image-to-3D (2026-05-26).
 // 4 reference photos → 310K-tri GLB, non-uniform scaled in Blender to real
 // dimensions: 285 m height, 43×33 m footprint. Base at z=0, centred at
-// xy=(0,0). Defaults per founder spec 2026-05-26: orientation [0,0,0],
-// size 1.0, elev 0 — tune via dev-tool sliders.
+// xy=(0,0). Founder-locked placement on Business Bay boulevard (2026-05-26).
 const HERO_GLB_URL_MILL = "/glb/buildings/millennium-tower.glb";
-const HERO_COORDS_MILL: [number, number, number] = [55.265873, 25.194813, 0];
-const HERO_ORIENTATION_MILL: [number, number, number] = [0, 0, 0];
-const HERO_SIZE_SCALE_MILL = 1.0;
+const HERO_COORDS_MILL: [number, number, number] = [55.263728, 25.193823, -1];
+const HERO_ORIENTATION_MILL: [number, number, number] = [0, -41, 90];
+const HERO_SIZE_SCALE_MILL = 0.80;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
