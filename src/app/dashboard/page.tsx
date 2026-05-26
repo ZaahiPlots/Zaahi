@@ -92,6 +92,7 @@ function DashboardInner() {
   const [section, setSection] = useState<SectionKey>("overview");
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [unreadNotif, setUnreadNotif] = useState<number>(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { user, reload } = useMe();
   const currentRole: Role = user?.role ?? "BUYER";
   const visibleNav = useMemo(
@@ -133,18 +134,23 @@ function DashboardInner() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: TXT, display: "flex", fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif' }}>
-      {/* ── Sidebar ── */}
+    <div style={{ minHeight: "100vh", background: BG, color: TXT, fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif' }} className="flex flex-col md:flex-row">
+      {/* ── Mobile-only backdrop when nav is open ── */}
+      {mobileNavOpen && (
+        <div
+          onClick={() => setMobileNavOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          aria-hidden="true"
+        />
+      )}
+      {/* ── Sidebar (slide-in on mobile, static on desktop) ── */}
       <aside
+        className={`flex flex-col flex-shrink-0 fixed md:static inset-y-0 left-0 z-50 w-[220px] transition-transform duration-200 ease-out ${mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
         style={{
-          width: 220,
-          background: "rgba(10, 22, 40, 0.4)",
+          background: "rgba(10, 22, 40, 0.92)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
           borderRight: `1px solid ${LINE}`,
-          display: "flex",
-          flexDirection: "column",
-          flexShrink: 0,
         }}
       >
         <div style={{ padding: "20px 20px 16px", borderBottom: `1px solid ${LINE}` }}>
@@ -162,7 +168,7 @@ function DashboardInner() {
             return (
               <button
                 key={n.key}
-                onClick={() => setSection(n.key)}
+                onClick={() => { setSection(n.key); setMobileNavOpen(false); }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -226,8 +232,8 @@ function DashboardInner() {
 
       {/* ── Main ── */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <Header user={user} />
-        <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+        <Header user={user} onMobileMenuClick={() => setMobileNavOpen(true)} />
+        <div className="p-4 md:p-6" style={{ overflowY: "auto", flex: 1 }}>
           {section === "overview" && <Overview user={user} />}
           {section === "profile" && <Profile user={user} onSaved={reload} />}
           {section === "properties" && <Properties />}
@@ -246,7 +252,7 @@ function DashboardInner() {
 }
 
 // ─── Header ─────────────────────────────────────────────────────────
-function Header({ user }: { user: MeUser | null }) {
+function Header({ user, onMobileMenuClick }: { user: MeUser | null; onMobileMenuClick?: () => void }) {
   const initials = initialsFromName(user?.name);
   return (
     <div
@@ -258,12 +264,30 @@ function Header({ user }: { user: MeUser | null }) {
         borderBottom: `1px solid ${LINE}`,
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: "space-between",
         padding: "0 24px",
         gap: 12,
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1.2 }}>
+      <button
+        type="button"
+        onClick={onMobileMenuClick}
+        aria-label="Open navigation"
+        className="md:hidden"
+        style={{
+          background: "transparent",
+          border: `1px solid ${LINE}`,
+          color: GOLD,
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          fontSize: 18,
+          cursor: "pointer",
+        }}
+      >
+        ☰
+      </button>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1.2, marginLeft: "auto" }}>
         <span style={{ fontSize: 13, fontWeight: 700 }}>{user?.name ?? "…"}</span>
         <span style={{ fontSize: 10, color: SUBTLE, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           {user?.role ?? ""}
@@ -272,7 +296,7 @@ function Header({ user }: { user: MeUser | null }) {
       </div>
       {user?.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={user.avatarUrl} alt={initials} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `1px solid ${LINE}` }} />
+        <img src={user.avatarUrl} alt={initials} loading="lazy" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `1px solid ${LINE}` }} />
       ) : (
         <div
           style={{
@@ -621,7 +645,7 @@ function Profile({ user, onSaved }: { user: MeUser | null; onSaved: () => Promis
         <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 18 }}>
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt={initials} style={{ width: 84, height: 84, borderRadius: "50%", objectFit: "cover", border: `1px solid ${LINE}` }} />
+            <img src={user.avatarUrl} alt={initials} loading="lazy" style={{ width: 84, height: 84, borderRadius: "50%", objectFit: "cover", border: `1px solid ${LINE}` }} />
           ) : (
             <div
               style={{

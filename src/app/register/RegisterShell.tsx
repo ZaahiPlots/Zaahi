@@ -66,7 +66,7 @@ function Header() {
       <div
         style={{
           fontFamily: "Georgia, serif",
-          fontSize: 38,
+          fontSize: "clamp(28px, 6vw, 38px)",
           fontWeight: 300,
           letterSpacing: "0.18em",
           color: GOLD,

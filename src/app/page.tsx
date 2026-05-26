@@ -186,7 +186,7 @@ export default function AuthPage() {
       >
         {pending && (
           <div style={{
-            width: '100%', maxWidth: 400, padding: 40,
+            width: '100%', maxWidth: 400, padding: 'clamp(20px, 5vw, 40px)',
             background: 'rgba(0,0,0,0.3)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
@@ -213,7 +213,7 @@ export default function AuthPage() {
             style={{
               width: '100%',
               maxWidth: 400,
-              padding: 40,
+              padding: 'clamp(20px, 5vw, 40px)',
               background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
@@ -411,10 +411,6 @@ export default function AuthPage() {
                 REGISTER →
               </a>
             </div>
-
-            {/* "By continuing you agree to Terms" line removed — the same
-                Terms · Privacy · Disclaimer links already live in the
-                footer below, so this duplicated it. */}
           </div>
         )}
       </div>

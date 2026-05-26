@@ -241,8 +241,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", gap: 12, fontSize: 13 }}>
-      <div style={{ width: 120, flexShrink: 0, color: TEXT_DIM }}>{label}</div>
+    <div className="flex flex-col sm:flex-row" style={{ gap: 4, fontSize: 13 }}>
+      <div className="w-full sm:w-[120px] sm:flex-shrink-0" style={{ color: TEXT_DIM }}>{label}</div>
       <div style={{ flex: 1, color: "rgba(245,241,232,0.95)", wordBreak: "break-word" }}>
         {value}
       </div>
