@@ -247,6 +247,28 @@ const HERO_GLB_URL_ADDR = "/glb/buildings/address-downtown.glb";
 const HERO_COORDS_ADDR: [number, number, number] = [55.278916, 25.193949, 0];
 const HERO_ORIENTATION_ADDR: [number, number, number] = [0, -110, 90];
 const HERO_SIZE_SCALE_ADDR = 1.10;
+// Burj Vista 1 — Meshy multi-image from Wikipedia + AS+GG architect site +
+// Bayut. Adrian Smith design (same as Burj Khalifa), 66-story curved
+// residential tower with honeycomb terraces. 254.6m height, 45×35m
+// footprint baked. Defaults orientation [0,0,90] / size 1.0 — to be
+// founder-tuned via reintroduced dev-tool when needed.
+const HERO_GLB_URL_VISTA = "/glb/buildings/burj-vista-1.glb";
+const HERO_COORDS_VISTA: [number, number, number] = [55.2714, 25.1988, 0];
+const HERO_ORIENTATION_VISTA: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_VISTA = 1.0;
+// Vida Residence Downtown — Meshy multi-image from Bayut + Propsearch.
+// Emaar Art Deco 1920s-NY-inspired tower, 60 floors, 238m height,
+// 35×35m footprint baked.
+const HERO_GLB_URL_VIDA = "/glb/buildings/vida-residence-downtown.glb";
+const HERO_COORDS_VIDA: [number, number, number] = [55.2731, 25.1903, 0];
+const HERO_ORIENTATION_VIDA: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_VIDA = 1.0;
+// Burj Royale — Meshy multi-image from Bayut + Propsearch. Emaar 2022
+// residential, 58 floors, 215m height, 40×35m footprint baked.
+const HERO_GLB_URL_ROYALE = "/glb/buildings/burj-royale.glb";
+const HERO_COORDS_ROYALE: [number, number, number] = [55.2803, 25.1916, 0];
+const HERO_ORIENTATION_ROYALE: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_ROYALE = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -4059,6 +4081,39 @@ function ParcelsMapPageInner() {
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Address] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-burj-vista-1",
+          data: [{ position: HERO_COORDS_VISTA }],
+          scenegraph: HERO_GLB_URL_VISTA,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_VISTA,
+          sizeScale: HERO_SIZE_SCALE_VISTA,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Vista] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-vida-residence-downtown",
+          data: [{ position: HERO_COORDS_VIDA }],
+          scenegraph: HERO_GLB_URL_VIDA,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_VIDA,
+          sizeScale: HERO_SIZE_SCALE_VIDA,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Vida] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-burj-royale",
+          data: [{ position: HERO_COORDS_ROYALE }],
+          scenegraph: HERO_GLB_URL_ROYALE,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_ROYALE,
+          sizeScale: HERO_SIZE_SCALE_ROYALE,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Royale] error:", err),
         }),
       ],
     });
