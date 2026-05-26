@@ -241,13 +241,12 @@ const HERO_SIZE_SCALE_MILL = 0.80;
 // Address Downtown — Meshy multi-image-to-3D from 4 ground-level photos
 // (Wikipedia + Bayut + addresshotels.com). Raw 1.25M tris → Blender
 // Decimate Collapse @ ratio 0.18 → 225K tris, then non-uniform scaled to
-// real dims 306m × 60×40m footprint. Position from Wikipedia infobox
-// (25.1936°N, 55.2768°E — Downtown Dubai, fountain side of Burj Khalifa).
-// Defaults [0,0,0] / 1.0 / elev 0 — tune via dev-tool sliders.
+// real dims 306m × 60×40m footprint. Founder-locked placement on
+// Downtown Dubai (fountain side of Burj Khalifa) 2026-05-26.
 const HERO_GLB_URL_ADDR = "/glb/buildings/address-downtown.glb";
-const HERO_COORDS_ADDR: [number, number, number] = [55.2768, 25.1936, 0];
-const HERO_ORIENTATION_ADDR: [number, number, number] = [0, 0, 0];
-const HERO_SIZE_SCALE_ADDR = 1.0;
+const HERO_COORDS_ADDR: [number, number, number] = [55.278916, 25.193949, 0];
+const HERO_ORIENTATION_ADDR: [number, number, number] = [0, -110, 90];
+const HERO_SIZE_SCALE_ADDR = 1.10;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1598,67 +1597,12 @@ function ParcelsMapPageInner() {
   // inside the map-init effect after the map instance is ready,
   // torn down in that effect's cleanup. See HERO_GLB_URL above.
   const deckOverlayRef = useRef<MapboxOverlay | null>(null);
-  // ── GLB dev-tool state (founder dev mode, always-on while spike) ────
-  // Drives both the deck.gl ScenegraphLayer position/yaw and the
-  // crosshair overlay handle. Defaults come from HERO_COORDS + the
-  // current production yaw (+10°), so first paint matches prod exactly.
-  const [glbLng, setGlbLng] = useState<number>(HERO_COORDS[0]);
-  const [glbLat, setGlbLat] = useState<number>(HERO_COORDS[1]);
-  const [glbYaw, setGlbYaw] = useState<number>(HERO_ORIENTATION[1]);
-  const [glbPitch, setGlbPitch] = useState<number>(HERO_ORIENTATION[0]);
-  const [glbRoll, setGlbRoll] = useState<number>(HERO_ORIENTATION[2]);
-  const [glbSize, setGlbSize] = useState<number>(HERO_SIZE_SCALE);
-  const [glbElev, setGlbElev] = useState<number>(HERO_COORDS[2]);
-  // Burj Khalifa dev state — pitch/yaw/roll/size/elev tuned via panel.
-  // Position (lng, lat) fixed via HERO_COORDS_KHALIFA — no drag handle.
-  const [khalifaYaw, setKhalifaYaw] = useState<number>(HERO_ORIENTATION_KHALIFA[1]);
-  const [khalifaPitch, setKhalifaPitch] = useState<number>(HERO_ORIENTATION_KHALIFA[0]);
-  const [khalifaRoll, setKhalifaRoll] = useState<number>(HERO_ORIENTATION_KHALIFA[2]);
-  const [khalifaSize, setKhalifaSize] = useState<number>(HERO_SIZE_SCALE_KHALIFA);
-  const [khalifaElev, setKhalifaElev] = useState<number>(HERO_COORDS_KHALIFA[2]);
-  const [khalifaLng, setKhalifaLng] = useState<number>(HERO_COORDS_KHALIFA[0]);
-  const [khalifaLat, setKhalifaLat] = useState<number>(HERO_COORDS_KHALIFA[1]);
-  const [khalifaHandlePx, setKhalifaHandlePx] = useState<{ x: number; y: number } | null>(null);
-  const draggingKhalifaRef = useRef(false);
-  // Millennium Tower dev state — same shape as khalifa* (lng/lat via drag
-  // handle + 5 sliders). Defaults from HERO_*_MILL constants above.
-  const [millYaw, setMillYaw] = useState<number>(HERO_ORIENTATION_MILL[1]);
-  const [millPitch, setMillPitch] = useState<number>(HERO_ORIENTATION_MILL[0]);
-  const [millRoll, setMillRoll] = useState<number>(HERO_ORIENTATION_MILL[2]);
-  const [millSize, setMillSize] = useState<number>(HERO_SIZE_SCALE_MILL);
-  const [millElev, setMillElev] = useState<number>(HERO_COORDS_MILL[2]);
-  const [millLng, setMillLng] = useState<number>(HERO_COORDS_MILL[0]);
-  const [millLat, setMillLat] = useState<number>(HERO_COORDS_MILL[1]);
-  const [millHandlePx, setMillHandlePx] = useState<{ x: number; y: number } | null>(null);
-  const draggingMillRef = useRef(false);
-  // Address Downtown dev state — same shape as khalifa/mill (lng/lat via drag
-  // handle + 5 sliders). Defaults from HERO_*_ADDR constants above.
-  const [addrYaw, setAddrYaw] = useState<number>(HERO_ORIENTATION_ADDR[1]);
-  const [addrPitch, setAddrPitch] = useState<number>(HERO_ORIENTATION_ADDR[0]);
-  const [addrRoll, setAddrRoll] = useState<number>(HERO_ORIENTATION_ADDR[2]);
-  const [addrSize, setAddrSize] = useState<number>(HERO_SIZE_SCALE_ADDR);
-  const [addrElev, setAddrElev] = useState<number>(HERO_COORDS_ADDR[2]);
-  const [addrLng, setAddrLng] = useState<number>(HERO_COORDS_ADDR[0]);
-  const [addrLat, setAddrLat] = useState<number>(HERO_COORDS_ADDR[1]);
-  const [addrHandlePx, setAddrHandlePx] = useState<{ x: number; y: number } | null>(null);
-  const draggingAddrRef = useRef(false);
-  const [glbHandlePx, setGlbHandlePx] = useState<{ x: number; y: number } | null>(null);
-  // Lazy-load gate: GLB is only loaded into deck.gl when user is zoomed in
-  // and camera is near BB. Saves bandwidth + WebGL memory on initial paint.
+  // Lazy-load gate: hero GLBs are only loaded into deck.gl when user is
+  // zoomed in (zoom ≥ 14). Saves bandwidth + WebGL memory on initial paint.
   const [glbActive, setGlbActive] = useState(false);
   // True once the deferred MapboxOverlay has been .addControl()-ed.
   // Needed because deckOverlayRef is a ref and won't trigger sync re-run.
   const [overlayReady, setOverlayReady] = useState(false);
-  // URL gate — default route ships zero deck.gl. ?dev=1 enables the GLB
-  // hero + drag-handle / yaw-slider / Copy-Config panel.
-  const [devMode, setDevMode] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const dev = new URLSearchParams(window.location.search).get("dev") === "1";
-    setDevMode(dev);
-    if (dev) console.log("[GLB] dev mode active");
-  }, []);
-  const draggingGlbRef = useRef(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
@@ -3940,20 +3884,13 @@ function ParcelsMapPageInner() {
 
     mapRef.current = map;
 
-    // ── deck.gl spike — Millennium Tower hero GLB ───────────────────
+    // ── deck.gl hero GLBs ──────────────────────────────────────────
     // MapboxOverlay in `interleaved: true` mode shares MapLibre's
-    // WebGL context. ScenegraphLayer loads the GLB from /glb/ static
-    // assets and renders one instance at the building's centroid.
-    // No `beforeId` — overlay renders on top; the resulting z-fight
-    // with the underlying PMTiles building (OSM way 203296254) was
-    // accepted by founder for this spike scope. Cleanup below removes
-    // the overlay so dev-mode HMR doesn't accumulate WebGL contexts.
-    // Overlay creation MOVED to a dedicated useEffect below ([devMode,
-    // mapStyleReady] deps). This map-init effect has [] deps and runs
-    // once at mount when devMode is still the initial `false` value
-    // (URL-detection useEffect sets it on a later render). Stale
-    // closure meant the GLB overlay never attached on ?dev=1. The
-    // separate effect fires when both gates are open.
+    // WebGL context. Each ScenegraphLayer loads a hero GLB from
+    // /glb/buildings/ and renders one instance at the founder-locked
+    // HERO_COORDS_*. Overlay attached in a separate [mapStyleReady]
+    // useEffect below; cleanup removes it so HMR doesn't accumulate
+    // WebGL contexts.
 
     // Toggleable WASD drone navigation (desktop only). Controller stays
     // installed for the map's lifetime; a separate effect drives
@@ -4009,10 +3946,9 @@ function ParcelsMapPageInner() {
     };
   }, []);
 
-  // ── deck.gl overlay init — deferred. Fires when devMode AND
-  // mapStyleReady are both true. Map-init useEffect has [] deps so
-  // it can't see devMode flip from false (initial) to true (after
-  // URL detection effect). This deferred effect is the only path
+  // ── deck.gl overlay init — deferred. Fires once mapStyleReady
+  // flips true. Map-init useEffect has [] deps so it can't see
+  // mapStyleReady update; this deferred effect is the only path
   // that actually attaches the overlay.
   useEffect(() => {
     const map = mapRef.current;
@@ -4066,296 +4002,67 @@ function ParcelsMapPageInner() {
     };
   }, [mapStyleReady]);
 
-  // ── GLB dev-tool — sync deck.gl layer with [glbLng, glbLat, glbYaw].
-  // Also lazy-gated by glbActive — when false, layers cleared (no GLB
-  // fetch / GPU upload).
+  // Sync deck.gl layers with locked HERO_* constants. Lazy-gated by
+  // glbActive (zoom ≥ 14) — when false, layers cleared (no GLB fetch /
+  // GPU upload). Dev-tool (drag handle + per-hero sliders) lived here
+  // earlier; deleted once all four heroes were locked. To re-tune a
+  // building: restore the dev-tool code from git history.
   useEffect(() => {
     const overlay = deckOverlayRef.current;
-    console.log("[GLB] sync:", { devMode, hasOverlay: !!overlay, glbActive, overlayReady });
     if (!overlay) return;
     if (!glbActive) {
       overlay.setProps({ layers: [] });
       return;
     }
-    console.log("[GLB] creating ScenegraphLayer:", {
-      url: HERO_GLB_URL,
-      coords: [glbLng, glbLat, glbElev],
-      pitch: glbPitch,
-      yaw: glbYaw,
-      roll: glbRoll,
-      sizeScale: glbSize,
-    });
     overlay.setProps({
       layers: [
         new ScenegraphLayer({
           id: "hero-millennium-tower",
-          data: [{ position: [glbLng, glbLat, glbElev] as [number, number, number] }],
+          data: [{ position: HERO_COORDS }],
           scenegraph: HERO_GLB_URL,
           getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: [glbPitch, glbYaw, glbRoll],
-          sizeScale: glbSize,
+          getOrientation: HERO_ORIENTATION,
+          sizeScale: HERO_SIZE_SCALE,
           _lighting: "pbr",
           pickable: false,
-          onError: (err: unknown) => console.error("[GLB] ScenegraphLayer error:", err),
+          onError: (err: unknown) => console.error("[GLB Crown] error:", err),
         }),
         new ScenegraphLayer({
           id: "hero-burj-khalifa",
-          data: [{ position: [khalifaLng, khalifaLat, khalifaElev] as [number, number, number] }],
+          data: [{ position: HERO_COORDS_KHALIFA }],
           scenegraph: HERO_GLB_URL_KHALIFA,
           getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: [khalifaPitch, khalifaYaw, khalifaRoll],
-          sizeScale: khalifaSize,
+          getOrientation: HERO_ORIENTATION_KHALIFA,
+          sizeScale: HERO_SIZE_SCALE_KHALIFA,
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Khalifa] error:", err),
         }),
         new ScenegraphLayer({
           id: "hero-millennium-tower-bb",
-          data: [{ position: [millLng, millLat, millElev] as [number, number, number] }],
+          data: [{ position: HERO_COORDS_MILL }],
           scenegraph: HERO_GLB_URL_MILL,
           getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: [millPitch, millYaw, millRoll],
-          sizeScale: millSize,
+          getOrientation: HERO_ORIENTATION_MILL,
+          sizeScale: HERO_SIZE_SCALE_MILL,
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Millennium] error:", err),
         }),
         new ScenegraphLayer({
           id: "hero-address-downtown",
-          data: [{ position: [addrLng, addrLat, addrElev] as [number, number, number] }],
+          data: [{ position: HERO_COORDS_ADDR }],
           scenegraph: HERO_GLB_URL_ADDR,
           getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: [addrPitch, addrYaw, addrRoll],
-          sizeScale: addrSize,
+          getOrientation: HERO_ORIENTATION_ADDR,
+          sizeScale: HERO_SIZE_SCALE_ADDR,
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Address] error:", err),
         }),
       ],
     });
-  }, [glbLng, glbLat, glbYaw, glbPitch, glbRoll, glbSize, glbElev,
-      khalifaLng, khalifaLat, khalifaYaw, khalifaPitch, khalifaRoll, khalifaSize, khalifaElev,
-      millLng, millLat, millYaw, millPitch, millRoll, millSize, millElev,
-      addrLng, addrLat, addrYaw, addrPitch, addrRoll, addrSize, addrElev,
-      glbActive, devMode, overlayReady]);
-
-  // ── GLB dev-tool — keep crosshair pinned to GLB anchor in screen
-  // space (re-project on every map move + on state change) and wire
-  // Shift+wheel on the map container for ±1° yaw nudge.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    const project = () => {
-      const p = map.project([glbLng, glbLat]);
-      setGlbHandlePx({ x: p.x, y: p.y });
-    };
-    project();
-    map.on("move", project);
-    const container = map.getContainer();
-    const onWheel = (e: WheelEvent) => {
-      if (!e.shiftKey) return;
-      e.preventDefault();
-      setGlbYaw((y) =>
-        Math.max(-180, Math.min(180, y + (e.deltaY > 0 ? 1 : -1)))
-      );
-    };
-    container.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      map.off("move", project);
-      container.removeEventListener("wheel", onWheel);
-    };
-  }, [glbLng, glbLat, mapStyleReady, devMode]);
-
-  // ── GLB dev-tool — pointer drag of the GLB anchor. Hooks into the
-  // crosshair handle's onMouseDown; the rest of the drag is tracked
-  // at the document level so the cursor can leave the small handle
-  // while dragging.
-  const onGlbHandleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const map = mapRef.current;
-    if (!map) return;
-    map.dragPan.disable();
-    draggingGlbRef.current = true;
-    const onMove = (ev: MouseEvent) => {
-      const rect = map.getContainer().getBoundingClientRect();
-      const ll = map.unproject([
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      ]);
-      setGlbLng(ll.lng);
-      setGlbLat(ll.lat);
-    };
-    const onUp = () => {
-      map.dragPan.enable();
-      draggingGlbRef.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
-
-  // Burj Khalifa handle — independent screen-space projection of its
-  // own [lng, lat] so the drag circle stays anchored to the building.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    const project = () => {
-      const p = map.project([khalifaLng, khalifaLat]);
-      setKhalifaHandlePx({ x: p.x, y: p.y });
-    };
-    project();
-    map.on("move", project);
-    return () => {
-      map.off("move", project);
-    };
-  }, [khalifaLng, khalifaLat, mapStyleReady, devMode]);
-
-  // Millennium Tower handle — same lng/lat projection pattern as khalifa.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    const project = () => {
-      const p = map.project([millLng, millLat]);
-      setMillHandlePx({ x: p.x, y: p.y });
-    };
-    project();
-    map.on("move", project);
-    return () => {
-      map.off("move", project);
-    };
-  }, [millLng, millLat, mapStyleReady, devMode]);
-
-  // Address Downtown handle — same lng/lat projection pattern as khalifa/mill.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !devMode) return;
-    const project = () => {
-      const p = map.project([addrLng, addrLat]);
-      setAddrHandlePx({ x: p.x, y: p.y });
-    };
-    project();
-    map.on("move", project);
-    return () => {
-      map.off("move", project);
-    };
-  }, [addrLng, addrLat, mapStyleReady, devMode]);
-
-  const onKhalifaHandleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const map = mapRef.current;
-    if (!map) return;
-    map.dragPan.disable();
-    draggingKhalifaRef.current = true;
-    const onMove = (ev: MouseEvent) => {
-      const rect = map.getContainer().getBoundingClientRect();
-      const ll = map.unproject([
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      ]);
-      setKhalifaLng(ll.lng);
-      setKhalifaLat(ll.lat);
-    };
-    const onUp = () => {
-      map.dragPan.enable();
-      draggingKhalifaRef.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
-
-  const onMillHandleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const map = mapRef.current;
-    if (!map) return;
-    map.dragPan.disable();
-    draggingMillRef.current = true;
-    const onMove = (ev: MouseEvent) => {
-      const rect = map.getContainer().getBoundingClientRect();
-      const ll = map.unproject([
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      ]);
-      setMillLng(ll.lng);
-      setMillLat(ll.lat);
-    };
-    const onUp = () => {
-      map.dragPan.enable();
-      draggingMillRef.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
-
-  const onAddrHandleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const map = mapRef.current;
-    if (!map) return;
-    map.dragPan.disable();
-    draggingAddrRef.current = true;
-    const onMove = (ev: MouseEvent) => {
-      const rect = map.getContainer().getBoundingClientRect();
-      const ll = map.unproject([
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      ]);
-      setAddrLng(ll.lng);
-      setAddrLat(ll.lat);
-    };
-    const onUp = () => {
-      map.dragPan.enable();
-      draggingAddrRef.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
-
-
-  const copyGlbConfig = () => {
-    const text = `data: [{ position: [${glbLng.toFixed(6)}, ${glbLat.toFixed(6)}, ${glbElev}] }],\ngetOrientation: [${glbPitch}, ${glbYaw}, ${glbRoll}],\nsizeScale: ${glbSize},`;
-    try {
-      void navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — silent */
-    }
-  };
-
-  const copyKhalifaConfig = () => {
-    const text = `// Burj Khalifa\ndata: [{ position: [${khalifaLng.toFixed(6)}, ${khalifaLat.toFixed(6)}, ${khalifaElev}] }],\ngetOrientation: [${khalifaPitch}, ${khalifaYaw}, ${khalifaRoll}],\nsizeScale: ${khalifaSize},`;
-    try {
-      void navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — silent */
-    }
-  };
-
-  const copyMillConfig = () => {
-    const text = `// Millennium Tower\ndata: [{ position: [${millLng.toFixed(6)}, ${millLat.toFixed(6)}, ${millElev}] }],\ngetOrientation: [${millPitch}, ${millYaw}, ${millRoll}],\nsizeScale: ${millSize},`;
-    try {
-      void navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — silent */
-    }
-  };
-
-  const copyAddrConfig = () => {
-    const text = `// Address Downtown\ndata: [{ position: [${addrLng.toFixed(6)}, ${addrLat.toFixed(6)}, ${addrElev}] }],\ngetOrientation: [${addrPitch}, ${addrYaw}, ${addrRoll}],\nsizeScale: ${addrSize},`;
-    try {
-      void navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — silent */
-    }
-  };
+  }, [glbActive, overlayReady]);
 
 
   // Drive the drone controller from React state. Persists choice and
@@ -4668,753 +4375,6 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
-
-      {/* ── GLB dev-tool — crosshair handle + control panel ──────────
-          Always-on while the 3D-buildings spike is active. Drag the
-          gold crosshair to reposition the hero GLB anchor; scrub the
-          yaw slider or Shift+wheel on the map for rotation; Copy
-          Config writes a drop-in HERO_COORDS + getOrientation snippet
-          to the clipboard. Removable in one diff once positions are
-          finalised. Glassmorphism per CLAUDE.md UI Style Guide.
-          v.2: gated behind ?dev=1 — default route ships no dev-tool. */}
-      {devMode && glbHandlePx && glbActive && (
-        <div
-          onMouseDown={onGlbHandleMouseDown}
-          title="Drag to move Burj Crown anchor"
-          style={{
-            position: "absolute",
-            left: glbHandlePx.x - 12,
-            top: glbHandlePx.y - 12,
-            width: 24,
-            height: 24,
-            cursor: draggingGlbRef.current ? "grabbing" : "grab",
-            border: "2px solid #C8A96E",
-            borderRadius: "50%",
-            background: "rgba(200,169,110,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-        />
-      )}
-      {devMode && khalifaHandlePx && glbActive && (
-        <div
-          onMouseDown={onKhalifaHandleMouseDown}
-          title="Drag to move Burj Khalifa anchor"
-          style={{
-            position: "absolute",
-            left: khalifaHandlePx.x - 12,
-            top: khalifaHandlePx.y - 12,
-            width: 24,
-            height: 24,
-            cursor: draggingKhalifaRef.current ? "grabbing" : "grab",
-            border: "2px solid #C8A96E",
-            borderRadius: "50%",
-            background: "rgba(200,169,110,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-        />
-      )}
-      {devMode && millHandlePx && glbActive && (
-        <div
-          onMouseDown={onMillHandleMouseDown}
-          title="Drag to move Millennium Tower anchor"
-          style={{
-            position: "absolute",
-            left: millHandlePx.x - 12,
-            top: millHandlePx.y - 12,
-            width: 24,
-            height: 24,
-            cursor: draggingMillRef.current ? "grabbing" : "grab",
-            border: "2px solid #C8A96E",
-            borderRadius: "50%",
-            background: "rgba(200,169,110,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-        />
-      )}
-      {devMode && addrHandlePx && glbActive && (
-        <div
-          onMouseDown={onAddrHandleMouseDown}
-          title="Drag to move Address Downtown anchor"
-          style={{
-            position: "absolute",
-            left: addrHandlePx.x - 12,
-            top: addrHandlePx.y - 12,
-            width: 24,
-            height: 24,
-            cursor: draggingAddrRef.current ? "grabbing" : "grab",
-            border: "2px solid #C8A96E",
-            borderRadius: "50%",
-            background: "rgba(200,169,110,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-        />
-      )}
-      {devMode && <div
-        style={{
-          position: "absolute",
-          top: 80,
-          right: 16,
-          width: 260,
-          padding: 16,
-          background: "rgba(10,22,40,0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-          color: "#C8A96E",
-          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-          fontSize: 11,
-          letterSpacing: "0.04em",
-          zIndex: 51,
-        }}
-      >
-        <div
-          style={{
-            textTransform: "uppercase",
-            fontWeight: 600,
-            marginBottom: 8,
-            letterSpacing: "0.08em",
-          }}
-        >
-          BURJ CROWN (dev)
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {glbLng.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {glbLat.toFixed(6)}
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          yaw: {glbYaw}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={glbYaw}
-          onChange={(e) => setGlbYaw(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div style={{ fontSize: 9, opacity: 0.6, marginTop: 4 }}>
-          Shift+wheel on map for fine yaw
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          pitch: {glbPitch}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={glbPitch}
-          onChange={(e) => setGlbPitch(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          roll: {glbRoll}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={glbRoll}
-          onChange={(e) => setGlbRoll(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          size: {glbSize.toFixed(2)}×
-        </div>
-        <input
-          type="range"
-          min={0.1}
-          max={5}
-          step={0.1}
-          value={glbSize}
-          onChange={(e) => setGlbSize(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          elev: {glbElev} m
-        </div>
-        <input
-          type="range"
-          min={-200}
-          max={500}
-          step={1}
-          value={glbElev}
-          onChange={(e) => setGlbElev(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <button
-          type="button"
-          onClick={copyGlbConfig}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-            e.currentTarget.style.borderColor = "#C8A96E";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
-          }}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(200,169,110,0.3)",
-            borderRadius: 8,
-            color: "#C8A96E",
-            cursor: "pointer",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            transition:
-              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
-          }}
-        >
-          Copy Config
-        </button>
-      </div>}
-
-      {devMode && <div
-        style={{
-          position: "absolute",
-          top: 80,
-          right: 290,
-          width: 260,
-          padding: 16,
-          background: "rgba(10,22,40,0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-          color: "#C8A96E",
-          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-          fontSize: 11,
-          letterSpacing: "0.04em",
-          zIndex: 51,
-        }}
-      >
-        <div
-          style={{
-            textTransform: "uppercase",
-            fontWeight: 600,
-            marginBottom: 8,
-            letterSpacing: "0.08em",
-          }}
-        >
-          BURJ KHALIFA (dev)
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {khalifaLng.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {khalifaLat.toFixed(6)}
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          yaw: {khalifaYaw}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={khalifaYaw}
-          onChange={(e) => setKhalifaYaw(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          pitch: {khalifaPitch}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={khalifaPitch}
-          onChange={(e) => setKhalifaPitch(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          roll: {khalifaRoll}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={khalifaRoll}
-          onChange={(e) => setKhalifaRoll(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          size: {khalifaSize.toFixed(2)}×
-        </div>
-        <input
-          type="range"
-          min={0.1}
-          max={20}
-          step={0.1}
-          value={khalifaSize}
-          onChange={(e) => setKhalifaSize(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          elev: {khalifaElev} m
-        </div>
-        <input
-          type="range"
-          min={-200}
-          max={1500}
-          step={1}
-          value={khalifaElev}
-          onChange={(e) => setKhalifaElev(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <button
-          type="button"
-          onClick={copyKhalifaConfig}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-            e.currentTarget.style.borderColor = "#C8A96E";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
-          }}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(200,169,110,0.3)",
-            borderRadius: 8,
-            color: "#C8A96E",
-            cursor: "pointer",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            transition:
-              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
-          }}
-        >
-          Copy Config
-        </button>
-      </div>}
-
-      {devMode && <div
-        style={{
-          position: "absolute",
-          top: 80,
-          right: 564,
-          width: 260,
-          padding: 16,
-          background: "rgba(10,22,40,0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-          color: "#C8A96E",
-          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-          fontSize: 11,
-          letterSpacing: "0.04em",
-          zIndex: 51,
-        }}
-      >
-        <div
-          style={{
-            textTransform: "uppercase",
-            fontWeight: 600,
-            marginBottom: 8,
-            letterSpacing: "0.08em",
-          }}
-        >
-          MILLENNIUM TOWER (dev)
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {millLng.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {millLat.toFixed(6)}
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          yaw: {millYaw}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={millYaw}
-          onChange={(e) => setMillYaw(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          pitch: {millPitch}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={millPitch}
-          onChange={(e) => setMillPitch(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          roll: {millRoll}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={millRoll}
-          onChange={(e) => setMillRoll(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          size: {millSize.toFixed(2)}×
-        </div>
-        <input
-          type="range"
-          min={0.1}
-          max={5}
-          step={0.1}
-          value={millSize}
-          onChange={(e) => setMillSize(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          elev: {millElev} m
-        </div>
-        <input
-          type="range"
-          min={-200}
-          max={500}
-          step={1}
-          value={millElev}
-          onChange={(e) => setMillElev(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <button
-          type="button"
-          onClick={copyMillConfig}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-            e.currentTarget.style.borderColor = "#C8A96E";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
-          }}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(200,169,110,0.3)",
-            borderRadius: 8,
-            color: "#C8A96E",
-            cursor: "pointer",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            transition:
-              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
-          }}
-        >
-          Copy Config
-        </button>
-      </div>}
-
-      {devMode && <div
-        style={{
-          position: "absolute",
-          top: 80,
-          right: 838,
-          width: 260,
-          padding: 16,
-          background: "rgba(10,22,40,0.4)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-          color: "#C8A96E",
-          fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-          fontSize: 11,
-          letterSpacing: "0.04em",
-          zIndex: 51,
-        }}
-      >
-        <div
-          style={{
-            textTransform: "uppercase",
-            fontWeight: 600,
-            marginBottom: 8,
-            letterSpacing: "0.08em",
-          }}
-        >
-          ADDRESS DOWNTOWN (dev)
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lng: {addrLng.toFixed(6)}
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>
-          lat: {addrLat.toFixed(6)}
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          yaw: {addrYaw}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={addrYaw}
-          onChange={(e) => setAddrYaw(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          pitch: {addrPitch}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={addrPitch}
-          onChange={(e) => setAddrPitch(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          roll: {addrRoll}°
-        </div>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={addrRoll}
-          onChange={(e) => setAddrRoll(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          size: {addrSize.toFixed(2)}×
-        </div>
-        <input
-          type="range"
-          min={0.1}
-          max={5}
-          step={0.1}
-          value={addrSize}
-          onChange={(e) => setAddrSize(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          elev: {addrElev} m
-        </div>
-        <input
-          type="range"
-          min={-200}
-          max={500}
-          step={1}
-          value={addrElev}
-          onChange={(e) => setAddrElev(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#C8A96E", marginTop: 4 }}
-        />
-        <button
-          type="button"
-          onClick={copyAddrConfig}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(200,169,110,0.25)";
-            e.currentTarget.style.borderColor = "#C8A96E";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)";
-          }}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(200,169,110,0.3)",
-            borderRadius: 8,
-            color: "#C8A96E",
-            cursor: "pointer",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            transition:
-              "background 150ms ease, border-color 150ms ease, transform 150ms ease",
-          }}
-        >
-          Copy Config
-        </button>
-      </div>}
 
       {/* Sun-time override slider — visible only when the ☀ button in
           the right stack is toggled on. Drives the directional-light
