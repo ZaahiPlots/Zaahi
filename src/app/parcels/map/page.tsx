@@ -289,6 +289,17 @@ const HERO_GLB_URL_BAA = "/glb/buildings/burj-al-arab.glb";
 const HERO_COORDS_BAA: [number, number, number] = [55.185329, 25.141318, 0];
 const HERO_ORIENTATION_BAA: [number, number, number] = [0, 53, 90];
 const HERO_SIZE_SCALE_BAA = 1.0;
+// Atlantis The Royal (Palm Jumeirah crescent) — Meshy multi-image from 4
+// founder photos. Twin-tower hotel + residences by KPF, 43 floors, 193m
+// architectural, connecting sky-bridge between towers, stepped
+// cantilevered floors. Wikipedia coords [55.127789, 25.138136]. Opened
+// Feb 2023. Real dims baked: 150 × 50 × 193 m (twin-tower span × depth ×
+// height). Pipeline used force-Z-up (auto-detect picked Y because of
+// horizontal twin-tower span > vertical).
+const HERO_GLB_URL_ATLANTIS = "/glb/buildings/royal-atlantis.glb";
+const HERO_COORDS_ATLANTIS: [number, number, number] = [55.127789, 25.138136, 0];
+const HERO_ORIENTATION_ATLANTIS: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_ATLANTIS = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1667,6 +1678,16 @@ function ParcelsMapPageInner() {
   const [binghattiLat, setBinghattiLat] = useState<number>(HERO_COORDS_BINGHATTI[1]);
   const [binghattiHandlePx, setBinghattiHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingBinghattiRef = useRef(false);
+  // Atlantis The Royal dev state.
+  const [atlYaw, setAtlYaw] = useState<number>(HERO_ORIENTATION_ATLANTIS[1]);
+  const [atlPitch, setAtlPitch] = useState<number>(HERO_ORIENTATION_ATLANTIS[0]);
+  const [atlRoll, setAtlRoll] = useState<number>(HERO_ORIENTATION_ATLANTIS[2]);
+  const [atlSize, setAtlSize] = useState<number>(HERO_SIZE_SCALE_ATLANTIS);
+  const [atlElev, setAtlElev] = useState<number>(HERO_COORDS_ATLANTIS[2]);
+  const [atlLng, setAtlLng] = useState<number>(HERO_COORDS_ATLANTIS[0]);
+  const [atlLat, setAtlLat] = useState<number>(HERO_COORDS_ATLANTIS[1]);
+  const [atlHandlePx, setAtlHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingAtlRef = useRef(false);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
@@ -4145,11 +4166,23 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB BAA] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-royal-atlantis",
+          data: [{ position: [atlLng, atlLat, atlElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_ATLANTIS,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [atlPitch, atlYaw, atlRoll],
+          sizeScale: atlSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Atlantis] error:", err),
+        }),
       ],
     });
   }, [glbActive, overlayReady,
       binghattiLng, binghattiLat, binghattiYaw, binghattiPitch, binghattiRoll,
-      binghattiSize, binghattiElev]);
+      binghattiSize, binghattiElev,
+      atlLng, atlLat, atlYaw, atlPitch, atlRoll, atlSize, atlElev]);
 
   // Binghatti drag-handle projection: lng/lat → screen-space pixel.
   useEffect(() => {
@@ -4184,6 +4217,41 @@ function ParcelsMapPageInner() {
 
   const copyBinghattiConfig = () => {
     const text = `// Binghatti Royal\ndata: [{ position: [${binghattiLng.toFixed(6)}, ${binghattiLat.toFixed(6)}, ${binghattiElev}] }],\ngetOrientation: [${binghattiPitch}, ${binghattiYaw}, ${binghattiRoll}],\nsizeScale: ${binghattiSize},`;
+    try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([atlLng, atlLat]);
+      setAtlHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => { map.off("move", project); };
+  }, [atlLng, atlLat, mapStyleReady, devMode]);
+
+  const onAtlHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const map = mapRef.current; if (!map) return;
+    map.dragPan.disable(); draggingAtlRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([ev.clientX - rect.left, ev.clientY - rect.top]);
+      setAtlLng(ll.lng); setAtlLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable(); draggingAtlRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyAtlConfig = () => {
+    const text = `// Royal Atlantis\ndata: [{ position: [${atlLng.toFixed(6)}, ${atlLat.toFixed(6)}, ${atlElev}] }],\ngetOrientation: [${atlPitch}, ${atlYaw}, ${atlRoll}],\nsizeScale: ${atlSize},`;
     try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
   };
 
@@ -4521,6 +4589,24 @@ function ParcelsMapPageInner() {
           onYaw={setBinghattiYaw} onPitch={setBinghattiPitch} onRoll={setBinghattiRoll}
           onSize={setBinghattiSize} onElev={setBinghattiElev}
           onCopy={copyBinghattiConfig} />
+      )}
+      {devMode && atlHandlePx && glbActive && (
+        <div onMouseDown={onAtlHandleMouseDown} title="Drag to move Royal Atlantis anchor"
+          style={{ position: "absolute", left: atlHandlePx.x - 12, top: atlHandlePx.y - 12,
+            width: 24, height: 24, cursor: draggingAtlRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E", borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50, pointerEvents: "auto" }} />
+      )}
+      {devMode && (
+        <DevToolPanel title="ROYAL ATLANTIS" right={290}
+          lng={atlLng} lat={atlLat}
+          yaw={atlYaw} pitch={atlPitch} roll={atlRoll}
+          size={atlSize} elev={atlElev}
+          onYaw={setAtlYaw} onPitch={setAtlPitch} onRoll={setAtlRoll}
+          onSize={setAtlSize} onElev={setAtlElev}
+          onCopy={copyAtlConfig} />
       )}
 
       {/* Sun-time override slider — visible only when the ☀ button in
