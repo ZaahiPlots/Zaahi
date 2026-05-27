@@ -36,6 +36,7 @@ import {
   type HeroOverride,
 } from "./heroBuildingsRegistry";
 import HeroBuildingsDevPanel from "./HeroBuildingsDevPanel";
+import ParcelsPortalPanel from "./ParcelsPortalPanel";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1717,6 +1718,9 @@ function ParcelsMapPageInner() {
   const [showAutoRotateHint, setShowAutoRotateHint] = useState(false);
   const autoRotateCtrlRef = useRef<AutoRotateController | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
+  // Parcels portal — left rail list view of /api/parcels/map. Mutex
+  // with the Layers panel because both anchor at left:60, top:64.
+  const [portalOpen, setPortalOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
   const legendRef = useRef<HTMLDivElement>(null);
@@ -4777,7 +4781,10 @@ function ParcelsMapPageInner() {
             c={c}
             title="Layers"
             active={layersOpen}
-            onClick={() => setLayersOpen((o) => !o)}
+            onClick={() => {
+              setLayersOpen((o) => !o);
+              setPortalOpen(false);
+            }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -4845,6 +4852,28 @@ function ParcelsMapPageInner() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-3.5-7.1" />
             <polyline points="21 4 21 9 16 9" />
+          </svg>
+        </ChromeBtn>
+        {/* 6. Parcels portal — opens the left-rail list of all listed
+              parcels. Mutex with the Layers panel (both anchor at
+              left:60, top:64) so only one is visible at a time. */}
+        <ChromeBtn
+          c={c}
+          title="Parcels list"
+          active={portalOpen}
+          onClick={() => {
+            setPortalOpen((o) => !o);
+            setLayersOpen(false);
+          }}
+        >
+          {/* List glyph — three horizontal lines with dots. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <circle cx="4" cy="6" r="1" />
+            <circle cx="4" cy="12" r="1" />
+            <circle cx="4" cy="18" r="1" />
           </svg>
         </ChromeBtn>
       </div>
@@ -5722,6 +5751,12 @@ function ParcelsMapPageInner() {
         }}
       />
       <WelcomeTour />
+      <ParcelsPortalPanel
+        open={portalOpen}
+        onClose={() => setPortalOpen(false)}
+        mapRef={mapRef}
+        onSelectParcel={(id) => setSelectedParcelId(id)}
+      />
       {devModeHero && editingHeroId && (() => {
         const b = HERO_BUILDINGS.find((x) => x.id === editingHeroId);
         if (!b) return null;
