@@ -77,74 +77,20 @@ export const HERO_BUILDINGS: HeroBuilding[] = [
     defaultOrientation: [0, -70, 90],
     defaultSize: 1.0 },
 
-  // ── 15-batch (2026-05-27) — Marina super-talls + DIFC + JLT + BB ──
-  // All baked at real height, sizeScale 1.0, default orientation [0,0,90].
-  // Founder will tune yaw/pitch/roll per building via dev panel.
-
-  { id: "marina-101", label: "Marina 101",
-    glb: "/glb/buildings/marina-101.glb",
-    defaultCoords: [55.14863, 25.08898, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "princess-tower", label: "Princess Tower",
-    glb: "/glb/buildings/princess-tower.glb",
-    defaultCoords: [55.146858, 25.088625, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "23-marina", label: "23 Marina",
-    glb: "/glb/buildings/23-marina.glb",
-    defaultCoords: [55.15063, 25.08981, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "elite-residence", label: "Elite Residence",
-    glb: "/glb/buildings/elite-residence.glb",
-    defaultCoords: [55.1478889, 25.0895694, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
+  // ── 5-building Marina/JLT batch (founder-locked 2026-05-27) ──
+  // Cayan keeps defaults — pending founder tune. Other 4 are
+  // founder-tuned via dev panel and copied back here.
 
   { id: "ciel-tower", label: "Ciel Tower",
     glb: "/glb/buildings/ciel-tower.glb",
-    defaultCoords: [55.1444, 25.0875, 0],
-    defaultOrientation: [0, 0, 90],
+    defaultCoords: [55.1447181, 25.0874099, 0],
+    defaultOrientation: [0, -36, 90],
     defaultSize: 1.0 },
 
   { id: "almas-tower", label: "Almas Tower",
     glb: "/glb/buildings/almas-tower.glb",
-    defaultCoords: [55.1411, 25.0689, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "gevora-hotel", label: "Gevora Hotel",
-    glb: "/glb/buildings/gevora-hotel.glb",
-    defaultCoords: [55.27708, 25.21239, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "jw-marriott-marquis", label: "JW Marriott Marquis",
-    glb: "/glb/buildings/jw-marriott-marquis.glb",
-    defaultCoords: [55.25667, 25.18556, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "emirates-tower-1", label: "Emirates Tower 1 (Office)",
-    glb: "/glb/buildings/emirates-tower-1.glb",
-    defaultCoords: [55.283546, 25.21768, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "emirates-tower-2", label: "Emirates Tower 2 (Hotel)",
-    glb: "/glb/buildings/emirates-tower-2.glb",
-    defaultCoords: [55.28194, 25.2175, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
-  { id: "index-tower", label: "Index Tower",
-    glb: "/glb/buildings/index-tower.glb",
-    defaultCoords: [55.27789, 25.20691, 0],
-    defaultOrientation: [0, 0, 90],
+    defaultCoords: [55.1410205, 25.0691342, 0],
+    defaultOrientation: [0, -148, 90],
     defaultSize: 1.0 },
 
   { id: "cayan-tower", label: "Cayan Tower",
@@ -153,22 +99,16 @@ export const HERO_BUILDINGS: HeroBuilding[] = [
     defaultOrientation: [0, 0, 90],
     defaultSize: 1.0 },
 
-  { id: "damac-heights", label: "DAMAC Heights",
-    glb: "/glb/buildings/damac-heights.glb",
-    defaultCoords: [55.14567, 25.08724, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
-
   { id: "the-torch", label: "The Torch",
     glb: "/glb/buildings/the-torch.glb",
-    defaultCoords: [55.14750, 25.08794, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
+    defaultCoords: [55.1474404, 25.0879400, -12],
+    defaultOrientation: [0, -41, 90],
+    defaultSize: 1.25 },
 
   { id: "ocean-heights", label: "Ocean Heights",
     glb: "/glb/buildings/ocean-heights.glb",
-    defaultCoords: [55.14884, 25.09059, 0],
-    defaultOrientation: [0, 0, 90],
+    defaultCoords: [55.1487704, 25.0906621, 1],
+    defaultOrientation: [0, -41, 90],
     defaultSize: 1.0 },
 ];
 
