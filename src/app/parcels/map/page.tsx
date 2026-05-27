@@ -301,6 +301,17 @@ const HERO_GLB_URL_ATLANTIS = "/glb/buildings/royal-atlantis.glb";
 const HERO_COORDS_ATLANTIS: [number, number, number] = [55.127789, 25.138136, 0];
 const HERO_ORIENTATION_ATLANTIS: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_ATLANTIS = 1.0;
+// FIVE Jumeirah Village Dubai (JVC) — Meshy multi-image from 4 founder
+// renders (developer marketing CGI not photos, but Meshy accepts).
+// AtkinsRéalis-designed cylindrical tower with each floor rotated 30°,
+// producing spiraling balcony pools (271 in total). 61 storeys, 277 m
+// architectural per CTBUH (Best Tall Building 200-299 m Award of
+// Excellence). Coords [55.2069, 25.0543]. Opened 2019. Real dims
+// baked: 50 × 45 × 277 m (round-ish tower + podium).
+const HERO_GLB_URL_FIVE = "/glb/buildings/five-jvh.glb";
+const HERO_COORDS_FIVE: [number, number, number] = [55.2069, 25.0543, 0];
+const HERO_ORIENTATION_FIVE: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_FIVE = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1689,6 +1700,16 @@ function ParcelsMapPageInner() {
   const [atlLat, setAtlLat] = useState<number>(HERO_COORDS_ATLANTIS[1]);
   const [atlHandlePx, setAtlHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingAtlRef = useRef(false);
+  // FIVE JVH dev state.
+  const [fiveYaw, setFiveYaw] = useState<number>(HERO_ORIENTATION_FIVE[1]);
+  const [fivePitch, setFivePitch] = useState<number>(HERO_ORIENTATION_FIVE[0]);
+  const [fiveRoll, setFiveRoll] = useState<number>(HERO_ORIENTATION_FIVE[2]);
+  const [fiveSize, setFiveSize] = useState<number>(HERO_SIZE_SCALE_FIVE);
+  const [fiveElev, setFiveElev] = useState<number>(HERO_COORDS_FIVE[2]);
+  const [fiveLng, setFiveLng] = useState<number>(HERO_COORDS_FIVE[0]);
+  const [fiveLat, setFiveLat] = useState<number>(HERO_COORDS_FIVE[1]);
+  const [fiveHandlePx, setFiveHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingFiveRef = useRef(false);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
@@ -4178,12 +4199,24 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Atlantis] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-five-jvh",
+          data: [{ position: [fiveLng, fiveLat, fiveElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_FIVE,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [fivePitch, fiveYaw, fiveRoll],
+          sizeScale: fiveSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB FIVE] error:", err),
+        }),
       ],
     });
   }, [glbActive, overlayReady,
       binghattiLng, binghattiLat, binghattiYaw, binghattiPitch, binghattiRoll,
       binghattiSize, binghattiElev,
-      atlLng, atlLat, atlYaw, atlPitch, atlRoll, atlSize, atlElev]);
+      atlLng, atlLat, atlYaw, atlPitch, atlRoll, atlSize, atlElev,
+      fiveLng, fiveLat, fiveYaw, fivePitch, fiveRoll, fiveSize, fiveElev]);
 
   // Binghatti drag-handle projection: lng/lat → screen-space pixel.
   useEffect(() => {
@@ -4253,6 +4286,41 @@ function ParcelsMapPageInner() {
 
   const copyAtlConfig = () => {
     const text = `// Royal Atlantis\ndata: [{ position: [${atlLng.toFixed(6)}, ${atlLat.toFixed(6)}, ${atlElev}] }],\ngetOrientation: [${atlPitch}, ${atlYaw}, ${atlRoll}],\nsizeScale: ${atlSize},`;
+    try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([fiveLng, fiveLat]);
+      setFiveHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => { map.off("move", project); };
+  }, [fiveLng, fiveLat, mapStyleReady, devMode]);
+
+  const onFiveHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const map = mapRef.current; if (!map) return;
+    map.dragPan.disable(); draggingFiveRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([ev.clientX - rect.left, ev.clientY - rect.top]);
+      setFiveLng(ll.lng); setFiveLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable(); draggingFiveRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyFiveConfig = () => {
+    const text = `// FIVE JVH\ndata: [{ position: [${fiveLng.toFixed(6)}, ${fiveLat.toFixed(6)}, ${fiveElev}] }],\ngetOrientation: [${fivePitch}, ${fiveYaw}, ${fiveRoll}],\nsizeScale: ${fiveSize},`;
     try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
   };
 
@@ -4608,6 +4676,24 @@ function ParcelsMapPageInner() {
           onYaw={setAtlYaw} onPitch={setAtlPitch} onRoll={setAtlRoll}
           onSize={setAtlSize} onElev={setAtlElev}
           onCopy={copyAtlConfig} />
+      )}
+      {devMode && fiveHandlePx && glbActive && (
+        <div onMouseDown={onFiveHandleMouseDown} title="Drag to move FIVE JVH anchor"
+          style={{ position: "absolute", left: fiveHandlePx.x - 12, top: fiveHandlePx.y - 12,
+            width: 24, height: 24, cursor: draggingFiveRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E", borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50, pointerEvents: "auto" }} />
+      )}
+      {devMode && (
+        <DevToolPanel title="FIVE JVH" right={564}
+          lng={fiveLng} lat={fiveLat}
+          yaw={fiveYaw} pitch={fivePitch} roll={fiveRoll}
+          size={fiveSize} elev={fiveElev}
+          onYaw={setFiveYaw} onPitch={setFivePitch} onRoll={setFiveRoll}
+          onSize={setFiveSize} onElev={setFiveElev}
+          onCopy={copyFiveConfig} />
       )}
 
       {/* Sun-time override slider — visible only when the ☀ button in
