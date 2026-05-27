@@ -6281,9 +6281,9 @@ function HeaderBar({
             border: `1px solid ${c.border}`,
             background: "rgba(10, 22, 40, 0.5)",
             color: GOLD,
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.06em",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: 0,
             textDecoration: "none",
             fontFamily: "inherit",
             transition: "border-color 150ms ease, background 150ms ease",
@@ -6297,7 +6297,7 @@ function HeaderBar({
             e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
           }}
         >
-          CHECK DLD
+          ✓
         </Link>
         <button
           type="button"
