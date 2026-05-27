@@ -29,6 +29,13 @@ import { apiFetch } from "@/lib/api-fetch";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
+import {
+  HERO_BUILDINGS,
+  HERO_OVERRIDES_STORAGE_KEY,
+  effectiveValues,
+  type HeroOverride,
+} from "./heroBuildingsRegistry";
+import HeroBuildingsDevPanel from "./HeroBuildingsDevPanel";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -210,197 +217,10 @@ const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold o
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
-// ── 3D-buildings — Burj Crown (Emaar) hero from Sketchfab (2026-05-25) ──
-// CC-BY-4.0 model by Alnazir (sketchfab.com/Nzr.3d). 16K triangles, PBR
-// textures, Y-up source rescaled via Blender pipeline to real Burj Crown
-// dimensions ~30 × 30 × 203 m. License credit file required —
-// see public/glb/buildings/burj-crown.LICENSE.txt.
-// Lazy-loaded at zoom ≥ 14 within 5 km of Downtown Dubai. Hero gated
-// behind ?dev=1 while founder evaluates model bank quality.
-const HERO_GLB_URL = "/glb/buildings/burj-crown.glb";
-// Founder-locked Burj Crown placement on Downtown Boulevard (2026-05-26).
-// Position is [lng, lat, elev_meters]; orientation is [pitch, yaw, roll]
-// in degrees fed to deck.gl ScenegraphLayer.getOrientation.
-const HERO_COORDS: [number, number, number] = [55.268824, 25.193982, 500];
-const HERO_ORIENTATION: [number, number, number] = [1, -80, -86];
-const HERO_SIZE_SCALE = 2.50;
-// Burj Khalifa (Sketchfab CC-BY-4.0 by SDC PERFORMANCE™ — Downtown Dubai).
-// Position constants are baseline; orientation/size/elev tuned via dev-tool.
-const HERO_GLB_URL_KHALIFA = "/glb/buildings/burj-khalifa.glb";
-const HERO_COORDS_KHALIFA: [number, number, number] = [55.274123, 25.197204, 0];
-const HERO_ORIENTATION_KHALIFA: [number, number, number] = [0, 53, 90];
-const HERO_SIZE_SCALE_KHALIFA = 1.20;
-// Millennium Tower (Business Bay) — Meshy multi-image-to-3D (2026-05-26).
-// 4 reference photos → 310K-tri GLB, non-uniform scaled in Blender to real
-// dimensions: 285 m height, 43×33 m footprint. Base at z=0, centred at
-// xy=(0,0). Founder-locked placement on Business Bay boulevard (2026-05-26).
-const HERO_GLB_URL_MILL = "/glb/buildings/millennium-tower.glb";
-const HERO_COORDS_MILL: [number, number, number] = [55.263728, 25.193823, -1];
-const HERO_ORIENTATION_MILL: [number, number, number] = [0, -41, 90];
-const HERO_SIZE_SCALE_MILL = 0.80;
-// Address Downtown — Meshy multi-image-to-3D from 4 ground-level photos
-// (Wikipedia + Bayut + addresshotels.com). Raw 1.25M tris → Blender
-// Decimate Collapse @ ratio 0.18 → 225K tris, then non-uniform scaled to
-// real dims 306m × 60×40m footprint. Founder-locked placement on
-// Downtown Dubai (fountain side of Burj Khalifa) 2026-05-26.
-const HERO_GLB_URL_ADDR = "/glb/buildings/address-downtown.glb";
-const HERO_COORDS_ADDR: [number, number, number] = [55.278916, 25.193949, 0];
-const HERO_ORIENTATION_ADDR: [number, number, number] = [0, -110, 90];
-const HERO_SIZE_SCALE_ADDR = 1.10;
-// Burj Vista 1 — Meshy multi-image from Wikipedia + AS+GG architect site +
-// Bayut. Adrian Smith design (same as Burj Khalifa), 66-story curved
-// residential tower with honeycomb terraces. 254.6m height, 45×35m
-// footprint baked. Defaults orientation [0,0,90] / size 1.0 — to be
-// founder-tuned via reintroduced dev-tool when needed.
-const HERO_GLB_URL_VISTA = "/glb/buildings/burj-vista-1.glb";
-const HERO_COORDS_VISTA: [number, number, number] = [55.2714, 25.1988, 0];
-const HERO_ORIENTATION_VISTA: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_VISTA = 1.0;
-// Vida Residence Downtown — Meshy multi-image from Bayut + Propsearch.
-// Emaar Art Deco 1920s-NY-inspired tower, 60 floors, 238m height,
-// 35×35m footprint baked.
-const HERO_GLB_URL_VIDA = "/glb/buildings/vida-residence-downtown.glb";
-const HERO_COORDS_VIDA: [number, number, number] = [55.2731, 25.1903, 0];
-const HERO_ORIENTATION_VIDA: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_VIDA = 1.0;
-// Burj Royale — Meshy multi-image from Bayut + Propsearch. Emaar 2022
-// residential, 58 floors, 215m height, 40×35m footprint baked.
-const HERO_GLB_URL_ROYALE = "/glb/buildings/burj-royale.glb";
-const HERO_COORDS_ROYALE: [number, number, number] = [55.2803, 25.1916, 0];
-const HERO_ORIENTATION_ROYALE: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_ROYALE = 1.0;
-// Binghatti Royale (Jumeirah Village Circle) — Meshy multi-image-to-3D
-// from 4 iPhone photos (founder, 2026-05-27). 47-floor residential by
-// Binghatti Developers with signature "twist" cantilevered balconies.
-// Real dims baked: ~165m height (47 floors × 3.5m), 42×38m footprint.
-// Coords are an approximate JVC placeholder — founder will tune via
-// dev-tool drag handle and Copy Config.
-const HERO_GLB_URL_BINGHATTI = "/glb/buildings/binghatti-royal.glb";
-const HERO_COORDS_BINGHATTI: [number, number, number] = [55.2113, 25.0533, 0];
-const HERO_ORIENTATION_BINGHATTI: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_BINGHATTI = 1.0;
-// Burj Al Arab (Jumeirah Beach) — Meshy multi-image from 3 CTBUH photos
-// (Mark Thompson, Terri Meyer Boake) + founder dusk photo + a line-drawing
-// silhouette for sail-shape guidance. 321 m architectural, 56 floors,
-// triangular sail-shaped footprint on artificial offshore island.
-// Wikipedia coords [55.18528, 25.14139]. Atkins structural, Tom Wright
-// architect (WKA). Real dims baked: 100 × 50 × 321 m.
-const HERO_GLB_URL_BAA = "/glb/buildings/burj-al-arab.glb";
-const HERO_COORDS_BAA: [number, number, number] = [55.185329, 25.141318, 0];
-const HERO_ORIENTATION_BAA: [number, number, number] = [0, 53, 90];
-const HERO_SIZE_SCALE_BAA = 1.0;
-// Atlantis The Royal (Palm Jumeirah crescent) — Meshy multi-image from 4
-// founder photos. Two-tower mega-structure by KPF: 43-storey west tower
-// (795-room hotel) + 38-storey east tower (230 apartments), connecting
-// sky-bridge between them, "stacked block" stepped cantilevered floors.
-// Wikipedia coords [55.127789, 25.138136]. Opened Feb 2023. Real dims
-// per CTBUH 2018 case study: 600 m long × 178 m tall (overall span ×
-// architectural height). 80 m depth estimated from photos. Pipeline
-// used force-Z-up (auto-detect picked Y because of horizontal span).
-const HERO_GLB_URL_ATLANTIS = "/glb/buildings/royal-atlantis.glb";
-const HERO_COORDS_ATLANTIS: [number, number, number] = [55.127789, 25.138136, 0];
-const HERO_ORIENTATION_ATLANTIS: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_ATLANTIS = 1.0;
-// FIVE Jumeirah Village Dubai (JVC) — Meshy multi-image from 4 founder
-// renders (developer marketing CGI not photos, but Meshy accepts).
-// AtkinsRéalis-designed cylindrical tower with each floor rotated 30°,
-// producing spiraling balcony pools (271 in total). 61 storeys, 277 m
-// architectural per CTBUH (Best Tall Building 200-299 m Award of
-// Excellence). Coords [55.2069, 25.0543]. Opened 2019. Real dims
-// baked: 50 × 45 × 277 m (round-ish tower + podium).
-const HERO_GLB_URL_FIVE = "/glb/buildings/five-jvh.glb";
-const HERO_COORDS_FIVE: [number, number, number] = [55.206710, 25.054108, 0];
-const HERO_ORIENTATION_FIVE: [number, number, number] = [0, -15, 90];
-const HERO_SIZE_SCALE_FIVE = 2.0;
-// The First Collection at Jumeirah Village Circle — Tribute Portfolio
-// hotel by The First Group, NORR Group architecture. Signature stacked
-// offset glass cubes (3 large rectangular volumes with offset edges).
-// 41 floors, ~160 m height (4 m/floor estimate, no skyscrapercenter
-// public spec). 491 rooms. Coords from Nominatim [55.2048, 25.0548].
-// Real dims baked: 40 × 35 × 160 m. CGI render input, force-Z-up
-// pipeline (consistent with prior JVC towers).
-const HERO_GLB_URL_FIRST = "/glb/buildings/first-hotel-jvc.glb";
-const HERO_COORDS_FIRST: [number, number, number] = [55.204777, 25.054784, 0];
-const HERO_ORIENTATION_FIRST: [number, number, number] = [0, -70, 90];
-const HERO_SIZE_SCALE_FIRST = 1.50;
-
-// ── 15-building batch: Meshy multi/single-image-to-3d → Blender force-Z-up
-// pipeline. Default orientation [0, 0, 90], sizeScale 1.0, elev 0 — founder
-// will tune yaw/pitch/roll/scale in a follow-up batch via dev-tool sliders.
-const HERO_GLB_URL_ALMAS = "/glb/buildings/almas-tower.glb";
-const HERO_COORDS_ALMAS: [number, number, number] = [55.1411, 25.0689, 0];
-const HERO_ORIENTATION_ALMAS: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_ALMAS = 1.0;
-
-const HERO_GLB_URL_GEVORA = "/glb/buildings/gevora-hotel.glb";
-const HERO_COORDS_GEVORA: [number, number, number] = [55.27708, 25.21239, 0];
-const HERO_ORIENTATION_GEVORA: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_GEVORA = 1.0;
-
-const HERO_GLB_URL_JWMARQUIS = "/glb/buildings/jw-marriott-marquis.glb";
-const HERO_COORDS_JWMARQUIS: [number, number, number] = [55.25667, 25.18556, 0];
-const HERO_ORIENTATION_JWMARQUIS: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_JWMARQUIS = 1.0;
-
-const HERO_GLB_URL_EMIRATES1 = "/glb/buildings/emirates-tower-1.glb";
-const HERO_COORDS_EMIRATES1: [number, number, number] = [55.2814, 25.2174, 0];
-const HERO_ORIENTATION_EMIRATES1: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_EMIRATES1 = 1.0;
-
-const HERO_GLB_URL_EMIRATES2 = "/glb/buildings/emirates-tower-2.glb";
-const HERO_COORDS_EMIRATES2: [number, number, number] = [55.28194, 25.2175, 0];
-const HERO_ORIENTATION_EMIRATES2: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_EMIRATES2 = 1.0;
-
-const HERO_GLB_URL_INDEX = "/glb/buildings/index-tower.glb";
-const HERO_COORDS_INDEX: [number, number, number] = [55.27789, 25.20691, 0];
-const HERO_ORIENTATION_INDEX: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_INDEX = 1.0;
-
-const HERO_GLB_URL_CAYAN = "/glb/buildings/cayan-tower.glb";
-const HERO_COORDS_CAYAN: [number, number, number] = [55.14525, 25.08689, 0];
-const HERO_ORIENTATION_CAYAN: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_CAYAN = 1.0;
-
-const HERO_GLB_URL_DAMAC = "/glb/buildings/damac-heights.glb";
-const HERO_COORDS_DAMAC: [number, number, number] = [55.14567, 25.08724, 0];
-const HERO_ORIENTATION_DAMAC: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_DAMAC = 1.0;
-
-const HERO_GLB_URL_TORCH = "/glb/buildings/the-torch.glb";
-const HERO_COORDS_TORCH: [number, number, number] = [55.14750, 25.08794, 0];
-const HERO_ORIENTATION_TORCH: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_TORCH = 1.0;
-
-const HERO_GLB_URL_OCEANHEIGHTS = "/glb/buildings/ocean-heights.glb";
-const HERO_COORDS_OCEANHEIGHTS: [number, number, number] = [55.14884, 25.09059, 0];
-const HERO_ORIENTATION_OCEANHEIGHTS: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_OCEANHEIGHTS = 1.0;
-
-const HERO_GLB_URL_MARINA101 = "/glb/buildings/marina-101.glb";
-const HERO_COORDS_MARINA101: [number, number, number] = [55.1401, 25.0807, 0];
-const HERO_ORIENTATION_MARINA101: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_MARINA101 = 1.0;
-
-const HERO_GLB_URL_PRINCESS = "/glb/buildings/princess-tower.glb";
-const HERO_COORDS_PRINCESS: [number, number, number] = [55.146858, 25.088625, 0];
-const HERO_ORIENTATION_PRINCESS: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_PRINCESS = 1.0;
-
-const HERO_GLB_URL_MARINA23 = "/glb/buildings/23-marina.glb";
-const HERO_COORDS_MARINA23: [number, number, number] = [55.15063, 25.08981, 0];
-const HERO_ORIENTATION_MARINA23: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_MARINA23 = 1.0;
-
-const HERO_GLB_URL_ELITE = "/glb/buildings/elite-residence.glb";
-const HERO_COORDS_ELITE: [number, number, number] = [55.1478889, 25.0895694, 0];
-const HERO_ORIENTATION_ELITE: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_ELITE = 1.0;
-
-const HERO_GLB_URL_CIEL = "/glb/buildings/ciel-tower.glb";
-const HERO_COORDS_CIEL: [number, number, number] = [55.1444, 25.0875, 0];
-const HERO_ORIENTATION_CIEL: [number, number, number] = [0, 0, 90];
-const HERO_SIZE_SCALE_CIEL = 1.0;
+// ── 3D hero buildings — registry-driven (heroBuildingsRegistry.ts)
+// 21 hero GLBs, default coords/orientation/size live in the registry.
+// Founder tunes via ?dev=1 + click any hero → HeroBuildingsDevPanel
+// → "Copy Config" → paste back into heroBuildingsRegistry.ts.
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1757,6 +1577,25 @@ function ParcelsMapPageInner() {
   // True once the deferred MapboxOverlay has been .addControl()-ed.
   // Needed because deckOverlayRef is a ref and won't trigger sync re-run.
   const [overlayReady, setOverlayReady] = useState(false);
+  // ── 3D hero buildings — dev-mode tuning panel ──
+  // Activated via ?dev=1 in URL. Clicking any hero (deck.gl pickable)
+  // opens HeroBuildingsDevPanel for that building. Overrides persist
+  // to localStorage; founder later pastes Copy Config into the registry.
+  const [devModeHero, setDevModeHero] = useState(false);
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null);
+  const [heroOverrides, setHeroOverrides] = useState<Record<string, HeroOverride>>({});
+  useEffect(() => {
+    setDevModeHero(new URLSearchParams(window.location.search).get("dev") === "1");
+    try {
+      const raw = localStorage.getItem(HERO_OVERRIDES_STORAGE_KEY);
+      if (raw) setHeroOverrides(JSON.parse(raw));
+    } catch { /* noop */ }
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(HERO_OVERRIDES_STORAGE_KEY, JSON.stringify(heroOverrides));
+    } catch { /* noop */ }
+  }, [heroOverrides]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
@@ -4156,11 +3995,10 @@ function ParcelsMapPageInner() {
     };
   }, [mapStyleReady]);
 
-  // Sync deck.gl layers with locked HERO_* constants. Lazy-gated by
-  // glbActive (zoom ≥ 14) — when false, layers cleared (no GLB fetch /
-  // GPU upload). Dev-tool (drag handle + per-hero sliders) lived here
-  // earlier; deleted once all four heroes were locked. To re-tune a
-  // building: restore the dev-tool code from git history.
+  // Sync deck.gl ScenegraphLayer entries from heroBuildingsRegistry.
+  // Lazy-gated by glbActive (zoom ≥ 14) — when false, layers cleared
+  // (no GLB fetch / GPU upload). In dev mode (?dev=1) each layer is
+  // pickable, and clicking a hero opens HeroBuildingsDevPanel for it.
   useEffect(() => {
     const overlay = deckOverlayRef.current;
     if (!overlay) return;
@@ -4169,243 +4007,23 @@ function ParcelsMapPageInner() {
       return;
     }
     overlay.setProps({
-      layers: [
-        new ScenegraphLayer({
-          id: "hero-millennium-tower",
-          data: [{ position: HERO_COORDS }],
-          scenegraph: HERO_GLB_URL,
+      layers: HERO_BUILDINGS.map((b) => {
+        const eff = effectiveValues(b, heroOverrides[b.id]);
+        return new ScenegraphLayer({
+          id: `hero-${b.id}`,
+          data: [{ position: eff.coords }],
+          scenegraph: b.glb,
           getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION,
-          sizeScale: HERO_SIZE_SCALE,
+          getOrientation: eff.orientation as unknown as [number, number, number],
+          sizeScale: eff.size,
           _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Crown] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-burj-khalifa",
-          data: [{ position: HERO_COORDS_KHALIFA }],
-          scenegraph: HERO_GLB_URL_KHALIFA,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_KHALIFA,
-          sizeScale: HERO_SIZE_SCALE_KHALIFA,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Khalifa] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-millennium-tower-bb",
-          data: [{ position: HERO_COORDS_MILL }],
-          scenegraph: HERO_GLB_URL_MILL,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_MILL,
-          sizeScale: HERO_SIZE_SCALE_MILL,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Millennium] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-address-downtown",
-          data: [{ position: HERO_COORDS_ADDR }],
-          scenegraph: HERO_GLB_URL_ADDR,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_ADDR,
-          sizeScale: HERO_SIZE_SCALE_ADDR,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Address] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-burj-al-arab",
-          data: [{ position: HERO_COORDS_BAA }],
-          scenegraph: HERO_GLB_URL_BAA,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_BAA,
-          sizeScale: HERO_SIZE_SCALE_BAA,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB BAA] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-first-hotel-jvc",
-          data: [{ position: HERO_COORDS_FIRST }],
-          scenegraph: HERO_GLB_URL_FIRST,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_FIRST,
-          sizeScale: HERO_SIZE_SCALE_FIRST,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB First] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-almas-tower",
-          data: [{ position: HERO_COORDS_ALMAS }],
-          scenegraph: HERO_GLB_URL_ALMAS,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_ALMAS,
-          sizeScale: HERO_SIZE_SCALE_ALMAS,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Almas] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-gevora-hotel",
-          data: [{ position: HERO_COORDS_GEVORA }],
-          scenegraph: HERO_GLB_URL_GEVORA,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_GEVORA,
-          sizeScale: HERO_SIZE_SCALE_GEVORA,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Gevora] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-jw-marriott-marquis",
-          data: [{ position: HERO_COORDS_JWMARQUIS }],
-          scenegraph: HERO_GLB_URL_JWMARQUIS,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_JWMARQUIS,
-          sizeScale: HERO_SIZE_SCALE_JWMARQUIS,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB JWMarquis] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-emirates-tower-1",
-          data: [{ position: HERO_COORDS_EMIRATES1 }],
-          scenegraph: HERO_GLB_URL_EMIRATES1,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_EMIRATES1,
-          sizeScale: HERO_SIZE_SCALE_EMIRATES1,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Emirates1] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-emirates-tower-2",
-          data: [{ position: HERO_COORDS_EMIRATES2 }],
-          scenegraph: HERO_GLB_URL_EMIRATES2,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_EMIRATES2,
-          sizeScale: HERO_SIZE_SCALE_EMIRATES2,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Emirates2] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-index-tower",
-          data: [{ position: HERO_COORDS_INDEX }],
-          scenegraph: HERO_GLB_URL_INDEX,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_INDEX,
-          sizeScale: HERO_SIZE_SCALE_INDEX,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Index] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-cayan-tower",
-          data: [{ position: HERO_COORDS_CAYAN }],
-          scenegraph: HERO_GLB_URL_CAYAN,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_CAYAN,
-          sizeScale: HERO_SIZE_SCALE_CAYAN,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Cayan] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-damac-heights",
-          data: [{ position: HERO_COORDS_DAMAC }],
-          scenegraph: HERO_GLB_URL_DAMAC,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_DAMAC,
-          sizeScale: HERO_SIZE_SCALE_DAMAC,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB DAMAC] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-the-torch",
-          data: [{ position: HERO_COORDS_TORCH }],
-          scenegraph: HERO_GLB_URL_TORCH,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_TORCH,
-          sizeScale: HERO_SIZE_SCALE_TORCH,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Torch] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-ocean-heights",
-          data: [{ position: HERO_COORDS_OCEANHEIGHTS }],
-          scenegraph: HERO_GLB_URL_OCEANHEIGHTS,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_OCEANHEIGHTS,
-          sizeScale: HERO_SIZE_SCALE_OCEANHEIGHTS,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB OceanHeights] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-marina-101",
-          data: [{ position: HERO_COORDS_MARINA101 }],
-          scenegraph: HERO_GLB_URL_MARINA101,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_MARINA101,
-          sizeScale: HERO_SIZE_SCALE_MARINA101,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Marina101] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-princess-tower",
-          data: [{ position: HERO_COORDS_PRINCESS }],
-          scenegraph: HERO_GLB_URL_PRINCESS,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_PRINCESS,
-          sizeScale: HERO_SIZE_SCALE_PRINCESS,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Princess] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-23-marina",
-          data: [{ position: HERO_COORDS_MARINA23 }],
-          scenegraph: HERO_GLB_URL_MARINA23,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_MARINA23,
-          sizeScale: HERO_SIZE_SCALE_MARINA23,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Marina23] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-elite-residence",
-          data: [{ position: HERO_COORDS_ELITE }],
-          scenegraph: HERO_GLB_URL_ELITE,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_ELITE,
-          sizeScale: HERO_SIZE_SCALE_ELITE,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Elite] error:", err),
-        }),
-        new ScenegraphLayer({
-          id: "hero-ciel-tower",
-          data: [{ position: HERO_COORDS_CIEL }],
-          scenegraph: HERO_GLB_URL_CIEL,
-          getPosition: (d: { position: [number, number, number] }) => d.position,
-          getOrientation: HERO_ORIENTATION_CIEL,
-          sizeScale: HERO_SIZE_SCALE_CIEL,
-          _lighting: "pbr",
-          pickable: false,
-          onError: (err: unknown) => console.error("[GLB Ciel] error:", err),
-        }),
-      ],
+          pickable: devModeHero,
+          onClick: devModeHero ? () => setEditingHeroId(b.id) : undefined,
+          onError: (err: unknown) => console.error(`[GLB ${b.id}] error:`, err),
+        });
+      }),
     });
-  }, [glbActive, overlayReady]);
-
-
+  }, [glbActive, overlayReady, heroOverrides, devModeHero]);
 
 
 
@@ -5980,6 +5598,27 @@ function ParcelsMapPageInner() {
         }}
       />
       <WelcomeTour />
+      {devModeHero && editingHeroId && (() => {
+        const b = HERO_BUILDINGS.find((x) => x.id === editingHeroId);
+        if (!b) return null;
+        return (
+          <HeroBuildingsDevPanel
+            building={b}
+            override={heroOverrides[editingHeroId]}
+            onChange={(next) =>
+              setHeroOverrides((prev) => ({ ...prev, [editingHeroId]: next }))
+            }
+            onReset={() =>
+              setHeroOverrides((prev) => {
+                const cp = { ...prev };
+                delete cp[editingHeroId];
+                return cp;
+              })
+            }
+            onClose={() => setEditingHeroId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
