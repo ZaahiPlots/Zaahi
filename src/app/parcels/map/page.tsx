@@ -352,6 +352,31 @@ const HERO_COORDS_EMIRATES2: [number, number, number] = [55.28194, 25.2175, 0];
 const HERO_ORIENTATION_EMIRATES2: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_EMIRATES2 = 1.0;
 
+const HERO_GLB_URL_INDEX = "/glb/buildings/index-tower.glb";
+const HERO_COORDS_INDEX: [number, number, number] = [55.27789, 25.20691, 0];
+const HERO_ORIENTATION_INDEX: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_INDEX = 1.0;
+
+const HERO_GLB_URL_CAYAN = "/glb/buildings/cayan-tower.glb";
+const HERO_COORDS_CAYAN: [number, number, number] = [55.14525, 25.08689, 0];
+const HERO_ORIENTATION_CAYAN: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_CAYAN = 1.0;
+
+const HERO_GLB_URL_DAMAC = "/glb/buildings/damac-heights.glb";
+const HERO_COORDS_DAMAC: [number, number, number] = [55.14567, 25.08724, 0];
+const HERO_ORIENTATION_DAMAC: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_DAMAC = 1.0;
+
+const HERO_GLB_URL_TORCH = "/glb/buildings/the-torch.glb";
+const HERO_COORDS_TORCH: [number, number, number] = [55.14750, 25.08794, 0];
+const HERO_ORIENTATION_TORCH: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_TORCH = 1.0;
+
+const HERO_GLB_URL_OCEANHEIGHTS = "/glb/buildings/ocean-heights.glb";
+const HERO_COORDS_OCEANHEIGHTS: [number, number, number] = [55.14884, 25.09059, 0];
+const HERO_ORIENTATION_OCEANHEIGHTS: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_OCEANHEIGHTS = 1.0;
+
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
 // conflict markers. Distinct visual treatment from ZAAHI listings:
@@ -4240,6 +4265,61 @@ function ParcelsMapPageInner() {
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Emirates2] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-index-tower",
+          data: [{ position: HERO_COORDS_INDEX }],
+          scenegraph: HERO_GLB_URL_INDEX,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_INDEX,
+          sizeScale: HERO_SIZE_SCALE_INDEX,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Index] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-cayan-tower",
+          data: [{ position: HERO_COORDS_CAYAN }],
+          scenegraph: HERO_GLB_URL_CAYAN,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_CAYAN,
+          sizeScale: HERO_SIZE_SCALE_CAYAN,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Cayan] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-damac-heights",
+          data: [{ position: HERO_COORDS_DAMAC }],
+          scenegraph: HERO_GLB_URL_DAMAC,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_DAMAC,
+          sizeScale: HERO_SIZE_SCALE_DAMAC,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB DAMAC] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-the-torch",
+          data: [{ position: HERO_COORDS_TORCH }],
+          scenegraph: HERO_GLB_URL_TORCH,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_TORCH,
+          sizeScale: HERO_SIZE_SCALE_TORCH,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Torch] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-ocean-heights",
+          data: [{ position: HERO_COORDS_OCEANHEIGHTS }],
+          scenegraph: HERO_GLB_URL_OCEANHEIGHTS,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_OCEANHEIGHTS,
+          sizeScale: HERO_SIZE_SCALE_OCEANHEIGHTS,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB OceanHeights] error:", err),
         }),
       ],
     });
