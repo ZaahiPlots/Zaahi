@@ -1556,9 +1556,20 @@ function ParcelsMapPageInner() {
     y: number;
     plotNumber: string;
     district: string;
+    emirate: string;
     area: number;
     priceAed: number | null;
     landUse: string;
+    projectName: string;
+    plotAreaSqm: number;
+    plotAreaSqft: number;
+    maxGfaSqm: number;
+    maxGfaSqft: number;
+    maxFloors: number;
+    maxHeightMeters: number;
+    maxHeightCode: string;
+    far: number;
+    planDateIso: string;
   } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
@@ -2660,8 +2671,11 @@ function ParcelsMapPageInner() {
             maxHeightMeters?: number | null;
             maxHeightCode?: string | null;
             plotAreaSqm?: number | null;
+            plotAreaSqft?: number | null;
             maxGfaSqm?: number | null;
             maxGfaSqft?: number | null;
+            sitePlanIssue?: string | null;
+            fetchedAt?: string | null;
             far?: number | null;
             buildingLimitGeometry?: GeoJSON.Polygon | null;
             setbacks?: Array<{ side: number; building: number | null; podium: number | null }> | null;
@@ -2704,6 +2718,7 @@ function ParcelsMapPageInner() {
             id: it.id,
             plotNumber: it.plotNumber,
             district: it.district,
+            emirate: it.emirate,
             area: it.area,
             priceAed: aed,
             landUse: landUse ?? "",
@@ -2711,6 +2726,17 @@ function ParcelsMapPageInner() {
             color: hasLandUse
               ? (ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR)
               : ZAAHI_DEFAULT_COLOR,
+            // Hover-card fields (flattened from latest affection plan).
+            projectName: it.plan?.projectName ?? "",
+            plotAreaSqm: it.plan?.plotAreaSqm ?? 0,
+            plotAreaSqft: it.plan?.plotAreaSqft ?? 0,
+            maxGfaSqm: it.plan?.maxGfaSqm ?? 0,
+            maxGfaSqft: it.plan?.maxGfaSqft ?? 0,
+            maxFloors: it.plan?.maxFloors ?? 0,
+            maxHeightMeters: it.plan?.maxHeightMeters ?? 0,
+            maxHeightCode: it.plan?.maxHeightCode ?? "",
+            far: it.plan?.far ?? 0,
+            planDateIso: it.plan?.sitePlanIssue ?? it.plan?.fetchedAt ?? "",
           },
         });
         // Skip 3D building generation for parcels without a land use —
@@ -3737,18 +3763,40 @@ function ParcelsMapPageInner() {
           const p = f.properties as {
             plotNumber: string;
             district: string;
+            emirate: string;
             area: number;
             priceAed: number | null;
             landUse: string;
+            projectName?: string;
+            plotAreaSqm?: number;
+            plotAreaSqft?: number;
+            maxGfaSqm?: number;
+            maxGfaSqft?: number;
+            maxFloors?: number;
+            maxHeightMeters?: number;
+            maxHeightCode?: string;
+            far?: number;
+            planDateIso?: string;
           };
           setZaahiHover({
             x: e.point.x,
             y: e.point.y,
             plotNumber: p.plotNumber,
             district: p.district,
+            emirate: p.emirate ?? "",
             area: p.area,
             priceAed: p.priceAed,
             landUse: p.landUse,
+            projectName: p.projectName ?? "",
+            plotAreaSqm: p.plotAreaSqm ?? 0,
+            plotAreaSqft: p.plotAreaSqft ?? 0,
+            maxGfaSqm: p.maxGfaSqm ?? 0,
+            maxGfaSqft: p.maxGfaSqft ?? 0,
+            maxFloors: p.maxFloors ?? 0,
+            maxHeightMeters: p.maxHeightMeters ?? 0,
+            maxHeightCode: p.maxHeightCode ?? "",
+            far: p.far ?? 0,
+            planDateIso: p.planDateIso ?? "",
           });
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
@@ -5268,43 +5316,80 @@ function ParcelsMapPageInner() {
           opacity: 1;
         }
       `}</style>
-      {zaahiHover && (
-        <div
-          style={{
-            position: "absolute",
-            left: zaahiHover.x + 14,
-            top: zaahiHover.y + 14, // map container now starts at top:0
-            width: 200,
-            background: "rgba(10, 22, 40, 0.75)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
-            color: "#FFFFFF",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderLeft: `3px solid ${GOLD}`,
-            borderRadius: 6,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-            padding: "8px 10px",
-            fontSize: 11,
-            fontFamily: "Georgia, serif",
-            lineHeight: 1.45,
-            pointerEvents: "none",
-            zIndex: 30,
-          }}
-        >
-          <div style={{ fontWeight: 700, color: GOLD, fontSize: 12 }}>
-            {zaahiHover.plotNumber}
+      {zaahiHover && (() => {
+        const title = zaahiHover.projectName || zaahiHover.plotNumber;
+        const authority =
+          zaahiHover.emirate === "Dubai" ? "DDA"
+          : zaahiHover.emirate === "Abu Dhabi" ? "ADDED"
+          : "";
+        const hasPlotArea = zaahiHover.plotAreaSqft > 0 || zaahiHover.plotAreaSqm > 0;
+        const hasGfa = zaahiHover.maxGfaSqft > 0 || zaahiHover.maxGfaSqm > 0;
+        const hasFar = zaahiHover.far > 0;
+        const hasHeight = !!zaahiHover.maxHeightCode || zaahiHover.maxFloors > 0 || zaahiHover.maxHeightMeters > 0;
+        const heightParts: string[] = [];
+        if (zaahiHover.maxHeightCode) heightParts.push(zaahiHover.maxHeightCode);
+        if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
+        if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
+        const planDate = formatPlanDate(zaahiHover.planDateIso);
+        // Physical status (Under Construction / Completed / etc.) is not
+        // stored on Parcel or AffectionPlan today — only Parcel.status
+        // (ParcelStatus enum) which is the marketplace listing state, and
+        // Building.status (separate table, not joined here). Row omitted
+        // until schema gains a physical-status field or Parcel↔Building FK.
+        return (
+          <div
+            style={{
+              position: "absolute",
+              left: zaahiHover.x + 14,
+              top: zaahiHover.y + 14,
+              width: 260,
+              background: "rgba(10, 22, 40, 0.75)",
+              backdropFilter: "blur(24px) saturate(150%)",
+              WebkitBackdropFilter: "blur(24px) saturate(150%)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderLeft: `3px solid ${GOLD}`,
+              borderRadius: 6,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+              padding: "10px 12px",
+              fontSize: 11,
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              lineHeight: 1.45,
+              pointerEvents: "none",
+              zIndex: 30,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
+                {title}
+              </span>
+              {authority && (
+                <span style={{
+                  fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                }}>{authority}</span>
+              )}
+            </div>
+            {hasPlotArea && (
+              <PmtilesHoverRow label="Plot Area"
+                value={`${zaahiHover.plotAreaSqft.toLocaleString()} ft² · ${zaahiHover.plotAreaSqm.toLocaleString()} m²`} />
+            )}
+            {hasGfa && (
+              <PmtilesHoverRow label="Max GFA"
+                value={`${zaahiHover.maxGfaSqft.toLocaleString()} ft² · ${zaahiHover.maxGfaSqm.toLocaleString()} m²`} />
+            )}
+            {hasFar && (
+              <PmtilesHoverRow label="FAR" value={zaahiHover.far.toFixed(1)} />
+            )}
+            {hasHeight && (
+              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
+            )}
+            {planDate && (
+              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+            )}
           </div>
-          <div style={{ opacity: 0.85, marginTop: 2 }}>
-            {zaahiHover.district} | {Math.round(zaahiHover.area).toLocaleString("en-US")} sqft |{" "}
-            {zaahiHover.priceAed == null
-              ? "—"
-              : zaahiHover.priceAed >= 1_000_000
-                ? `${(zaahiHover.priceAed / 1_000_000).toFixed(1)}M AED`
-                : `${(zaahiHover.priceAed / 1_000).toFixed(0)}K AED`}{" "}
-            | {zaahiHover.landUse.charAt(0) + zaahiHover.landUse.slice(1).toLowerCase()}
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {ddaLandHover && (() => {
         const m = ddaLandHover.municipality;
         const authority =
@@ -5691,6 +5776,16 @@ function formatPmtilesStatus(raw: string): string {
     return raw.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()).replace(/_/g, " ");
   }
   return raw;
+}
+
+// "2026-03-14T..." → "14 Mar 2026". Empty / invalid → "".
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function formatPlanDate(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getUTCDate().toString().padStart(2, "0")} ${MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 function LayerToggle({
