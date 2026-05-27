@@ -112,13 +112,12 @@ export const HERO_BUILDINGS: HeroBuilding[] = [
     defaultSize: 1.0 },
 
   // Como Residences (Nakheel, Palm Jumeirah trunk) — UNDER_CONSTRUCTION
-  // Q2 2028. 71 floors, ~300m seashell tower. Centroid from OSM
-  // Nominatim. Founder will tune orientation/elev via dev panel.
+  // Q2 2028. 71 floors, ~300m seashell tower. Founder-tuned 2026-05-27.
   { id: "como-residences", label: "Como Residences (Palm)",
     glb: "/glb/buildings/como-residences.glb",
-    defaultCoords: [55.1454260, 25.1111743, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
+    defaultCoords: [55.1455254, 25.1111202, 0],
+    defaultOrientation: [0, -39, 90],
+    defaultSize: 2.50 },
 ];
 
 export function effectiveValues(b: HeroBuilding, ov: HeroOverride | undefined) {
