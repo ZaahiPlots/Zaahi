@@ -290,12 +290,13 @@ const HERO_COORDS_BAA: [number, number, number] = [55.185329, 25.141318, 0];
 const HERO_ORIENTATION_BAA: [number, number, number] = [0, 53, 90];
 const HERO_SIZE_SCALE_BAA = 1.0;
 // Atlantis The Royal (Palm Jumeirah crescent) — Meshy multi-image from 4
-// founder photos. Twin-tower hotel + residences by KPF, 43 floors, 193m
-// architectural, connecting sky-bridge between towers, stepped
-// cantilevered floors. Wikipedia coords [55.127789, 25.138136]. Opened
-// Feb 2023. Real dims baked: 150 × 50 × 193 m (twin-tower span × depth ×
-// height). Pipeline used force-Z-up (auto-detect picked Y because of
-// horizontal twin-tower span > vertical).
+// founder photos. Two-tower mega-structure by KPF: 43-storey west tower
+// (795-room hotel) + 38-storey east tower (230 apartments), connecting
+// sky-bridge between them, "stacked block" stepped cantilevered floors.
+// Wikipedia coords [55.127789, 25.138136]. Opened Feb 2023. Real dims
+// per CTBUH 2018 case study: 600 m long × 178 m tall (overall span ×
+// architectural height). 80 m depth estimated from photos. Pipeline
+// used force-Z-up (auto-detect picked Y because of horizontal span).
 const HERO_GLB_URL_ATLANTIS = "/glb/buildings/royal-atlantis.glb";
 const HERO_COORDS_ATLANTIS: [number, number, number] = [55.127789, 25.138136, 0];
 const HERO_ORIENTATION_ATLANTIS: [number, number, number] = [0, 0, 90];
