@@ -377,6 +377,31 @@ const HERO_COORDS_OCEANHEIGHTS: [number, number, number] = [55.14884, 25.09059, 
 const HERO_ORIENTATION_OCEANHEIGHTS: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_OCEANHEIGHTS = 1.0;
 
+const HERO_GLB_URL_MARINA101 = "/glb/buildings/marina-101.glb";
+const HERO_COORDS_MARINA101: [number, number, number] = [55.1401, 25.0807, 0];
+const HERO_ORIENTATION_MARINA101: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_MARINA101 = 1.0;
+
+const HERO_GLB_URL_PRINCESS = "/glb/buildings/princess-tower.glb";
+const HERO_COORDS_PRINCESS: [number, number, number] = [55.146858, 25.088625, 0];
+const HERO_ORIENTATION_PRINCESS: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_PRINCESS = 1.0;
+
+const HERO_GLB_URL_MARINA23 = "/glb/buildings/23-marina.glb";
+const HERO_COORDS_MARINA23: [number, number, number] = [55.15063, 25.08981, 0];
+const HERO_ORIENTATION_MARINA23: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_MARINA23 = 1.0;
+
+const HERO_GLB_URL_ELITE = "/glb/buildings/elite-residence.glb";
+const HERO_COORDS_ELITE: [number, number, number] = [55.1478889, 25.0895694, 0];
+const HERO_ORIENTATION_ELITE: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_ELITE = 1.0;
+
+const HERO_GLB_URL_CIEL = "/glb/buildings/ciel-tower.glb";
+const HERO_COORDS_CIEL: [number, number, number] = [55.1444, 25.0875, 0];
+const HERO_ORIENTATION_CIEL: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_CIEL = 1.0;
+
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
 // conflict markers. Distinct visual treatment from ZAAHI listings:
@@ -4320,6 +4345,61 @@ function ParcelsMapPageInner() {
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB OceanHeights] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-marina-101",
+          data: [{ position: HERO_COORDS_MARINA101 }],
+          scenegraph: HERO_GLB_URL_MARINA101,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_MARINA101,
+          sizeScale: HERO_SIZE_SCALE_MARINA101,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Marina101] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-princess-tower",
+          data: [{ position: HERO_COORDS_PRINCESS }],
+          scenegraph: HERO_GLB_URL_PRINCESS,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_PRINCESS,
+          sizeScale: HERO_SIZE_SCALE_PRINCESS,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Princess] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-23-marina",
+          data: [{ position: HERO_COORDS_MARINA23 }],
+          scenegraph: HERO_GLB_URL_MARINA23,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_MARINA23,
+          sizeScale: HERO_SIZE_SCALE_MARINA23,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Marina23] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-elite-residence",
+          data: [{ position: HERO_COORDS_ELITE }],
+          scenegraph: HERO_GLB_URL_ELITE,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_ELITE,
+          sizeScale: HERO_SIZE_SCALE_ELITE,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Elite] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-ciel-tower",
+          data: [{ position: HERO_COORDS_CIEL }],
+          scenegraph: HERO_GLB_URL_CIEL,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_CIEL,
+          sizeScale: HERO_SIZE_SCALE_CIEL,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Ciel] error:", err),
         }),
       ],
     });
