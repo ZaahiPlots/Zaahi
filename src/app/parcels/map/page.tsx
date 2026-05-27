@@ -324,6 +324,34 @@ const HERO_COORDS_FIRST: [number, number, number] = [55.204777, 25.054784, 0];
 const HERO_ORIENTATION_FIRST: [number, number, number] = [0, -70, 90];
 const HERO_SIZE_SCALE_FIRST = 1.50;
 
+// ── 15-building batch: Meshy multi/single-image-to-3d → Blender force-Z-up
+// pipeline. Default orientation [0, 0, 90], sizeScale 1.0, elev 0 — founder
+// will tune yaw/pitch/roll/scale in a follow-up batch via dev-tool sliders.
+const HERO_GLB_URL_ALMAS = "/glb/buildings/almas-tower.glb";
+const HERO_COORDS_ALMAS: [number, number, number] = [55.1411, 25.0689, 0];
+const HERO_ORIENTATION_ALMAS: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_ALMAS = 1.0;
+
+const HERO_GLB_URL_GEVORA = "/glb/buildings/gevora-hotel.glb";
+const HERO_COORDS_GEVORA: [number, number, number] = [55.27708, 25.21239, 0];
+const HERO_ORIENTATION_GEVORA: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_GEVORA = 1.0;
+
+const HERO_GLB_URL_JWMARQUIS = "/glb/buildings/jw-marriott-marquis.glb";
+const HERO_COORDS_JWMARQUIS: [number, number, number] = [55.25667, 25.18556, 0];
+const HERO_ORIENTATION_JWMARQUIS: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_JWMARQUIS = 1.0;
+
+const HERO_GLB_URL_EMIRATES1 = "/glb/buildings/emirates-tower-1.glb";
+const HERO_COORDS_EMIRATES1: [number, number, number] = [55.2814, 25.2174, 0];
+const HERO_ORIENTATION_EMIRATES1: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_EMIRATES1 = 1.0;
+
+const HERO_GLB_URL_EMIRATES2 = "/glb/buildings/emirates-tower-2.glb";
+const HERO_COORDS_EMIRATES2: [number, number, number] = [55.28194, 25.2175, 0];
+const HERO_ORIENTATION_EMIRATES2: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_EMIRATES2 = 1.0;
+
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
 // conflict markers. Distinct visual treatment from ZAAHI listings:
@@ -4157,6 +4185,61 @@ function ParcelsMapPageInner() {
           _lighting: "pbr",
           pickable: false,
           onError: (err: unknown) => console.error("[GLB First] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-almas-tower",
+          data: [{ position: HERO_COORDS_ALMAS }],
+          scenegraph: HERO_GLB_URL_ALMAS,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_ALMAS,
+          sizeScale: HERO_SIZE_SCALE_ALMAS,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Almas] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-gevora-hotel",
+          data: [{ position: HERO_COORDS_GEVORA }],
+          scenegraph: HERO_GLB_URL_GEVORA,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_GEVORA,
+          sizeScale: HERO_SIZE_SCALE_GEVORA,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Gevora] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-jw-marriott-marquis",
+          data: [{ position: HERO_COORDS_JWMARQUIS }],
+          scenegraph: HERO_GLB_URL_JWMARQUIS,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_JWMARQUIS,
+          sizeScale: HERO_SIZE_SCALE_JWMARQUIS,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB JWMarquis] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-emirates-tower-1",
+          data: [{ position: HERO_COORDS_EMIRATES1 }],
+          scenegraph: HERO_GLB_URL_EMIRATES1,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_EMIRATES1,
+          sizeScale: HERO_SIZE_SCALE_EMIRATES1,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Emirates1] error:", err),
+        }),
+        new ScenegraphLayer({
+          id: "hero-emirates-tower-2",
+          data: [{ position: HERO_COORDS_EMIRATES2 }],
+          scenegraph: HERO_GLB_URL_EMIRATES2,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: HERO_ORIENTATION_EMIRATES2,
+          sizeScale: HERO_SIZE_SCALE_EMIRATES2,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Emirates2] error:", err),
         }),
       ],
     });
