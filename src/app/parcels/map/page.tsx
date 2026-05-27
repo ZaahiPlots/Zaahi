@@ -1562,8 +1562,14 @@ function ParcelsMapPageInner() {
   } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
-    plotNumber: string; mainLandUse: string;
-    areaSqm: number; gfaSqm: number; status: string;
+    plotNumber: string;
+    mainLandUse: string;
+    areaSqm: number; areaSqft: number;
+    gfaSqm: number; gfaSqft: number;
+    status: string;
+    source: "dda" | "ad" | "";
+    municipality: string;
+    district: string;
   } | null>(null);
   const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
@@ -3329,13 +3335,21 @@ function ParcelsMapPageInner() {
       if (!f) return;
       map.getCanvas().style.cursor = "pointer";
       const pr = f.properties as Record<string, unknown>;
+      const areaSqm = (pr.areaSqm as number) ?? 0;
+      // DDA tiles carry AREA_SQFT directly; AD tiles only have
+      // CALCULATEDAREA (in sqm) — derive sqft via 10.7639.
+      const areaSqft = (pr.areaSqft as number) || Math.round(areaSqm * 10.7639);
+      const gfaSqm = (pr.gfaSqm as number) ?? 0;
+      const gfaSqft = gfaSqm > 0 ? Math.round(gfaSqm * 10.7639) : 0;
       setDdaLandHover({
         x: e.point.x, y: e.point.y,
         plotNumber: (pr.plotNumber as string) ?? "",
         mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
-        areaSqm: (pr.areaSqm as number) ?? 0,
-        gfaSqm: (pr.gfaSqm as number) ?? 0,
+        areaSqm, areaSqft, gfaSqm, gfaSqft,
         status: (pr.status as string) ?? "",
+        source: ((pr.source as string) ?? "") as "dda" | "ad" | "",
+        municipality: (pr.municipality as string) ?? "",
+        district: (pr.district as string) ?? "",
       });
     });
     map.on("mouseleave", fillId, () => { map.getCanvas().style.cursor = ""; setDdaLandHover(null); });
@@ -5291,45 +5305,70 @@ function ParcelsMapPageInner() {
           </div>
         </div>
       )}
-      {ddaLandHover && (
-        <div
-          style={{
-            position: "absolute",
-            left: ddaLandHover.x + 14,
-            top: ddaLandHover.y + 14,
-            width: 210,
-            background: "rgba(10, 22, 40, 0.75)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
-            color: "#FFFFFF",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderLeft: "3px solid #4A90D9",
-            borderRadius: 6,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-            padding: "8px 10px",
-            fontSize: 11,
-            fontFamily: "Georgia, serif",
-            lineHeight: 1.45,
-            pointerEvents: "none",
-            zIndex: 30,
-          }}
-        >
-          <div style={{ fontWeight: 700, color: "#4A90D9", fontSize: 12 }}>
-            {ddaLandHover.plotNumber}
-            <span style={{ fontSize: 8, fontWeight: 400, color: "rgba(255,255,255,0.5)", marginLeft: 6 }}>DDA</span>
+      {ddaLandHover && (() => {
+        const m = ddaLandHover.municipality;
+        const authority =
+          ddaLandHover.source === "dda" ? "DDA"
+          : ddaLandHover.source === "ad" && m === "ADM" ? "ADM"
+          : ddaLandHover.source === "ad" && m === "AAM" ? "AAM"
+          : ddaLandHover.source === "ad" ? "AD"
+          : "";
+        const status = formatPmtilesStatus(ddaLandHover.status);
+        return (
+          <div
+            style={{
+              position: "absolute",
+              left: ddaLandHover.x + 14,
+              top: ddaLandHover.y + 14,
+              width: 250,
+              background: "rgba(10, 22, 40, 0.75)",
+              backdropFilter: "blur(24px) saturate(150%)",
+              WebkitBackdropFilter: "blur(24px) saturate(150%)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderLeft: "3px solid #4A90D9",
+              borderRadius: 6,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+              padding: "10px 12px",
+              fontSize: 11,
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              lineHeight: 1.45,
+              pointerEvents: "none",
+              zIndex: 30,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontWeight: 700, color: "#4A90D9", fontSize: 13 }}>
+                {ddaLandHover.plotNumber || "—"}
+              </span>
+              {authority && (
+                <span style={{
+                  fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                }}>{authority}</span>
+              )}
+            </div>
+            {ddaLandHover.mainLandUse && (
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 10 }}>
+                {ddaLandHover.mainLandUse}
+              </div>
+            )}
+            <PmtilesHoverRow label="Plot Area"
+              value={`${ddaLandHover.areaSqft.toLocaleString()} ft² · ${ddaLandHover.areaSqm.toLocaleString()} m²`} />
+            {ddaLandHover.gfaSqm > 0 && (
+              <PmtilesHoverRow label="Max GFA"
+                value={`${ddaLandHover.gfaSqft.toLocaleString()} ft² · ${ddaLandHover.gfaSqm.toLocaleString()} m²`} />
+            )}
+            {/* Max Height + Affection Plan rows intentionally omitted —
+                neither field is emitted by scripts/prepare-tiles.ts into
+                the PMTiles feature properties. To enable: add
+                MAX_HEIGHT_FLOORS + MAX_HEIGHT_METERS (read internally
+                already) and AFFECTION_PLAN_DATE to baseProps, then
+                rebuild via scripts/update-tiles.sh. */}
+            {status && <PmtilesHoverRow label="Status" value={status} />}
           </div>
-          <div style={{ opacity: 0.85, marginTop: 2 }}>
-            {ddaLandHover.mainLandUse || "—"}
-          </div>
-          <div style={{ opacity: 0.7, marginTop: 1, fontSize: 10 }}>
-            {Math.round(ddaLandHover.areaSqm).toLocaleString()} sqm
-            {ddaLandHover.gfaSqm > 0 && ` · GFA ${Math.round(ddaLandHover.gfaSqm).toLocaleString()} sqm`}
-          </div>
-          <div style={{ opacity: 0.6, marginTop: 1, fontSize: 9, fontStyle: "italic" }}>
-            {ddaLandHover.status || "—"}
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {/* The music / sound toggle moved into the HeaderBar (next to
           Profile) per founder spec 2026-04-12. The old floating
           button at top:56 right:16 is gone. */}
@@ -5621,6 +5660,37 @@ function ParcelsMapPageInner() {
       })()}
     </div>
   );
+}
+
+// ── Hover-card helpers (PMTiles DDA/AD plot popup) ──
+// One small row of label + value, used inside the ddaLandHover popup
+// JSX. Style mirrors the rest of the hover card (Georgia / SF Mono).
+function PmtilesHoverRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      display: "flex", justifyContent: "space-between", gap: 8,
+      marginTop: 3, fontSize: 10, lineHeight: 1.35,
+    }}>
+      <span style={{
+        opacity: 0.55, letterSpacing: "0.04em",
+        textTransform: "uppercase", fontSize: 9,
+      }}>{label}</span>
+      <span style={{
+        color: "rgba(255,255,255,0.95)", textAlign: "right",
+        fontFamily: '"SF Mono", Menlo, monospace', fontSize: 10,
+      }}>{value}</span>
+    </div>
+  );
+}
+
+// Light-touch status normalizer: ALL-CAPS → Title Case (with
+// underscores spaced). Already-Title values pass through unchanged.
+function formatPmtilesStatus(raw: string): string {
+  if (!raw || raw.trim() === "") return "";
+  if (raw === raw.toUpperCase()) {
+    return raw.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()).replace(/_/g, " ");
+  }
+  return raw;
 }
 
 function LayerToggle({
