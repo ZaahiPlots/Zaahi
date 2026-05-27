@@ -279,12 +279,15 @@ const HERO_GLB_URL_BINGHATTI = "/glb/buildings/binghatti-royal.glb";
 const HERO_COORDS_BINGHATTI: [number, number, number] = [55.2113, 25.0533, 0];
 const HERO_ORIENTATION_BINGHATTI: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_BINGHATTI = 1.0;
-// Burj Al Arab (Jumeirah Beach) — Meshy multi-image from 3 CTBUH photos
-// (Mark Thompson, Terri Meyer Boake) + founder dusk photo + a line-drawing
-// silhouette for sail-shape guidance. 321 m architectural, 56 floors,
-// triangular sail-shaped footprint on artificial offshore island.
+// Burj Al Arab (Jumeirah Beach) — Meshy multi-image v2 with 1 Flickr
+// aerial helicopter shot + 2 CTBUH ground views + 1 founder dusk shot
+// (v1 with line-drawing instead of aerial gave oval footprint, no V).
+// Aerial 3q angle taught Meshy the V/triangle plan with two wings
+// spreading from a central spine. 321 m architectural, 56 floors,
 // Wikipedia coords [55.18528, 25.14139]. Atkins structural, Tom Wright
-// architect (WKA). Real dims baked: 100 × 50 × 321 m.
+// architect (WKA). Real dims baked: 100 × 50 × 321 m. Pipeline forced
+// Z-up because Meshy emitted thin debris tendrils that confused
+// auto-detect — see pipeline_force_zup.py.
 const HERO_GLB_URL_BAA = "/glb/buildings/burj-al-arab.glb";
 const HERO_COORDS_BAA: [number, number, number] = [55.18528, 25.14139, 0];
 const HERO_ORIENTATION_BAA: [number, number, number] = [0, 0, 90];
