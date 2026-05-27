@@ -269,6 +269,16 @@ const HERO_GLB_URL_ROYALE = "/glb/buildings/burj-royale.glb";
 const HERO_COORDS_ROYALE: [number, number, number] = [55.2803, 25.1916, 0];
 const HERO_ORIENTATION_ROYALE: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_ROYALE = 1.0;
+// Binghatti Royale (Jumeirah Village Circle) — Meshy multi-image-to-3D
+// from 4 iPhone photos (founder, 2026-05-27). 47-floor residential by
+// Binghatti Developers with signature "twist" cantilevered balconies.
+// Real dims baked: ~165m height (47 floors × 3.5m), 42×38m footprint.
+// Coords are an approximate JVC placeholder — founder will tune via
+// dev-tool drag handle and Copy Config.
+const HERO_GLB_URL_BINGHATTI = "/glb/buildings/binghatti-royal.glb";
+const HERO_COORDS_BINGHATTI: [number, number, number] = [55.2113, 25.0533, 0];
+const HERO_ORIENTATION_BINGHATTI: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_BINGHATTI = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1626,6 +1636,27 @@ function ParcelsMapPageInner() {
   // Needed because deckOverlayRef is a ref and won't trigger sync re-run.
   const [overlayReady, setOverlayReady] = useState(false);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  // ?dev=1 gate — restored for Binghatti Royal tuning. Locked heroes
+  // (Crown / Khalifa / Mill / Address Downtown) read constants directly
+  // and ignore this state. Remove this + DevToolPanel + state cluster
+  // below once founder confirms locked Binghatti placement.
+  const [devMode, setDevMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dev = new URLSearchParams(window.location.search).get("dev") === "1";
+    setDevMode(dev);
+    if (dev) console.log("[GLB] dev mode active (binghatti)");
+  }, []);
+  // Binghatti Royal dev state — drag handle + 5 sliders.
+  const [binghattiYaw, setBinghattiYaw] = useState<number>(HERO_ORIENTATION_BINGHATTI[1]);
+  const [binghattiPitch, setBinghattiPitch] = useState<number>(HERO_ORIENTATION_BINGHATTI[0]);
+  const [binghattiRoll, setBinghattiRoll] = useState<number>(HERO_ORIENTATION_BINGHATTI[2]);
+  const [binghattiSize, setBinghattiSize] = useState<number>(HERO_SIZE_SCALE_BINGHATTI);
+  const [binghattiElev, setBinghattiElev] = useState<number>(HERO_COORDS_BINGHATTI[2]);
+  const [binghattiLng, setBinghattiLng] = useState<number>(HERO_COORDS_BINGHATTI[0]);
+  const [binghattiLat, setBinghattiLat] = useState<number>(HERO_COORDS_BINGHATTI[1]);
+  const [binghattiHandlePx, setBinghattiHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingBinghattiRef = useRef(false);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
@@ -4082,9 +4113,58 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Address] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-binghatti-royal",
+          data: [{ position: [binghattiLng, binghattiLat, binghattiElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_BINGHATTI,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [binghattiPitch, binghattiYaw, binghattiRoll],
+          sizeScale: binghattiSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB Binghatti] error:", err),
+        }),
       ],
     });
-  }, [glbActive, overlayReady]);
+  }, [glbActive, overlayReady,
+      binghattiLng, binghattiLat, binghattiYaw, binghattiPitch, binghattiRoll,
+      binghattiSize, binghattiElev]);
+
+  // Binghatti drag-handle projection: lng/lat → screen-space pixel.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([binghattiLng, binghattiLat]);
+      setBinghattiHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => { map.off("move", project); };
+  }, [binghattiLng, binghattiLat, mapStyleReady, devMode]);
+
+  const onBinghattiHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const map = mapRef.current; if (!map) return;
+    map.dragPan.disable(); draggingBinghattiRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([ev.clientX - rect.left, ev.clientY - rect.top]);
+      setBinghattiLng(ll.lng); setBinghattiLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable(); draggingBinghattiRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyBinghattiConfig = () => {
+    const text = `// Binghatti Royal\ndata: [{ position: [${binghattiLng.toFixed(6)}, ${binghattiLat.toFixed(6)}, ${binghattiElev}] }],\ngetOrientation: [${binghattiPitch}, ${binghattiYaw}, ${binghattiRoll}],\nsizeScale: ${binghattiSize},`;
+    try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
+  };
 
 
   // Drive the drone controller from React state. Persists choice and
@@ -4397,6 +4477,29 @@ function ParcelsMapPageInner() {
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* ── Dev-tool — gold crosshair drag handle + control panel for
+          Binghatti Royal tuning. Gated behind ?dev=1. Founder workflow:
+          drag handle to reposition, scrub sliders, then Copy Config to
+          clipboard and paste values into HERO_*_BINGHATTI constants. */}
+      {devMode && binghattiHandlePx && glbActive && (
+        <div onMouseDown={onBinghattiHandleMouseDown} title="Drag to move Binghatti Royal anchor"
+          style={{ position: "absolute", left: binghattiHandlePx.x - 12, top: binghattiHandlePx.y - 12,
+            width: 24, height: 24, cursor: draggingBinghattiRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E", borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50, pointerEvents: "auto" }} />
+      )}
+      {devMode && (
+        <DevToolPanel title="BINGHATTI ROYAL" right={16}
+          lng={binghattiLng} lat={binghattiLat}
+          yaw={binghattiYaw} pitch={binghattiPitch} roll={binghattiRoll}
+          size={binghattiSize} elev={binghattiElev}
+          onYaw={setBinghattiYaw} onPitch={setBinghattiPitch} onRoll={setBinghattiRoll}
+          onSize={setBinghattiSize} onElev={setBinghattiElev}
+          onCopy={copyBinghattiConfig} />
+      )}
 
       {/* Sun-time override slider — visible only when the ☀ button in
           the right stack is toggled on. Drives the directional-light
@@ -6781,6 +6884,67 @@ function MiniRailBtn({
     >
       {children}
     </button>
+  );
+}
+
+// Dev-tool panel — gold glassmorphism, gated by ?dev=1. 5 sliders +
+// Copy Config button. Reused per-hero so adding/removing one stays a
+// single JSX block instead of 150 inline lines per panel.
+function DevToolPanel(props: {
+  title: string; right: number;
+  lng: number; lat: number;
+  yaw: number; pitch: number; roll: number;
+  size: number; elev: number;
+  onYaw: (v: number) => void; onPitch: (v: number) => void; onRoll: (v: number) => void;
+  onSize: (v: number) => void; onElev: (v: number) => void;
+  onCopy: () => void;
+}) {
+  const labelStyle = { fontFamily: "monospace", fontSize: 11, marginTop: 8, lineHeight: 1.5 } as React.CSSProperties;
+  const rangeStyle = { width: "100%", accentColor: "#C8A96E", marginTop: 4 } as React.CSSProperties;
+  return (
+    <div style={{
+      position: "absolute", top: 80, right: props.right, width: 260, padding: 16,
+      background: "rgba(10,22,40,0.4)",
+      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,
+      boxShadow: "0 6px 20px rgba(0,0,0,0.2)", color: "#C8A96E",
+      fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+      fontSize: 11, letterSpacing: "0.04em", zIndex: 51,
+    }}>
+      <div style={{ textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.08em" }}>
+        {props.title} (dev)
+      </div>
+      <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>lng: {props.lng.toFixed(6)}</div>
+      <div style={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.5 }}>lat: {props.lat.toFixed(6)}</div>
+      <div style={labelStyle}>yaw: {props.yaw}°</div>
+      <input type="range" min={-180} max={180} step={1} value={props.yaw}
+        onChange={(e) => props.onYaw(Number(e.target.value))} style={rangeStyle} />
+      <div style={labelStyle}>pitch: {props.pitch}°</div>
+      <input type="range" min={-180} max={180} step={1} value={props.pitch}
+        onChange={(e) => props.onPitch(Number(e.target.value))} style={rangeStyle} />
+      <div style={labelStyle}>roll: {props.roll}°</div>
+      <input type="range" min={-180} max={180} step={1} value={props.roll}
+        onChange={(e) => props.onRoll(Number(e.target.value))} style={rangeStyle} />
+      <div style={labelStyle}>size: {props.size.toFixed(2)}×</div>
+      <input type="range" min={0.1} max={5} step={0.1} value={props.size}
+        onChange={(e) => props.onSize(Number(e.target.value))} style={rangeStyle} />
+      <div style={labelStyle}>elev: {props.elev} m</div>
+      <input type="range" min={-200} max={500} step={1} value={props.elev}
+        onChange={(e) => props.onElev(Number(e.target.value))} style={rangeStyle} />
+      <button type="button" onClick={props.onCopy}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(200,169,110,0.25)"; e.currentTarget.style.borderColor = "#C8A96E"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)"; }}
+        style={{
+          marginTop: 12, width: "100%", padding: "8px 10px",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(200,169,110,0.3)", borderRadius: 8,
+          color: "#C8A96E", cursor: "pointer", fontSize: 11,
+          letterSpacing: "0.08em", fontFamily: "inherit", textTransform: "uppercase",
+          transition: "background 150ms ease, border-color 150ms ease, transform 150ms ease",
+        }}>
+        Copy Config
+      </button>
+    </div>
   );
 }
 
