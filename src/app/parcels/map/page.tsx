@@ -279,6 +279,16 @@ const HERO_GLB_URL_BINGHATTI = "/glb/buildings/binghatti-royal.glb";
 const HERO_COORDS_BINGHATTI: [number, number, number] = [55.2113, 25.0533, 0];
 const HERO_ORIENTATION_BINGHATTI: [number, number, number] = [0, 0, 90];
 const HERO_SIZE_SCALE_BINGHATTI = 1.0;
+// Burj Al Arab (Jumeirah Beach) — Meshy multi-image from 3 CTBUH photos
+// (Mark Thompson, Terri Meyer Boake) + founder dusk photo + a line-drawing
+// silhouette for sail-shape guidance. 321 m architectural, 56 floors,
+// triangular sail-shaped footprint on artificial offshore island.
+// Wikipedia coords [55.18528, 25.14139]. Atkins structural, Tom Wright
+// architect (WKA). Real dims baked: 100 × 50 × 321 m.
+const HERO_GLB_URL_BAA = "/glb/buildings/burj-al-arab.glb";
+const HERO_COORDS_BAA: [number, number, number] = [55.18528, 25.14139, 0];
+const HERO_ORIENTATION_BAA: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_BAA = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1657,6 +1667,16 @@ function ParcelsMapPageInner() {
   const [binghattiLat, setBinghattiLat] = useState<number>(HERO_COORDS_BINGHATTI[1]);
   const [binghattiHandlePx, setBinghattiHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingBinghattiRef = useRef(false);
+  // Burj Al Arab dev state — drag handle + 5 sliders.
+  const [baaYaw, setBaaYaw] = useState<number>(HERO_ORIENTATION_BAA[1]);
+  const [baaPitch, setBaaPitch] = useState<number>(HERO_ORIENTATION_BAA[0]);
+  const [baaRoll, setBaaRoll] = useState<number>(HERO_ORIENTATION_BAA[2]);
+  const [baaSize, setBaaSize] = useState<number>(HERO_SIZE_SCALE_BAA);
+  const [baaElev, setBaaElev] = useState<number>(HERO_COORDS_BAA[2]);
+  const [baaLng, setBaaLng] = useState<number>(HERO_COORDS_BAA[0]);
+  const [baaLat, setBaaLat] = useState<number>(HERO_COORDS_BAA[1]);
+  const [baaHandlePx, setBaaHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingBaaRef = useRef(false);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
@@ -4124,11 +4144,23 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB Binghatti] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-burj-al-arab",
+          data: [{ position: [baaLng, baaLat, baaElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_BAA,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [baaPitch, baaYaw, baaRoll],
+          sizeScale: baaSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB BAA] error:", err),
+        }),
       ],
     });
   }, [glbActive, overlayReady,
       binghattiLng, binghattiLat, binghattiYaw, binghattiPitch, binghattiRoll,
-      binghattiSize, binghattiElev]);
+      binghattiSize, binghattiElev,
+      baaLng, baaLat, baaYaw, baaPitch, baaRoll, baaSize, baaElev]);
 
   // Binghatti drag-handle projection: lng/lat → screen-space pixel.
   useEffect(() => {
@@ -4163,6 +4195,41 @@ function ParcelsMapPageInner() {
 
   const copyBinghattiConfig = () => {
     const text = `// Binghatti Royal\ndata: [{ position: [${binghattiLng.toFixed(6)}, ${binghattiLat.toFixed(6)}, ${binghattiElev}] }],\ngetOrientation: [${binghattiPitch}, ${binghattiYaw}, ${binghattiRoll}],\nsizeScale: ${binghattiSize},`;
+    try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([baaLng, baaLat]);
+      setBaaHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => { map.off("move", project); };
+  }, [baaLng, baaLat, mapStyleReady, devMode]);
+
+  const onBaaHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const map = mapRef.current; if (!map) return;
+    map.dragPan.disable(); draggingBaaRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([ev.clientX - rect.left, ev.clientY - rect.top]);
+      setBaaLng(ll.lng); setBaaLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable(); draggingBaaRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyBaaConfig = () => {
+    const text = `// Burj Al Arab\ndata: [{ position: [${baaLng.toFixed(6)}, ${baaLat.toFixed(6)}, ${baaElev}] }],\ngetOrientation: [${baaPitch}, ${baaYaw}, ${baaRoll}],\nsizeScale: ${baaSize},`;
     try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
   };
 
@@ -4499,6 +4566,24 @@ function ParcelsMapPageInner() {
           onYaw={setBinghattiYaw} onPitch={setBinghattiPitch} onRoll={setBinghattiRoll}
           onSize={setBinghattiSize} onElev={setBinghattiElev}
           onCopy={copyBinghattiConfig} />
+      )}
+      {devMode && baaHandlePx && glbActive && (
+        <div onMouseDown={onBaaHandleMouseDown} title="Drag to move Burj Al Arab anchor"
+          style={{ position: "absolute", left: baaHandlePx.x - 12, top: baaHandlePx.y - 12,
+            width: 24, height: 24, cursor: draggingBaaRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E", borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50, pointerEvents: "auto" }} />
+      )}
+      {devMode && (
+        <DevToolPanel title="BURJ AL ARAB" right={290}
+          lng={baaLng} lat={baaLat}
+          yaw={baaYaw} pitch={baaPitch} roll={baaRoll}
+          size={baaSize} elev={baaElev}
+          onYaw={setBaaYaw} onPitch={setBaaPitch} onRoll={setBaaRoll}
+          onSize={setBaaSize} onElev={setBaaElev}
+          onCopy={copyBaaConfig} />
       )}
 
       {/* Sun-time override slider — visible only when the ☀ button in
