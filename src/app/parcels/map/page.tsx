@@ -312,6 +312,17 @@ const HERO_GLB_URL_FIVE = "/glb/buildings/five-jvh.glb";
 const HERO_COORDS_FIVE: [number, number, number] = [55.206710, 25.054108, 0];
 const HERO_ORIENTATION_FIVE: [number, number, number] = [0, -15, 90];
 const HERO_SIZE_SCALE_FIVE = 2.0;
+// The First Collection at Jumeirah Village Circle — Tribute Portfolio
+// hotel by The First Group, NORR Group architecture. Signature stacked
+// offset glass cubes (3 large rectangular volumes with offset edges).
+// 41 floors, ~160 m height (4 m/floor estimate, no skyscrapercenter
+// public spec). 491 rooms. Coords from Nominatim [55.2048, 25.0548].
+// Real dims baked: 40 × 35 × 160 m. CGI render input, force-Z-up
+// pipeline (consistent with prior JVC towers).
+const HERO_GLB_URL_FIRST = "/glb/buildings/first-hotel-jvc.glb";
+const HERO_COORDS_FIRST: [number, number, number] = [55.2048, 25.0548, 0];
+const HERO_ORIENTATION_FIRST: [number, number, number] = [0, 0, 90];
+const HERO_SIZE_SCALE_FIRST = 1.0;
 
 // ── Private Plot Vault (Day 7 — feat/vault-mvp) ─────────────────────
 // Two new fill-extrusion layers + one symbol layer for cross-user
@@ -1700,6 +1711,16 @@ function ParcelsMapPageInner() {
   const [atlLat, setAtlLat] = useState<number>(HERO_COORDS_ATLANTIS[1]);
   const [atlHandlePx, setAtlHandlePx] = useState<{ x: number; y: number } | null>(null);
   const draggingAtlRef = useRef(false);
+  // First Hotel JVC dev state.
+  const [firstYaw, setFirstYaw] = useState<number>(HERO_ORIENTATION_FIRST[1]);
+  const [firstPitch, setFirstPitch] = useState<number>(HERO_ORIENTATION_FIRST[0]);
+  const [firstRoll, setFirstRoll] = useState<number>(HERO_ORIENTATION_FIRST[2]);
+  const [firstSize, setFirstSize] = useState<number>(HERO_SIZE_SCALE_FIRST);
+  const [firstElev, setFirstElev] = useState<number>(HERO_COORDS_FIRST[2]);
+  const [firstLng, setFirstLng] = useState<number>(HERO_COORDS_FIRST[0]);
+  const [firstLat, setFirstLat] = useState<number>(HERO_COORDS_FIRST[1]);
+  const [firstHandlePx, setFirstHandlePx] = useState<{ x: number; y: number } | null>(null);
+  const draggingFirstRef = useRef(false);
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
@@ -4200,12 +4221,24 @@ function ParcelsMapPageInner() {
           pickable: false,
           onError: (err: unknown) => console.error("[GLB FIVE] error:", err),
         }),
+        new ScenegraphLayer({
+          id: "hero-first-hotel-jvc",
+          data: [{ position: [firstLng, firstLat, firstElev] as [number, number, number] }],
+          scenegraph: HERO_GLB_URL_FIRST,
+          getPosition: (d: { position: [number, number, number] }) => d.position,
+          getOrientation: [firstPitch, firstYaw, firstRoll],
+          sizeScale: firstSize,
+          _lighting: "pbr",
+          pickable: false,
+          onError: (err: unknown) => console.error("[GLB First] error:", err),
+        }),
       ],
     });
   }, [glbActive, overlayReady,
       binghattiLng, binghattiLat, binghattiYaw, binghattiPitch, binghattiRoll,
       binghattiSize, binghattiElev,
-      atlLng, atlLat, atlYaw, atlPitch, atlRoll, atlSize, atlElev]);
+      atlLng, atlLat, atlYaw, atlPitch, atlRoll, atlSize, atlElev,
+      firstLng, firstLat, firstYaw, firstPitch, firstRoll, firstSize, firstElev]);
 
   // Binghatti drag-handle projection: lng/lat → screen-space pixel.
   useEffect(() => {
@@ -4275,6 +4308,41 @@ function ParcelsMapPageInner() {
 
   const copyAtlConfig = () => {
     const text = `// Royal Atlantis\ndata: [{ position: [${atlLng.toFixed(6)}, ${atlLat.toFixed(6)}, ${atlElev}] }],\ngetOrientation: [${atlPitch}, ${atlYaw}, ${atlRoll}],\nsizeScale: ${atlSize},`;
+    try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !devMode) return;
+    const project = () => {
+      const p = map.project([firstLng, firstLat]);
+      setFirstHandlePx({ x: p.x, y: p.y });
+    };
+    project();
+    map.on("move", project);
+    return () => { map.off("move", project); };
+  }, [firstLng, firstLat, mapStyleReady, devMode]);
+
+  const onFirstHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const map = mapRef.current; if (!map) return;
+    map.dragPan.disable(); draggingFirstRef.current = true;
+    const onMove = (ev: MouseEvent) => {
+      const rect = map.getContainer().getBoundingClientRect();
+      const ll = map.unproject([ev.clientX - rect.left, ev.clientY - rect.top]);
+      setFirstLng(ll.lng); setFirstLat(ll.lat);
+    };
+    const onUp = () => {
+      map.dragPan.enable(); draggingFirstRef.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const copyFirstConfig = () => {
+    const text = `// First Hotel JVC\ndata: [{ position: [${firstLng.toFixed(6)}, ${firstLat.toFixed(6)}, ${firstElev}] }],\ngetOrientation: [${firstPitch}, ${firstYaw}, ${firstRoll}],\nsizeScale: ${firstSize},`;
     try { void navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
   };
 
@@ -4631,6 +4699,24 @@ function ParcelsMapPageInner() {
           onYaw={setAtlYaw} onPitch={setAtlPitch} onRoll={setAtlRoll}
           onSize={setAtlSize} onElev={setAtlElev}
           onCopy={copyAtlConfig} />
+      )}
+      {devMode && firstHandlePx && glbActive && (
+        <div onMouseDown={onFirstHandleMouseDown} title="Drag to move First Hotel JVC anchor"
+          style={{ position: "absolute", left: firstHandlePx.x - 12, top: firstHandlePx.y - 12,
+            width: 24, height: 24, cursor: draggingFirstRef.current ? "grabbing" : "grab",
+            border: "2px solid #C8A96E", borderRadius: "50%",
+            background: "rgba(200,169,110,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 0 8px rgba(200,169,110,0.6)",
+            zIndex: 50, pointerEvents: "auto" }} />
+      )}
+      {devMode && (
+        <DevToolPanel title="FIRST HOTEL JVC" right={564}
+          lng={firstLng} lat={firstLat}
+          yaw={firstYaw} pitch={firstPitch} roll={firstRoll}
+          size={firstSize} elev={firstElev}
+          onYaw={setFirstYaw} onPitch={setFirstPitch} onRoll={setFirstRoll}
+          onSize={setFirstSize} onElev={setFirstElev}
+          onCopy={copyFirstConfig} />
       )}
 
       {/* Sun-time override slider — visible only when the ☀ button in
