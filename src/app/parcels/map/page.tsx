@@ -4956,17 +4956,19 @@ function ParcelsMapPageInner() {
           position: "absolute",
           top: 64,
           left: 60,
-          width: 260,
+          // Unified panel width (320) + login-reference tokens (bg 0.3,
+          // blur 16, neutral white border, radius 12, pure white text).
+          width: 320,
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
-          background: "rgba(10, 22, 40, 0.75)",
-          backdropFilter: "blur(24px) saturate(150%)",
-          WebkitBackdropFilter: "blur(24px) saturate(150%)",
-          border: "1px solid rgba(200, 169, 110, 0.15)",
-          borderRadius: 16,
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255, 255, 255, 0.15)",
+          borderRadius: 12,
           zIndex: 11,
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
-          color: "#f5f1e8",
+          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4)",
+          color: "#FFFFFF",
         }}
       >
         <div
@@ -5994,12 +5996,12 @@ function LayerGroup({
           justifyContent: "space-between",
           padding: "8px 12px 6px 20px",
           background: "rgba(255, 255, 255, 0.02)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
           fontFamily: 'Georgia, "Times New Roman", serif',
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "rgba(255, 255, 255, 0.55)",
+          color: "rgba(255, 255, 255, 0.35)",
           gap: 4,
         }}
       >

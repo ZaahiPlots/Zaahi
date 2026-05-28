@@ -314,11 +314,13 @@ export default function SidePanel({
   return (
     <aside
       style={{
-        background: "rgba(10, 22, 40, 0.75)",
-        backdropFilter: "blur(24px) saturate(150%)",
-        WebkitBackdropFilter: "blur(24px) saturate(150%)",
-        borderLeft: "1px solid rgba(200, 169, 110, 0.15)",
-        boxShadow: "-12px 0 48px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.08)",
+        // Unified panel tokens — match login reference (src/app/page.tsx)
+        // and the Layers panel (parcels/map/page.tsx) exactly.
+        background: "rgba(0, 0, 0, 0.3)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderLeft: "1px solid rgba(255, 255, 255, 0.15)",
+        boxShadow: "-12px 0 48px rgba(0, 0, 0, 0.4)",
         color: TXT,
       }}
       // Mobile (< sm): bottom sheet — slides up from the bottom, takes
@@ -328,7 +330,7 @@ export default function SidePanel({
       // the mobile y-translate with a horizontal slide. `border-gray-200`
       // matches the LINE constant (#E5E7EB) — Tailwind JIT can't see
       // arbitrary `[${LINE}]` interpolations, so we use a static class.
-      className={`absolute z-20 overflow-y-auto transition-transform duration-300 ease-out bottom-0 left-0 right-0 max-h-[85vh] h-[85vh] rounded-t-2xl border-t border-gray-200 sm:top-0 sm:bottom-auto sm:left-auto sm:right-0 sm:h-full sm:max-h-screen sm:w-[350px] sm:rounded-none sm:border-t-0 sm:border-l ${
+      className={`absolute z-20 overflow-y-auto transition-transform duration-300 ease-out bottom-0 left-0 right-0 max-h-[85vh] h-[85vh] rounded-t-2xl border-t border-gray-200 sm:top-0 sm:bottom-auto sm:left-auto sm:right-0 sm:h-full sm:max-h-screen sm:w-[320px] sm:rounded-none sm:border-t-0 sm:border-l ${
         open
           ? "translate-y-0 sm:translate-y-0 sm:translate-x-0"
           : "translate-y-full sm:translate-y-0 sm:translate-x-full"
@@ -1025,7 +1027,13 @@ function Section({
           marginBottom: 4,
         }}
       >
-        <div style={{ color: GOLD, fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2 }}>
+        <div style={{
+          color: "rgba(255, 255, 255, 0.35)",
+          fontWeight: 700,
+          fontSize: 11,
+          textTransform: "uppercase",
+          letterSpacing: 1.2,
+        }}>
           {title}
         </div>
         {right}
