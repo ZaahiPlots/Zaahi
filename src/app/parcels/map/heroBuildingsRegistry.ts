@@ -30,16 +30,6 @@ export type HeroOverride = {
 };
 
 export const HERO_BUILDINGS: HeroBuilding[] = [
-  // Burj Crown — Sketchfab CC-BY-4.0 model by Alnazir, baked at 203m
-  // height (Sketchfab source is half-scale). sizeScale 1.995 brings it
-  // to real 405m. License credit in public/glb/buildings/burj-crown.LICENSE.txt.
-  // elev:500 keeps the founder-locked elevated placement above Downtown.
-  { id: "burj-crown", label: "Burj Crown",
-    glb: "/glb/buildings/burj-crown.glb",
-    defaultCoords: [55.268824, 25.193982, 500],
-    defaultOrientation: [1, -80, -86],
-    defaultSize: 1.995 },
-
   // Burj Khalifa — Sketchfab CC-BY-4.0 SDC PERFORMANCE™. Baked at 731m
   // height; sizeScale 1.133 brings to real 828m.
   { id: "burj-khalifa", label: "Burj Khalifa",
