@@ -779,7 +779,24 @@ function fmtAedFromFils(filsStr: string | null): string {
 function Properties() {
   const [rows, setRows] = useState<MyPlotRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "LISTED" | "VACANT" | "IN_DEAL" | "SOLD">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "LISTED" | "VACANT" | "IN_DEAL" | "SOLD" | "FROZEN">("ALL");
+  // Per-row archive busy flag so a slow PATCH doesn't lock the whole table.
+  const [archiving, setArchiving] = useState<Record<string, boolean>>({});
+
+  async function archive(id: string) {
+    if (archiving[id]) return;
+    if (!window.confirm("Archive this listing? It will move to the Archived group and disappear from the public map until you re-list it.")) return;
+    setArchiving((m) => ({ ...m, [id]: true }));
+    try {
+      const r = await apiFetch(`/api/parcels/${id}/archive`, { method: "PATCH" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setRows((prev) => prev?.map((p) => p.id === id ? { ...p, status: "FROZEN" } : p) ?? prev);
+    } catch (e) {
+      window.alert(`Archive failed: ${e instanceof Error ? e.message : "unknown"}`);
+    } finally {
+      setArchiving((m) => ({ ...m, [id]: false }));
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -827,7 +844,7 @@ function Properties() {
       )}
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {(["ALL", "LISTED", "VACANT", "IN_DEAL", "SOLD"] as const).map((f) => (
+        {(["ALL", "LISTED", "VACANT", "IN_DEAL", "SOLD", "FROZEN"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -873,8 +890,13 @@ function Properties() {
             )}
             {visible.map((p) => {
               const b = PARCEL_STATUS_BADGE[p.status] ?? PARCEL_STATUS_BADGE.VACANT;
+              const isArchived = p.status === "FROZEN";
               return (
-                <tr key={p.id} style={{ borderTop: `1px solid ${LINE}` }} className="hover-row">
+                <tr key={p.id} style={{
+                  borderTop: `1px solid ${LINE}`,
+                  opacity: isArchived ? 0.55 : 1,
+                  background: isArchived ? "rgba(255,255,255,0.02)" : undefined,
+                }} className="hover-row">
                   <Td><span style={{ color: GOLD, fontWeight: 700 }}>{p.plotNumber}</span></Td>
                   <Td><span style={{ fontSize: 11 }}>{p.district}</span><div style={{ fontSize: 9, color: SUBTLE }}>{p.emirate}</div></Td>
                   <Td>{Math.round(p.area).toLocaleString("en-US")} sqft</Td>
@@ -897,6 +919,21 @@ function Properties() {
                     <div style={{ display: "flex", gap: 6 }}>
                       <Link href={`/parcels/${p.id}`} style={{ ...actionBtnStyle(), textDecoration: "none" }}>View</Link>
                       <Link href="/parcels/map" style={{ ...actionBtnStyle(), textDecoration: "none" }}>Map</Link>
+                      {!isArchived && (
+                        <button
+                          type="button"
+                          onClick={() => archive(p.id)}
+                          disabled={!!archiving[p.id]}
+                          title="Move listing to Archived (FROZEN). Hides from the public map; reversible by changing status."
+                          style={{
+                            ...actionBtnStyle(),
+                            cursor: archiving[p.id] ? "wait" : "pointer",
+                            opacity: archiving[p.id] ? 0.5 : 1,
+                          }}
+                        >
+                          {archiving[p.id] ? "…" : "Archive"}
+                        </button>
+                      )}
                     </div>
                   </Td>
                 </tr>
