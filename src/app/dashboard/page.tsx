@@ -18,10 +18,12 @@ import { type AreaUnit, loadAreaUnit, saveAreaUnit } from "@/lib/area-unit";
 
 const GOLD = "#C8A96E";
 const GOLD_TEXT = "#e8d5a8";
-const TXT = "#f5f1e8";
-const SUBTLE = "rgba(245, 241, 232, 0.55)";
-const DIM = "rgba(245, 241, 232, 0.75)";
-const LINE = "rgba(200, 169, 110, 0.15)";
+// Style tokens unified against the login reference (src/app/page.tsx):
+// pure white text, neutral white borders, gradient page bg as specced.
+const TXT = "#FFFFFF";
+const SUBTLE = "rgba(255, 255, 255, 0.5)";
+const DIM = "rgba(255, 255, 255, 0.7)";
+const LINE = "rgba(255, 255, 255, 0.1)";
 const BG = "linear-gradient(180deg, #0A1628 0%, #050B18 100%)";
 
 type Role = "OWNER" | "BUYER" | "BROKER" | "INVESTOR" | "DEVELOPER" | "ARCHITECT" | "ADMIN";

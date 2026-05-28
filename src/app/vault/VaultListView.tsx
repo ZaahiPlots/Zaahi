@@ -22,10 +22,11 @@ import {
 } from "./types";
 
 const GOLD = "#C8A96E";
+// Tokens unified against login reference (src/app/page.tsx).
 const BORDER = "rgba(255, 255, 255, 0.1)";
-const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
-const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
-const BG_GLASS = "rgba(10, 22, 40, 0.5)";
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
+const BG_GLASS = "rgba(0, 0, 0, 0.3)";
 
 interface Props {
   selfUserId: string;

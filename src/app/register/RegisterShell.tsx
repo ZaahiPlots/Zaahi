@@ -22,8 +22,11 @@ export function RegisterShell({
         position: "fixed",
         inset: 0,
         overflow: "auto",
-        background: `radial-gradient(ellipse at top, #1A2547 0%, ${NAVY} 70%)`,
-        color: "rgba(245,241,232,0.85)",
+        // Unified linear gradient (login reference). Replaces the
+        // earlier radial gradient so /register reads as part of the
+        // same shell as /dashboard, /admin, etc.
+        background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
+        color: "#FFFFFF",
         fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif",
       }}
     >
@@ -42,10 +45,11 @@ export function RegisterShell({
           style={{
             width: "100%",
             maxWidth: 560,
-            background: "rgba(0, 0, 0, 0.32)",
+            // Card tokens match login auth card exactly.
+            background: "rgba(0, 0, 0, 0.3)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255, 255, 255, 0.10)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
             borderRadius: 16,
             boxShadow: "0 16px 64px rgba(0,0,0,0.4)",
             padding: "32px 28px",

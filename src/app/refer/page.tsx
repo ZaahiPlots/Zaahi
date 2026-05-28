@@ -11,9 +11,10 @@ import LegalNavbar from '@/components/LegalNavbar';
 import Footer from '@/components/Footer';
 
 const GOLD = '#C8A96E';
-const BG = '#0A0F1E';
-const TEXT = 'rgba(255,255,255,0.85)';
-const TEXT_DIM = 'rgba(255,255,255,0.55)';
+// Tokens unified against login reference (src/app/page.tsx).
+const BG = 'linear-gradient(180deg, #0A1628 0%, #050B18 100%)';
+const TEXT = '#FFFFFF';
+const TEXT_DIM = 'rgba(255,255,255,0.5)';
 
 export default function ReferPage() {
   return (

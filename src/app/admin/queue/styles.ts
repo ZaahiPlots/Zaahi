@@ -4,30 +4,34 @@
 
 import type { CSSProperties } from "react";
 
+// Tokens unified against login reference (src/app/page.tsx). NAVY is
+// retained as a solid colour for chip / primary-button on-colour
+// contrast (gold-on-navy CTA reads better than gold-on-gradient).
 export const GOLD = "#C8A96E";
-export const NAVY = "#0A0F1E";
+export const NAVY = "#0A1628";
 export const NAVY_CARD = "rgba(255,255,255,0.04)";
-export const TEXT = "rgba(245, 241, 232, 0.92)";
-export const TEXT_DIM = "rgba(245, 241, 232, 0.55)";
-export const TEXT_FADE = "rgba(245, 241, 232, 0.35)";
+export const TEXT = "#FFFFFF";
+export const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
+export const TEXT_FADE = "rgba(255, 255, 255, 0.35)";
 export const ERROR = "#ff6b6b";
 export const AMBER = "#E67E22";
 export const RED = "#E63946";
 export const GREEN = "#2D6A4F";
 
 export const card: CSSProperties = {
-  background: "rgba(0,0,0,0.28)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(0, 0, 0, 0.3)",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
   borderRadius: 12,
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  boxShadow: "0 16px 64px rgba(0,0,0,0.4)",
 };
 
 export const inputStyle: CSSProperties = {
   width: "100%",
   padding: "10px 12px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   borderRadius: 8,
   color: TEXT,
   fontSize: 13,

@@ -15,10 +15,11 @@ import { useState, useRef, useEffect } from "react";
 import AuthGuard from "@/components/AuthGuard";
 
 const GOLD = "#C8A96E";
-const BG_GLASS = "rgba(10, 22, 40, 0.5)";
+// Tokens unified against login reference (src/app/page.tsx).
+const BG_GLASS = "rgba(0, 0, 0, 0.3)";
 const BORDER = "rgba(255, 255, 255, 0.1)";
-const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
-const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
 
 const DLD_INQUIRY_URL =
   "https://dubailand.gov.ae/en/eservices/inquiry-about-a-property-status/";
@@ -168,7 +169,7 @@ function CheckPlotInner() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#0A1628",
+  background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

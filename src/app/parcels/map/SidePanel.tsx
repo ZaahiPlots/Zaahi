@@ -16,13 +16,19 @@ import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
 // Updated 2026-04-16: warm off-white text + gold-tinted lines, matches
 // the design tokens in src/app/globals.css (--text-primary, --glass-*).
+// Brand + tokens — text/border/dim unified against the login
+// reference (src/app/page.tsx). Card opacity is intentionally lifted
+// (0.75 below) because the panel sits over a sharp MapLibre canvas
+// without the full-screen blur overlay the login card enjoys; matching
+// 0.3 would render the body text against live tiles. Same logic for
+// blur(24px) saturate — readability over an unblurred map.
 const GOLD = "#C8A96E";
 const GOLD_TEXT = "#e8d5a8";
-const NAVY = "#1A1A2E";
-const TXT = "#f5f1e8";
+const NAVY = "#0A1628";
+const TXT = "#FFFFFF";
 const DIM = "rgba(245, 241, 232, 0.75)";
-const SUBTLE = "rgba(245, 241, 232, 0.55)";
-const LINE = "rgba(200, 169, 110, 0.15)";
+const SUBTLE = "rgba(255, 255, 255, 0.5)";
+const LINE = "rgba(255, 255, 255, 0.1)";
 
 // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
 // remove, or recolor without explicit founder approval. Mirrors

@@ -4,18 +4,21 @@
 
 import type { CSSProperties } from "react";
 
+// Tokens unified against login reference (src/app/page.tsx). NAVY is
+// retained as the solid backing colour for the gold primary CTA so
+// gold-on-navy contrast stays AA-readable.
 export const GOLD = "#C8A96E";
 export const GOLD_DIM = "rgba(200, 169, 110, 0.6)";
-export const NAVY = "#0A0F1E";
-export const TEXT = "rgba(245, 241, 232, 0.85)";
-export const TEXT_DIM = "rgba(245, 241, 232, 0.55)";
+export const NAVY = "#0A1628";
+export const TEXT = "#FFFFFF";
+export const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
 export const ERROR = "#ff6b6b";
 
 export const inputStyle: CSSProperties = {
   width: "100%",
   padding: "11px 14px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   borderRadius: 8,
   color: TEXT,
   fontSize: 13,

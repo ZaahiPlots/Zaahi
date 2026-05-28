@@ -37,8 +37,8 @@ function VaultPageBody() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#000",
-          color: "rgba(255, 255, 255, 0.55)",
+          background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
+          color: "rgba(255, 255, 255, 0.5)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -54,8 +54,8 @@ function VaultPageBody() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#000",
-        color: "rgba(255, 255, 255, 0.92)",
+        background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
+        color: "#FFFFFF",
       }}
     >
       <VaultListView selfUserId={userId} />

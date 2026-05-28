@@ -48,8 +48,8 @@ export default function AdminLayout({
       <div
         style={{
           minHeight: "100vh",
-          background: "#0A1628",
-          color: "rgba(255, 255, 255, 0.55)",
+          background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
+          color: "rgba(255, 255, 255, 0.5)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -68,8 +68,8 @@ export default function AdminLayout({
     <div
       style={{
         minHeight: "100vh",
-        background: "#0A1628",
-        color: "rgba(255, 255, 255, 0.92)",
+        background: "linear-gradient(180deg, #0A1628 0%, #050B18 100%)",
+        color: "#FFFFFF",
         fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
       }}
     >
