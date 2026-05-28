@@ -4,15 +4,11 @@ import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 
 // ── Brand tokens (unified against login reference src/app/page.tsx).
-// PANEL_BG is intentionally lifted from the reference 0.3 to 0.75
-// because the panel sits over a sharp MapLibre canvas without the
-// reference's full-screen blur overlay; identical 0.3 would render
-// the list text against live tiles. Text/border tokens are exact.
 const GOLD = "#C8A96E";
-const PANEL_BG = "rgba(10, 22, 40, 0.75)";
+const PANEL_BG = "rgba(0, 0, 0, 0.3)";
 const ROW_BG = "rgba(255, 255, 255, 0.03)";
 const ROW_HOVER = "rgba(200, 169, 110, 0.10)";
-const BORDER = "1px solid rgba(255, 255, 255, 0.1)";
+const BORDER = "1px solid rgba(255, 255, 255, 0.15)";
 
 // 1 AED = 0.2723 USD (founder-supplied static rate, per spec).
 const AED_TO_USD = 0.2723;

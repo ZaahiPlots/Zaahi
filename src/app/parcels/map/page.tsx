@@ -1297,8 +1297,11 @@ const ddaLabelId = (srcId: string) => `${srcId}-label`;
 // Saudi + Oman fully removed 2026-05-24 (founder spec) — the
 // `saudiGovernorates`, `riyadhZones`, `omanLandPlots` flags are gone
 // from LayersState; the layer definitions, hover handlers, and
-// PMTiles binding are dropped below. LayerCountry stays UAE-only.
-type LayerCountry = "dubai" | "abudhabi" | "otheruae";
+// PMTiles binding are dropped below. "amenities" is a pseudo-country
+// — its layers are physically Dubai-scoped, but founder spec
+// 2026-05-29 surfaces them as a peer top-level group so users find
+// them without diving into UAE→Dubai first.
+type LayerCountry = "dubai" | "abudhabi" | "otheruae" | "amenities";
 type LayerCategory =
   | "base"            // roads / metro / admin boundaries
   | "dda-admin"       // DDA projects, free zones, 99K plots layer
@@ -1319,7 +1322,7 @@ type LayerMeta = {
 };
 
 const LAYER_COUNTRY_ORDER: LayerCountry[] = [
-  "dubai", "abudhabi", "otheruae",
+  "dubai", "abudhabi", "otheruae", "amenities",
 ];
 
 const LAYER_CATEGORY_ORDER: LayerCategory[] = [
@@ -1330,6 +1333,7 @@ const COUNTRY_LABELS: Record<LayerCountry, string> = {
   dubai: "UAE — Dubai",
   abudhabi: "UAE — Abu Dhabi",
   otheruae: "UAE — Other Emirates",
+  amenities: "Amenities",
 };
 
 const CATEGORY_LABELS: Record<LayerCategory, string> = {
@@ -1358,10 +1362,13 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     ddaFreeZones: { country: "dubai", category: "dda-admin" },
     ddaLandPlots: { country: "dubai", category: "dda-admin", tier: "GOLD" },
     // ── Dubai — amenities (data.dubai point overlays, public open data) ──
-    evChargers: { country: "dubai", category: "amenities" },
-    metroStations: { country: "dubai", category: "amenities" },
-    tramStations: { country: "dubai", category: "amenities" },
-    marineStations: { country: "dubai", category: "amenities" },
+    // Amenity overlays surfaced under the "Amenities" top-level
+    // group (founder spec 2026-05-29). Data is still Dubai-only;
+    // grouping is the only thing that changes.
+    evChargers: { country: "amenities", category: "amenities" },
+    metroStations: { country: "amenities", category: "amenities" },
+    tramStations: { country: "amenities", category: "amenities" },
+    marineStations: { country: "amenities", category: "amenities" },
     // ── Dubai — Private Plot Vault v2.1 (owner + shared overlays) ──
     // Country=dubai for UI organisation (vault is technically per-user,
     // not per-emirate — but cohort-scale demand is Dubai-centric and
@@ -1733,7 +1740,13 @@ function ParcelsMapPageInner() {
   // first open of the layers panel we re-initialise from map center so
   // a user already panned to AD/Oman sees the right country expanded.
   const [countryOpen, setCountryOpen] = useState<Record<LayerCountry, boolean>>({
-    dubai: true, abudhabi: false, otheruae: false,
+    dubai: true, abudhabi: false, otheruae: false, amenities: false,
+  });
+  // Per-category fold state — keys are `${country}:${category}`. Initial
+  // default = DDA Layers (dda-admin) under Dubai open, every other
+  // category closed (founder spec 2026-05-29).
+  const [categoryOpen, setCategoryOpen] = useState<Record<string, boolean>>({
+    "dubai:dda-admin": true,
   });
   const countryInitialisedRef = useRef(false);
   const [layerSearch, setLayerSearch] = useState("");
@@ -4349,7 +4362,7 @@ function ParcelsMapPageInner() {
     const ctr = map.getCenter();
     const detected = detectCountryFromLngLat(ctr.lng, ctr.lat);
     setCountryOpen({
-      dubai: false, abudhabi: false, otheruae: false,
+      dubai: false, abudhabi: false, otheruae: false, amenities: false,
       [detected]: true,
     });
     countryInitialisedRef.current = true;
@@ -5218,7 +5231,7 @@ function ParcelsMapPageInner() {
             }
           }
           const grouped: Record<LayerCountry, Partial<Record<LayerCategory, PanelItem[]>>> = {
-            dubai: {}, abudhabi: {}, otheruae: {},
+            dubai: {}, abudhabi: {}, otheruae: {}, amenities: {},
           };
           for (const [key, meta] of Object.entries(LAYER_META)) {
             (grouped[meta.country][meta.category] ??= []).push({
@@ -5256,14 +5269,18 @@ function ParcelsMapPageInner() {
                 {LAYER_CATEGORY_ORDER.map((cat) => {
                   const items = cats[cat];
                   if (!items || items.length === 0) return null;
+                  const ckey = `${country}:${cat}`;
+                  // Founder spec 2026-05-29: each category folds
+                  // independently. Search collapses the fold state and
+                  // forces every group open so matches surface.
+                  const catOpen = searchActive || !!categoryOpen[ckey];
                   return (
                     <LayerGroup
                       key={`${country}-${cat}`}
                       c={c}
                       title={CATEGORY_LABELS[cat]}
-                      open={true}
-                      onToggle={() => { /* categories are always open inside an open country */ }}
-                      hideCollapseCaret
+                      open={catOpen}
+                      onToggle={() => setCategoryOpen((s) => ({ ...s, [ckey]: !s[ckey] }))}
                       search={layerSearch}
                       items={items}
                       isOn={(k) => layers[k as keyof LayersState] as boolean}
@@ -5374,11 +5391,11 @@ function ParcelsMapPageInner() {
               left: zaahiHover.x + 14,
               top: zaahiHover.y + 14,
               width: 260,
-              background: "rgba(10, 22, 40, 0.75)",
-              backdropFilter: "blur(24px) saturate(150%)",
-              WebkitBackdropFilter: "blur(24px) saturate(150%)",
+              background: "rgba(0, 0, 0, 0.3)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
               color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.15)",
               borderLeft: `3px solid ${GOLD}`,
               borderRadius: 6,
               boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
@@ -5437,11 +5454,11 @@ function ParcelsMapPageInner() {
               left: ddaLandHover.x + 14,
               top: ddaLandHover.y + 14,
               width: 250,
-              background: "rgba(10, 22, 40, 0.75)",
-              backdropFilter: "blur(24px) saturate(150%)",
-              WebkitBackdropFilter: "blur(24px) saturate(150%)",
+              background: "rgba(0, 0, 0, 0.3)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
               color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.15)",
               borderLeft: "3px solid #4A90D9",
               borderRadius: 6,
               boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
@@ -5853,10 +5870,13 @@ function LayerToggle({
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "5px 14px 5px 24px",
-        fontSize: 11,
+        // Founder spec 2026-05-29: compact 4px vertical padding +
+        // 12px indent step for the in-group hierarchy + readable
+        // body text colour rgba(255,255,255,0.7).
+        padding: "4px 14px 4px 36px",
+        fontSize: 12,
         cursor: comingSoon ? "not-allowed" : "pointer",
-        color: checked ? GOLD : color,
+        color: checked ? GOLD : "rgba(255, 255, 255, 0.7)",
         opacity: comingSoon ? 0.4 : 1,
         lineHeight: 1.3,
         borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
@@ -6001,7 +6021,7 @@ function LayerGroup({
           fontSize: 11,
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "rgba(255, 255, 255, 0.35)",
+          color: "#FFFFFF",
           gap: 4,
         }}
       >
@@ -6047,18 +6067,31 @@ function LayerGroup({
           }}
         />
       </div>
-      {effectivelyOpen && filtered.map((i) => (
-        <LayerToggle
-          key={i.key}
-          label={i.label}
-          description={i.description}
-          checked={isOn(i.key)}
-          onChange={(v) => onChange(i.key, v)}
-          color="rgba(255, 255, 255, 0.9)"
-          requiredTier={i.requiredTier}
-          comingSoon={i.comingSoon}
-        />
-      ))}
+      {/* Animated collapse — maxHeight transition gives a smooth 200ms
+          slide without needing per-item measurement. 2000px ceiling is
+          well above any realistic category (DDA districts ≈ 206 rows ×
+          24px ≈ 5000px — that one breaks past the cap and snaps, which
+          is acceptable for the largest list in the registry). */}
+      <div
+        style={{
+          maxHeight: effectivelyOpen ? 2000 : 0,
+          overflow: "hidden",
+          transition: "max-height 200ms ease",
+        }}
+      >
+        {filtered.map((i) => (
+          <LayerToggle
+            key={i.key}
+            label={i.label}
+            description={i.description}
+            checked={isOn(i.key)}
+            onChange={(v) => onChange(i.key, v)}
+            color="rgba(255, 255, 255, 0.7)"
+            requiredTier={i.requiredTier}
+            comingSoon={i.comingSoon}
+          />
+        ))}
+      </div>
     </div>
   );
 }

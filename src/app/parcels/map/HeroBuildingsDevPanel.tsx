@@ -3,13 +3,10 @@ import { useMemo, useState } from "react";
 import type { HeroBuilding, HeroOverride, HeroCoords, HeroOrientation } from "./heroBuildingsRegistry";
 
 // Tokens unified against login reference (src/app/page.tsx).
-// PANEL_BG lifted from 0.3 to 0.75 — panel sits over a sharp MapLibre
-// canvas without the reference's full-screen blur overlay; identical
-// 0.3 would render slider labels against live tiles.
 const GOLD = "#C8A96E";
-const PANEL_BG = "rgba(10, 22, 40, 0.75)";
+const PANEL_BG = "rgba(0, 0, 0, 0.3)";
 const FIELD_BG = "rgba(255, 255, 255, 0.04)";
-const BORDER = "1px solid rgba(255, 255, 255, 0.1)";
+const BORDER = "1px solid rgba(255, 255, 255, 0.15)";
 
 // 1° latitude ≈ 111,000m. 1° longitude at Dubai lat 25° ≈ 100,600m.
 const M_PER_DEG_LAT = 111_000;
