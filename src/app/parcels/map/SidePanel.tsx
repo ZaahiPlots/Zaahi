@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 import { PdfProgressBar } from "./PdfProgressBar";
+import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
 // Updated 2026-04-16: warm off-white text + gold-tinted lines, matches
@@ -45,6 +46,22 @@ const LANDUSE_COLORS: Record<string, string> = {
   FUTURE_DEVELOPMENT:    "#C8A96E",
   "FUTURE DEVELOPMENT":  "#C8A96E",
 };
+
+function ddaFetchBtnStyle(busy: boolean): React.CSSProperties {
+  return {
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    padding: "4px 10px",
+    borderRadius: 4,
+    border: `1px solid ${busy ? "rgba(200,169,110,0.2)" : "rgba(200,169,110,0.4)"}`,
+    background: busy ? "rgba(255,255,255,0.04)" : "rgba(200,169,110,0.10)",
+    color: "#C8A96E",
+    cursor: busy ? "wait" : "pointer",
+    fontFamily: "inherit",
+    transition: "border-color 150ms ease, background 150ms ease",
+  };
+}
 
 function fmtMonthYear(iso: string | null): string {
   if (!iso) return "";
@@ -168,6 +185,13 @@ export default function SidePanel({
   const [guidelinesBusy, setGuidelinesBusy] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
+  // Trigger DDA refresh from inside the panel. Calls seed-dda with the
+  // current parcel's plotNumber and walks the user through three
+  // labelled phases — Fetching → Parsing → Saving → Done. The actual
+  // POST is one shot; the intermediate labels are client-side timers
+  // sized to typical DDA latency so the founder sees something move.
+  const [ddaPhase, setDdaPhase] = useState<DdaFetchPhase>("idle");
+  const [ddaErr, setDdaErr] = useState<string | null>(null);
 
   useEffect(() => {
     supabaseBrowser.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -183,11 +207,52 @@ export default function SidePanel({
     setFeasOpen(false);
     setJvOpen(true);
     setIsFavorite(false);
+    setDdaPhase("idle");
+    setDdaErr(null);
     apiFetch(`/api/parcels/${parcelId}`)
       .then((r) => r.json())
       .then((d) => setData(d))
       .finally(() => setLoading(false));
   }, [parcelId]);
+
+  async function triggerDdaFetch() {
+    if (!data?.plotNumber || ddaPhase === "fetching" || ddaPhase === "parsing" || ddaPhase === "saving") return;
+    setDdaErr(null);
+    setDdaPhase("fetching");
+    // Phase timers — sized to typical DDA latency (~3–6 s end-to-end).
+    // We bail on advance if the POST already resolved (success / error
+    // flipped phase to done / error in the meantime).
+    const t1 = window.setTimeout(() => setDdaPhase((p) => p === "fetching" ? "parsing" : p), 1500);
+    const t2 = window.setTimeout(() => setDdaPhase((p) => p === "parsing" ? "saving" : p), 3000);
+    try {
+      const r = await apiFetch("/api/parcels/seed-dda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plotNumber: data.plotNumber }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? `HTTP ${r.status}`);
+      }
+      setDdaPhase("done");
+      // Reload the parcel after a brief Done flash, then drop the bar.
+      window.setTimeout(async () => {
+        if (parcelId) {
+          const rr = await apiFetch(`/api/parcels/${parcelId}`);
+          if (rr.ok) setData(await rr.json());
+        }
+        setDdaPhase("idle");
+      }, 900);
+    } catch (e) {
+      setDdaErr(e instanceof Error ? e.message : "unknown");
+      setDdaPhase("error");
+      // Auto-clear the error state after a few seconds.
+      window.setTimeout(() => setDdaPhase("idle"), 4000);
+    } finally {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    }
+  }
 
   // Fetch favourite state whenever the parcel changes. Silent on errors
   // (favourites are a nice-to-have, shouldn't block the panel).
@@ -839,14 +904,46 @@ export default function SidePanel({
                 )}
               </div>
 
-              <div style={{ fontSize: 9, color: "#9CA3AF", paddingTop: 6, borderTop: `1px solid ${LINE}` }}>
-                Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 8, paddingTop: 6, borderTop: `1px solid ${LINE}`,
+              }}>
+                <span style={{ fontSize: 9, color: "#9CA3AF" }}>
+                  Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
+                </span>
+                <button
+                  type="button"
+                  onClick={triggerDdaFetch}
+                  disabled={ddaPhase !== "idle" && ddaPhase !== "error"}
+                  style={ddaFetchBtnStyle(ddaPhase !== "idle" && ddaPhase !== "error")}
+                  title="Refresh affection plan from DDA"
+                >
+                  ↻ Refresh from DDA
+                </button>
               </div>
+              <DdaFetchProgress phase={ddaPhase} error={ddaErr} />
               {/* Spacer so sticky CTA never covers the last row */}
               <div style={{ height: 72 }} />
             </>
           ) : (
-            <p style={{ color: SUBTLE }}>No affection plan loaded for this parcel.</p>
+            <div>
+              <p style={{ color: SUBTLE, marginBottom: 10 }}>
+                No affection plan loaded for this parcel.
+              </p>
+              <button
+                type="button"
+                onClick={triggerDdaFetch}
+                disabled={!data?.plotNumber || (ddaPhase !== "idle" && ddaPhase !== "error")}
+                style={{
+                  ...ddaFetchBtnStyle(ddaPhase !== "idle" && ddaPhase !== "error"),
+                  padding: "8px 14px",
+                  fontSize: 11,
+                }}
+              >
+                ↓ Fetch from DDA
+              </button>
+              <DdaFetchProgress phase={ddaPhase} error={ddaErr} />
+            </div>
           )}
         </div>
         );
