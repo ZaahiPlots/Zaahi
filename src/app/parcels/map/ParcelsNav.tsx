@@ -107,27 +107,27 @@ export default function ParcelsNav({
           disabled={!items || items.length === 0}
           onClick={() => goTo(-1)}
         />
+        {/* Middle clickable spacer — toggles the portal panel without
+            rendering any "Parcels (N)" text label (founder spec
+            2026-05-29 simplification). The element is empty + 16 px wide
+            so the gap between the arrows stays clickable. */}
         <button
           type="button"
+          aria-label={portalOpen ? "Close parcels list" : "Open parcels list"}
+          title={`Parcels (${items === null ? "…" : count})`}
           onClick={onTogglePortal}
           style={{
             background: portalOpen ? "rgba(200,169,110,0.25)" : "transparent",
             border: "none",
-            color: portalOpen ? GOLD : "#FFFFFF",
-            padding: "8px 14px",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            width: 16,
+            padding: 0,
             cursor: "pointer",
             fontFamily: "inherit",
             borderLeft: "1px solid rgba(255, 255, 255, 0.1)",
             borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-            transition: "background 150ms ease, color 150ms ease",
+            transition: "background 150ms ease",
           }}
-        >
-          Parcels ({items === null ? "…" : count})
-        </button>
+        />
         <NavArrow
           dir="next"
           disabled={!items || items.length === 0}
