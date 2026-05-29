@@ -46,6 +46,20 @@ enum ParcelStatus {
   FROZEN
 }
 
+// Physical / on-the-ground state of the parcel, distinct from the
+// marketplace listing state above (ParcelStatus). Surfaced in the
+// hover card and other read surfaces. Nullable on Parcel — many rows
+// are seeded without a known ground state and stay null until
+// classified.
+enum PhysicalStatus {
+  EMPTY
+  UNDER_CONSTRUCTION
+  COMPLETED
+  SUSPENDED
+  FUTURE_DEVELOPMENT
+  PRE_CONSTRUCTION
+}
+
 // Mirrors states in backend/services/deal_engine.ts
 enum DealStatus {
   INITIAL
@@ -180,6 +194,9 @@ model Parcel {
   longitude        Float?
   geometry         Json? // GeoJSON polygon
   status           ParcelStatus @default(VACANT)
+  // On-the-ground state — independent of ParcelStatus (which tracks
+  // marketplace lifecycle). Null when not yet classified.
+  physicalStatus   PhysicalStatus?
   currentValuation BigInt? // fils
   isTokenized      Boolean      @default(false)
   openToJV         Boolean      @default(false) // Joint-Venture signal — owner is open to JV partnership terms instead of (or alongside) a cash sale.

@@ -1585,6 +1585,7 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    physicalStatus: string;
   } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
@@ -2685,6 +2686,7 @@ function ParcelsMapPageInner() {
           district: string;
           emirate: string;
           status: string;
+          physicalStatus: string | null;
           area: number;
           geometry: GeoJSON.Polygon | null;
           currentValuation: string | null;
@@ -2761,6 +2763,7 @@ function ParcelsMapPageInner() {
             maxHeightCode: it.plan?.maxHeightCode ?? "",
             far: it.plan?.far ?? 0,
             planDateIso: it.plan?.sitePlanIssue ?? it.plan?.fetchedAt ?? "",
+            physicalStatus: it.physicalStatus ?? "",
           },
         });
         // Skip 3D building generation for parcels without a land use —
@@ -3807,6 +3810,7 @@ function ParcelsMapPageInner() {
             maxHeightCode?: string;
             far?: number;
             planDateIso?: string;
+            physicalStatus?: string;
           };
           // Polygon centroid (mean of outer-ring vertices). Used for the
           // click-flyTo destination — falls back to the cursor lngLat
@@ -3841,6 +3845,7 @@ function ParcelsMapPageInner() {
             maxHeightCode: p.maxHeightCode ?? "",
             far: p.far ?? 0,
             planDateIso: p.planDateIso ?? "",
+            physicalStatus: p.physicalStatus ?? "",
           });
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
@@ -5398,11 +5403,11 @@ function ParcelsMapPageInner() {
         if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
         if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(zaahiHover.planDateIso);
-        // Physical status (Under Construction / Completed / etc.) is not
-        // stored on Parcel or AffectionPlan today — only Parcel.status
-        // (ParcelStatus enum) which is the marketplace listing state, and
-        // Building.status (separate table, not joined here). Row omitted
-        // until schema gains a physical-status field or Parcel↔Building FK.
+        // Physical status (Parcel.physicalStatus, enum PhysicalStatus).
+        // Distinct from Parcel.status which is the marketplace listing
+        // state. Null on rows where the on-the-ground state hasn't
+        // been classified yet — row hides in that case.
+        const physicalStatusLabel = formatPhysicalStatus(zaahiHover.physicalStatus);
         const handleOpenParcel = () => {
           const map = mapRef.current;
           if (!map || !zaahiHover.id) return;
@@ -5476,6 +5481,9 @@ function ParcelsMapPageInner() {
             )}
             {planDate && (
               <PmtilesHoverRow label="Affection Plan" value={planDate} />
+            )}
+            {physicalStatusLabel && (
+              <PmtilesHoverRow label="Status" value={physicalStatusLabel} />
             )}
             {/* Add-to-vault CTA — stops propagation so it doesn't also
                 trigger the card's flyTo+open click handler. Page is
@@ -5927,6 +5935,22 @@ function formatPmtilesStatus(raw: string): string {
     return raw.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()).replace(/_/g, " ");
   }
   return raw;
+}
+
+// Display labels for Parcel.physicalStatus (PhysicalStatus enum).
+// Returns "" when the value is null/empty/unrecognised so the hover
+// row can short-circuit on falsy.
+const PHYSICAL_STATUS_LABEL: Record<string, string> = {
+  EMPTY: "Empty",
+  UNDER_CONSTRUCTION: "Under Construction",
+  COMPLETED: "Completed",
+  SUSPENDED: "Suspended",
+  FUTURE_DEVELOPMENT: "Future Development",
+  PRE_CONSTRUCTION: "Pre-Construction",
+};
+function formatPhysicalStatus(raw: string): string {
+  if (!raw) return "";
+  return PHYSICAL_STATUS_LABEL[raw] ?? "";
 }
 
 // "2026-03-14T..." → "14 Mar 2026". Empty / invalid → "".

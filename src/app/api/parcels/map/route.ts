@@ -50,6 +50,9 @@ export async function GET(req: NextRequest) {
       district: p.district,
       emirate: p.emirate,
       status: p.status,
+      // Physical / on-the-ground state. Null when not classified.
+      // Display labels mapped in the hover card consumer.
+      physicalStatus: p.physicalStatus,
       area: p.area,
       geometry: p.geometry,
       currentValuation: p.currentValuation?.toString() ?? null,
