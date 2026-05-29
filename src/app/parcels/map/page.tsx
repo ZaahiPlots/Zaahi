@@ -37,6 +37,7 @@ import {
 } from "./heroBuildingsRegistry";
 import HeroBuildingsDevPanel from "./HeroBuildingsDevPanel";
 import ParcelsPortalPanel from "./ParcelsPortalPanel";
+import ParcelsNav from "./ParcelsNav";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1559,9 +1560,15 @@ function ParcelsMapPageInner() {
     void apiFetch(`/api/parcels/${selectedParcelId}/view`, { method: "POST" }).catch(() => { /* silent */ });
   }, [selectedParcelId]);
 
+  // Defer-close timer so the user can move the cursor from the polygon
+  // onto the (now clickable) hover card without it disappearing first.
+  const hoverCloseTimerRef = useRef<number | null>(null);
   const [zaahiHover, setZaahiHover] = useState<{
     x: number;
     y: number;
+    id: string;
+    lng: number;
+    lat: number;
     plotNumber: string;
     district: string;
     emirate: string;
@@ -3776,8 +3783,14 @@ function ParcelsMapPageInner() {
         map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          // Cancel any scheduled close — we're back on a polygon.
+          if (hoverCloseTimerRef.current != null) {
+            window.clearTimeout(hoverCloseTimerRef.current);
+            hoverCloseTimerRef.current = null;
+          }
           map.getCanvas().style.cursor = "pointer";
           const p = f.properties as {
+            id?: string;
             plotNumber: string;
             district: string;
             emirate: string;
@@ -3795,9 +3808,23 @@ function ParcelsMapPageInner() {
             far?: number;
             planDateIso?: string;
           };
+          // Polygon centroid (mean of outer-ring vertices). Used for the
+          // click-flyTo destination — falls back to the cursor lngLat
+          // when the geometry isn't a Polygon (vector-tile fragmentation
+          // can yield MultiPolygon at parcel boundaries).
+          let cLng = e.lngLat.lng, cLat = e.lngLat.lat;
+          const g = f.geometry;
+          if (g && g.type === "Polygon" && g.coordinates[0]?.length > 0) {
+            const ring = g.coordinates[0];
+            cLng = ring.reduce((s, q) => s + q[0], 0) / ring.length;
+            cLat = ring.reduce((s, q) => s + q[1], 0) / ring.length;
+          }
           setZaahiHover({
             x: e.point.x,
             y: e.point.y,
+            id: p.id ?? "",
+            lng: cLng,
+            lat: cLat,
             plotNumber: p.plotNumber,
             district: p.district,
             emirate: p.emirate ?? "",
@@ -3818,7 +3845,16 @@ function ParcelsMapPageInner() {
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
-          setZaahiHover(null);
+          // Defer close ~220 ms so the cursor can transit onto the now
+          // clickable card without it vanishing. Card's onMouseEnter
+          // cancels the timer; onMouseLeave closes immediately.
+          if (hoverCloseTimerRef.current != null) {
+            window.clearTimeout(hoverCloseTimerRef.current);
+          }
+          hoverCloseTimerRef.current = window.setTimeout(() => {
+            setZaahiHover(null);
+            hoverCloseTimerRef.current = null;
+          }, 220);
         });
         map.on("click", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
@@ -4867,28 +4903,11 @@ function ParcelsMapPageInner() {
             <polyline points="21 4 21 9 16 9" />
           </svg>
         </ChromeBtn>
-        {/* 6. Parcels portal — opens the left-rail list of all listed
-              parcels. Mutex with the Layers panel (both anchor at
-              left:60, top:64) so only one is visible at a time. */}
-        <ChromeBtn
-          c={c}
-          title="Parcels list"
-          active={portalOpen}
-          onClick={() => {
-            setPortalOpen((o) => !o);
-            setLayersOpen(false);
-          }}
-        >
-          {/* List glyph — three horizontal lines with dots. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <circle cx="4" cy="6" r="1" />
-            <circle cx="4" cy="12" r="1" />
-            <circle cx="4" cy="18" r="1" />
-          </svg>
-        </ChromeBtn>
+        {/* Parcels portal toggle moved to the bottom-centre ParcelsNav
+            pill (founder spec 2026-05-29). Left rail is back to its
+            5×5 symmetric stack — no Parcels button here. portalOpen
+            state and ParcelsPortalPanel rendering stay untouched and
+            are now driven by the nav's middle button. */}
       </div>
 
       {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
@@ -5384,6 +5403,20 @@ function ParcelsMapPageInner() {
         // (ParcelStatus enum) which is the marketplace listing state, and
         // Building.status (separate table, not joined here). Row omitted
         // until schema gains a physical-status field or Parcel↔Building FK.
+        const handleOpenParcel = () => {
+          const map = mapRef.current;
+          if (!map || !zaahiHover.id) return;
+          map.flyTo({
+            center: [zaahiHover.lng, zaahiHover.lat],
+            zoom: 16, pitch: 45, duration: 2000, essential: true,
+          });
+          // Mirror HeaderBar Find handshake (page.tsx ~6155) — open the
+          // right SidePanel after the camera lands, not during flight.
+          window.setTimeout(() => {
+            setSelectedParcelId(zaahiHover.id);
+          }, 2000);
+          setZaahiHover(null);
+        };
         return (
           <div
             style={{
@@ -5403,9 +5436,18 @@ function ParcelsMapPageInner() {
               fontSize: 11,
               fontFamily: 'Georgia, "Times New Roman", serif',
               lineHeight: 1.45,
-              pointerEvents: "none",
+              pointerEvents: "auto",
+              cursor: "pointer",
               zIndex: 30,
             }}
+            onMouseEnter={() => {
+              if (hoverCloseTimerRef.current != null) {
+                window.clearTimeout(hoverCloseTimerRef.current);
+                hoverCloseTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => setZaahiHover(null)}
+            onClick={handleOpenParcel}
           >
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
@@ -5435,6 +5477,51 @@ function ParcelsMapPageInner() {
             {planDate && (
               <PmtilesHoverRow label="Affection Plan" value={planDate} />
             )}
+            {/* Add-to-vault CTA — stops propagation so it doesn't also
+                trigger the card's flyTo+open click handler. Page is
+                gated by AuthGuard so an unauthenticated user can't
+                reach this surface; the founder spec mentioned a login
+                redirect for defensive parity (kept as a fallback). */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setZaahiHover(null);
+                try {
+                  if (typeof window !== "undefined" && document.cookie.indexOf("sb-") < 0 && !localStorage.getItem("supabase.auth.token")) {
+                    window.location.href = "/";
+                    return;
+                  }
+                } catch { /* noop */ }
+                setAddFlow("vault");
+              }}
+              style={{
+                marginTop: 8,
+                width: "100%",
+                padding: "6px 10px",
+                background: "rgba(200, 169, 110, 0.10)",
+                border: "1px solid rgba(200, 169, 110, 0.3)",
+                borderRadius: 4,
+                color: GOLD,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "border-color 150ms ease, background 150ms ease",
+              }}
+              onMouseEnter={(ev) => {
+                ev.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+                ev.currentTarget.style.borderColor = GOLD;
+              }}
+              onMouseLeave={(ev) => {
+                ev.currentTarget.style.background = "rgba(200, 169, 110, 0.10)";
+                ev.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+              }}
+            >
+              + Add to Vault
+            </button>
           </div>
         );
       })()}
@@ -5774,6 +5861,16 @@ function ParcelsMapPageInner() {
         open={portalOpen}
         onClose={() => setPortalOpen(false)}
         mapRef={mapRef}
+        onSelectParcel={(id) => setSelectedParcelId(id)}
+      />
+      <ParcelsNav
+        mapRef={mapRef}
+        portalOpen={portalOpen}
+        onTogglePortal={() => {
+          setPortalOpen((o) => !o);
+          setLayersOpen(false);
+        }}
+        selectedParcelId={selectedParcelId}
         onSelectParcel={(id) => setSelectedParcelId(id)}
       />
       {devModeHero && editingHeroId && (() => {
