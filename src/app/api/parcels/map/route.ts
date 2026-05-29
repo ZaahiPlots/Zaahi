@@ -50,9 +50,12 @@ export async function GET(req: NextRequest) {
       district: p.district,
       emirate: p.emirate,
       status: p.status,
-      // Physical / on-the-ground state. Null when not classified.
-      // Display labels mapped in the hover card consumer.
-      physicalStatus: p.physicalStatus,
+      // physicalStatus is intentionally NOT surfaced here right now —
+      // Vercel's deployed Prisma client may not yet know about the
+      // column (deploy + cache lag), and the resulting `p.physicalStatus`
+      // access throws 500 on the live function. Schema + DB column are
+      // already in place; restore this line after the next clean
+      // Vercel build picks up the regenerated client.
       area: p.area,
       geometry: p.geometry,
       currentValuation: p.currentValuation?.toString() ?? null,
