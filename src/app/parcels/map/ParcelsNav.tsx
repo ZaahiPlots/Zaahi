@@ -107,27 +107,27 @@ export default function ParcelsNav({
           disabled={!items || items.length === 0}
           onClick={() => goTo(-1)}
         />
+        {/* Empty 16 px clickable spacer between ◀ and ▶ — toggles the
+            portal panel without rendering any "Parcels (N)" label.
+            Count + state survive as the aria-label / title so a screen
+            reader and hover tooltip still surface them. */}
         <button
           type="button"
+          aria-label={`${portalOpen ? "Close" : "Open"} parcels list — ${items === null ? "…" : count}`}
+          title={`Parcels (${items === null ? "…" : count})`}
           onClick={onTogglePortal}
           style={{
             background: portalOpen ? "rgba(200,169,110,0.25)" : "transparent",
             border: "none",
-            color: portalOpen ? GOLD : "#FFFFFF",
-            padding: "8px 14px",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            width: 16,
+            padding: 0,
             cursor: "pointer",
             fontFamily: "inherit",
             borderLeft: "1px solid rgba(255, 255, 255, 0.1)",
             borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-            transition: "background 150ms ease, color 150ms ease",
+            transition: "background 150ms ease",
           }}
-        >
-          Parcels ({items === null ? "…" : count})
-        </button>
+        />
         <NavArrow
           dir="next"
           disabled={!items || items.length === 0}
