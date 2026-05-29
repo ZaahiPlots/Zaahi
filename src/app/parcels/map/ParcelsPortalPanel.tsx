@@ -51,31 +51,16 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
   useEffect(() => {
     if (!open || fetchedRef.current) return;
     fetchedRef.current = true;
-    // Defensive parse — same shape as ParcelsNav. If the API ever
-    // returns a non-JSON body (P2022, middleware redirect, Vercel
-    // error page), we surface a typed error instead of an Uncaught
-    // SyntaxError bubbling up from r.json().
-    (async () => {
-      try {
-        const r = await apiFetch("/api/parcels/map");
+    apiFetch("/api/parcels/map")
+      .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const text = await r.text();
-        if (!text) throw new Error("empty body");
-        let parsed: { items?: ParcelItem[] };
-        try {
-          parsed = JSON.parse(text);
-        } catch {
-          console.error("[ParcelsPortalPanel] non-JSON body:", text.slice(0, 120));
-          throw new Error("invalid JSON");
-        }
-        setItems(parsed.items ?? []);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to load parcels";
-        console.error("[ParcelsPortalPanel] fetch failed:", err);
-        fetchedRef.current = false;
-        setError(msg);
-      }
-    })();
+        return r.json() as Promise<{ items: ParcelItem[] }>;
+      })
+      .then((d) => setItems(d.items))
+      .catch((e: Error) => {
+        fetchedRef.current = false; // allow retry on next open
+        setError(e.message || "Failed to load parcels");
+      });
   }, [open]);
 
   const filtered = useMemo(() => {
