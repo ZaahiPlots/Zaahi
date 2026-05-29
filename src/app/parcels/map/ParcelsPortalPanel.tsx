@@ -200,7 +200,7 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
         {grouped.map((group) => (
           <div key={group.status}>
             <div style={{
-              padding: "10px 14px 4px", fontSize: 9, fontWeight: 700,
+              padding: "10px 14px 4px", fontSize: 11, fontWeight: 700,
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: STATUS_COLOR[group.status] ?? GOLD,
             }}>
@@ -250,7 +250,7 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
           {item.plotNumber}
         </span>
         <span style={{
-          fontSize: 9, fontWeight: 600, letterSpacing: "0.06em",
+          fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
           textTransform: "uppercase",
           padding: "1px 6px", borderRadius: 3,
           color: STATUS_COLOR[item.status] ?? GOLD,
@@ -260,7 +260,7 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
           {item.status}
         </span>
       </div>
-      <div style={{ opacity: 0.7, fontSize: 10, marginTop: 2 }}>
+      <div style={{ opacity: 0.7, fontSize: 12, marginTop: 2 }}>
         {item.district}
       </div>
       {item.plan?.projectName && (
@@ -273,7 +273,7 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
       )}
       <div style={{
         display: "flex", justifyContent: "space-between", gap: 8,
-        marginTop: 4, fontSize: 10, fontFamily: '"SF Mono", Menlo, monospace',
+        marginTop: 4, fontSize: 12, fontFamily: '"SF Mono", Menlo, monospace',
       }}>
         <span style={{ opacity: 0.6 }}>
           {item.area > 0 ? `${Math.round(item.area).toLocaleString()} ft²` : "—"}

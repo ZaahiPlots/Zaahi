@@ -55,7 +55,7 @@ const LANDUSE_COLORS: Record<string, string> = {
 
 function ddaFetchBtnStyle(busy: boolean): React.CSSProperties {
   return {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 600,
     letterSpacing: "0.04em",
     padding: "4px 10px",
@@ -343,9 +343,9 @@ export default function SidePanel({
       <div
         className="sticky top-0 px-4 py-3 flex items-center gap-2"
         style={{
-          background: "rgba(10, 22, 40, 0.85)",
-          backdropFilter: "blur(24px) saturate(150%)",
-          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           borderBottom: `1px solid ${LINE}`,
           zIndex: 5,
         }}
@@ -362,7 +362,7 @@ export default function SidePanel({
               <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, lineHeight: 1.1 }} className="truncate">
                 Plot {data.plotNumber}
               </div>
-              <div style={{ color: SUBTLE, fontSize: 10 }} className="truncate">
+              <div style={{ color: SUBTLE, fontSize: 12 }} className="truncate">
                 {data.district} · {data.emirate}
               </div>
             </>
@@ -407,7 +407,7 @@ export default function SidePanel({
         <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
           {/* Price block — total + per-sqft computed for display only */}
           <div style={{ paddingBottom: 10, borderBottom: `1px solid ${LINE}` }}>
-            <div style={{ color: SUBTLE, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
+            <div style={{ color: SUBTLE, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
               {isJvNoPrice ? "Price on Request" : "Total Price"}
             </div>
             <div
@@ -503,8 +503,8 @@ export default function SidePanel({
                 textTransform: "uppercase",
                 cursor: pdfBusy ? "wait" : "pointer",
                 opacity: pdfBusy ? 0.7 : 1,
-                backdropFilter: "blur(24px) saturate(150%)",
-                WebkitBackdropFilter: "blur(24px) saturate(150%)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
                 transition: "background 150ms ease, border-color 150ms ease",
                 display: "flex",
                 alignItems: "center",
@@ -558,7 +558,7 @@ export default function SidePanel({
                     padding: 0,
                     color: GOLD,
                     fontWeight: 700,
-                    fontSize: 9,
+                    fontSize: 11,
                     textTransform: "uppercase",
                     letterSpacing: 1.2,
                     cursor: "pointer",
@@ -678,7 +678,7 @@ export default function SidePanel({
                           gap: 4,
                           padding: "2px 8px",
                           borderRadius: 4,
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: 700,
                           letterSpacing: 0.6,
                           textTransform: "uppercase",
@@ -850,7 +850,7 @@ export default function SidePanel({
                         display: "block",
                         width: "100%",
                         textAlign: "left",
-                        fontSize: 10,
+                        fontSize: 12,
                         color: GOLD,
                         padding: "4px 8px",
                         background: "transparent",
@@ -891,7 +891,7 @@ export default function SidePanel({
                             display: "block",
                             width: "100%",
                             textAlign: "left",
-                            fontSize: 10,
+                            fontSize: 12,
                             color: GOLD,
                             padding: "4px 8px",
                             background: "transparent",
@@ -916,7 +916,7 @@ export default function SidePanel({
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 gap: 8, paddingTop: 6, borderTop: `1px solid ${LINE}`,
               }}>
-                <span style={{ fontSize: 9, color: "#9CA3AF" }}>
+                <span style={{ fontSize: 11, color: "#9CA3AF" }}>
                   Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
                 </span>
                 <button
@@ -966,9 +966,9 @@ export default function SidePanel({
             left: 0,
             right: 0,
             padding: 14,
-            background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            background: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             borderTop: `1px solid ${LINE}`,
             boxShadow: "0 -12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
           }}
@@ -1089,7 +1089,7 @@ function NotesBlock({
             border: 0,
             padding: 0,
             color: GOLD,
-            fontSize: 9,
+            fontSize: 11,
             textTransform: "uppercase",
             letterSpacing: 0.6,
             cursor: "pointer",

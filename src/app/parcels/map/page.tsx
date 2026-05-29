@@ -4477,8 +4477,8 @@ function ParcelsMapPageInner() {
             left: "50%",
             transform: "translateX(-50%)",
             background: "rgba(10,22,40,0.7)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.9)",
             borderRadius: 12,
@@ -4502,8 +4502,8 @@ function ParcelsMapPageInner() {
             left: "50%",
             transform: "translateX(-50%)",
             background: "rgba(10,22,40,0.7)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.9)",
             borderRadius: 12,
@@ -4626,8 +4626,8 @@ function ParcelsMapPageInner() {
             padding: "14px 16px",
             borderRadius: 12,
             background: "rgba(10, 22, 40, 0.92)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             border: `1px solid ${toast.kind === "error" ? "rgba(230, 57, 70, 0.55)" : "rgba(200, 169, 110, 0.45)"}`,
             color: "rgba(255, 255, 255, 0.92)",
             fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
@@ -4687,10 +4687,10 @@ function ParcelsMapPageInner() {
             width: 280,
             maxHeight: "calc(100vh - 130px)",
             overflowY: "auto",
-            background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
-            border: "1px solid rgba(200, 169, 110, 0.15)",
+            background: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
             borderRadius: 12,
             boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
             zIndex: 12,
@@ -4758,7 +4758,7 @@ function ParcelsMapPageInner() {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: "#FFFFFF", fontWeight: 600 }}>{item.name}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255, 255, 255, 0.55)", marginTop: 1 }}>{item.desc}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.55)", marginTop: 1 }}>{item.desc}</div>
                 </div>
               </div>
             ))}
@@ -4768,7 +4768,7 @@ function ParcelsMapPageInner() {
             style={{
               borderTop: "1px solid rgba(200, 169, 110, 0.15)",
               padding: "10px 14px",
-              fontSize: 10,
+              fontSize: 12,
               color: "rgba(255, 255, 255, 0.55)",
               fontStyle: "italic",
               lineHeight: 1.5,
@@ -4792,7 +4792,7 @@ function ParcelsMapPageInner() {
           position: "absolute",
           left: 16,
           bottom: 8,
-          fontSize: 9,
+          fontSize: 11,
           color: c.textDim,
           fontFamily: '"SF Mono", "Menlo", monospace',
           letterSpacing: "0.04em",
@@ -5009,9 +5009,9 @@ function ParcelsMapPageInner() {
             top: 0,
             zIndex: 2,
             padding: "10px 14px",
-            background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            background: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
@@ -5053,7 +5053,7 @@ function ParcelsMapPageInner() {
               alignItems: "center",
               gap: 6,
               padding: "6px 10px",
-              border: "1px solid rgba(200, 169, 110, 0.15)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
               borderRadius: 8,
               background: "rgba(255, 255, 255, 0.04)",
               transition: "border-color 150ms ease, background 150ms ease",
@@ -5111,7 +5111,7 @@ function ParcelsMapPageInner() {
           <span
             title="Always visible — core ZAAHI inventory"
             style={{
-              fontSize: 9,
+              fontSize: 11,
               letterSpacing: "0.08em",
               color: GOLD,
               fontFamily: 'Georgia, "Times New Roman", serif',
@@ -5135,7 +5135,7 @@ function ParcelsMapPageInner() {
         <div
           style={{
             padding: "8px 14px 2px",
-            fontSize: 9,
+            fontSize: 11,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             color: GOLD,
@@ -5455,7 +5455,7 @@ function ParcelsMapPageInner() {
               </span>
               {authority && (
                 <span style={{
-                  fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
                   letterSpacing: "0.06em", textTransform: "uppercase",
                 }}>{authority}</span>
               )}
@@ -5503,7 +5503,7 @@ function ParcelsMapPageInner() {
                 border: "1px solid rgba(200, 169, 110, 0.3)",
                 borderRadius: 4,
                 color: GOLD,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
@@ -5563,13 +5563,13 @@ function ParcelsMapPageInner() {
               </span>
               {authority && (
                 <span style={{
-                  fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
                   letterSpacing: "0.06em", textTransform: "uppercase",
                 }}>{authority}</span>
               )}
             </div>
             {ddaLandHover.mainLandUse && (
-              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 10 }}>
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
                 {ddaLandHover.mainLandUse}
               </div>
             )}
@@ -5633,9 +5633,9 @@ function ParcelsMapPageInner() {
             columnGap: 6,
             rowGap: 6,
             padding: 8,
-            background: "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            background: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 12,
             boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
@@ -5699,7 +5699,7 @@ function ParcelsMapPageInner() {
                 kept for users who never open the dock. */}
             <div
               style={{
-                fontSize: 9,
+                fontSize: 11,
                 color: "rgba(255, 255, 255, 0.55)",
                 fontFamily: '"SF Mono", "Menlo", monospace',
                 letterSpacing: "0.04em",
@@ -5796,9 +5796,9 @@ function ParcelsMapPageInner() {
             height: 32,
             borderRadius: 8,
             border: `1px solid ${miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: miniOpen ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.85)",
-            backdropFilter: "blur(24px) saturate(150%)",
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            background: miniOpen ? "rgba(200,169,110,0.25)" : "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             color: GOLD,
             cursor: "pointer",
             display: "flex",
@@ -5816,7 +5816,7 @@ function ParcelsMapPageInner() {
             e.currentTarget.style.borderColor = miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)";
             e.currentTarget.style.background = miniOpen
               ? "rgba(200,169,110,0.25)"
-              : "rgba(10, 22, 40, 0.85)";
+              : "rgba(0, 0, 0, 0.3)";
           }}
         >
           {miniOpen ? (
@@ -5905,15 +5905,15 @@ function PmtilesHoverRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", gap: 8,
-      marginTop: 3, fontSize: 10, lineHeight: 1.35,
+      marginTop: 3, fontSize: 12, lineHeight: 1.35,
     }}>
       <span style={{
         opacity: 0.55, letterSpacing: "0.04em",
-        textTransform: "uppercase", fontSize: 9,
+        textTransform: "uppercase", fontSize: 11,
       }}>{label}</span>
       <span style={{
         color: "rgba(255,255,255,0.95)", textAlign: "right",
-        fontFamily: '"SF Mono", Menlo, monospace', fontSize: 10,
+        fontFamily: '"SF Mono", Menlo, monospace', fontSize: 12,
       }}>{value}</span>
     </div>
   );
@@ -6020,7 +6020,7 @@ function SoonBadge() {
         padding: "2px 6px",
         border: `1px solid ${GOLD}`,
         borderRadius: 3,
-        fontSize: 9,
+        fontSize: 11,
         letterSpacing: "0.08em",
         color: GOLD,
         background: "rgba(200, 169, 110, 0.12)",
@@ -6056,7 +6056,7 @@ function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
         padding: "2px 6px",
         border: `1px solid ${accent}`,
         borderRadius: 3,
-        fontSize: 9,
+        fontSize: 11,
         letterSpacing: "0.08em",
         color: accent,
         background: bgTint,
@@ -6248,7 +6248,7 @@ function CountryGroup({
         }}
       >
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 9, color: "rgba(255, 255, 255, 0.55)", width: 8, transition: "transform 200ms ease", transform: open ? "rotate(0deg)" : "rotate(-90deg)", display: "inline-block" }}>▾</span>
+          <span style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.55)", width: 8, transition: "transform 200ms ease", transform: open ? "rotate(0deg)" : "rotate(-90deg)", display: "inline-block" }}>▾</span>
           <span>{title}</span>
         </span>
         <span
@@ -6256,7 +6256,7 @@ function CountryGroup({
             color: anyOn ? GOLD : "rgba(255, 255, 255, 0.45)",
             fontFamily: '"SF Mono", Menlo, monospace',
             letterSpacing: 0,
-            fontSize: 10,
+            fontSize: 12,
             textTransform: "none",
             padding: "1px 6px",
             borderRadius: 3,
@@ -6332,14 +6332,14 @@ function GroupHeader({
         borderTopColor: c.borderSubtle,
         cursor: "pointer",
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: 10,
+        fontSize: 12,
         letterSpacing: "0.12em",
         textTransform: "uppercase",
         color: c.textDim,
       }}
     >
       <span>{title}</span>
-      <span style={{ fontSize: 9 }}>{open ? "▾" : "▸"}</span>
+      <span style={{ fontSize: 11 }}>{open ? "▾" : "▸"}</span>
     </button>
   );
 }
@@ -6384,31 +6384,38 @@ function ChromeBtn({
       aria-pressed={active != null ? isActive : undefined}
       onClick={onClick}
       style={{
-        width: 30,
-        height: 30,
-        borderRadius: 6,
-        border: `1px solid ${isActive ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-        background: isActive ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.5)",
-        color: GOLD,
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        // Unified spec tokens (founder 2026-05-29): rgba(0,0,0,0.3) +
+        // blur(16) + neutral 0.15 border. Active state lifts to gold
+        // accent like the rest of the gold-on-glass affordances.
+        border: `1px solid ${isActive ? GOLD : "rgba(255, 255, 255, 0.15)"}`,
+        background: isActive ? "rgba(200, 169, 110, 0.25)" : "rgba(0, 0, 0, 0.3)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        color: isActive ? GOLD : "#FFFFFF",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontSize: 15,
         fontWeight: 700,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3)",
         padding: 0,
-        transition: "border-color 150ms ease, background 150ms ease",
+        transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = GOLD;
         e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+        e.currentTarget.style.color = GOLD;
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = isActive ? GOLD : "rgba(200, 169, 110, 0.3)";
+        e.currentTarget.style.borderColor = isActive ? GOLD : "rgba(255, 255, 255, 0.15)";
         e.currentTarget.style.background = isActive
           ? "rgba(200, 169, 110, 0.25)"
-          : "rgba(10, 22, 40, 0.5)";
+          : "rgba(0, 0, 0, 0.3)";
+        e.currentTarget.style.color = isActive ? GOLD : "#FFFFFF";
       }}
     >
       {children}
@@ -6789,7 +6796,7 @@ function FindLauncher({
             border: "none",
             background: "transparent",
             color: c.text,
-            fontSize: 10,
+            fontSize: 12,
             outline: "none",
           }}
         />
@@ -6822,7 +6829,7 @@ function FindLauncher({
             border: "1px solid #EF4444",
             borderRadius: 4,
             color: "#EF4444",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 600,
             textAlign: "center",
             boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
@@ -6884,7 +6891,7 @@ function HdrField({
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
     >
       <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
-      {label && <span style={{ fontSize: 10, fontWeight: 600, color: c.text }}>{label}</span>}
+      {label && <span style={{ fontSize: 12, fontWeight: 600, color: c.text }}>{label}</span>}
       <input
         autoFocus
         value={value}
@@ -6907,7 +6914,7 @@ function HdrField({
           border: "none",
           background: "transparent",
           color: c.text,
-          fontSize: 10,
+          fontSize: 12,
           outline: "none",
         }}
       />
