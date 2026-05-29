@@ -39,10 +39,30 @@ export default function ParcelsNav({
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
-    apiFetch("/api/parcels/map")
-      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((d: { items: ParcelMini[] }) => setItems(d.items))
-      .catch(() => { fetchedRef.current = false; });
+    // Defensive: read body as text first, then JSON.parse with explicit
+    // try/catch + fallback. Earlier 500s on /api/parcels/map (P2022)
+    // returned an HTML error page rather than JSON — calling r.json()
+    // straight away threw "JSON.parse: unexpected end of data" with no
+    // useful diagnostic. This path swallows that case gracefully.
+    (async () => {
+      try {
+        const r = await apiFetch("/api/parcels/map");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const text = await r.text();
+        if (!text) throw new Error("empty body");
+        let parsed: { items?: ParcelMini[] };
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          console.error("[ParcelsNav] /api/parcels/map returned non-JSON body:", text.slice(0, 120));
+          throw new Error("invalid JSON");
+        }
+        setItems(parsed.items ?? []);
+      } catch (err) {
+        console.error("[ParcelsNav] fetch failed:", err);
+        fetchedRef.current = false;
+      }
+    })();
   }, []);
 
   const currentIndex = useMemo(() => {
