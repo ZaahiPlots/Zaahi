@@ -113,7 +113,7 @@ interface RecipientView {
   ownerContact: { name?: string; phone?: string; email?: string; role?: string } | null;
   stage: string;
   conflictsWithOthers: boolean;
-  sharedBy: { id: string; nickname: string | null };
+  sharedBy?: { id: string; nickname: string | null };
   permission: string;
   shareId: string;
   ddaSnapshot: unknown | null;
@@ -363,7 +363,9 @@ function VaultFooter({
       }}>
         {view.access === "owner"
           ? "PRIVATE · only you"
-          : `SHARED BY @${view.sharedBy.nickname ?? "—"}`}
+          : view.access === "share" && view.sharedBy
+            ? `SHARED BY @${view.sharedBy.nickname ?? "—"}`
+            : "VAULT ENTRY"}
         {view.access === "owner" && view.promotedAt && (
           <div style={{ marginTop: 4, fontSize: 11, textTransform: "none", letterSpacing: 0 }}>
             ✓ Promoted to public listing
