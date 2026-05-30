@@ -236,6 +236,10 @@ const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 // untouched, PMTiles untouched.
 const VAULT_MINE_SRC = "vault-mine-buildings";
 const VAULT_MINE_3D = "vault-mine-buildings-3d";
+// Gold outline line layer that highlights the caller's vault entries
+// when vault-only mode is on. Same source as VAULT_MINE_3D; filtered
+// to tierIndex=0 so multi-tier entries get one outline, not three.
+const VAULT_MINE_OUTLINE = "vault-mine-outline";
 const VAULT_SHARED_SRC = "vault-shared-buildings";
 const VAULT_SHARED_3D = "vault-shared-buildings-3d";
 const VAULT_CONFLICT_MARKERS_LAYER = "vault-conflict-markers";
@@ -3140,6 +3144,24 @@ function ParcelsMapPageInner() {
         });
       }
 
+      // Gold outline — visible only when vaultOnlyMode is on. Filtered
+      // to tierIndex=0 so multi-tier entries get ONE outline instead of
+      // three stacked ones (matches the conflict-marker pattern).
+      if (!map.getLayer(VAULT_MINE_OUTLINE)) {
+        map.addLayer({
+          id: VAULT_MINE_OUTLINE,
+          type: "line",
+          source: VAULT_MINE_SRC,
+          filter: ["==", ["get", "tierIndex"], 0],
+          layout: { visibility: "none" },
+          paint: {
+            "line-color": GOLD,
+            "line-width": 2,
+            "line-opacity": 0.9,
+          },
+        });
+      }
+
       // Conflict markers — small red dot on top of polygons in conflict.
       // tierIndex === 0 filter so multi-tier entries get ONE marker, not three.
       if (!map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
@@ -4345,13 +4367,21 @@ function ParcelsMapPageInner() {
     if (map.getLayer(VAULT_SHARED_3D)) {
       map.setLayoutProperty(VAULT_SHARED_3D, "visibility", sharedV);
     }
+    // Gold outline only when vault-only mode is on — it's the
+    // "highlighted" affordance for the dedicated mode, not a default
+    // chrome for the My Vault layer toggle.
+    if (map.getLayer(VAULT_MINE_OUTLINE)) {
+      map.setLayoutProperty(VAULT_MINE_OUTLINE, "visibility", vaultOnlyMode ? "visible" : "none");
+    }
   }, [layers.vaultMine, layers.vaultShared, vaultOnlyMode]);
 
-  // Vault-only mode side effect on public ZAAHI listings + persistence.
-  // When ON: hide ZAAHI_PLOTS_FILL / ZAAHI_PLOTS_LINE / ZAAHI_BUILDINGS_3D.
-  // When OFF: restore default visibility ("visible"). PMTiles, DDA districts,
-  // amenities and other contextual layers are deliberately NOT touched —
-  // they remain user-controlled via the Layers panel.
+  // Vault-only mode side effect on public ZAAHI listings + PMTiles +
+  // persistence. When ON: hide ZAAHI_PLOTS_FILL / _LINE / _BUILDINGS_3D
+  // entirely, and dim the PMTiles 3D layers via a literal opacity drop
+  // (0.45 → 0.1; never an array — CLAUDE.md rule). When OFF: restore
+  // defaults. DDA districts / amenities / other contextual layers are
+  // deliberately NOT touched — they stay user-controlled via the
+  // Layers panel.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -4361,9 +4391,63 @@ function ParcelsMapPageInner() {
         map.setLayoutProperty(lid, "visibility", publicV);
       }
     }
+    // PMTiles dim: 0.45 (default) ↔ 0.1 (vault-only mode). Literal
+    // numbers per CLAUDE.md "fill-extrusion-opacity must be literal".
+    const pmtilesOpacity = vaultOnlyMode ? 0.1 : 0.45;
+    for (const lid of ["dda-land-tiles-3d", "ad-adm-tiles-3d", "ad-other-tiles-3d"]) {
+      if (map.getLayer(lid)) {
+        map.setPaintProperty(lid, "fill-extrusion-opacity", pmtilesOpacity);
+      }
+    }
     try {
       localStorage.setItem("zaahi-vault-only-mode", vaultOnlyMode ? "1" : "0");
     } catch { /* ignore quota / SSR */ }
+  }, [vaultOnlyMode]);
+
+  // Fly to the bounds of the caller's vault entries whenever vault-only
+  // mode flips on. Empty vault → toast + no-op. We DO NOT touch the
+  // viewport when vault-only mode is turned off — the founder spec
+  // explicitly asked for that to stay where the user left it.
+  useEffect(() => {
+    if (!vaultOnlyMode) return;
+    const map = mapRef.current;
+    if (!map) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/me/vault/map");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const fc = (await r.json()) as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
+        if (cancelled) return;
+        if (!fc.features || fc.features.length === 0) {
+          setToast({ kind: "success", message: "No vault plots yet" });
+          return;
+        }
+        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        for (const f of fc.features) {
+          if (!f.geometry || f.geometry.type !== "Polygon") continue;
+          for (const ring of f.geometry.coordinates) {
+            for (const [lng, lat] of ring) {
+              if (lng < minLng) minLng = lng;
+              if (lat < minLat) minLat = lat;
+              if (lng > maxLng) maxLng = lng;
+              if (lat > maxLat) maxLat = lat;
+            }
+          }
+        }
+        if (!Number.isFinite(minLng)) {
+          setToast({ kind: "success", message: "No vault plots with geometry yet" });
+          return;
+        }
+        map.fitBounds(
+          [[minLng, minLat], [maxLng, maxLat]],
+          { padding: 80, duration: 1500, maxZoom: 17 },
+        );
+      } catch (err) {
+        console.error("[vault map] flyTo bounds failed:", err);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [vaultOnlyMode]);
 
   // Hydrate vault-only mode from localStorage once on mount.
@@ -4533,6 +4617,8 @@ function ParcelsMapPageInner() {
         }
         onSelectParcel={(id) => setSelectedParcelId(id)}
         onOpenAddModal={() => setAddFlow("chooser")}
+        vaultOnlyMode={vaultOnlyMode}
+        onToggleVaultOnly={() => setVaultOnlyMode((v) => !v)}
       />
       {addFlow === "chooser" && (
         <AddPlotChooser
@@ -6428,12 +6514,16 @@ function HeaderBar({
   onFly,
   onSelectParcel,
   onOpenAddModal,
+  vaultOnlyMode,
+  onToggleVaultOnly,
 }: {
   c: ChromeTheme;
   isDark: boolean;
   onFly: (lng: number, lat: number) => void;
   onSelectParcel: (id: string) => void;
   onOpenAddModal: () => void;
+  vaultOnlyMode: boolean;
+  onToggleVaultOnly: () => void;
 }) {
   const [find, setFind] = useState("");
   const [findOpen, setFindOpen] = useState(false);
@@ -6665,22 +6755,33 @@ function HeaderBar({
             </svg>
           </a>
         )}
-        {/* Vault — direct access to /vault, promoted out of the mini
-            dock right rail on 2026-05-24 (founder map UI cleanup).
-            Padlock icon distinguishes from Profile. */}
-        <Link
-          href="/vault"
-          title="Private Plot Vault"
-          aria-label="Vault"
-          style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
+        {/* Vault — flips vault-only mode on the map (founder spec
+            2026-05-30). No longer redirects to /vault; that page is
+            still reachable from /dashboard. Active state lifts the
+            button to the gold tint so it visually matches the
+            highlighted vault entries on the map. */}
+        <button
+          type="button"
+          title={vaultOnlyMode ? "Exit vault view" : "Private Plot Vault"}
+          aria-label="Toggle vault view"
+          aria-pressed={vaultOnlyMode}
+          onClick={onToggleVaultOnly}
+          style={{
+            ...hdrBtnStyle(c),
+            background: vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : hdrBtnStyle(c).background,
+            borderColor: vaultOnlyMode ? GOLD : hdrBtnStyle(c).borderColor,
+          }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = vaultOnlyMode ? GOLD : (hdrBtnStyle(c).borderColor as string);
+            e.currentTarget.style.background = vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : (hdrBtnStyle(c).background as string);
+          }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="10" rx="2" />
             <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
-        </Link>
+        </button>
         <a
           href="/dashboard"
           title="Profile"
