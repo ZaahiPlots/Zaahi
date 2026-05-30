@@ -53,15 +53,25 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
   const [landUse, setLandUse] = useState<LandUse | "">("");
 
   const canLookup =
-    plotNumber.match(/^\d{5,10}$/) && district.trim().length > 0 && !loading;
+    !!plotNumber.match(/^\d{5,10}$/) && !loading;
 
   async function handleLookup() {
     setLoading(true);
     setError(null);
     try {
+      // District field was removed from the initial form (founder spec
+      // 2026-05-30) — DDA returns the canonical district anyway. We send
+      // "AUTO" as a placeholder to satisfy the plot-lookup schema's
+      // `district.min(1)`. Existing-entry short-circuit may miss a
+      // prior duplicate when the stored district differs from "AUTO";
+      // the DB unique constraint on (ownerId, emirate, district,
+      // plotNumber) still catches duplicates on create (entries POST
+      // surfaces a P2002 with the existing id), so the worst-case is
+      // a slightly worse error message, never silent dup writes.
+      const lookupDistrict = district.trim() || "AUTO";
       const r = await apiFetch("/api/me/vault/plot-lookup", {
         method: "POST",
-        body: JSON.stringify({ emirate, district: district.trim(), plotNumber }),
+        body: JSON.stringify({ emirate, district: lookupDistrict, plotNumber }),
       });
       if (!r.ok) {
         setError(`Lookup failed (${r.status})`);
@@ -123,7 +133,11 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
         facts; otherwise you&apos;ll add basic info manually.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: 12, marginTop: 16 }}>
+      {/* Founder spec 2026-05-30 — initial form is Emirate + Plot Number
+          only. District is pulled from DDA on hit (shown read-only in
+          the result block below). For not_found plots we reveal a
+          District input alongside the manual-mode fields. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
         <Field label="Emirate">
           <select
             value={emirate}
@@ -136,15 +150,6 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
               </option>
             ))}
           </select>
-        </Field>
-        <Field label="District">
-          <input
-            type="text"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            placeholder="e.g. Al Barari"
-            style={inputStyle}
-          />
         </Field>
         <Field label="Plot number">
           <input
@@ -211,6 +216,17 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
             ⚠ This plot isn&apos;t in DDA. Add it manually for now — Phase 2.2 will support
             Affection Plan PDF upload to auto-build the 3D geometry.
           </div>
+          {/* District input only on the manual branch — DDA hits fill it
+              automatically from the response. */}
+          <Field label="District" style={{ marginTop: 12 }}>
+            <input
+              type="text"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              placeholder="e.g. Al Barari"
+              style={inputStyle}
+            />
+          </Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 12 }}>
             <Field label="Area (sqft)">
               <input
@@ -257,7 +273,11 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
               ))}
             </select>
           </Field>
-          <button onClick={handleContinueManual} style={{ ...buttonStyle, marginTop: 16 }}>
+          <button
+            onClick={handleContinueManual}
+            disabled={district.trim().length === 0}
+            style={district.trim().length > 0 ? { ...buttonStyle, marginTop: 16 } : { ...buttonDisabledStyle, marginTop: 16 }}
+          >
             Continue with manual entry →
           </button>
         </div>
