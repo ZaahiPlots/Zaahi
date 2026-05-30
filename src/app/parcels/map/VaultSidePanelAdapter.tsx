@@ -16,6 +16,7 @@
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §6.4, §6.5, §6.6.
 
 import { useEffect, useState } from "react";
+import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import { useAreaUnit, formatAreaWithBoth } from "@/lib/area-unit";
 import { ConflictBanner } from "./ConflictBanner";
@@ -24,12 +25,21 @@ import { ShareModal } from "./ShareModal";
 import { PromoteToPublicModal } from "./PromoteToPublicModal";
 import { ImportFromShareButton } from "./ImportFromShareButton";
 import { useEscapeClose } from "./useEscapeClose";
+import { PdfProgressBar } from "./PdfProgressBar";
+import FeasibilityV6Calculator from "@/components/feasibility/FeasibilityV6Calculator";
+import { IS_FEASIBILITY_V6_ENABLED } from "@/lib/feasibility-v6/featureFlag";
+import { adaptSidePanelToInput } from "@/lib/feasibility-v6/parcelInput";
+import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 
 const GOLD = "#C8A96E";
-const BG_GLASS = "rgba(10, 22, 40, 0.78)";
-const BORDER = "rgba(255, 255, 255, 0.1)";
-const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
-const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
+// Glass tokens unified against the standard SidePanel + login reference
+// (founder spec 2026-05-30).
+const BG_GLASS = "rgba(0, 0, 0, 0.3)";
+const BORDER = "rgba(255, 255, 255, 0.15)";
+const LINE_SUBTLE = "rgba(255, 255, 255, 0.1)";
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
+const TEXT_SECONDARY = "rgba(255, 255, 255, 0.7)";
 
 // AffectionPlan fields from the public Parcel join (when entry has
 // publicParcelId). Mirrors the columns selected in
@@ -134,15 +144,21 @@ interface Props {
   entryId: string;
   mode: "owner" | "share";
   onClose: () => void;
+  /** Map ref — required for the Download Site Plan PDF snapshot, same
+   *  way the standard SidePanel uses it. Optional so callers without a
+   *  map context can still render the panel (PDF button hides). */
+  mapRef?: React.RefObject<MLMap | null>;
 }
 
-export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
+export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props) {
   const [view, setView] = useState<EntryView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [feasOpen, setFeasOpen] = useState(false);
   // Esc closes the panel — but only when no inner modal is open
   // (otherwise the modal's own escape handler should win).
   useEscapeClose(
@@ -223,7 +239,199 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose }: Props) {
 
         {view && (
           <div style={bodyStyle}>
+            {/* ── TOTAL PRICE — mirror standard SidePanel header
+                (founder spec 2026-05-30). askingPriceFils is the vault
+                analogue of currentValuation; we expose the same
+                per-sqft (Plot / Max GFA) decomposition when affection
+                plan data is available. */}
+            <div style={{ paddingBottom: 10, borderBottom: `1px solid ${LINE_SUBTLE}` }}>
+              <div style={{ color: TEXT_DIM, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
+                Asking Price
+              </div>
+              <div style={{ color: GOLD, fontWeight: 800, fontSize: 22, lineHeight: 1.25, letterSpacing: -0.2 }}>
+                {askingAed != null ? `AED ${askingAed.toLocaleString()}` : "—"}
+              </div>
+              {(() => {
+                const plotSqft = view.affectionPlan?.plotAreaSqft ?? view.area ?? null;
+                const gfaSqft = view.affectionPlan?.maxGfaSqft ?? null;
+                const perPlot = askingAed != null && plotSqft && plotSqft > 0
+                  ? Math.round(askingAed / plotSqft) : null;
+                const perGfa = askingAed != null && gfaSqft && gfaSqft > 0
+                  ? Math.round(askingAed / gfaSqft) : null;
+                if (perPlot == null && perGfa == null) return null;
+                return (
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                    {perPlot != null && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: TEXT_DIM }}>Per sqft (Plot)</span>
+                        <span style={{ color: TEXT_PRIMARY, fontWeight: 600 }}>{perPlot.toLocaleString()} AED</span>
+                      </div>
+                    )}
+                    {perGfa != null && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: TEXT_DIM }}>Per sqft (Max GFA)</span>
+                        <span style={{ color: TEXT_PRIMARY, fontWeight: 600 }}>{perGfa.toLocaleString()} AED</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Download Site Plan — same component / styling / flow as
+                  the standard SidePanel. Disabled when we don't have
+                  the geometry the PDF needs (vault-only entries that
+                  weren't sourced via DDA lookup). */}
+              {(() => {
+                const geom = (view as { geometry?: unknown }).geometry;
+                const lat = (view as { latitude?: number | null }).latitude ?? null;
+                const lng = (view as { longitude?: number | null }).longitude ?? null;
+                const canPdf = !!geom || (lat != null && lng != null);
+                return (
+                  <>
+                    <button
+                      type="button"
+                      disabled={pdfBusy || !canPdf || !mapRef}
+                      onClick={async () => {
+                        if (!canPdf || !mapRef) return;
+                        setPdfBusy(true);
+                        try {
+                          await generateSitePlanPdf({
+                            parcel: {
+                              id: view.id,
+                              plotNumber: view.plotNumber,
+                              district: view.district,
+                              emirate: view.emirate,
+                              area: view.area ?? 0,
+                              currentValuation: view.askingPriceFils ? BigInt(view.askingPriceFils) : null,
+                              geometry: (geom ?? null) as GeoJSON.Polygon | null,
+                              latitude: lat,
+                              longitude: lng,
+                            },
+                            plan: view.affectionPlan ? {
+                              projectName: view.affectionPlan.projectName,
+                              community: view.affectionPlan.community,
+                              masterDeveloper: view.affectionPlan.masterDeveloper,
+                              plotAreaSqm: view.affectionPlan.plotAreaSqm,
+                              plotAreaSqft: view.affectionPlan.plotAreaSqft,
+                              maxGfaSqm: view.affectionPlan.maxGfaSqm,
+                              maxGfaSqft: view.affectionPlan.maxGfaSqft,
+                              maxHeightCode: view.affectionPlan.maxHeightCode,
+                              maxFloors: view.affectionPlan.maxFloors,
+                              maxHeightMeters: view.affectionPlan.maxHeightMeters,
+                              far: view.affectionPlan.far,
+                              setbacks: view.affectionPlan.setbacks as unknown as Array<{ side: number; building: number | null; podium: number | null }> | null,
+                              landUseMix: view.affectionPlan.landUseMix as unknown as Array<{ category: string; sub?: string | null }> | null,
+                              notes: view.affectionPlan.notes,
+                            } : null,
+                            authority: null,
+                            map: mapRef?.current ?? null,
+                          });
+                        } catch (e) {
+                          console.error("[site-plan-pdf vault]", e);
+                          alert("Could not generate the Site Plan PDF. Please try again.");
+                        } finally {
+                          setPdfBusy(false);
+                        }
+                      }}
+                      title={canPdf ? "Download Site Plan PDF" : "Site Plan PDF needs polygon or coordinates"}
+                      style={{
+                        marginTop: 12,
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        background: "rgba(255,255,255,0.06)",
+                        border: `1px solid rgba(200,169,110,${canPdf ? 0.3 : 0.15})`,
+                        color: GOLD,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1.1,
+                        textTransform: "uppercase",
+                        cursor: pdfBusy ? "wait" : canPdf ? "pointer" : "not-allowed",
+                        opacity: pdfBusy ? 0.7 : canPdf ? 1 : 0.45,
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      <span>{pdfBusy ? "Generating…" : "Download Site Plan"}</span>
+                    </button>
+                    <PdfProgressBar busy={pdfBusy} />
+                  </>
+                );
+              })()}
+            </div>
+
             <PlotFactsSections view={view} />
+
+            {/* ── FEASIBILITY CALCULATOR — collapsible, V6 by default
+                (founder feature flag). Pulls vault entry into the same
+                ParcelInput shape the standard SidePanel uses, so the
+                engine list and computed metrics are identical. */}
+            {view.affectionPlan && (
+              <div>
+                <button
+                  onClick={() => setFeasOpen((v) => !v)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                    border: `1px solid ${GOLD}`,
+                    background: "rgba(200,169,110,0.08)",
+                    color: GOLD,
+                    fontWeight: 700,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <span>Feasibility Calculator</span>
+                  <span>{feasOpen ? "▾" : "▸"}</span>
+                </button>
+                {feasOpen && IS_FEASIBILITY_V6_ENABLED && (
+                  <div style={{ marginTop: 8 }}>
+                    <FeasibilityV6Calculator
+                      parcel={adaptSidePanelToInput(
+                        {
+                          id: view.id,
+                          plotNumber: view.plotNumber,
+                          district: view.district,
+                          emirate: view.emirate,
+                          area: view.area ?? 0,
+                        },
+                        view.affectionPlan ? {
+                          community: view.affectionPlan.community,
+                          projectName: view.affectionPlan.projectName,
+                          masterDeveloper: view.affectionPlan.masterDeveloper,
+                          plotAreaSqft: view.affectionPlan.plotAreaSqft,
+                          far: view.affectionPlan.far,
+                          maxGfaSqft: view.affectionPlan.maxGfaSqft,
+                          maxFloors: view.affectionPlan.maxFloors,
+                          landUseMix: view.affectionPlan.landUseMix as unknown as Array<{ category: string; sub?: string; areaSqm?: number | null }> | null,
+                        } : null,
+                        askingAed ?? 0,
+                      )}
+                      banner="none"
+                      mode="sidepanel"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <Section label="Your pipeline">
               <Row label="Stage">{view.stage}</Row>

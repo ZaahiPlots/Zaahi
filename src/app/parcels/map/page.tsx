@@ -5930,6 +5930,7 @@ function ParcelsMapPageInner() {
           entryId={selectedVaultEntry.id}
           mode={selectedVaultEntry.mode}
           onClose={() => setSelectedVaultEntry(null)}
+          mapRef={mapRef}
         />
       )}
 
