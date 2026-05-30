@@ -44,6 +44,11 @@ enum ParcelStatus {
   SOLD
   DISPUTED
   FROZEN
+  // Private parcel visible only to ownerId + active VaultShare
+  // recipients. Phase 1 of vault refactor (founder spec 2026-05-30) —
+  // unifies vault entries onto the Parcel + AffectionPlan source of
+  // truth so vault and public listings render through the same code.
+  VAULT_PRIVATE
 }
 
 // Mirrors states in backend/services/deal_engine.ts
