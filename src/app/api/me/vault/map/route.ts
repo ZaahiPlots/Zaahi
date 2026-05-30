@@ -59,6 +59,13 @@ export async function GET(req: NextRequest) {
             select: {
               maxFloors: true,
               maxHeightMeters: true,
+              maxHeightCode: true,
+              far: true,
+              plotAreaSqft: true,
+              maxGfaSqft: true,
+              projectName: true,
+              sitePlanIssue: true,
+              fetchedAt: true,
               buildingLimitGeometry: true,
               setbacks: true,
               landUseMix: true,
@@ -100,11 +107,21 @@ export async function GET(req: NextRequest) {
       affectionPlan = {
         maxFloors: plan.maxFloors,
         maxHeightMeters: plan.maxHeightMeters,
+        // Extra fields flattened by loadVaultMine into feature.properties
+        // so the vault hover popup can read them like the ZAAHI listing
+        // hover does. AffectionPlanLike is a structural superset — extra
+        // keys flow through unchanged.
+        maxHeightCode: plan.maxHeightCode,
+        far: plan.far,
+        plotAreaSqft: plan.plotAreaSqft,
+        maxGfaSqft: plan.maxGfaSqft,
+        projectName: plan.projectName,
+        sitePlanIssue: plan.sitePlanIssue?.toISOString() ?? null,
         buildingLimitGeometry: plan.buildingLimitGeometry,
         setbacks: plan.setbacks,
         landUseMix: plan.landUseMix,
         buildingStyle: plan.buildingStyle,
-      };
+      } as AffectionPlanLike;
     }
 
     // Live-DDA entries (Path 1 fallback) — synthesise the affectionPlan shape

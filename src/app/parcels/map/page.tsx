@@ -1590,6 +1590,28 @@ function ParcelsMapPageInner() {
     far: number;
     planDateIso: string;
   } | null>(null);
+  // Vault hover popup — mirrors zaahiHover so a vault polygon reads
+  // the same as a public listing on hover. Click → VaultSidePanelAdapter
+  // (via setSelectedVaultEntry), same handshake as ZAAHI listings.
+  const [vaultHover, setVaultHover] = useState<{
+    x: number;
+    y: number;
+    id: string;
+    plotNumber: string;
+    district: string;
+    landUse: string;
+    projectName: string;
+    askingAed: number | null;
+    area: number;
+    plotAreaSqft: number;
+    maxGfaSqft: number;
+    maxFloors: number;
+    maxHeightMeters: number;
+    maxHeightCode: string;
+    far: number;
+    planDateIso: string;
+    mode: "owner" | "share";
+  } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
     plotNumber: string;
@@ -3065,18 +3087,48 @@ function ParcelsMapPageInner() {
         if (!f.geometry || f.geometry.type !== "Polygon") continue;
         const props = (f.properties ?? {}) as Record<string, unknown>;
         const stage = String(props.stage ?? "LEAD");
-        const color = VAULT_STAGE_COLOR(stage);
         const placeholder = props.placeholder === true;
         const plan = (props.affectionPlan ?? null) as {
           maxFloors?: number | null;
           maxHeightMeters?: number | null;
+          maxHeightCode?: string | null;
+          far?: number | null;
+          plotAreaSqft?: number | null;
+          maxGfaSqft?: number | null;
+          projectName?: string | null;
+          sitePlanIssue?: string | null;
           buildingLimitGeometry?: GeoJSON.Polygon | null;
           setbacks?: SetbackEntry[] | null;
-          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          landUseMix?: Array<{ category: string; sub?: string | null }> | null;
           buildingStyle?: string | null;
         } | null;
 
-        const baseProps = { ...props, color };
+        // Land-use colour parity with public listings (founder spec
+        // 2026-05-30). Stage tone moves to the SidePanel pipeline block;
+        // the 3D building reads identically to a ZAAHI listing here.
+        const landUseKey =
+          deriveLandUse(plan?.landUseMix) ??
+          (typeof props.landUse === "string" && props.landUse
+            ? props.landUse.toUpperCase().replace(/[ -]+/g, "_")
+            : null);
+        const color = (landUseKey && ZAAHI_LANDUSE_COLOR[landUseKey]) ?? ZAAHI_DEFAULT_COLOR;
+
+        // Flatten plan fields so the vault hover popup can read them
+        // the same way the ZAAHI listing hover does (no nested digs).
+        const baseProps = {
+          ...props,
+          color,
+          stage,
+          landUse: landUseKey ?? "",
+          projectName: plan?.projectName ?? "",
+          maxFloors: plan?.maxFloors ?? 0,
+          maxHeightCode: plan?.maxHeightCode ?? "",
+          maxHeightMeters: plan?.maxHeightMeters ?? 0,
+          far: plan?.far ?? 0,
+          plotAreaSqft: plan?.plotAreaSqft ?? 0,
+          maxGfaSqft: plan?.maxGfaSqft ?? 0,
+          planDateIso: plan?.sitePlanIssue ?? "",
+        };
 
         if (placeholder) {
           features.push({
@@ -3139,7 +3191,7 @@ function ParcelsMapPageInner() {
             "fill-extrusion-color": ["get", "color"],
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.85, // literal per CLAUDE.md rule
+            "fill-extrusion-opacity": 1, // listing parity — solid against PMTiles
           },
         });
       }
@@ -3205,18 +3257,44 @@ function ParcelsMapPageInner() {
         if (!f.geometry || f.geometry.type !== "Polygon") continue;
         const props = (f.properties ?? {}) as Record<string, unknown>;
         const stage = String(props.stage ?? "LEAD");
-        const color = VAULT_STAGE_COLOR(stage);
         const placeholder = props.placeholder === true;
         const plan = (props.affectionPlan ?? null) as {
           maxFloors?: number | null;
           maxHeightMeters?: number | null;
+          maxHeightCode?: string | null;
+          far?: number | null;
+          plotAreaSqft?: number | null;
+          maxGfaSqft?: number | null;
+          projectName?: string | null;
+          sitePlanIssue?: string | null;
           buildingLimitGeometry?: GeoJSON.Polygon | null;
           setbacks?: SetbackEntry[] | null;
-          landUseMix?: Array<{ category?: string; sub?: string | null }> | null;
+          landUseMix?: Array<{ category: string; sub?: string | null }> | null;
           buildingStyle?: string | null;
         } | null;
 
-        const baseProps = { ...props, color };
+        // Land-use colour parity with public listings (founder spec
+        // 2026-05-30). Stage tone moves to the SidePanel pipeline block.
+        const landUseKey =
+          deriveLandUse(plan?.landUseMix) ??
+          (typeof props.landUse === "string" && props.landUse
+            ? props.landUse.toUpperCase().replace(/[ -]+/g, "_")
+            : null);
+        const color = (landUseKey && ZAAHI_LANDUSE_COLOR[landUseKey]) ?? ZAAHI_DEFAULT_COLOR;
+        const baseProps = {
+          ...props,
+          color,
+          stage,
+          landUse: landUseKey ?? "",
+          projectName: plan?.projectName ?? "",
+          maxFloors: plan?.maxFloors ?? 0,
+          maxHeightCode: plan?.maxHeightCode ?? "",
+          maxHeightMeters: plan?.maxHeightMeters ?? 0,
+          far: plan?.far ?? 0,
+          plotAreaSqft: plan?.plotAreaSqft ?? 0,
+          maxGfaSqft: plan?.maxGfaSqft ?? 0,
+          planDateIso: plan?.sitePlanIssue ?? "",
+        };
 
         if (placeholder) {
           features.push({
@@ -3278,7 +3356,7 @@ function ParcelsMapPageInner() {
             "fill-extrusion-color": ["get", "color"],
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
-            "fill-extrusion-opacity": 0.55, // literal per CLAUDE.md rule
+            "fill-extrusion-opacity": 1, // listing parity — solid (founder 2026-05-30)
           },
         });
       }
@@ -3784,10 +3862,57 @@ function ParcelsMapPageInner() {
         const id = f?.properties?.id as string | undefined;
         if (id) setSelectedVaultEntry({ id, mode: "share" });
       });
-      for (const layerId of [VAULT_MINE_3D, VAULT_SHARED_3D]) {
-        map.on("mouseenter", layerId, () => { map.getCanvas().style.cursor = "pointer"; });
-        map.on("mouseleave", layerId, () => { map.getCanvas().style.cursor = ""; });
-      }
+      // Hover popup parity with ZAAHI listings (founder spec 2026-05-30).
+      // Mirrors the ZAAHI mousemove handler at ZAAHI_PLOTS_FILL: card
+      // shows projectName / plotNumber, plot area, max GFA, FAR, max
+      // height, plan date + asking price (vault) instead of total price.
+      const vaultMove = (mode: "owner" | "share") =>
+        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          if (hoverCloseTimerRef.current != null) {
+            window.clearTimeout(hoverCloseTimerRef.current);
+            hoverCloseTimerRef.current = null;
+          }
+          map.getCanvas().style.cursor = "pointer";
+          const p = f.properties as Record<string, unknown>;
+          const id = typeof p.id === "string" ? p.id : "";
+          const fils = typeof p.askingPriceFils === "string" ? p.askingPriceFils : null;
+          const askingAed = fils ? Math.floor(Number(fils) / 100) : null;
+          setVaultHover({
+            x: e.point.x,
+            y: e.point.y,
+            id,
+            plotNumber: typeof p.plotNumber === "string" ? p.plotNumber : "",
+            district: typeof p.district === "string" ? p.district : "",
+            landUse: typeof p.landUse === "string" ? p.landUse : "",
+            projectName: typeof p.projectName === "string" ? p.projectName : "",
+            askingAed,
+            area: typeof p.area === "number" ? p.area : 0,
+            plotAreaSqft: typeof p.plotAreaSqft === "number" ? p.plotAreaSqft : 0,
+            maxGfaSqft: typeof p.maxGfaSqft === "number" ? p.maxGfaSqft : 0,
+            maxFloors: typeof p.maxFloors === "number" ? p.maxFloors : 0,
+            maxHeightMeters: typeof p.maxHeightMeters === "number" ? p.maxHeightMeters : 0,
+            maxHeightCode: typeof p.maxHeightCode === "string" ? p.maxHeightCode : "",
+            far: typeof p.far === "number" ? p.far : 0,
+            planDateIso: typeof p.planDateIso === "string" ? p.planDateIso : "",
+            mode,
+          });
+        };
+      const vaultLeave = () => {
+        map.getCanvas().style.cursor = "";
+        if (hoverCloseTimerRef.current != null) {
+          window.clearTimeout(hoverCloseTimerRef.current);
+        }
+        hoverCloseTimerRef.current = window.setTimeout(() => {
+          setVaultHover(null);
+          hoverCloseTimerRef.current = null;
+        }, 220);
+      };
+      map.on("mousemove", VAULT_MINE_3D, vaultMove("owner"));
+      map.on("mouseleave", VAULT_MINE_3D, vaultLeave);
+      map.on("mousemove", VAULT_SHARED_3D, vaultMove("share"));
+      map.on("mouseleave", VAULT_SHARED_3D, vaultLeave);
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
@@ -5608,6 +5733,87 @@ function ParcelsMapPageInner() {
             >
               + Add to Vault
             </button>
+          </div>
+        );
+      })()}
+      {vaultHover && (() => {
+        const title = vaultHover.projectName || vaultHover.plotNumber;
+        const hasPlotArea = vaultHover.plotAreaSqft > 0 || vaultHover.area > 0;
+        const hasGfa = vaultHover.maxGfaSqft > 0;
+        const hasFar = vaultHover.far > 0;
+        const hasHeight = !!vaultHover.maxHeightCode || vaultHover.maxFloors > 0 || vaultHover.maxHeightMeters > 0;
+        const heightParts: string[] = [];
+        if (vaultHover.maxHeightCode) heightParts.push(vaultHover.maxHeightCode);
+        if (vaultHover.maxFloors > 0) heightParts.push(`${vaultHover.maxFloors} floors`);
+        if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
+        const planDate = formatPlanDate(vaultHover.planDateIso);
+        const handleOpen = () => {
+          if (vaultHover.id) setSelectedVaultEntry({ id: vaultHover.id, mode: vaultHover.mode });
+          setVaultHover(null);
+        };
+        return (
+          <div
+            style={{
+              position: "absolute",
+              left: vaultHover.x + 14,
+              top: vaultHover.y + 14,
+              width: 260,
+              background: "rgba(0, 0, 0, 0.3)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderLeft: `3px solid ${GOLD}`,
+              borderRadius: 6,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+              padding: "10px 12px",
+              fontSize: 11,
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              lineHeight: 1.45,
+              pointerEvents: "auto",
+              cursor: "pointer",
+              zIndex: 30,
+            }}
+            onMouseEnter={() => {
+              if (hoverCloseTimerRef.current != null) {
+                window.clearTimeout(hoverCloseTimerRef.current);
+                hoverCloseTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => setVaultHover(null)}
+            onClick={handleOpen}
+          >
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
+                {title}
+              </span>
+              <span style={{
+                fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                letterSpacing: "0.06em", textTransform: "uppercase",
+              }}>
+                {vaultHover.mode === "share" ? "SHARED" : "VAULT"}
+              </span>
+            </div>
+            {hasPlotArea && (
+              <PmtilesHoverRow label="Plot Area"
+                value={(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area).toLocaleString() + " ft²"} />
+            )}
+            {hasGfa && (
+              <PmtilesHoverRow label="Max GFA" value={`${vaultHover.maxGfaSqft.toLocaleString()} ft²`} />
+            )}
+            {hasFar && (
+              <PmtilesHoverRow label="FAR" value={vaultHover.far.toFixed(1)} />
+            )}
+            {hasHeight && (
+              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
+            )}
+            {planDate && (
+              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+            )}
+            <PmtilesHoverRow
+              label="Asking Price"
+              value={vaultHover.askingAed != null ? `AED ${vaultHover.askingAed.toLocaleString()}` : "—"}
+            />
           </div>
         );
       })()}

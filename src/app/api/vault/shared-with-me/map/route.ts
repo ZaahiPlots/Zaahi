@@ -62,6 +62,12 @@ export async function GET(req: NextRequest) {
                 select: {
                   maxFloors: true,
                   maxHeightMeters: true,
+                  maxHeightCode: true,
+                  far: true,
+                  plotAreaSqft: true,
+                  maxGfaSqft: true,
+                  projectName: true,
+                  sitePlanIssue: true,
                   buildingLimitGeometry: true,
                   setbacks: true,
                   landUseMix: true,
@@ -107,11 +113,19 @@ export async function GET(req: NextRequest) {
       affectionPlan = {
         maxFloors: plan.maxFloors,
         maxHeightMeters: plan.maxHeightMeters,
+        // Extra fields surfaced for vault hover parity. AffectionPlanLike
+        // is a structural superset — extra keys pass through unchanged.
+        maxHeightCode: plan.maxHeightCode,
+        far: plan.far,
+        plotAreaSqft: plan.plotAreaSqft,
+        maxGfaSqft: plan.maxGfaSqft,
+        projectName: plan.projectName,
+        sitePlanIssue: plan.sitePlanIssue?.toISOString() ?? null,
         buildingLimitGeometry: plan.buildingLimitGeometry,
         setbacks: plan.setbacks,
         landUseMix: plan.landUseMix,
         buildingStyle: plan.buildingStyle,
-      };
+      } as AffectionPlanLike;
     }
 
     if (!affectionPlan && e.ddaSnapshot && typeof e.ddaSnapshot === "object") {
