@@ -14,6 +14,10 @@ import { getApprovedUserId } from "@/lib/auth";
 import { recordVaultEvent } from "@/lib/vault-activity";
 import { recomputeConflictsForPlot } from "@/lib/vault-conflict";
 import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
+import {
+  writeAffectionPlan,
+  maybeAppendAffectionPlan,
+} from "@/lib/vault-affection-plan";
 import type { AffectionPlan } from "@/lib/dda";
 
 export const runtime = "nodejs";
@@ -379,11 +383,27 @@ async function ensureVaultPrivateParcel(args: {
   clientBuildingLimit: GeoJSON.Polygon | null;
 }): Promise<string | null> {
   // 1) Existing Parcel for this plot — reuse, do not mutate.
+  //    Phase 3.5 (2026-05-30): when the parcel pre-exists (curated
+  //    listing, prior vault user, earlier seed) we used to short-
+  //    circuit here without writing AffectionPlan. That meant a fresh
+  //    add with full DDA plan + building-limit data couldn't repair
+  //    an incomplete prior plan — the 3D building ended up flat.
+  //    Now we delegate to maybeAppendAffectionPlan, which is a no-op
+  //    when the latest plan already has the fields we'd bring (so
+  //    safe for repeated re-adds of curated listings).
+  //    LOCK-8 holds — we never touch Parcel.ownerId.
   const existing = await prisma.parcel.findFirst({
     where: { emirate: "Dubai", plotNumber: args.plotNumber },
     select: { id: true },
   });
-  if (existing) return existing.id;
+  if (existing) {
+    await maybeAppendAffectionPlan(existing.id, {
+      plotNumber: args.plotNumber,
+      clientPlan: args.clientPlan,
+      clientBuildingLimit: args.clientBuildingLimit,
+    });
+    return existing.id;
+  }
 
   // 2) Geometry is required to create a Parcel — bail if absent.
   if (!args.geometry) return null;
@@ -456,32 +476,7 @@ async function ensureVaultPrivateParcel(args: {
   //    the Parcel still renders a flat block, identical to vault's
   //    pre-Phase-2 fallback.
   if (plan) {
-    await prisma.affectionPlan.create({
-      data: {
-        parcelId,
-        source: "dda:full-fetch",
-        plotNumber: plan.plotNumber || args.plotNumber,
-        oldNumber: plan.oldNumber,
-        projectName: plan.projectName,
-        community: plan.community,
-        masterDeveloper: plan.masterDeveloper,
-        plotAreaSqm: plan.plotAreaSqm,
-        plotAreaSqft: plan.plotAreaSqft,
-        maxGfaSqm: plan.maxGfaSqm,
-        maxGfaSqft: plan.maxGfaSqft,
-        maxHeightCode: plan.maxHeightCode,
-        maxFloors: plan.maxFloors,
-        maxHeightMeters: plan.maxHeightMeters,
-        far: plan.far,
-        setbacks: (plan.setbacks ?? []) as unknown as Prisma.InputJsonValue,
-        landUseMix: (plan.landUseMix ?? []) as unknown as Prisma.InputJsonValue,
-        sitePlanIssue: plan.sitePlanIssue ? new Date(plan.sitePlanIssue) : null,
-        sitePlanExpiry: plan.sitePlanExpiry ? new Date(plan.sitePlanExpiry) : null,
-        notes: plan.notes,
-        buildingLimitGeometry:
-          (buildingLimit as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull,
-      },
-    });
+    await writeAffectionPlan(parcelId, args.plotNumber, plan, buildingLimit);
   }
 
   return parcelId;
