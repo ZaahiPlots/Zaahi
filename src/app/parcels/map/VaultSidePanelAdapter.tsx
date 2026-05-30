@@ -302,27 +302,17 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
                               district: view.district,
                               emirate: view.emirate,
                               area: view.area ?? 0,
-                              currentValuation: view.askingPriceFils ? BigInt(view.askingPriceFils) : null,
+                              currentValuation: view.askingPriceFils ?? null,
                               geometry: (geom ?? null) as GeoJSON.Polygon | null,
                               latitude: lat,
                               longitude: lng,
                             },
-                            plan: view.affectionPlan ? {
-                              projectName: view.affectionPlan.projectName,
-                              community: view.affectionPlan.community,
-                              masterDeveloper: view.affectionPlan.masterDeveloper,
-                              plotAreaSqm: view.affectionPlan.plotAreaSqm,
-                              plotAreaSqft: view.affectionPlan.plotAreaSqft,
-                              maxGfaSqm: view.affectionPlan.maxGfaSqm,
-                              maxGfaSqft: view.affectionPlan.maxGfaSqft,
-                              maxHeightCode: view.affectionPlan.maxHeightCode,
-                              maxFloors: view.affectionPlan.maxFloors,
-                              maxHeightMeters: view.affectionPlan.maxHeightMeters,
-                              far: view.affectionPlan.far,
-                              setbacks: view.affectionPlan.setbacks as unknown as Array<{ side: number; building: number | null; podium: number | null }> | null,
-                              landUseMix: view.affectionPlan.landUseMix as unknown as Array<{ category: string; sub?: string | null }> | null,
-                              notes: view.affectionPlan.notes,
-                            } : null,
+                            // Cast through unknown — vault's AffectionPlanLite is a
+                            // structural subset of generate-site-plan-pdf's Plan;
+                            // narrower nullability on setbacks/landUseMix internals
+                            // doesn't matter for the PDF render path, which guards
+                            // every read with `?? null`.
+                            plan: (view.affectionPlan ?? null) as unknown as Parameters<typeof generateSitePlanPdf>[0]["plan"],
                             authority: null,
                             map: mapRef?.current ?? null,
                           });
