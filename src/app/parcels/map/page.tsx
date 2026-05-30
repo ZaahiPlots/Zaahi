@@ -2909,6 +2909,12 @@ function ParcelsMapPageInner() {
               color: buildingHex,
               height: topM,
               base: baseM,
+              // Phase 3 vault-only mode filter scopes ZAAHI_BUILDINGS_3D
+              // by isVault === true. Tier features must carry the prop
+              // or the filter excludes every building when the mode
+              // toggles on. Plot features get this via the API; tier
+              // features are derived locally so we pass it through.
+              isVault: it.isVault,
             },
           });
         };
