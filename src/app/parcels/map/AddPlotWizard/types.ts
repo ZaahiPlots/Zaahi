@@ -96,6 +96,11 @@ export interface PlotLookupResponse {
     district: string;
     /** Raw DDA snapshot (BASIC_LAND_BASE feature). Present only on live DDA hits. */
     ddaSnapshot?: unknown;
+    /** Full AffectionPlan from PlotInfo HTML — Phase 2 of vault refactor.
+     *  Null when DDA returns "SEE NOTES" / master plot / parse failure. */
+    plan?: unknown;
+    /** Building-limit polygon (MapServer/8). Null when missing for the plot. */
+    buildingLimit?: unknown;
   };
 }
 
@@ -112,6 +117,13 @@ export interface WizardState {
   geometry: unknown | null;
   /** Raw DDA snapshot persisted on the VaultEntry for Signature 3D render. */
   ddaSnapshot: unknown | null;
+  /** Full AffectionPlan from /api/me/vault/plot-lookup — passed through
+   *  to /api/me/vault/entries so ensureVaultPrivateParcel doesn't have
+   *  to re-fetch from DDA. Phase 2/3 of vault refactor. */
+  plan: unknown | null;
+  /** Building-limit polygon from /api/me/vault/plot-lookup — same
+   *  passthrough rationale as `plan`. */
+  buildingLimit: unknown | null;
   landUse: LandUse | null;
 
   // Step 2 outputs — broker's own data
@@ -139,6 +151,8 @@ export const INITIAL_WIZARD_STATE: WizardState = {
   longitude: null,
   geometry: null,
   ddaSnapshot: null,
+  plan: null,
+  buildingLimit: null,
   landUse: null,
   askingPriceFils: null,
   stage: "LEAD",

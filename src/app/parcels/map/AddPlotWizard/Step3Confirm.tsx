@@ -58,6 +58,11 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
         longitude: state.longitude ?? undefined,
         geometry: state.geometry ?? undefined,
         ddaSnapshot: state.ddaSnapshot ?? undefined,
+        // Phase 2/3 — passthrough affection plan + building limit
+        // (collected by Step 1 from /api/me/vault/plot-lookup) so
+        // ensureVaultPrivateParcel skips the second DDA round-trip.
+        plan: state.plan ?? undefined,
+        buildingLimit: state.buildingLimit ?? undefined,
         landUse: state.landUse ?? undefined,
         askingPriceFils: state.askingPriceFils ?? undefined,
         ownerContact: state.ownerContact ?? undefined,

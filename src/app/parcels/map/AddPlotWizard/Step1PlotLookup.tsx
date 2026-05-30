@@ -106,6 +106,11 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
       longitude: dda.longitude,
       geometry: dda.geometry,
       ddaSnapshot: dda.ddaSnapshot ?? null,
+      // Phase 2/3 — pass affection plan + building limit through to
+      // /api/me/vault/entries so ensureVaultPrivateParcel skips the
+      // second DDA round-trip.
+      plan: dda.plan ?? null,
+      buildingLimit: dda.buildingLimit ?? null,
       landUse: (dda.landUse?.toUpperCase() as LandUse) ?? null,
     });
   }
@@ -121,6 +126,8 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
       longitude: longitude ? Number(longitude) : null,
       geometry: null,
       ddaSnapshot: null,
+      plan: null,
+      buildingLimit: null,
       landUse: (landUse || null) as LandUse | null,
     });
   }
