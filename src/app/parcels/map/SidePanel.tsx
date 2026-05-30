@@ -106,7 +106,7 @@ interface Plan {
   raw: { authority?: string | null } | null;
 }
 
-interface ParcelDetail {
+export interface ParcelDetail {
   id: string;
   plotNumber: string;
   district: string;
@@ -175,10 +175,21 @@ export default function SidePanel({
   parcelId,
   onClose,
   mapRef,
+  directData,
+  renderFooter,
 }: {
   parcelId: string | null;
   onClose: () => void;
   mapRef?: { current: MLMap | null };
+  /** When provided, the panel skips the /api/parcels/[id] fetch and
+   *  uses this preloaded shape instead. Used by VaultSidePanelAdapter
+   *  to feed vault entries through the exact same render pipeline. */
+  directData?: ParcelDetail | null;
+  /** When provided, replaces the default "Start Negotiation" sticky CTA
+   *  with the caller-supplied node. Lets the vault wrapper inject its
+   *  Pipeline / Owner contact / Activity sections without forking the
+   *  rest of the panel. */
+  renderFooter?: (data: ParcelDetail) => React.ReactNode;
 }) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -206,6 +217,18 @@ export default function SidePanel({
   }, []);
 
   useEffect(() => {
+    // Direct-data path (vault wrapper) bypasses the API fetch entirely.
+    if (directData) {
+      setData(directData);
+      setLoading(false);
+      setDocsOpen(false);
+      setFeasOpen(false);
+      setJvOpen(true);
+      setIsFavorite(false);
+      setDdaPhase("idle");
+      setDdaErr(null);
+      return;
+    }
     if (!parcelId) return;
     setLoading(true);
     setData(null);
@@ -219,7 +242,7 @@ export default function SidePanel({
       .then((r) => r.json())
       .then((d) => setData(d))
       .finally(() => setLoading(false));
-  }, [parcelId]);
+  }, [parcelId, directData]);
 
   async function triggerDdaFetch() {
     if (!data?.plotNumber || ddaPhase === "fetching" || ddaPhase === "parsing" || ddaPhase === "saving") return;
@@ -294,7 +317,7 @@ export default function SidePanel({
     }
   }
 
-  const open = parcelId != null;
+  const open = parcelId != null || directData != null;
   const plan = data?.affectionPlans?.[0] ?? null;
   const aed = aedFromFils(data?.currentValuation ?? null);
   // Per CLAUDE.md "Цена участка": currentValuation is the SOURCE OF
@@ -370,7 +393,7 @@ export default function SidePanel({
             <div style={{ color: SUBTLE, fontSize: 11 }}>{loading ? "Loading…" : ""}</div>
           )}
         </div>
-        {data && signedIn && (
+        {data && signedIn && parcelId && (
           <button
             onClick={toggleFavorite}
             disabled={favoriteBusy}
@@ -957,8 +980,12 @@ export default function SidePanel({
         );
       })()}
 
-      {/* Sticky Start Negotiation CTA — always visible at bottom of panel */}
-      {data && signedIn && (
+      {/* Caller-supplied footer wins over the default Start Negotiation
+          CTA. Used by VaultSidePanelAdapter to inject its Pipeline +
+          Owner contact + Broker notes + Activity stack. */}
+      {data && renderFooter ? (
+        renderFooter(data)
+      ) : data && signedIn && (
         <div
           style={{
             position: "sticky",
