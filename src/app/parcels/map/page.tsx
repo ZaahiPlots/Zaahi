@@ -1749,6 +1749,14 @@ function ParcelsMapPageInner() {
   // the My Vault / Shared-with-me layers are force-visible. Persists via
   // localStorage "zaahi-vault-only-mode". Default OFF.
   const [vaultOnlyMode, setVaultOnlyMode] = useState(false);
+  // Ref mirror of vaultOnlyMode for loadZaahiPlots — the loader runs
+  // async after map.on("load") so the useEffect-based setFilter race
+  // would otherwise leave a freshly created layer without any filter
+  // for the first paint, leaking PPV rows by default.
+  const vaultOnlyModeRef = useRef(false);
+  useEffect(() => {
+    vaultOnlyModeRef.current = vaultOnlyMode;
+  }, [vaultOnlyMode]);
 
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
@@ -2969,6 +2977,16 @@ function ParcelsMapPageInner() {
           features: plotFeatures,
         });
       } else {
+        // Initial filter for vault-direction layers. The mode flips
+        // direction (OFF: !=true → public listings, ON: ==true → PPV),
+        // never null. Baking this in at addLayer time prevents the
+        // first-paint race where the useEffect setFilter would land
+        // after layer creation. Subsequent toggles reach the layer
+        // via the vaultOnlyMode useEffect.
+        const initialVaultFilter: FilterSpecification = vaultOnlyModeRef.current
+          ? ["==", ["get", "isVault"], true]
+          : ["!=", ["get", "isVault"], true];
+
         map.addSource(ZAAHI_PLOTS_SRC, {
           type: "geojson",
           data: { type: "FeatureCollection", features: plotFeatures },
@@ -2978,6 +2996,7 @@ function ParcelsMapPageInner() {
             id: ZAAHI_PLOTS_FILL,
             type: "fill",
             source: ZAAHI_PLOTS_SRC,
+            filter: initialVaultFilter,
             paint: {
               "fill-color": ["get", "color"],
               // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
@@ -2997,6 +3016,7 @@ function ParcelsMapPageInner() {
             id: ZAAHI_PLOTS_LINE,
             type: "line",
             source: ZAAHI_PLOTS_SRC,
+            filter: initialVaultFilter,
             paint: {
               "line-color": ["get", "color"],
               "line-width": 2,
@@ -3038,6 +3058,15 @@ function ParcelsMapPageInner() {
           features: buildingFeatures,
         });
       } else {
+        // Same initial filter as the plot layers (see comment in the
+        // plot-source branch above): bake in the current vault-mode
+        // direction at addLayer time so the first paint matches what
+        // the useEffect will eventually enforce.
+        const initialVaultFilterBuildings: FilterSpecification =
+          vaultOnlyModeRef.current
+            ? ["==", ["get", "isVault"], true]
+            : ["!=", ["get", "isVault"], true];
+
         console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
         map.addSource(ZAAHI_BUILDINGS_SRC, {
           type: "geojson",
@@ -3049,6 +3078,7 @@ function ParcelsMapPageInner() {
             id: ZAAHI_BUILDINGS_3D,
             type: "fill-extrusion",
             source: ZAAHI_BUILDINGS_SRC,
+            filter: initialVaultFilterBuildings,
             paint: {
               "fill-extrusion-color": ["get", "color"],
               "fill-extrusion-height": ["get", "height"],
@@ -4364,13 +4394,18 @@ function ParcelsMapPageInner() {
   }, [layers.vaultShared, vaultOnlyMode]);
 
   // Vault-only mode side effect on public ZAAHI listings + PMTiles +
-  // persistence. When ON: filter ZAAHI_PLOTS_FILL / _LINE /
-  // _BUILDINGS_3D to vault-only features (isVault === true), and dim
-  // the PMTiles 3D layers via a literal opacity drop (0.45 → 0.1; never
-  // an array — CLAUDE.md rule). When OFF: clear the filter. Phase 3
-  // (2026-05-30) switched from hide-layer to filter-feature so the
-  // unified ZAAHI layer can scope on vault rows without losing public
-  // listings (they get filtered out and back in via the same layer).
+  // persistence. The filter on ZAAHI_PLOTS_FILL / _LINE /
+  // _BUILDINGS_3D is ALWAYS active — only its direction flips:
+  //   OFF (default): isVault !== true  → public listings only,
+  //                  caller's VAULT_PRIVATE plots stay hidden.
+  //   ON  (lock):    isVault === true  → caller's VAULT_PRIVATE plots
+  //                  only, public listings hidden.
+  // Founder spec 2026-05-30: PPV is private by design — it should not
+  // share screen real estate with the public listing layer even
+  // though both rows live in the same source.
+  //
+  // PMTiles 3D dims 0.45 → 0.1 when vault-only mode flips on. Literal
+  // numbers per CLAUDE.md "fill-extrusion-opacity must be literal".
   //
   // DDA districts / amenities / other contextual layers are
   // deliberately NOT touched — they stay user-controlled via the
@@ -4378,9 +4413,9 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const filterExpr: FilterSpecification | null = vaultOnlyMode
+    const filterExpr: FilterSpecification = vaultOnlyMode
       ? ["==", ["get", "isVault"], true]
-      : null;
+      : ["!=", ["get", "isVault"], true];
     for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
       if (map.getLayer(lid)) {
         map.setFilter(lid, filterExpr);
