@@ -26,6 +26,7 @@ import { sound } from "@/lib/sound";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
+import type { MapControls } from "@/lib/archie-tools";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
@@ -1750,6 +1751,19 @@ function ParcelsMapPageInner() {
   // localStorage "zaahi-vault-only-mode". Default OFF.
   const [vaultOnlyMode, setVaultOnlyMode] = useState(false);
 
+  // ── Archie map filters (Phase 2 archie client, 2026-05-30) ──
+  // Refs (not state) so mapControls handlers can read/write them
+  // without forcing a React render cycle on every tool invocation.
+  // Filter state is composed with vaultOnlyMode in reapplyMapFilters
+  // below; the same helper drives both the vault-only useEffect and
+  // the Archie tool calls.
+  const vaultOnlyModeRef = useRef(false);
+  const archieLandUseRef = useRef<string | null>(null);
+  const archieStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    vaultOnlyModeRef.current = vaultOnlyMode;
+  }, [vaultOnlyMode]);
+
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
   // key yet), respects saved choice on subsequent visits. Mutually
@@ -2803,6 +2817,9 @@ function ParcelsMapPageInner() {
             isVault: it.isVault,
             vaultEntryId: it.vaultEntryId,
             conflictsWithOthers: it.conflictsWithOthers,
+            // Archie filter_by_status tool (Phase 2 archie client)
+            // reads this. ParcelStatus enum from /api/parcels/map.
+            status: it.status,
           },
         });
         // Skip 3D building generation for parcels without a land use —
@@ -2915,6 +2932,10 @@ function ParcelsMapPageInner() {
               // toggles on. Plot features get this via the API; tier
               // features are derived locally so we pass it through.
               isVault: it.isVault,
+              // Archie filter_by_status tool (Phase 2 archie client)
+              // — same prop on building tiers so the filter scopes
+              // both plot polygons and 3D extrusions consistently.
+              status: it.status,
             },
           });
         };
@@ -3091,6 +3112,50 @@ function ParcelsMapPageInner() {
       }
     } catch (e) {
       console.error("[zaahi-plots] load failed", e);
+    }
+  }
+
+  // ── Map filter composition (Phase 2 archie client, 2026-05-30) ──
+  //
+  // ONE filter per layer is a maplibre invariant. Three independent
+  // sources of truth could each want to set the ZAAHI plot/building
+  // filter:
+  //   • vault-only mode (lock button)          — isVault === true
+  //   • Archie filter_by_land_use tool         — landUse === <enum>
+  //   • Archie filter_by_status tool           — status === <enum>
+  //
+  // buildZaahiFilter merges whichever are active into a single
+  // ["all", …] expression. When everything is off, returns null
+  // (no filter applied — pre-Phase-2 behaviour exactly).
+  //
+  // reapplyMapFilters reads the three refs + maps over the three
+  // affected layers. Safe to call multiple times — setFilter
+  // replaces the prior filter atomically.
+  function buildZaahiFilter(): FilterSpecification | null {
+    const parts: FilterSpecification[] = [];
+    if (vaultOnlyModeRef.current) {
+      parts.push(["==", ["get", "isVault"], true]);
+    }
+    if (archieLandUseRef.current) {
+      parts.push(["==", ["get", "landUse"], archieLandUseRef.current]);
+    }
+    if (archieStatusRef.current) {
+      parts.push(["==", ["get", "status"], archieStatusRef.current]);
+    }
+    if (parts.length === 0) return null;
+    if (parts.length === 1) return parts[0];
+    return ["all", ...parts] as FilterSpecification;
+  }
+  function reapplyMapFilters() {
+    const map = mapRef.current;
+    if (!map) return;
+    const expr = buildZaahiFilter();
+    for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
+      if (map.getLayer(lid)) {
+        // maplibre accepts null to clear the filter; cast satisfies
+        // the FilterSpecification | null union signature on setFilter.
+        map.setFilter(lid, expr as FilterSpecification | null);
+      }
     }
   }
 
@@ -4364,13 +4429,17 @@ function ParcelsMapPageInner() {
   }, [layers.vaultShared, vaultOnlyMode]);
 
   // Vault-only mode side effect on public ZAAHI listings + PMTiles +
-  // persistence. When ON: filter ZAAHI_PLOTS_FILL / _LINE /
-  // _BUILDINGS_3D to vault-only features (isVault === true), and dim
-  // the PMTiles 3D layers via a literal opacity drop (0.45 → 0.1; never
-  // an array — CLAUDE.md rule). When OFF: clear the filter. Phase 3
-  // (2026-05-30) switched from hide-layer to filter-feature so the
-  // unified ZAAHI layer can scope on vault rows without losing public
-  // listings (they get filtered out and back in via the same layer).
+  // persistence. Phase 2 archie client (2026-05-30) factored the
+  // filter logic into reapplyMapFilters so Archie's
+  // filter_by_land_use / filter_by_status tools can compose with
+  // vault-only mode.
+  //
+  // ⚠️ INVARIANT: when Archie filters are off (both refs null), the
+  // applied filter matches the pre-Phase-2 behaviour exactly —
+  // ["==", ["get", "isVault"], true] when ON, null when OFF.
+  //
+  // PMTiles dim 0.45 → 0.1 on vault-only ON, literal numbers per
+  // CLAUDE.md "fill-extrusion-opacity must be literal".
   //
   // DDA districts / amenities / other contextual layers are
   // deliberately NOT touched — they stay user-controlled via the
@@ -4378,14 +4447,10 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const filterExpr: FilterSpecification | null = vaultOnlyMode
-      ? ["==", ["get", "isVault"], true]
-      : null;
-    for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
-      if (map.getLayer(lid)) {
-        map.setFilter(lid, filterExpr);
-      }
-    }
+    // Sync ref immediately so reapplyMapFilters reads the current
+    // value (the mirror useEffect runs after this one).
+    vaultOnlyModeRef.current = vaultOnlyMode;
+    reapplyMapFilters();
     // PMTiles dim: 0.45 (default) ↔ 0.1 (vault-only mode). Literal
     // numbers per CLAUDE.md "fill-extrusion-opacity must be literal".
     const pmtilesOpacity = vaultOnlyMode ? 0.1 : 0.45;
@@ -4519,6 +4584,85 @@ function ParcelsMapPageInner() {
 
   const c = PALETTE[theme];
   const isDark = theme === "dark";
+
+  // ── Archie mapControls bridge (Phase 2 archie client, 2026-05-30) ──
+  // Imperative handles passed into ArchibaldChat so OpenAI tool_calls
+  // can drive the map. All closures capture stable refs / setState
+  // handles, so useMemo with empty deps gives a stable identity for
+  // the lifetime of this component.
+  const mapControls = useMemo<MapControls>(() => ({
+    flyTo: (lng, lat, zoom = 14) => {
+      const m = mapRef.current;
+      if (!m) return;
+      m.flyTo({ center: [lng, lat], zoom, duration: 1200, essential: true });
+    },
+    fitBounds: (bounds) => {
+      const m = mapRef.current;
+      if (!m) return;
+      m.fitBounds(bounds, { padding: 80, duration: 1200, maxZoom: 17 });
+    },
+    openParcel: (parcelId) => setSelectedParcelId(parcelId),
+    openVaultEntry: (entryId) => setSelectedVaultEntry({ id: entryId, mode: "owner" }),
+    highlightParcel: (parcelId) => {
+      // Reuse the gold-glow filter pattern from the click-selection
+      // path (page.tsx:307-312). Setting "__none__" hides the glow;
+      // a real parcel id pulses the halo. NOTE we deliberately do
+      // NOT touch ZAAHI_BUILDINGS_3D paint here — that grey-out
+      // behaviour belongs to the click-selection flow alone.
+      const m = mapRef.current;
+      if (!m) return;
+      const sel = parcelId ?? "__none__";
+      if (m.getLayer(ZAAHI_PLOTS_GLOW)) {
+        m.setFilter(ZAAHI_PLOTS_GLOW, ["==", ["id"], sel]);
+      }
+      if (m.getLayer(ZAAHI_PLOTS_GLOW_CRISP)) {
+        m.setFilter(ZAAHI_PLOTS_GLOW_CRISP, ["==", ["id"], sel]);
+      }
+    },
+    setVaultOnly: (enabled) => setVaultOnlyMode(enabled),
+    filterByLandUse: (cat) => {
+      archieLandUseRef.current = cat;
+      reapplyMapFilters();
+    },
+    filterByStatus: (st) => {
+      archieStatusRef.current = st;
+      reapplyMapFilters();
+    },
+    searchPlot: async (plotNumber) => {
+      try {
+        const r = await apiFetch(`/api/parcels/by-plot-number/${plotNumber}`);
+        if (!r.ok) return null;
+        return (await r.json()) as {
+          id: string;
+          plotNumber: string;
+          district: string;
+          latitude: number | null;
+          longitude: number | null;
+          projectName: string | null;
+        };
+      } catch {
+        return null;
+      }
+    },
+    resolveDistrict: async (name) => {
+      try {
+        const r = await apiFetch(
+          `/api/archie/resolve-district?name=${encodeURIComponent(name)}`,
+        );
+        if (!r.ok) return null;
+        return (await r.json()) as {
+          name: string;
+          matchedCount: number;
+          matchMode: "exact" | "contains";
+          center: [number, number];
+          bounds: [[number, number], [number, number]] | null;
+        };
+      } catch {
+        return null;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);
 
   return (
     <div
@@ -6008,7 +6152,7 @@ function ParcelsMapPageInner() {
         />
       )}
 
-      <ArchibaldChat hidden={!!selectedParcelId} />
+      <ArchibaldChat hidden={!!selectedParcelId} mapControls={mapControls} />
       <SidePanel
         parcelId={selectedParcelId}
         mapRef={mapRef}

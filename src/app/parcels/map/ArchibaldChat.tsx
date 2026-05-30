@@ -1,66 +1,168 @@
 "use client";
 /**
  * Archibald — ZAAHI's AI assistant chat widget.
+ *
+ * Phase 2 (2026-05-30): switched from /api/chat (Anthropic) to
+ * /api/archie (OpenAI gpt-4o with map-control tools). Drives a
+ * client-side tool dispatch loop — each turn may resolve to a text
+ * reply OR a sequence of tool calls. Tools execute sequentially via
+ * the MapControls bridge passed in from the parent map page.
+ *
  * Inline SVG mascot with CSS-driven idle / hover / open / thinking states.
  */
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import {
+  type MapControls,
+  type ArchieReply,
+  type AssistantWithTools,
+  toolHumanLabel,
+  executeArchieTool,
+} from "@/lib/archie-tools";
 
 const GOLD = "#C8A96E";
 const TXT = "#FFFFFF";
 
-interface Msg {
+// Server wire-format message. role:"tool" entries hold the JSON result
+// of a previous tool_call and carry tool_call_id so OpenAI can pair
+// them. The model spec also allows assistant turns with null content +
+// tool_calls (echoed back from /api/archie) — we pass them through
+// untouched.
+interface ServerMsg {
+  role: "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: AssistantWithTools["tool_calls"];
+  tool_call_id?: string;
+}
+
+// UI bubble — only user and assistant text show in the scroll. Tool
+// turns are wire-only.
+interface UiMsg {
   role: "user" | "assistant";
   content: string;
 }
 
-const GREETING: Msg = {
+const GREETING: UiMsg = {
   role: "assistant",
   content:
-    "Hi! I'm Archibald — your Dubai real estate expert. Ask me anything about properties, fees, procedures, or let me help you navigate the platform.",
+    "Hi! I'm Archibald — your Dubai real estate expert. Ask me anything about properties, fees, procedures, or tell me where to fly the map.",
 };
 
-export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) {
+// Safety cap for the dispatch loop. Eight turns covers any sensible
+// multi-tool chain (e.g. resolve-district → fitBounds → highlight →
+// open) without letting a runaway prompt burn tokens forever.
+const MAX_TOOL_TURNS = 8;
+
+export default function ArchibaldChat({
+  hidden = false,
+  mapControls,
+}: {
+  hidden?: boolean;
+  mapControls: MapControls;
+}) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([GREETING]);
+  const [messages, setMessages] = useState<UiMsg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [pendingTool, setPendingTool] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, thinking, open]);
+  }, [messages, thinking, pendingTool, open]);
 
   async function send() {
     const text = input.trim();
     if (!text || thinking) return;
     setInput("");
-    const next: Msg[] = [...messages, { role: "user", content: text }];
-    setMessages(next);
+
+    // Build the wire-format history (last 30 turns of useful state,
+    // not counting the static greeting bubble). The new user turn
+    // goes at the tail.
+    const uiNext: UiMsg[] = [...messages, { role: "user", content: text }];
+    setMessages(uiNext);
     setThinking(true);
+    setPendingTool(null);
+
+    // wireHistory accumulates server-shape turns across the dispatch
+    // loop. Starts from current UI messages (user + assistant text
+    // bubbles), tool_calls + tool results layer on top.
+    let wireHistory: ServerMsg[] = uiNext
+      .filter((m) => m !== GREETING)
+      .map<ServerMsg>((m) => ({ role: m.role, content: m.content }));
+
     try {
-      const r = await apiFetch("/api/chat", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          history: next.slice(0, -1).filter((m) => m !== GREETING),
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
+      let safety = 0;
+      while (safety++ < MAX_TOOL_TURNS) {
+        const r = await apiFetch("/api/archie", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ history: wireHistory.slice(-30) }),
+        });
+        const data = (await r.json()) as ArchieReply;
+
+        if (!r.ok || data.error) {
+          const errText = data.error ?? "Archibald is sleeping";
+          setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${errText}` }]);
+          break;
+        }
+
+        // Pure text reply → end loop, surface bubble.
+        if ("reply" in data && typeof data.reply === "string") {
+          const reply = data.reply || "…";
+          setMessages((m) => [...m, { role: "assistant", content: reply }]);
+          wireHistory.push({ role: "assistant", content: reply });
+          break;
+        }
+
+        // Tool call branch — push the assistant message that emitted
+        // tool_calls, execute each call sequentially, append the tool
+        // results, then loop back for the model's follow-up reply.
+        if ("tool_calls" in data && data.tool_calls?.length) {
+          wireHistory.push({
+            role: "assistant",
+            content: data.assistant_message.content,
+            tool_calls: data.assistant_message.tool_calls,
+          });
+          for (const tc of data.tool_calls) {
+            setPendingTool(`Archibald is ${toolHumanLabel(tc.name, tc.arguments)}`);
+            let result: unknown;
+            try {
+              result = await executeArchieTool(tc, mapControls);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "unknown";
+              result = { error: "execution_failed", message: msg };
+              setMessages((m) => [
+                ...m,
+                {
+                  role: "assistant",
+                  content: `⚠️ Tool \`${tc.name}\` failed: ${msg}`,
+                },
+              ]);
+            }
+            wireHistory.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: JSON.stringify(result),
+            });
+          }
+          setPendingTool(null);
+          continue;
+        }
+
+        // Defensive — neither path matched.
         setMessages((m) => [
           ...m,
-          { role: "assistant", content: `⚠️ ${data.error ?? "Archibald is sleeping"}` },
+          { role: "assistant", content: "⚠️ Empty response from Archibald" },
         ]);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", content: data.reply || "…" }]);
+        break;
       }
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "⚠️ Network error." }]);
     } finally {
       setThinking(false);
+      setPendingTool(null);
     }
   }
 
@@ -152,7 +254,7 @@ export default function ArchibaldChat({ hidden = false }: { hidden?: boolean }) 
                   paddingLeft: 28,
                 }}
               >
-                Archibald is thinking
+                {pendingTool ?? "Archibald is thinking"}
                 <span className="archibald-dots">
                   <i />
                   <i />
