@@ -6,6 +6,19 @@
 // 6731157 and 6731146 (~0.4–0.5s round trip).
 //
 // Failure modes return null; route caller treats that as "not_found".
+//
+// fetchFullDdaData (Phase 2 of vault refactor, founder spec 2026-05-30)
+// chains the basic lookup with the same fetchPlotInfoHtml +
+// parseAffectionPlan + fetchBuildingLimit calls that listings use, so
+// vault entries can persist a real AffectionPlan row identical to
+// public listings rather than relying on the partial DdaSnapshot.
+
+import {
+  fetchPlotInfoHtml,
+  parseAffectionPlan,
+  fetchBuildingLimit,
+  type AffectionPlan,
+} from "@/lib/dda";
 
 export interface DdaPlotResult {
   /** Plot polygon in EPSG:4326. */
@@ -120,6 +133,51 @@ export function synthesizeAffectionPlanFromDdaSnapshot(
     landUseMix,
     buildingStyle: null,
   };
+}
+
+/** Full vault-side DDA fetch — basic polygon + affection plan +
+ *  building limit. Each child fetch is best-effort: PlotInfo can return
+ *  "SEE NOTES" on master plots, and BuildingLimit is missing for many
+ *  smaller parcels. Returns null only when the basic lookup misses.
+ *
+ *  Used by /api/me/vault/plot-lookup (to surface the plan in the wizard)
+ *  and /api/me/vault/entries POST (to persist the AffectionPlan row).
+ */
+export interface DdaFullData {
+  basic: DdaPlotResult;
+  plan: AffectionPlan | null;
+  buildingLimit: GeoJSON.Polygon | null;
+}
+
+export async function fetchFullDdaData(
+  plotNumber: string,
+): Promise<DdaFullData | null> {
+  const basic = await fetchDdaPlotByNumber(plotNumber);
+  if (!basic) return null;
+
+  // Plan and building-limit run in parallel — neither blocks the basic
+  // polygon, both are best-effort.
+  const [plan, buildingLimit] = await Promise.all([
+    (async () => {
+      try {
+        const html = await fetchPlotInfoHtml(plotNumber);
+        return parseAffectionPlan(html);
+      } catch (e) {
+        console.warn("[dda-full-fetch] PlotInfo failed for", plotNumber, e);
+        return null;
+      }
+    })(),
+    (async () => {
+      try {
+        return await fetchBuildingLimit(plotNumber);
+      } catch (e) {
+        console.warn("[dda-full-fetch] BuildingLimit failed for", plotNumber, e);
+        return null;
+      }
+    })(),
+  ]);
+
+  return { basic, plan, buildingLimit };
 }
 
 /** Fetch + parse one plot from BASIC_LAND_BASE. Returns null on miss/error. */

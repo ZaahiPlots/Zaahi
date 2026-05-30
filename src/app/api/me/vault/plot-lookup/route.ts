@@ -24,7 +24,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
-import { fetchDdaPlotByNumber } from "@/lib/dda-plot-lookup";
+import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
 
 export const runtime = "nodejs";
 
@@ -135,22 +135,30 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 3) Live DDA fallback — call BASIC_LAND_BASE/MapServer/2 for plots not in
-  //    our curated index. ~0.5s; null on miss/error → "not_found" branch.
+  // 3) Live DDA fallback — call BASIC_LAND_BASE/2 + PlotInfo + BuildingLimit
+  //    for plots not in our curated index. Phase 2 of vault refactor
+  //    (founder spec 2026-05-30) brings parity with seed-dda by chaining
+  //    all three DDA fetches so the wizard surfaces the same affection
+  //    plan a public listing would. ~0.5–2s end-to-end; plan or
+  //    buildingLimit can come back null on master plots / missing layer 8.
   if (emirate === "DUBAI") {
-    const live = await fetchDdaPlotByNumber(plotNumber);
+    const live = await fetchFullDdaData(plotNumber);
     if (live) {
       return NextResponse.json({
         source: "dda" as const,
         existing: existingSummary,
         ddaData: {
-          area: live.area,
-          geometry: live.geometry,
-          landUse: live.landUse,
-          latitude: live.latitude,
-          longitude: live.longitude,
-          district: live.district || district,
-          ddaSnapshot: live.ddaSnapshot,
+          area: live.basic.area,
+          geometry: live.basic.geometry,
+          landUse: live.basic.landUse,
+          latitude: live.basic.latitude,
+          longitude: live.basic.longitude,
+          district: live.basic.district || district,
+          ddaSnapshot: live.basic.ddaSnapshot,
+          // Full affection plan + building limit polygon — Phase 2.
+          // Either may be null on master plots / missing data.
+          plan: live.plan,
+          buildingLimit: live.buildingLimit,
         },
       });
     }

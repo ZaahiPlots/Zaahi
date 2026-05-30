@@ -7,12 +7,14 @@
 // Auth: getApprovedUserId. Caller's own entries only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma, VaultStage } from "@prisma/client";
+import { Prisma, VaultStage, ParcelStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { recordVaultEvent } from "@/lib/vault-activity";
 import { recomputeConflictsForPlot } from "@/lib/vault-conflict";
+import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
+import type { AffectionPlan } from "@/lib/dda";
 
 export const runtime = "nodejs";
 
@@ -45,6 +47,14 @@ const VaultEntryCreateSchema = z.object({
   longitude: z.number().min(51).max(57).optional(),
   geometry: z.unknown().optional(), // GeoJSON Polygon — server-side stored as-is; only set for DDA hits in MVP
   ddaSnapshot: z.unknown().optional(), // raw DDA BASIC_LAND_BASE feature when sourced via live lookup
+  // Phase 2 of vault refactor (founder spec 2026-05-30): wizard passes
+  // through the affection plan + building limit it received from
+  // /api/me/vault/plot-lookup so the server can persist a real
+  // AffectionPlan row without a second DDA round-trip. Server falls
+  // back to fetchFullDdaData when these are absent but ddaSnapshot is
+  // present.
+  plan: z.unknown().optional(),
+  buildingLimit: z.unknown().optional(),
   landUse: z.string().trim().max(64).optional(),
   askingPriceFils: z
     .string()
@@ -179,6 +189,31 @@ export async function POST(req: NextRequest) {
   // Build the row. addedByUserId = self for direct uploads.
   const askingPriceFils = body.askingPriceFils ? BigInt(body.askingPriceFils) : null;
 
+  // Phase 2 of vault refactor: persist a Parcel(VAULT_PRIVATE) +
+  // AffectionPlan when the entry is DDA-sourced (ddaSnapshot present)
+  // so vault rendering can flow through the same listing data path in
+  // Phase 3. Best-effort — failures fall through to the legacy
+  // denormalised VaultEntry-only flow.
+  let publicParcelId: string | null = null;
+  if (body.ddaSnapshot != null && body.emirate === "DUBAI") {
+    try {
+      publicParcelId = await ensureVaultPrivateParcel({
+        ownerId: userId,
+        plotNumber: body.plotNumber,
+        district: body.district,
+        area: body.area ?? null,
+        latitude: body.latitude ?? null,
+        longitude: body.longitude ?? null,
+        geometry: (body.geometry as GeoJSON.Polygon | null | undefined) ?? null,
+        clientPlan: (body.plan as AffectionPlan | null | undefined) ?? null,
+        clientBuildingLimit: (body.buildingLimit as GeoJSON.Polygon | null | undefined) ?? null,
+      });
+    } catch (e) {
+      console.error("[vault POST] Parcel/AffectionPlan upsert failed:", e);
+      // continue without publicParcelId — VaultEntry create still proceeds
+    }
+  }
+
   let created;
   try {
     created = await prisma.vaultEntry.create({
@@ -194,6 +229,7 @@ export async function POST(req: NextRequest) {
         geometry: (body.geometry as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
         ddaSnapshot: (body.ddaSnapshot as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
         landUse: body.landUse ?? null,
+        publicParcelId,
         askingPriceFils,
         ownerContact: body.ownerContact
           ? (body.ownerContact as Prisma.InputJsonValue)
@@ -312,4 +348,141 @@ export async function POST(req: NextRequest) {
   };
 
   return NextResponse.json(summary, { status: 201 });
+}
+
+/**
+ * Phase 2 of vault refactor — ensure a Parcel(VAULT_PRIVATE) +
+ * AffectionPlan row exists for the plot so the vault entry can link
+ * to it via VaultEntry.publicParcelId. Returns the parcel id, or null
+ * when the plot has no usable geometry / DDA data.
+ *
+ * Reuses an existing Parcel row when one already exists for
+ * (Dubai, plotNumber) — that may be a public listing, another user's
+ * VAULT_PRIVATE entry, or a system-seeded curated parcel. Same-row
+ * sharing is intentional: AffectionPlan + geometry are
+ * cross-user-shareable; per-user broker data lives on VaultEntry
+ * regardless. LOCK-8 invariant (Parcel.ownerId immutable) is
+ * preserved — we never rewrite the owner of an existing row.
+ *
+ * Best-effort: PlotInfo / BuildingLimit failures don't block create,
+ * the AffectionPlan row simply omits the missing fields.
+ */
+async function ensureVaultPrivateParcel(args: {
+  ownerId: string;
+  plotNumber: string;
+  district: string;
+  area: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  geometry: GeoJSON.Polygon | null;
+  clientPlan: AffectionPlan | null;
+  clientBuildingLimit: GeoJSON.Polygon | null;
+}): Promise<string | null> {
+  // 1) Existing Parcel for this plot — reuse, do not mutate.
+  const existing = await prisma.parcel.findFirst({
+    where: { emirate: "Dubai", plotNumber: args.plotNumber },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+
+  // 2) Geometry is required to create a Parcel — bail if absent.
+  if (!args.geometry) return null;
+
+  // 3) Plan: prefer the client-passed one (from plot-lookup), else
+  //    re-fetch from DDA. Either may stay null and we'll still create
+  //    Parcel without an AffectionPlan row.
+  let plan = args.clientPlan;
+  let buildingLimit = args.clientBuildingLimit;
+  if (!plan) {
+    const live = await fetchFullDdaData(args.plotNumber);
+    if (live) {
+      plan = live.plan;
+      buildingLimit = buildingLimit ?? live.buildingLimit;
+    }
+  }
+
+  // 4) Centroid for lat/lng fallback.
+  const ring = args.geometry.coordinates[0];
+  const ringCount = Array.isArray(ring) ? ring.length : 0;
+  let cLng = args.longitude;
+  let cLat = args.latitude;
+  if ((cLng == null || cLat == null) && ringCount > 0) {
+    let sumLng = 0, sumLat = 0;
+    for (const p of ring) {
+      if (Array.isArray(p) && p.length >= 2) {
+        sumLng += p[0];
+        sumLat += p[1];
+      }
+    }
+    cLng = cLng ?? sumLng / ringCount;
+    cLat = cLat ?? sumLat / ringCount;
+  }
+
+  // 5) Create Parcel(VAULT_PRIVATE). Race-safe via P2002 catch: if a
+  //    concurrent vault-add lost the race, return the now-existing
+  //    parcel id.
+  let parcelId: string;
+  try {
+    const parcel = await prisma.parcel.create({
+      data: {
+        plotNumber: args.plotNumber,
+        ownerId: args.ownerId,
+        area: args.area ?? plan?.plotAreaSqft ?? 0,
+        emirate: "Dubai",
+        district: args.district,
+        latitude: cLat,
+        longitude: cLng,
+        geometry: args.geometry as unknown as Prisma.InputJsonValue,
+        status: ParcelStatus.VAULT_PRIVATE,
+      },
+      select: { id: true },
+    });
+    parcelId = parcel.id;
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      const racer = await prisma.parcel.findFirst({
+        where: { emirate: "Dubai", plotNumber: args.plotNumber },
+        select: { id: true },
+      });
+      if (racer) return racer.id;
+    }
+    throw err;
+  }
+
+  // 6) AffectionPlan when we have plan data. Skip silently otherwise —
+  //    the Parcel still renders a flat block, identical to vault's
+  //    pre-Phase-2 fallback.
+  if (plan) {
+    await prisma.affectionPlan.create({
+      data: {
+        parcelId,
+        source: "dda:full-fetch",
+        plotNumber: plan.plotNumber || args.plotNumber,
+        oldNumber: plan.oldNumber,
+        projectName: plan.projectName,
+        community: plan.community,
+        masterDeveloper: plan.masterDeveloper,
+        plotAreaSqm: plan.plotAreaSqm,
+        plotAreaSqft: plan.plotAreaSqft,
+        maxGfaSqm: plan.maxGfaSqm,
+        maxGfaSqft: plan.maxGfaSqft,
+        maxHeightCode: plan.maxHeightCode,
+        maxFloors: plan.maxFloors,
+        maxHeightMeters: plan.maxHeightMeters,
+        far: plan.far,
+        setbacks: (plan.setbacks ?? []) as unknown as Prisma.InputJsonValue,
+        landUseMix: (plan.landUseMix ?? []) as unknown as Prisma.InputJsonValue,
+        sitePlanIssue: plan.sitePlanIssue ? new Date(plan.sitePlanIssue) : null,
+        sitePlanExpiry: plan.sitePlanExpiry ? new Date(plan.sitePlanExpiry) : null,
+        notes: plan.notes,
+        buildingLimitGeometry:
+          (buildingLimit as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+      },
+    });
+  }
+
+  return parcelId;
 }
