@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useFormatArea } from "@/lib/area-unit";
 import { Spinner } from "../Spinner";
 import {
   EMIRATES,
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
+  const fmtA = useFormatArea();
   const [emirate, setEmirate] = useState<Emirate>(state.emirate);
   const [district, setDistrict] = useState(state.district);
   const [plotNumber, setPlotNumber] = useState(state.plotNumber);
@@ -217,9 +219,7 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
             District: <span style={{ color: TEXT_PRIMARY }}>{lookupResult.ddaData.district}</span>
             <br />
             Area: <span style={{ color: TEXT_PRIMARY }}>
-              {lookupResult.ddaData.area
-                ? `${lookupResult.ddaData.area.toLocaleString()} sqft`
-                : "—"}
+              {fmtA(lookupResult.ddaData.area, null) ?? "—"}
             </span>
             <br />
             Land use: <span style={{ color: TEXT_PRIMARY }}>{lookupResult.ddaData.landUse ?? "—"}</span>

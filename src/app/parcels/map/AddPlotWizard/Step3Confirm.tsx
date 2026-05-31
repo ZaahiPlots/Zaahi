@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useFormatArea } from "@/lib/area-unit";
 import { Spinner } from "../Spinner";
 import {
   EMIRATE_LABELS,
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Props) {
+  const fmtA = useFormatArea();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,7 +132,7 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
         <Row label="Source">
           {state.source === "dda" ? "DDA (auto-built 3D)" : "Manual entry"}
         </Row>
-        {state.area !== null && <Row label="Area">{`${state.area.toLocaleString()} sqft`}</Row>}
+        {state.area !== null && <Row label="Area">{fmtA(state.area, null) ?? "—"}</Row>}
         {(state.latitude !== null && state.longitude !== null) && (
           <Row label="Coordinates">{`${state.latitude.toFixed(5)}, ${state.longitude.toFixed(5)}`}</Row>
         )}

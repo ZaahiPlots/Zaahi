@@ -8,7 +8,7 @@
 // All internal storage / API values are always in SQFT (per CLAUDE.md
 // "area: Float // sqft" on Parcel). The unit only affects DISPLAY.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type AreaUnit = "sqft" | "sqm";
 
@@ -91,6 +91,30 @@ export function formatArea(
   const sqft = sqftValue ?? (typeof sqmValue === "number" ? sqmValue * SQFT_PER_SQM : null);
   if (sqft == null || !Number.isFinite(sqft)) return null;
   return `${Math.round(sqft).toLocaleString()} sqft`;
+}
+
+/**
+ * Convenience hook — subscribes to the user's chosen area unit and
+ * returns a memoised formatter. Saves callsites from importing the
+ * raw `unit` + `formatArea` and threading both into JSX.
+ *
+ *   const fmtArea = useFormatArea();
+ *   …
+ *   <Row label="Plot Area" v={fmtArea(plot.sqft, plot.sqm)} />
+ *
+ * The returned callback re-creates only when the unit changes, so
+ * React.memo'd children downstream are stable across unrelated
+ * renders.
+ */
+export function useFormatArea(): (
+  sqftValue: number | null | undefined,
+  sqmValue: number | null | undefined,
+) => string | null {
+  const unit = useAreaUnit();
+  return useCallback(
+    (sqftValue, sqmValue) => formatArea(sqftValue, sqmValue, unit),
+    [unit],
+  );
 }
 
 /**

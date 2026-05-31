@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { filsToAed } from "@/lib/valuation";
 import MapPreview from "./MapPreview";
+import AreaRow, { AreaInline } from "./AreaRow";
 
 export const dynamic = "force-dynamic";
 
@@ -77,13 +78,15 @@ export default async function ParcelPage({ params }: { params: Promise<{ id: str
               <Row label="Community" value={plan.community} />
               <Row label="Master Developer" value={plan.masterDeveloper} />
               <Row label="Old Number" value={plan.oldNumber} />
-              <Row
+              <AreaRow
                 label="Plot Area"
-                value={plan.plotAreaSqm ? `${plan.plotAreaSqm.toLocaleString()} m² (${plan.plotAreaSqft?.toLocaleString()} ft²)` : null}
+                sqftValue={plan.plotAreaSqft}
+                sqmValue={plan.plotAreaSqm}
               />
-              <Row
+              <AreaRow
                 label="Maximum GFA"
-                value={plan.maxGfaSqm ? `${plan.maxGfaSqm.toLocaleString()} m² (${plan.maxGfaSqft?.toLocaleString()} ft²)` : null}
+                sqftValue={plan.maxGfaSqft}
+                sqmValue={plan.maxGfaSqm}
               />
               <Row label="FAR" value={plan.far?.toString()} />
               <Row
@@ -130,7 +133,7 @@ export default async function ParcelPage({ params }: { params: Promise<{ id: str
                     {landUse.map((u, i) => (
                       <li key={i}>
                         <span className="text-amber-400">{u.category}</span> · {u.sub}
-                        {u.areaSqm != null && ` (${u.areaSqm.toLocaleString()} m²)`}
+                        <AreaInline sqmValue={u.areaSqm} />
                       </li>
                     ))}
                   </ul>

@@ -15,6 +15,7 @@ import {
   PANEL_WIDTH_STORAGE_KEY,
   clampPanelWidth,
 } from "./sidepanel-width";
+import { useFormatArea } from "@/lib/area-unit";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
@@ -1560,6 +1561,10 @@ function ParcelsMapPageInner() {
   // PANEL_WIDTH_DEFAULT to avoid an SSR/CSR mismatch — the useEffect
   // below restores the saved value on mount, before the panel ever
   // opens (selectedParcelId is null at first paint), so no flicker.
+  // Area unit (ft² vs m²) — subscribes to the dashboard Settings →
+  // Area Unit toggle. Internal storage stays sqft per CLAUDE.md;
+  // this only formats display.
+  const fmtA = useFormatArea();
   const [panelWidth, setPanelWidthState] = useState<number>(PANEL_WIDTH_DEFAULT);
   const panelWidthWriteRef = useRef<number | null>(null);
   useEffect(() => {
@@ -6048,11 +6053,11 @@ function ParcelsMapPageInner() {
             </div>
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
-                value={`${zaahiHover.plotAreaSqft.toLocaleString()} ft² · ${zaahiHover.plotAreaSqm.toLocaleString()} m²`} />
+                value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />
             )}
             {hasGfa && (
               <PmtilesHoverRow label="Max GFA"
-                value={`${zaahiHover.maxGfaSqft.toLocaleString()} ft² · ${zaahiHover.maxGfaSqm.toLocaleString()} m²`} />
+                value={fmtA(zaahiHover.maxGfaSqft, zaahiHover.maxGfaSqm) ?? "—"} />
             )}
             {hasFar && (
               <PmtilesHoverRow label="FAR" value={zaahiHover.far.toFixed(1)} />
@@ -6126,10 +6131,10 @@ function ParcelsMapPageInner() {
             </div>
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
-                value={(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area).toLocaleString() + " ft²"} />
+                value={fmtA(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area, null) ?? "—"} />
             )}
             {hasGfa && (
-              <PmtilesHoverRow label="Max GFA" value={`${vaultHover.maxGfaSqft.toLocaleString()} ft²`} />
+              <PmtilesHoverRow label="Max GFA" value={fmtA(vaultHover.maxGfaSqft, null) ?? "—"} />
             )}
             {hasFar && (
               <PmtilesHoverRow label="FAR" value={vaultHover.far.toFixed(1)} />
@@ -6220,10 +6225,10 @@ function ParcelsMapPageInner() {
               </div>
             )}
             <PmtilesHoverRow label="Plot Area"
-              value={`${ddaLandHover.areaSqft.toLocaleString()} ft² · ${ddaLandHover.areaSqm.toLocaleString()} m²`} />
+              value={fmtA(ddaLandHover.areaSqft, ddaLandHover.areaSqm) ?? "—"} />
             {ddaLandHover.gfaSqm > 0 && (
               <PmtilesHoverRow label="Max GFA"
-                value={`${ddaLandHover.gfaSqft.toLocaleString()} ft² · ${ddaLandHover.gfaSqm.toLocaleString()} m²`} />
+                value={fmtA(ddaLandHover.gfaSqft, ddaLandHover.gfaSqm) ?? "—"} />
             )}
             {/* Max Height + Affection Plan rows intentionally omitted —
                 neither field is emitted by scripts/prepare-tiles.ts into

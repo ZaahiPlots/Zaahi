@@ -22,6 +22,7 @@ import {
   NUMBER_LARGE,
   NUMBER_SMALL,
 } from "@/lib/design-tokens";
+import { useFormatArea } from "@/lib/area-unit";
 import {
   PANEL_WIDTH_DEFAULT,
   clampPanelWidth,
@@ -172,13 +173,6 @@ function parseJvTerms(raw: string | null | undefined): JvTerms | null {
   }
 }
 
-function fmtAreaSplit(sqm?: number, sqft?: number): string | null {
-  const parts: string[] = [];
-  if (sqm != null) parts.push(`${sqm.toLocaleString("en-US")} m²`);
-  if (sqft != null) parts.push(`${sqft.toLocaleString("en-US")} ft²`);
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
 function aedFromFils(fils: string | null): number | null {
   if (!fils) return null;
   return Number(BigInt(fils)) / 100;
@@ -222,6 +216,10 @@ export default function SidePanel({
 }) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  // User-chosen area unit. Subscribes to the dashboard Settings →
+  // Area Unit toggle in real time — sqft (Dubai market default) or
+  // m² (rest of world). Display-only; internal storage stays sqft.
+  const fmtA = useFormatArea();
   // Drag-resize state — `isDesktop` gates the inline width / drag
   // handle (mobile still uses the bottom-sheet layout). `isResizing`
   // suppresses the 150ms width transition during drag so the panel
@@ -708,11 +706,11 @@ export default function SidePanel({
                     <Row label="Basis" v={jv.basis} />
                     <Row
                       label="Landowner Share"
-                      v={fmtAreaSplit(jv.landownerShareSqm, jv.landownerShareSqft)}
+                      v={fmtA(jv.landownerShareSqft, jv.landownerShareSqm)}
                     />
                     <Row
                       label="Developer Share"
-                      v={fmtAreaSplit(jv.developerShareSqm, jv.developerShareSqft)}
+                      v={fmtA(jv.developerShareSqft, jv.developerShareSqm)}
                     />
                     <Row
                       label="Commission"
@@ -739,29 +737,11 @@ export default function SidePanel({
               <Section title="Dimensions">
                 <Row
                   label="Plot Area"
-                  v={
-                    plan.plotAreaSqft || plan.plotAreaSqm
-                      ? [
-                          plan.plotAreaSqft ? `${Math.round(plan.plotAreaSqft).toLocaleString()} ft²` : null,
-                          plan.plotAreaSqm ? `${Math.round(plan.plotAreaSqm).toLocaleString()} m²` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")
-                      : null
-                  }
+                  v={fmtA(plan.plotAreaSqft, plan.plotAreaSqm)}
                 />
                 <Row
                   label="Max GFA"
-                  v={
-                    plan.maxGfaSqft || plan.maxGfaSqm
-                      ? [
-                          plan.maxGfaSqft ? `${Math.round(plan.maxGfaSqft).toLocaleString()} ft²` : null,
-                          plan.maxGfaSqm ? `${Math.round(plan.maxGfaSqm).toLocaleString()} m²` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")
-                      : null
-                  }
+                  v={fmtA(plan.maxGfaSqft, plan.maxGfaSqm)}
                 />
                 <Row label="FAR" v={plan.far?.toString()} />
                 <Row

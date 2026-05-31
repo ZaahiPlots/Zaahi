@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import { formatParcelStatus } from "@/lib/format-parcel-status";
+import { useFormatArea } from "@/lib/area-unit";
 
 // ── Brand tokens (unified against login reference src/app/page.tsx).
 const GOLD = "#C8A96E";
@@ -219,6 +220,7 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
 
 function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }) {
   const [hover, setHover] = useState(false);
+  const fmtA = useFormatArea();
   const aed = item.currentValuation ? Math.floor(Number(item.currentValuation) / 100) : null;
   const usd = aed != null ? Math.round(aed * AED_TO_USD) : null;
 
@@ -276,7 +278,7 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
         marginTop: 4, fontSize: 12, fontFamily: '"SF Mono", Menlo, monospace',
       }}>
         <span style={{ opacity: 0.6 }}>
-          {item.area > 0 ? `${Math.round(item.area).toLocaleString()} ft²` : "—"}
+          {item.area > 0 ? (fmtA(item.area, null) ?? "—") : "—"}
         </span>
         <span style={{ color: "rgba(255,255,255,0.95)", textAlign: "right" }}>
           {aed != null

@@ -14,7 +14,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
-import { type AreaUnit, loadAreaUnit, saveAreaUnit } from "@/lib/area-unit";
+import { type AreaUnit, loadAreaUnit, saveAreaUnit, useFormatArea } from "@/lib/area-unit";
 import { formatParcelStatus } from "@/lib/format-parcel-status";
 
 const GOLD = "#C8A96E";
@@ -794,6 +794,7 @@ function fmtAedFromFils(filsStr: string | null): string {
 }
 
 function Properties() {
+  const fmtA = useFormatArea();
   const [rows, setRows] = useState<MyPlotRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | "LISTED" | "VACANT" | "IN_DEAL" | "SOLD" | "FROZEN">("ALL");
@@ -916,7 +917,7 @@ function Properties() {
                 }} className="hover-row">
                   <Td><span style={{ color: GOLD, fontWeight: 700 }}>{p.plotNumber}</span></Td>
                   <Td><span style={{ fontSize: 11 }}>{p.district}</span><div style={{ fontSize: 9, color: SUBTLE }}>{p.emirate}</div></Td>
-                  <Td>{Math.round(p.area).toLocaleString("en-US")} sqft</Td>
+                  <Td>{fmtA(p.area, null) ?? "—"}</Td>
                   <Td><span style={{ color: GOLD }}>{fmtAedFromFils(p.currentValuation)}</span></Td>
                   <Td>
                     <span style={{ padding: "2px 8px", borderRadius: 4, background: b.bg, color: b.fg, fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", fontFamily: 'Georgia, "Times New Roman", serif' }}>
@@ -1019,6 +1020,7 @@ interface FavoriteRow {
 }
 
 function Favorites() {
+  const fmtA = useFormatArea();
   const [rows, setRows] = useState<FavoriteRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1082,7 +1084,7 @@ function Favorites() {
                 fontSize: 11, color: SUBTLE, marginTop: 2,
                 fontVariantNumeric: "tabular-nums",
               }}>
-                {Math.round(f.parcel.area).toLocaleString("en-US")} sqft · {formatParcelStatus(f.parcel.status)}
+                {(fmtA(f.parcel.area, null) ?? "—")} · {formatParcelStatus(f.parcel.status)}
               </div>
               <div style={{ fontSize: 9, color: SUBTLE, marginTop: 8 }}>
                 Saved {new Date(f.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
