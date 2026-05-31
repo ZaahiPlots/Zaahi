@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
+import { formatParcelStatus } from "@/lib/format-parcel-status";
 
 // ── Brand tokens (unified against login reference src/app/page.tsx).
 const GOLD = "#C8A96E";
@@ -200,11 +201,11 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
         {grouped.map((group) => (
           <div key={group.status}>
             <div style={{
-              padding: "10px 14px 4px", fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "10px 14px 4px", fontSize: 12, fontWeight: 700,
+              letterSpacing: "0.02em",
               color: STATUS_COLOR[group.status] ?? GOLD,
             }}>
-              {group.status} ({group.items.length})
+              {formatParcelStatus(group.status)} ({group.items.length})
             </div>
             {group.items.map((it) => (
               <PortalCard key={it.id} item={it} onClick={() => handleClick(it)} />
@@ -250,14 +251,13 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
           {item.plotNumber}
         </span>
         <span style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
-          textTransform: "uppercase",
+          fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
           padding: "1px 6px", borderRadius: 3,
           color: STATUS_COLOR[item.status] ?? GOLD,
           border: `1px solid ${(STATUS_COLOR[item.status] ?? GOLD)}55`,
           background: `${(STATUS_COLOR[item.status] ?? GOLD)}1A`,
         }}>
-          {item.status}
+          {formatParcelStatus(item.status)}
         </span>
       </div>
       <div style={{ opacity: 0.7, fontSize: 12, marginTop: 2 }}>

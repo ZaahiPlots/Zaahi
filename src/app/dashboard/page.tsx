@@ -15,6 +15,7 @@ import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { type AreaUnit, loadAreaUnit, saveAreaUnit } from "@/lib/area-unit";
+import { formatParcelStatus } from "@/lib/format-parcel-status";
 
 const GOLD = "#C8A96E";
 // rgba(200,169,110,0.9) — translucent gold for primary CTAs
@@ -918,8 +919,8 @@ function Properties() {
                   <Td>{Math.round(p.area).toLocaleString("en-US")} sqft</Td>
                   <Td><span style={{ color: GOLD }}>{fmtAedFromFils(p.currentValuation)}</span></Td>
                   <Td>
-                    <span style={{ padding: "2px 8px", borderRadius: 4, background: b.bg, color: b.fg, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                      {p.status.replace("_", " ")}
+                    <span style={{ padding: "2px 8px", borderRadius: 4, background: b.bg, color: b.fg, fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                      {formatParcelStatus(p.status)}
                     </span>
                   </Td>
                   <Td>
@@ -1081,7 +1082,7 @@ function Favorites() {
                 fontSize: 11, color: SUBTLE, marginTop: 2,
                 fontVariantNumeric: "tabular-nums",
               }}>
-                {Math.round(f.parcel.area).toLocaleString("en-US")} sqft · {f.parcel.status.replace("_", " ")}
+                {Math.round(f.parcel.area).toLocaleString("en-US")} sqft · {formatParcelStatus(f.parcel.status)}
               </div>
               <div style={{ fontSize: 9, color: SUBTLE, marginTop: 8 }}>
                 Saved {new Date(f.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}

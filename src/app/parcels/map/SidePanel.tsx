@@ -962,7 +962,9 @@ export default function SidePanel({
                         });
                       }}
                       style={{
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
                         width: "100%",
                         textAlign: "left",
                         fontSize: 12,
@@ -974,7 +976,8 @@ export default function SidePanel({
                         fontFamily: "inherit",
                       }}
                     >
-                      📄 Affection Plan (PDF)
+                      <DocIcon />
+                      <span>Affection Plan (PDF)</span>
                     </button>
                     {/* New "Plot Details" button — DDA's
                         title="Download Plot Guidelines" Salesforce PDF.
@@ -1003,7 +1006,9 @@ export default function SidePanel({
                             }
                           }}
                           style={{
-                            display: "block",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
                             width: "100%",
                             textAlign: "left",
                             fontSize: 12,
@@ -1016,7 +1021,8 @@ export default function SidePanel({
                             fontFamily: "inherit",
                           }}
                         >
-                          {guidelinesBusy ? "📑 Downloading…" : "📑 Plot Details (PDF)"}
+                          <DocIcon />
+                          <span>{guidelinesBusy ? "Downloading…" : "Plot Details (PDF)"}</span>
                         </button>
                         <div style={{ padding: "0 8px" }}>
                           <PdfProgressBar busy={guidelinesBusy} />
@@ -1216,6 +1222,33 @@ function DragHandle({
         }
       }}
     />
+  );
+}
+
+// Document icon — minimalist outline glyph (Phase B 2026-05-31).
+// Replaces 📄 / 📑 emoji in the Affection Plan + Plot Details PDF
+// buttons. Inherits currentColor so callers control the tint
+// (GOLD on the SidePanel buttons). Sized to read at the 12 px button
+// line-height without throwing off baseline alignment.
+function DocIcon() {
+  return (
+    <svg
+      width={13}
+      height={13}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+      <polyline points="14 3 14 9 20 9" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+    </svg>
   );
 }
 

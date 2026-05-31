@@ -5735,7 +5735,7 @@ function ParcelsMapPageInner() {
           color="rgba(255, 255, 255, 0.9)"
         />
         <LayerToggle
-          label={`Under construction · ${loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}`}
+          label={`Under Construction · ${loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}`}
           checked={underConstructionVisible}
           onChange={setUnderConstructionVisible}
           color="rgba(255, 255, 255, 0.9)"

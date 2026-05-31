@@ -59,11 +59,11 @@ export function AddPlotChooser({ onPickListing, onPickVault, onClose }: Props) {
           />
           <ChooserCard
             iconSvg={<PadlockIcon />}
-            title="Track in Vault"
+            title="Add to Vault"
             subtitle="Add to your private plot tracker"
             note="Only you see it — share with specific contacts later"
             onClick={onPickVault}
-            ariaLabel="Track in Vault — open the private-vault wizard"
+            ariaLabel="Add to Vault — open the private-vault wizard"
           />
         </div>
       </div>
