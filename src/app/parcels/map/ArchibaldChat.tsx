@@ -9,6 +9,15 @@
  * the MapControls bridge passed in from the parent map page.
  *
  * Inline SVG mascot with CSS-driven idle / hover / open / thinking states.
+ *
+ * UX (2026-05-31): unified glassmorphism tokens to match SidePanel /
+ * Layers (rgba(0,0,0,0.3) + blur(16) + rgba(255,255,255,0.15) border,
+ * gold as accent only). Mobile bottom-sheet ≤640px (full-width,
+ * 90vh, top-rounded, drag handle, safe-area + iOS anti-zoom 16px
+ * input). Desktop launcher is draggable with localStorage persistence
+ * (zaahi-archie-launcher-pos); chat window anchors to the launcher's
+ * quadrant. Mobile launcher stays pinned to bottom-right safe-area
+ * (tap-only — drag disabled there).
  */
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
@@ -22,6 +31,14 @@ import {
 
 const GOLD = "#C8A96E";
 const TXT = "#FFFFFF";
+
+// Drag / persistence. Mirrors the other map-page localStorage keys
+// (zaahi-drone-mode, zaahi-vault-only-mode).
+const LAUNCHER_POS_KEY = "zaahi-archie-launcher-pos";
+const DRAG_THRESHOLD_PX = 8;
+const LAUNCHER_SIZE = 52; // desktop. Mobile sized via CSS, drag disabled.
+const VIEWPORT_MARGIN = 12;
+const WINDOW_GAP = 8; // between launcher and chat window when anchored
 
 // Server wire-format message. role:"tool" entries hold the JSON result
 // of a previous tool_call and carry tool_call_id so OpenAI can pair
@@ -53,6 +70,15 @@ const GREETING: UiMsg = {
 // open) without letting a runaway prompt burn tokens forever.
 const MAX_TOOL_TURNS = 8;
 
+function clampPos(x: number, y: number): { x: number; y: number } {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return {
+    x: Math.max(VIEWPORT_MARGIN, Math.min(w - LAUNCHER_SIZE - VIEWPORT_MARGIN, x)),
+    y: Math.max(VIEWPORT_MARGIN, Math.min(h - LAUNCHER_SIZE - VIEWPORT_MARGIN, y)),
+  };
+}
+
 export default function ArchibaldChat({
   hidden = false,
   mapControls,
@@ -67,10 +93,72 @@ export default function ArchibaldChat({
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Draggable launcher. null = use CSS defaults (bottom-right with
+  // safe-area). Set from localStorage on mount and updated on drag.
+  const [launcherPos, setLauncherPos] = useState<{ x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const dragStateRef = useRef<{
+    startX: number;
+    startY: number;
+    posX: number;
+    posY: number;
+    didDrag: boolean;
+    pointerId: number;
+  } | null>(null);
+  // Set true on pointerup-after-drag so the synthesized click that
+  // follows pointerup doesn't toggle the chat open/closed.
+  const justDraggedRef = useRef(false);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, thinking, pendingTool, open]);
+
+  // Mobile breakpoint — matches SidePanel's sm: (640px).
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Load persisted launcher position on mount. Clamp into the current
+  // viewport in case the window shrank since last session.
+  useEffect(() => {
+    if (isMobile) {
+      // Mobile pins to bottom-right safe-area via CSS — drop any
+      // desktop drag state so the launcher reflows cleanly.
+      setLauncherPos(null);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(LAUNCHER_POS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { x?: unknown; y?: unknown };
+      if (typeof parsed.x !== "number" || typeof parsed.y !== "number") return;
+      if (!Number.isFinite(parsed.x) || !Number.isFinite(parsed.y)) return;
+      setLauncherPos(clampPos(parsed.x, parsed.y));
+    } catch {
+      // Bad JSON or storage blocked — silently fall back to default.
+    }
+  }, [isMobile]);
+
+  // Re-clamp on resize / orientation so the launcher never goes
+  // off-screen if the user rotates the device or resizes the window.
+  useEffect(() => {
+    if (isMobile) return;
+    const onResize = () => {
+      setLauncherPos((p) => (p ? clampPos(p.x, p.y) : null));
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [isMobile]);
 
   async function send() {
     const text = input.trim();
@@ -88,7 +176,7 @@ export default function ArchibaldChat({
     // wireHistory accumulates server-shape turns across the dispatch
     // loop. Starts from current UI messages (user + assistant text
     // bubbles), tool_calls + tool results layer on top.
-    let wireHistory: ServerMsg[] = uiNext
+    const wireHistory: ServerMsg[] = uiNext
       .filter((m) => m !== GREETING)
       .map<ServerMsg>((m) => ({ role: m.role, content: m.content }));
 
@@ -171,18 +259,127 @@ export default function ArchibaldChat({
     if (hidden && open) setOpen(false);
   }, [hidden, open]);
 
+  // ── Drag handlers (desktop only) ─────────────────────
+  function onLauncherPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (isMobile) return;
+    // Only left button / primary pointer initiates drag.
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const el = launcherRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: rect.left,
+      posY: rect.top,
+      didDrag: false,
+      pointerId: e.pointerId,
+    };
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // Safari rare failure — drag continues via pointermove on element.
+    }
+  }
+
+  function onLauncherPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = dragStateRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.didDrag && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+    d.didDrag = true;
+    setLauncherPos(clampPos(d.posX + dx, d.posY + dy));
+    if (open) setOpen(false);
+  }
+
+  function onLauncherPointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = dragStateRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const wasDrag = d.didDrag;
+    dragStateRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore — capture may already be released
+    }
+    if (wasDrag) {
+      justDraggedRef.current = true;
+      // Persist final position (read state via element rect — setLauncherPos
+      // may not have flushed yet when this fires).
+      const rect = e.currentTarget.getBoundingClientRect();
+      try {
+        localStorage.setItem(
+          LAUNCHER_POS_KEY,
+          JSON.stringify({ x: rect.left, y: rect.top }),
+        );
+      } catch {
+        // storage blocked — session-only is acceptable
+      }
+    }
+  }
+
+  function onLauncherPointerCancel() {
+    dragStateRef.current = null;
+  }
+
+  function onLauncherClick() {
+    if (justDraggedRef.current) {
+      justDraggedRef.current = false;
+      return;
+    }
+    setOpen((v) => !v);
+  }
+
   const launcherMode: AvatarMode = thinking ? "thinking" : open ? "open" : "idle";
 
   if (hidden) return null;
+
+  // Resolve launcher + window inline positioning. CSS handles defaults
+  // (bottom-right with safe-area). Inline styles take over when the
+  // user has dragged the launcher to a custom spot.
+  const useCustomPos = !isMobile && launcherPos != null;
+  const launcherStyle: React.CSSProperties | undefined = useCustomPos
+    ? {
+        left: launcherPos!.x,
+        top: launcherPos!.y,
+        right: "auto",
+        bottom: "auto",
+      }
+    : undefined;
+
+  // 4-quadrant anchor for the chat window. Reads window dims at render
+  // time — resize useEffect triggers re-render via setLauncherPos.
+  let windowStyle: React.CSSProperties | undefined;
+  if (useCustomPos && typeof window !== "undefined") {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const cx = launcherPos!.x + LAUNCHER_SIZE / 2;
+    const cy = launcherPos!.y + LAUNCHER_SIZE / 2;
+    const anchorLeft = cx < w / 2;
+    const anchorTop = cy < h / 2;
+    windowStyle = {
+      left: anchorLeft ? launcherPos!.x : "auto",
+      right: anchorLeft ? "auto" : w - launcherPos!.x - LAUNCHER_SIZE,
+      top: anchorTop ? launcherPos!.y + LAUNCHER_SIZE + WINDOW_GAP : "auto",
+      bottom: anchorTop ? "auto" : h - launcherPos!.y + WINDOW_GAP,
+    };
+  }
 
   return (
     <>
       {/* Launcher button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={launcherRef}
+        onClick={onLauncherClick}
+        onPointerDown={onLauncherPointerDown}
+        onPointerMove={onLauncherPointerMove}
+        onPointerUp={onLauncherPointerUp}
+        onPointerCancel={onLauncherPointerCancel}
         title="Archibald — AI assistant"
         aria-label="Open Archibald assistant"
         className="archibald-launcher"
+        style={launcherStyle}
       >
         {!open && <span className="archibald-pulse" aria-hidden />}
         <CatAvatar mode={launcherMode} size={32} />
@@ -190,22 +387,32 @@ export default function ArchibaldChat({
 
       {/* Chat window */}
       {open && (
-        <div className="archibald-window">
+        <div className="archibald-window" style={windowStyle}>
+          {/* Mobile drag handle — hidden on desktop */}
+          <div className="archibald-mobile-handle" aria-hidden>
+            <div />
+          </div>
           {/* Header */}
           <div className="archibald-header">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <CatAvatar mode="open" size={24} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "rgba(200, 169, 110, 0.25)",
+                  border: `1px solid ${GOLD}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <CatAvatar mode="open" size={18} />
+              </div>
               <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-                <span style={{ fontWeight: 700, fontSize: 13 }}>Archibald</span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: 0.95,
-                  }}
-                >
+                <span className="archibald-header-title">Archibald</span>
+                <span className="archibald-header-status">
                   <span
                     style={{
                       width: 6,
@@ -223,14 +430,7 @@ export default function ArchibaldChat({
             <button
               onClick={() => setOpen(false)}
               aria-label="Close chat"
-              style={{
-                background: "transparent",
-                border: 0,
-                color: "white",
-                fontSize: 20,
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
+              className="archibald-close"
             >
               ×
             </button>
@@ -249,9 +449,9 @@ export default function ArchibaldChat({
                   alignItems: "center",
                   gap: 6,
                   fontSize: 11,
-                  color: "#6B7280",
+                  color: "rgba(255, 255, 255, 0.6)",
                   fontStyle: "italic",
-                  paddingLeft: 28,
+                  paddingLeft: 32,
                 }}
               >
                 {pendingTool ?? "Archibald is thinking"}
@@ -293,22 +493,29 @@ export default function ArchibaldChat({
       <style jsx global>{`
         .archibald-launcher {
           position: absolute;
-          right: 10px;
-          bottom: 10px;
-          width: 52px;
-          height: 52px;
+          right: 16px;
+          bottom: 16px;
+          width: ${LAUNCHER_SIZE}px;
+          height: ${LAUNCHER_SIZE}px;
           border-radius: 50%;
           background: ${GOLD};
           color: white;
-          border: none;
+          border: 1px solid rgba(200, 169, 110, 0.6);
           cursor: pointer;
-          box-shadow: 0 4px 16px rgba(200, 169, 110, 0.5),
-            0 2px 6px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 8px 24px rgba(200, 169, 110, 0.45),
+            0 4px 12px rgba(0, 0, 0, 0.3);
           z-index: 27;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 0;
+          touch-action: none;
+          transition: transform 150ms ease, box-shadow 150ms ease;
+        }
+        .archibald-launcher:hover {
+          transform: scale(1.05);
+          box-shadow: 0 12px 32px rgba(200, 169, 110, 0.6),
+            0 4px 14px rgba(0, 0, 0, 0.35);
         }
         .archibald-launcher:hover .archi-ear-l {
           transform: rotate(-5deg);
@@ -359,16 +566,16 @@ export default function ArchibaldChat({
 
         .archibald-window {
           position: absolute;
-          right: 10px;
-          bottom: 72px;
-          width: 350px;
-          height: 500px;
-          background: rgba(10, 22, 40, 0.75);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          right: 16px;
+          bottom: ${16 + LAUNCHER_SIZE + WINDOW_GAP}px;
+          width: 360px;
+          height: 520px;
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
-          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4);
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -380,59 +587,127 @@ export default function ArchibaldChat({
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
+
+        .archibald-mobile-handle {
+          display: none;
+        }
+
         .archibald-header {
-          padding: 10px 14px;
-          background: ${GOLD};
-          color: white;
+          padding: 12px 14px;
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
+        .archibald-header-title {
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 700;
+          font-size: 12px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: ${GOLD};
+          line-height: 1.1;
+        }
+        .archibald-header-status {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.7);
+          letter-spacing: 0.04em;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          line-height: 1.4;
+        }
+        .archibald-close {
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          color: white;
+          font-size: 18px;
+          line-height: 1;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+        }
+        .archibald-close:hover {
+          border-color: ${GOLD};
+          background: rgba(200, 169, 110, 0.25);
+          color: ${GOLD};
+        }
+
         .archibald-scroll {
           flex: 1;
           overflow-y: auto;
-          padding: 12px;
+          padding: 14px;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          background: rgba(255, 255, 255, 0.04);
+          gap: 10px;
         }
         .archibald-input-row {
-          padding: 10px;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(10, 22, 40, 0.4);
+          padding: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.2);
           display: flex;
-          gap: 6px;
+          gap: 8px;
+          align-items: center;
         }
         .archibald-input {
           flex: 1;
-          font-size: 12px;
-          padding: 8px 10px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
+          font-size: 13px;
+          padding: 10px 12px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 8px;
           color: ${TXT};
           background: rgba(255, 255, 255, 0.04);
           outline: none;
-          transition: border-color 150ms ease;
+          transition: border-color 150ms ease, background 150ms ease;
           font-family: inherit;
+        }
+        .archibald-input::placeholder {
+          color: rgba(255, 255, 255, 0.4);
         }
         .archibald-input:focus {
           border-color: ${GOLD};
+          background: rgba(255, 255, 255, 0.06);
         }
         .archibald-send {
-          padding: 0 14px;
+          padding: 0 16px;
+          height: 38px;
+          min-width: 56px;
           font-size: 12px;
           font-weight: 700;
-          color: white;
-          background: ${GOLD};
-          border: 0;
-          border-radius: 6px;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: ${GOLD};
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid ${GOLD};
+          border-radius: 8px;
           cursor: pointer;
+          font-family: inherit;
+          transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+        }
+        .archibald-send:hover:not(:disabled) {
+          background: rgba(200, 169, 110, 0.25);
         }
         .archibald-send:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: not-allowed;
+          border-color: rgba(255, 255, 255, 0.15);
+          color: rgba(255, 255, 255, 0.5);
+          background: rgba(0, 0, 0, 0.2);
         }
+
         .archibald-dots {
           display: inline-flex;
           gap: 3px;
@@ -441,7 +716,7 @@ export default function ArchibaldChat({
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background: #6b7280;
+          background: rgba(255, 255, 255, 0.55);
           animation: archiDots 1s ease-in-out infinite;
         }
         .archibald-dots i:nth-child(2) { animation-delay: 0.15s; }
@@ -449,6 +724,73 @@ export default function ArchibaldChat({
         @keyframes archiDots {
           0%, 100% { opacity: 0.3; transform: translateY(0); }
           50% { opacity: 1; transform: translateY(-2px); }
+        }
+
+        /* ── Mobile bottom-sheet (≤640px) ────────────────
+           Mirrors the SidePanel mobile pattern: drag handle, top-only
+           rounded corners, 90vh height, full width, safe-area padding.
+           Launcher pins to bottom-right safe-area; drag is disabled
+           on mobile (full-screen sheet → no need to move the icon). */
+        @media (max-width: 640px) {
+          .archibald-launcher {
+            width: 56px;
+            height: 56px;
+            right: max(16px, env(safe-area-inset-right));
+            bottom: max(16px, env(safe-area-inset-bottom));
+            /* Drag disabled on mobile — inline style from desktop
+               persistence is ignored because launcherPos is reset to
+               null when isMobile is true. */
+          }
+
+          .archibald-window {
+            /* Override any anchored inline-style values from desktop. */
+            left: 0 !important;
+            right: 0 !important;
+            top: 10% !important;
+            bottom: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            border-radius: 16px 16px 0 0;
+            border-left: 0;
+            border-right: 0;
+            border-bottom: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+            animation: archiSlideUpMobile 0.28s ease-out;
+          }
+          @keyframes archiSlideUpMobile {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+          }
+
+          .archibald-mobile-handle {
+            display: flex;
+            justify-content: center;
+            padding: 8px 0 4px;
+            flex-shrink: 0;
+          }
+          .archibald-mobile-handle > div {
+            width: 36px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.3);
+          }
+
+          .archibald-header {
+            padding: 10px 16px 12px;
+          }
+
+          .archibald-input {
+            /* iOS Safari zooms <16px inputs on focus — bumping to 16px
+               keeps the viewport stable when Archibald is summoned on
+               a phone. */
+            font-size: 16px;
+            padding: 12px 14px;
+          }
+          .archibald-send {
+            height: 44px;
+            min-width: 64px;
+            font-size: 13px;
+          }
         }
       `}</style>
     </>
@@ -505,15 +847,18 @@ function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
         style={{
           alignSelf: "flex-end",
           maxWidth: "85%",
-          padding: "8px 12px",
-          borderRadius: 12,
-          background: GOLD,
+          padding: "10px 14px",
+          borderRadius: 14,
+          // Gold accent for the user's voice — translucent so it reads
+          // as accent on glass, not solid CTA chrome.
+          background: "rgba(200, 169, 110, 0.85)",
+          border: "1px solid rgba(200, 169, 110, 1)",
           color: "white",
-          fontSize: 12,
+          fontSize: 13,
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
         }}
       >
         {text}
@@ -521,13 +866,14 @@ function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
     );
   }
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "flex-end", maxWidth: "85%" }}>
+    <div style={{ display: "flex", gap: 8, alignItems: "flex-end", maxWidth: "85%" }}>
       <div
         style={{
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           borderRadius: "50%",
-          background: GOLD,
+          background: "rgba(200, 169, 110, 0.25)",
+          border: `1px solid ${GOLD}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -538,16 +884,15 @@ function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
       </div>
       <div
         style={{
-          padding: "8px 12px",
-          borderRadius: 12,
-          background: "rgba(255, 255, 255, 0.08)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          padding: "10px 14px",
+          borderRadius: 14,
+          background: "rgba(255, 255, 255, 0.06)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
           color: TXT,
-          fontSize: 12,
+          fontSize: 13,
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
         }}
       >
         {text}
