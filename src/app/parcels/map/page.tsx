@@ -44,7 +44,16 @@ import ParcelsNav from "./ParcelsNav";
 // Other surfaces (HeaderBar, hover popups, MiniMap dock, SidePanel)
 // follow in the next commit after founder review.
 import { Panel } from "@/components/Panel";
-import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL } from "@/lib/design-tokens";
+import { ChromeBtn } from "@/components/ChromeBtn";
+import {
+  PANEL_BG,
+  PANEL_BLUR,
+  PANEL_BORDER_COLOR,
+  CHROME_BTN_BG,
+  CHROME_BTN_SIZE_COMPACT,
+  RADIUS_PANEL,
+  RADIUS_CARD,
+} from "@/lib/design-tokens";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -5299,7 +5308,6 @@ function ParcelsMapPageInner() {
               button. */}
         <span ref={panelBtnRef} style={{ display: "block" }}>
           <ChromeBtn
-            c={c}
             title="Layers"
             active={layersOpen}
             onClick={() => {
@@ -5316,7 +5324,6 @@ function ParcelsMapPageInner() {
         </span>
         {/* 2. Basemap Light */}
         <ChromeBtn
-          c={c}
           title="Light basemap"
           active={baseMap === "light"}
           onClick={() => setBaseMap("light")}
@@ -5329,7 +5336,6 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 3. Basemap Dark */}
         <ChromeBtn
-          c={c}
           title="Dark basemap"
           active={baseMap === "dark"}
           onClick={() => setBaseMap("dark")}
@@ -5341,7 +5347,6 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 4. Basemap Satellite */}
         <ChromeBtn
-          c={c}
           title="Satellite basemap"
           active={baseMap === "satellite"}
           onClick={() => setBaseMap("satellite")}
@@ -5357,7 +5362,6 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 5. Auto-rotate — mutex with drone mode. */}
         <ChromeBtn
-          c={c}
           title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
           active={autoRotateEnabled}
           onClick={() => {
@@ -5404,7 +5408,6 @@ function ParcelsMapPageInner() {
               MiniRailBtn carries the same marker. */}
         <span ref={legendBtnRef} data-legend-trigger style={{ display: "block" }}>
           <ChromeBtn
-            c={c}
             title="Legend"
             active={legendOpen}
             onClick={() => setLegendOpen((o) => !o)}
@@ -5420,12 +5423,11 @@ function ParcelsMapPageInner() {
           </ChromeBtn>
         </span>
         {/* 2. Zoom in */}
-        <ChromeBtn c={c} title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
+        <ChromeBtn title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
         {/* 3. Zoom out */}
-        <ChromeBtn c={c} title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
+        <ChromeBtn title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
         {/* 4. Reset bearing — compass icon rotates with current bearing. */}
         <ChromeBtn
-          c={c}
           title="Reset bearing"
           onClick={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45, duration: 500 })}
         >
@@ -5435,7 +5437,6 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 5. 2D/3D toggle */}
         <ChromeBtn
-          c={c}
           title={is3D ? "Switch to 2D" : "Switch to 3D"}
           active={is3D}
           onClick={() => {
@@ -6963,65 +6964,10 @@ type ChromeTheme = {
   headerShadow: string;
 };
 
-// Square chrome button used in the right vertical control column.
-function ChromeBtn({
-  c, title, onClick, children, active,
-}: {
-  c: ChromeTheme;
-  title: string;
-  onClick: () => void;
-  children: React.ReactNode;
-  // Optional active state — used by Layers, basemap select, Auto-rotate,
-  // Legend triggers in the symmetric 5×5 big-map button stacks (2026-05-24).
-  // Default false keeps the legacy zoom / compass / 3D look untouched.
-  active?: boolean;
-}) {
-  const isActive = !!active;
-  return (
-    <button
-      title={title}
-      aria-label={title}
-      aria-pressed={active != null ? isActive : undefined}
-      onClick={onClick}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        // Unified spec tokens (founder 2026-05-29): rgba(0,0,0,0.3) +
-        // blur(16) + neutral 0.15 border. Active state lifts to gold
-        // accent like the rest of the gold-on-glass affordances.
-        border: `1px solid ${isActive ? GOLD : "rgba(255, 255, 255, 0.15)"}`,
-        background: isActive ? "rgba(200, 169, 110, 0.25)" : "rgba(0, 0, 0, 0.3)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        color: isActive ? GOLD : "#FFFFFF",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 15,
-        fontWeight: 700,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3)",
-        padding: 0,
-        transition: "border-color 150ms ease, background 150ms ease, color 150ms ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = GOLD;
-        e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-        e.currentTarget.style.color = GOLD;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = isActive ? GOLD : "rgba(255, 255, 255, 0.15)";
-        e.currentTarget.style.background = isActive
-          ? "rgba(200, 169, 110, 0.25)"
-          : "rgba(0, 0, 0, 0.3)";
-        e.currentTarget.style.color = isActive ? GOLD : "#FFFFFF";
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+// Inline ChromeBtn function moved out (Phase 1 style unification,
+// 2026-05-31) — now imported from "@/components/ChromeBtn" at the
+// top of this file. Single source of truth for the glass button
+// chrome across page.tsx, modals, and any future surface.
 function HeaderBar({
   c,
   isDark,
@@ -7187,15 +7133,19 @@ function HeaderBar({
       )}
 
       <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-        <button
-          onClick={onOpenAddModal}
+        {/* Phase 1 unification (2026-05-31): all HeaderBar buttons
+            migrated from the inline `hdrBtnStyle` legacy chrome (28×28,
+            navy 0.5, always-gold border) to the shared ChromeBtn size
+            COMPACT (28×28, CHROME_BTN_BG, neutral border, gold only on
+            hover/active). Toggle/permanent-gold affordances use the
+            `active` prop. */}
+        <ChromeBtn
           title="Add Plot"
-          style={hdrBtnStyle(c)}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+          onClick={onOpenAddModal}
+          size={CHROME_BTN_SIZE_COMPACT}
         >
           <span style={{ fontSize: 15, color: GOLD, fontWeight: 700 }}>+</span>
-        </button>
+        </ChromeBtn>
         <FindLauncher
           c={c}
           open={findOpen}
@@ -7208,8 +7158,12 @@ function HeaderBar({
         />
         {/* Check DLD — links to the dedicated /parcels/check-plot page
             where the user enters the 3+4-digit split and lands on DLD's
-            inquiry form with the number copied. Old inline doCheck input
-            removed in favour of the dedicated route. */}
+            inquiry form with the number copied. Stays as Next <Link>
+            (client-side nav) — it's a pill-shaped 28h text affordance
+            with the ✓ glyph rather than a square ChromeBtn footprint.
+            Phase 1: styled with the same tokens as ChromeBtn (
+            CHROME_BTN_BG, PANEL_BORDER_COLOR, GOLD hover) so it
+            reads as part of the same family. */}
         <Link
           href="/parcels/check-plot"
           title="Check Plot Status on DLD"
@@ -7220,9 +7174,11 @@ function HeaderBar({
             gap: 6,
             height: 28,
             padding: "0 12px",
-            borderRadius: 6,
-            border: `1px solid ${c.border}`,
-            background: "rgba(10, 22, 40, 0.5)",
+            borderRadius: 8,
+            border: `1px solid ${PANEL_BORDER_COLOR}`,
+            background: CHROME_BTN_BG,
+            backdropFilter: PANEL_BLUR,
+            WebkitBackdropFilter: PANEL_BLUR,
             color: GOLD,
             fontSize: 15,
             fontWeight: 700,
@@ -7236,75 +7192,64 @@ function HeaderBar({
             e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = c.border;
-            e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
+            e.currentTarget.style.borderColor = PANEL_BORDER_COLOR;
+            e.currentTarget.style.background = CHROME_BTN_BG;
           }}
         >
           ✓
         </Link>
-        <button
-          type="button"
-          onClick={() => sound.toggle()}
+        <ChromeBtn
           title={soundOn ? "Mute" : "Unmute"}
-          aria-label={soundOn ? "Mute" : "Unmute"}
-          style={hdrBtnStyle(c)}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+          ariaLabel={soundOn ? "Mute" : "Unmute"}
+          onClick={() => sound.toggle()}
+          size={CHROME_BTN_SIZE_COMPACT}
         >
           <span style={{ fontSize: 13 }}>{soundOn ? "🎵" : "🔇"}</span>
-        </button>
+        </ChromeBtn>
         {isAdmin && (
           // Step 12 audit B-3: Step 2 deleted /admin/ambassadors;
           // /admin/queue (Step 7) is the cohort-pilot admin destination.
-          <a
+          // Phase 1: always-`active` so the chrome stays gold even
+          // without hover (preserves the prior "admin = always lit"
+          // affordance).
+          <ChromeBtn
+            as="a"
             href="/admin/queue"
             title="Admin — Cohort queue"
-            aria-label="Admin"
-            style={{ ...hdrBtnStyle(c), textDecoration: "none", borderColor: GOLD, background: "rgba(200, 169, 110, 0.12)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.12)"; }}
+            ariaLabel="Admin"
+            size={CHROME_BTN_SIZE_COMPACT}
+            active
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2 L4 6 V12 C4 17 7.5 20.5 12 22 C16.5 20.5 20 17 20 12 V6 Z" />
             </svg>
-          </a>
+          </ChromeBtn>
         )}
         {/* Vault — flips vault-only mode on the map (founder spec
             2026-05-30). No longer redirects to /vault; that page is
             still reachable from /dashboard. Active state lifts the
             button to the gold tint so it visually matches the
             highlighted vault entries on the map. */}
-        <button
-          type="button"
+        <ChromeBtn
           title={vaultOnlyMode ? "Exit vault view" : "Private Plot Vault"}
-          aria-label="Toggle vault view"
-          aria-pressed={vaultOnlyMode}
+          ariaLabel="Toggle vault view"
           onClick={onToggleVaultOnly}
-          style={{
-            ...hdrBtnStyle(c),
-            background: vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : hdrBtnStyle(c).background,
-            borderColor: vaultOnlyMode ? GOLD : hdrBtnStyle(c).borderColor,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = vaultOnlyMode ? GOLD : (hdrBtnStyle(c).borderColor as string);
-            e.currentTarget.style.background = vaultOnlyMode ? "rgba(200, 169, 110, 0.25)" : (hdrBtnStyle(c).background as string);
-          }}
+          size={CHROME_BTN_SIZE_COMPACT}
+          active={vaultOnlyMode}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="10" rx="2" />
             <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
-        </button>
-        <a
+        </ChromeBtn>
+        <ChromeBtn
+          as="a"
           href="/dashboard"
           title="Profile"
-          style={{ ...hdrBtnStyle(c), textDecoration: "none" }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+          size={CHROME_BTN_SIZE_COMPACT}
         >
           <span style={{ fontSize: 13 }}>👤</span>
-        </a>
+        </ChromeBtn>
         {/* Step 12 — quick-access global sign-out next to Profile.
             Same component as Dashboard Settings so the confirm dialog
             and signOut({ scope: 'global' }) logic live in one place. */}
@@ -7314,26 +7259,8 @@ function HeaderBar({
   );
 }
 
-function hdrBtnStyle(c: ChromeTheme): React.CSSProperties {
-  return {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    width: 28,
-    height: 28,
-    padding: 0,
-    borderRadius: 6,
-    border: `1px solid rgba(200, 169, 110, 0.3)`,
-    background: "rgba(10, 22, 40, 0.5)",
-    color: c.text,
-    fontSize: 11,
-    fontWeight: 600,
-    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-    cursor: "pointer",
-    transition: "border-color 150ms ease, background 150ms ease",
-  };
-}
+// hdrBtnStyle removed (Phase 1 style unification, 2026-05-31) — all
+// callsites migrated to <ChromeBtn size={CHROME_BTN_SIZE_COMPACT}>.
 
 // ── Add Plot modal ─────────────────────────────────────────────────
 // AddPlotModal moved to ./AddPlotModal (broker + owner flows).
@@ -7359,16 +7286,14 @@ function FindLauncher({
 
   if (!open) {
     return (
-      <button
+      <ChromeBtn
         title="Find Plot"
-        aria-label="Find plot"
+        ariaLabel="Find plot"
         onClick={() => setOpen(true)}
-        style={hdrBtnStyle(c)}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+        size={CHROME_BTN_SIZE_COMPACT}
       >
         <span style={{ fontSize: 12 }}>🔍</span>
-      </button>
+      </ChromeBtn>
     );
   }
 
@@ -7474,15 +7399,13 @@ function HdrField({
 
   if (!expanded && !value) {
     return (
-      <button
+      <ChromeBtn
         title={tooltip}
         onClick={() => setExpanded(true)}
-        style={hdrBtnStyle(c)}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
+        size={CHROME_BTN_SIZE_COMPACT}
       >
         <span style={{ fontSize: 13, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
-      </button>
+      </ChromeBtn>
     );
   }
 
