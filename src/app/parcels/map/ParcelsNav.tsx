@@ -2,6 +2,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
+// Phase 1: pill bg + blur from tokens. radius 999 stays inline (this
+// IS the pill — RADIUS_PILL exists in tokens but the value is identical
+// and reading it from the constant doesn't make the JSX clearer here).
+import { PANEL_BG, PANEL_BLUR, PANEL_BORDER_COLOR } from "@/lib/design-tokens";
 
 // ── Bottom-centre parcels nav pill ────────────────────────────────────
 // Three controls in one row: ◀ prev | "Parcels (N)" toggle | next ▶.
@@ -141,10 +145,10 @@ export default function ParcelsNav({
         style={{
           display: "flex",
           alignItems: "stretch",
-          background: "rgba(0, 0, 0, 0.3)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
+          background: PANEL_BG,
+          backdropFilter: PANEL_BLUR,
+          WebkitBackdropFilter: PANEL_BLUR,
+          border: `1px solid ${PANEL_BORDER_COLOR}`,
           borderRadius: 999,
           boxShadow: "0 6px 20px rgba(0, 0, 0, 0.3)",
           color: "#FFFFFF",

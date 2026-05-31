@@ -12,6 +12,9 @@ import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
+// Phase 1: drop the local 0.12 border value in favour of the shared
+// PANEL_BORDER_COLOR (0.15) — single source of truth for panel edges.
+import { PANEL_BORDER_COLOR } from "@/lib/design-tokens";
 
 const GOLD = "#C8A96E";
 const VIEWPORT_SRC = "mini-viewport";
@@ -329,7 +332,7 @@ export default function MiniMap({
         position: "relative",
         width: 280,
         height: 160,
-        border: "1px solid rgba(255,255,255,0.12)",
+        border: `1px solid ${PANEL_BORDER_COLOR}`,
         borderRadius: 8,
         overflow: "hidden",
         // Intentionally no backdrop-filter here — this canvas sits
