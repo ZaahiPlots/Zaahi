@@ -12,6 +12,11 @@ import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 import { PdfProgressBar } from "./PdfProgressBar";
 import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
+// Phase 1 style unification (2026-05-31): the aside container migrates
+// to the shared Panel + tokens. Inner content keeps its existing
+// styling — Phase 2 will sweep the row colours / chips.
+import { Panel } from "@/components/Panel";
+import { PANEL_BORDER_COLOR, RADIUS_EDGE } from "@/lib/design-tokens";
 
 // rgba(200,169,110,0.9) — translucent solid-gold for primary CTAs
 // (founder spec 2026-05-31 Q1). Same hue as the GOLD constant below
@@ -340,14 +345,17 @@ export default function SidePanel({
     n == null ? "—" : `${Math.round(n).toLocaleString("en-US")} AED`;
 
   return (
-    <aside
+    <Panel
+      as="aside"
+      radius={RADIUS_EDGE}
+      noShadow
       style={{
-        // Unified panel tokens — match login reference (src/app/page.tsx)
-        // and the Layers panel (parcels/map/page.tsx) exactly.
-        background: "rgba(0, 0, 0, 0.3)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderLeft: "1px solid rgba(255, 255, 255, 0.15)",
+        // SidePanel is flush against the right viewport edge: no all-around
+        // border, only a left edge; and a direction-aware drop shadow
+        // pushing visually inward from the right (so it doesn't paint over
+        // the map underneath). Panel's PANEL_BG + PANEL_BLUR come for free.
+        border: "none",
+        borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
         boxShadow: "-12px 0 48px rgba(0, 0, 0, 0.4)",
         color: TXT,
       }}
@@ -1036,7 +1044,7 @@ export default function SidePanel({
           onClose={() => setOfferOpen(false)}
         />
       )}
-    </aside>
+    </Panel>
   );
 }
 

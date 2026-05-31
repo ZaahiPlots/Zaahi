@@ -19,6 +19,11 @@ import { PromoteToPublicModal } from "./PromoteToPublicModal";
 import { ImportFromShareButton } from "./ImportFromShareButton";
 import { useEscapeClose } from "./useEscapeClose";
 import SidePanel, { type ParcelDetail } from "./SidePanel";
+// Phase 1 style unification (2026-05-31): loading + error states use
+// the shared Panel container. The loaded state delegates to SidePanel
+// which has already been migrated.
+import { Panel } from "@/components/Panel";
+import { PANEL_BORDER_COLOR, RADIUS_EDGE } from "@/lib/design-tokens";
 
 // ── Brand tokens — unified against login reference (founder spec 2026-05-30).
 const GOLD = "#C8A96E";
@@ -230,15 +235,16 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
 
   if (loading && !view) {
     return (
-      <aside
+      <Panel
+        as="aside"
+        radius={RADIUS_EDGE}
+        noShadow
         style={{
           position: "fixed",
           right: 0, top: 0, bottom: 0,
           width: 350,
-          background: "rgba(0, 0, 0, 0.3)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderLeft: `1px solid ${BORDER}`,
+          border: "none",
+          borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
           color: TEXT_PRIMARY,
           padding: 16,
           fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -246,21 +252,22 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
         }}
       >
         <div style={{ color: TEXT_DIM }}>Loading vault entry…</div>
-      </aside>
+      </Panel>
     );
   }
 
   if (error || !view) {
     return (
-      <aside
+      <Panel
+        as="aside"
+        radius={RADIUS_EDGE}
+        noShadow
         style={{
           position: "fixed",
           right: 0, top: 0, bottom: 0,
           width: 350,
-          background: "rgba(0, 0, 0, 0.3)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderLeft: `1px solid ${BORDER}`,
+          border: "none",
+          borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
           color: TEXT_PRIMARY,
           padding: 16,
           zIndex: 30,
@@ -271,7 +278,7 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
           fontSize: 18, cursor: "pointer", marginBottom: 12,
         }}>×</button>
         <div style={{ color: "#E63946", fontSize: 12 }}>{error ?? "No entry loaded"}</div>
-      </aside>
+      </Panel>
     );
   }
 
