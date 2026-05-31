@@ -57,18 +57,35 @@ PLATFORM:
 - ZAAHI is Real Estate OS for UAE & Saudi Arabia
 - Map shows communities, DDA districts, master plans, plots for sale with 3D buildings and feasibility calculator
 
-MAP CONTROL — you can drive the map directly:
-- fly_to_district  — move the camera to a Dubai district / community (Arjan, Dubai Hills, Business Bay, …)
+MAP CONTROL — you have SIX tools that drive the map directly:
+- fly_to_district  — camera to a Dubai district / community (Arjan, Dubai Hills, Business Bay, …)
 - open_plot        — search a plot by its plot number and open its detail panel
 - highlight_plot   — pulse the gold halo around a plot without opening the panel
 - filter_by_land_use — show only buildings of one category (RESIDENTIAL, COMMERCIAL, MIXED_USE, HOTEL, INDUSTRIAL, EDUCATIONAL, HEALTHCARE, AGRICULTURAL, FUTURE_DEVELOPMENT)
 - filter_by_status — show only parcels of a given status (LISTED, VERIFIED, IN_DEAL, SOLD, VAULT_PRIVATE)
 - toggle_vault_only — flip the lock that scopes the map to the caller's private vault plots
 
-When the user asks to navigate, find, or filter the map, CALL the
-relevant tool instead of describing what they should click. Use one
-tool per turn unless several are clearly needed at once. After a
-tool completes, summarise what changed in one short sentence.
+⚠️ CRITICAL — read this carefully:
+
+You have NO ability to move the map by describing actions in text.
+The map ONLY changes when you call a tool. This applies in every
+language (EN, RU, AR).
+
+- NEVER claim you moved the camera, opened a plot, applied a filter,
+  or toggled vault mode unless you actually called the corresponding
+  tool in this turn.
+- If the user asks to navigate, find, filter, open, or highlight
+  anything on the map — you MUST call the relevant tool. There is
+  no other way.
+- Describing the action without calling the tool is a FAILURE. Do
+  NOT say "I've moved the camera", "showing only residential", "I've
+  opened the plot", "камера перемещена", or any equivalent — call
+  the tool first, wait for its return value, then summarise what
+  the tool actually reported.
+
+After a tool call, your follow-up turn should describe the result
+based on the tool's return payload — not on what you assumed would
+happen. If the tool returned an error, tell the user honestly.
 
 RULES:
 - Use emoji sparingly
@@ -248,6 +265,30 @@ interface OpenAIResponse {
   error?: { message: string; type?: string };
 }
 
+// ── Navigation-intent heuristic ───────────────────────────────
+// gpt-4o with tool_choice:"auto" is known to skip tool calls and
+// hallucinate a "done" reply, especially on non-English prompts
+// (founder report 2026-05-31). When the latest user message clearly
+// signals a navigation / filter intent, we promote tool_choice to
+// "required" so the model is forced to invoke one of the six tools
+// rather than chat. For ambient questions ("what's the DLD fee?")
+// we keep tool_choice:"auto" so the model can answer in text.
+//
+// Word-list is deliberately conservative — only verbs that imply a
+// map action, in all three platform languages.
+const NAV_INTENT_RE =
+  /\b(show|go to|open|filter|fly|find|navigate|highlight|take me to|zoom to|filter by|only)\b|покажи|откро[йи]|найди|лети|фильтр|перейди|выдели|показать|только|أرني|افتح|اعرض|انتقل|فلتر|ابحث/iu;
+
+function detectToolChoice(history: ChatMessage[]): "auto" | "required" {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = history[i];
+    if (m.role !== "user") continue;
+    if (typeof m.content !== "string") return "auto";
+    return NAV_INTENT_RE.test(m.content) ? "required" : "auto";
+  }
+  return "auto";
+}
+
 // ── Handler ───────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const callerId = await getApprovedUserId(req);
@@ -297,7 +338,11 @@ export async function POST(req: NextRequest) {
         model: "gpt-4o",
         messages,
         tools: TOOLS,
-        tool_choice: "auto",
+        // "required" when the user's latest turn looks like a
+        // navigation / filter command (forces the model to actually
+        // invoke a tool); "auto" otherwise so RE-knowledge questions
+        // still get plain text replies. See detectToolChoice above.
+        tool_choice: detectToolChoice(history),
         max_tokens: 600,
         // Slight non-determinism so repeated identical queries don't
         // bore returning users. Same posture as gpt-4o defaults.
@@ -324,6 +369,17 @@ export async function POST(req: NextRequest) {
     if (!choice) {
       return NextResponse.json({ error: "no_choice" }, { status: 502 });
     }
+
+    // Observability — one line per turn so we can monitor whether
+    // the model is calling tools as expected. Kept permanently
+    // (founder spec 2026-05-31): if tool-call rate drops, this is
+    // the cheapest signal.
+    console.log(
+      "[archie] finish:",
+      choice.finish_reason,
+      "tools:",
+      choice.message.tool_calls?.length ?? 0,
+    );
 
     // Tool-call path: surface them up to the client. The client will
     // execute and post a follow-up turn with role:"tool" entries.
