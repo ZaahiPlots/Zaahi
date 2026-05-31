@@ -135,6 +135,12 @@ interface Props {
   mode: "owner" | "share";
   onClose: () => void;
   mapRef?: React.RefObject<MLMap | null>;
+  /** Forwarded to SidePanel + applied to the local loading / error
+   *  states. Founder spec 2026-05-31 Q1: vault loading/error widths
+   *  match the saved width too, so opening a vault entry doesn't
+   *  flicker from 350 to the user's saved value. */
+  width?: number;
+  onWidthChange?: (w: number) => void;
 }
 
 // ── EntryView → ParcelDetail adapter ──────────────────────────────
@@ -191,7 +197,7 @@ function mapEntryToParcelDetail(view: EntryView): ParcelDetail {
   };
 }
 
-export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props) {
+export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef, width, onWidthChange }: Props) {
   const [view, setView] = useState<EntryView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,6 +239,12 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
     return () => { cancelled = true; };
   }, [entryId, mode]);
 
+  // Founder spec 2026-05-31 Q1: loading/error transients inherit the
+  // saved width so opening a vault entry doesn't snap from 350 →
+  // saved when the loaded SidePanel takes over. Falls back to the
+  // historical 350 px when the parent doesn't wire up width.
+  const transientWidth = width ?? 350;
+
   if (loading && !view) {
     return (
       <Panel
@@ -242,7 +254,7 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
         style={{
           position: "fixed",
           right: 0, top: 0, bottom: 0,
-          width: 350,
+          width: transientWidth,
           border: "none",
           borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
           color: TEXT_PRIMARY,
@@ -265,7 +277,7 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
         style={{
           position: "fixed",
           right: 0, top: 0, bottom: 0,
-          width: 350,
+          width: transientWidth,
           border: "none",
           borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
           color: TEXT_PRIMARY,
@@ -294,6 +306,8 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef }: Props)
         directData={directData}
         mapRef={mapRef}
         onClose={onClose}
+        width={width}
+        onWidthChange={onWidthChange}
         renderFooter={() => (
           <VaultFooter
             view={view}

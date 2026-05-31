@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import FeasibilityCalculator from "./FeasibilityCalculator";
 import FeasibilityV6Calculator from "@/components/feasibility/FeasibilityV6Calculator";
@@ -17,6 +17,10 @@ import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 // styling — Phase 2 will sweep the row colours / chips.
 import { Panel } from "@/components/Panel";
 import { PANEL_BORDER_COLOR, RADIUS_EDGE } from "@/lib/design-tokens";
+import {
+  PANEL_WIDTH_DEFAULT,
+  clampPanelWidth,
+} from "./sidepanel-width";
 
 // rgba(200,169,110,0.9) — translucent solid-gold for primary CTAs
 // (founder spec 2026-05-31 Q1). Same hue as the GOLD constant below
@@ -187,6 +191,8 @@ export default function SidePanel({
   mapRef,
   directData,
   renderFooter,
+  width,
+  onWidthChange,
 }: {
   parcelId: string | null;
   onClose: () => void;
@@ -200,9 +206,25 @@ export default function SidePanel({
    *  Pipeline / Owner contact / Activity sections without forking the
    *  rest of the panel. */
   renderFooter?: (data: ParcelDetail) => React.ReactNode;
+  /** Desktop panel width in px. Controlled by the parent so the value
+   *  survives open/close cycles and stays in sync with the vault
+   *  adapter's loading/error states. Falls back to PANEL_WIDTH_DEFAULT
+   *  when omitted (e.g. callers that don't wire up resize). */
+  width?: number;
+  /** Setter for the controlled width. When omitted, the drag handle is
+   *  not rendered (the panel becomes effectively non-resizable). */
+  onWidthChange?: (w: number) => void;
 }) {
   const [data, setData] = useState<ParcelDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  // Drag-resize state — `isDesktop` gates the inline width / drag
+  // handle (mobile still uses the bottom-sheet layout). `isResizing`
+  // suppresses the 150ms width transition during drag so the panel
+  // tracks the cursor instead of lagging behind by one animation
+  // frame; it flips back on at pointerup so subsequent width changes
+  // (e.g. double-click reset) animate.
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [feasOpen, setFeasOpen] = useState(false);
   const [jvOpen, setJvOpen] = useState(true); // default open — the JV terms are the headline of the listing
@@ -224,6 +246,21 @@ export default function SidePanel({
     supabaseBrowser.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
     const { data: sub } = supabaseBrowser.auth.onAuthStateChange((_e, session) => setSignedIn(!!session));
     return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Detect the sm breakpoint via matchMedia — the inline width style
+  // only applies on desktop. At < sm the panel is a bottom sheet
+  // (left:0 right:0) and a width override would conflict with that
+  // layout. matchMedia listens for breakpoint crossings so a user
+  // resizing the browser between mobile and desktop sees the right
+  // shape without a refresh.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 640px)");
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   useEffect(() => {
@@ -344,6 +381,19 @@ export default function SidePanel({
   const fmtPerSqft = (n: number | null): string =>
     n == null ? "—" : `${Math.round(n).toLocaleString("en-US")} AED`;
 
+  // Effective width — falls back to the historical 320 px default
+  // when no parent wires up the controlled value. Mobile bottom-sheet
+  // ignores this entirely (see isDesktop gate below).
+  const effectiveWidth = width ?? PANEL_WIDTH_DEFAULT;
+  // Width transition is normally 150 ms ease (smooth reset / breakpoint
+  // crossings), but suppressed during drag so the cursor leads the
+  // panel pixel-for-pixel. transform stays on the existing 300 ms
+  // transition (slide-in animation) — we merge the two via inline
+  // style so they don't fight.
+  const widthTransition = isResizing
+    ? "transform 300ms ease-out"
+    : "transform 300ms ease-out, width 150ms ease";
+
   return (
     <Panel
       as="aside"
@@ -358,6 +408,10 @@ export default function SidePanel({
         borderLeft: `1px solid ${PANEL_BORDER_COLOR}`,
         boxShadow: "-12px 0 48px rgba(0, 0, 0, 0.4)",
         color: TXT,
+        // Inline width applies on desktop only; on mobile the panel is
+        // a bottom sheet whose width is driven by left-0/right-0.
+        width: isDesktop ? effectiveWidth : undefined,
+        transition: widthTransition,
       }}
       // Mobile (< sm): bottom sheet — slides up from the bottom, takes
       // the bottom 85% of the viewport, rounded top corners + a small
@@ -366,12 +420,21 @@ export default function SidePanel({
       // the mobile y-translate with a horizontal slide. `border-gray-200`
       // matches the LINE constant (#E5E7EB) — Tailwind JIT can't see
       // arbitrary `[${LINE}]` interpolations, so we use a static class.
-      className={`absolute z-20 overflow-y-auto transition-transform duration-300 ease-out bottom-0 left-0 right-0 max-h-[85vh] h-[85vh] rounded-t-2xl border-t border-gray-200 sm:top-0 sm:bottom-auto sm:left-auto sm:right-0 sm:h-full sm:max-h-screen sm:w-[320px] sm:rounded-none sm:border-t-0 sm:border-l ${
+      // Phase 2 2026-05-31: dropped sm:w-[320px] — width is driven by
+      // the inline style above so the parent's controlled value (or
+      // its localStorage-restored saved value) wins.
+      className={`absolute z-20 overflow-y-auto transition-transform duration-300 ease-out bottom-0 left-0 right-0 max-h-[85vh] h-[85vh] rounded-t-2xl border-t border-gray-200 sm:top-0 sm:bottom-auto sm:left-auto sm:right-0 sm:h-full sm:max-h-screen sm:rounded-none sm:border-t-0 sm:border-l ${
         open
           ? "translate-y-0 sm:translate-y-0 sm:translate-x-0"
           : "translate-y-full sm:translate-y-0 sm:translate-x-full"
       }`}
     >
+      {/* Drag-resize handle — desktop only. Pointer-event based so the
+       *  same code path covers mouse + iPad touch. Double-click resets
+       *  the panel to the 320 px default (Q2 founder spec 2026-05-31). */}
+      {isDesktop && onWidthChange && (
+        <DragHandle onResize={onWidthChange} onResizingChange={setIsResizing} />
+      )}
       {/* Mobile drag handle — hidden on sm+ */}
       <div className="sm:hidden flex justify-center pt-2 pb-1">
         <div style={{ width: 36, height: 4, borderRadius: 2, background: LINE }} />
@@ -1045,6 +1108,98 @@ export default function SidePanel({
         />
       )}
     </Panel>
+  );
+}
+
+// Drag handle for SidePanel left edge. 6 px wide hit zone with a gold
+// tint on hover/drag. PointerEvents (not MouseEvents) so the same
+// code path handles desktop mouse + iPad touch. setPointerCapture
+// keeps mousemove flowing even if the cursor briefly leaves the 6 px
+// strip during a fast drag.
+//
+// Width math: dragging LEFT (cursor moves toward smaller x) widens
+// the panel — `delta = startX - currentX`. clampPanelWidth applies
+// the MIN / MAX rules. The new width is reported up via onResize
+// every frame; the parent's setState batches and re-renders the
+// panel. isResizing flag flips to true on pointerdown and back on
+// pointerup so the parent can suppress the 150 ms width transition
+// during drag.
+function DragHandle({
+  onResize,
+  onResizingChange,
+}: {
+  onResize: (w: number) => void;
+  onResizingChange: (resizing: boolean) => void;
+}) {
+  const startRef = useRef<{ x: number; w: number; id: number } | null>(null);
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize side panel"
+      title="Drag to resize · double-click to reset"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 6,
+        cursor: "col-resize",
+        zIndex: 31,
+        userSelect: "none",
+        background: "transparent",
+        transition: "background 120ms ease",
+      }}
+      onPointerDown={(e) => {
+        // Left button only — right-click context menu shouldn't start
+        // a drag. Touch / pen pointers fall through (button === 0).
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const el = e.currentTarget;
+        try { el.setPointerCapture(e.pointerId); } catch { /* unsupported */ }
+        const panel = el.parentElement;
+        const panelW =
+          panel?.getBoundingClientRect().width ?? PANEL_WIDTH_DEFAULT;
+        startRef.current = { x: e.clientX, w: panelW, id: e.pointerId };
+        el.style.background = "rgba(200, 169, 110, 0.3)";
+        onResizingChange(true);
+      }}
+      onPointerMove={(e) => {
+        const start = startRef.current;
+        if (!start || start.id !== e.pointerId) return;
+        const delta = start.x - e.clientX;
+        const next = clampPanelWidth(start.w + delta, window.innerWidth);
+        onResize(next);
+      }}
+      onPointerUp={(e) => {
+        const start = startRef.current;
+        if (!start || start.id !== e.pointerId) return;
+        const el = e.currentTarget;
+        try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+        startRef.current = null;
+        el.style.background = "transparent";
+        onResizingChange(false);
+      }}
+      onPointerCancel={(e) => {
+        if (!startRef.current) return;
+        const el = e.currentTarget;
+        try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+        startRef.current = null;
+        el.style.background = "transparent";
+        onResizingChange(false);
+      }}
+      onDoubleClick={() => onResize(PANEL_WIDTH_DEFAULT)}
+      onMouseEnter={(e) => {
+        if (!startRef.current) {
+          e.currentTarget.style.background = "rgba(200, 169, 110, 0.3)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!startRef.current) {
+          e.currentTarget.style.background = "transparent";
+        }
+      }}
+    />
   );
 }
 

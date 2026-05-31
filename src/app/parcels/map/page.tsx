@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification, MapMouseEvent, FilterSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Protocol } from "pmtiles";
@@ -10,6 +10,11 @@ import Link from "next/link";
 import SidePanel from "./SidePanel";
 import ArchibaldChat from "./ArchibaldChat";
 import { VaultSidePanelAdapter } from "./VaultSidePanelAdapter";
+import {
+  PANEL_WIDTH_DEFAULT,
+  PANEL_WIDTH_STORAGE_KEY,
+  clampPanelWidth,
+} from "./sidepanel-width";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
@@ -1548,6 +1553,38 @@ function ParcelsMapPageInner() {
   const [selectedVaultEntry, setSelectedVaultEntry] = useState<
     { id: string; mode: "owner" | "share" } | null
   >(null);
+  // SidePanel drag-resize width (founder spec 2026-05-31). Lives in
+  // page.tsx so the value survives open/close cycles and stays in
+  // sync between SidePanel + VaultSidePanelAdapter. Initialised to
+  // PANEL_WIDTH_DEFAULT to avoid an SSR/CSR mismatch — the useEffect
+  // below restores the saved value on mount, before the panel ever
+  // opens (selectedParcelId is null at first paint), so no flicker.
+  const [panelWidth, setPanelWidthState] = useState<number>(PANEL_WIDTH_DEFAULT);
+  const panelWidthWriteRef = useRef<number | null>(null);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PANEL_WIDTH_STORAGE_KEY);
+      if (raw != null) {
+        const n = Number(raw);
+        if (Number.isFinite(n)) {
+          setPanelWidthState(clampPanelWidth(n, window.innerWidth));
+        }
+      }
+    } catch { /* localStorage unavailable — keep default */ }
+  }, []);
+  const setPanelWidth = useCallback((w: number) => {
+    setPanelWidthState(w);
+    // Debounce the localStorage write so a 60 fps drag doesn't pound
+    // synchronous storage on every move. Latest value wins.
+    if (panelWidthWriteRef.current != null) {
+      window.clearTimeout(panelWidthWriteRef.current);
+    }
+    panelWidthWriteRef.current = window.setTimeout(() => {
+      try { window.localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(w)); }
+      catch { /* ignore quota errors */ }
+      panelWidthWriteRef.current = null;
+    }, 100);
+  }, []);
   // sound.init() is called from inside HeaderBar's local useEffect now
   // (the music toggle button lives there). The page-level state used
   // to live here for the old floating button which was removed.
@@ -6453,6 +6490,8 @@ function ParcelsMapPageInner() {
           mode={selectedVaultEntry.mode}
           onClose={() => setSelectedVaultEntry(null)}
           mapRef={mapRef}
+          width={panelWidth}
+          onWidthChange={setPanelWidth}
         />
       )}
 
@@ -6464,6 +6503,8 @@ function ParcelsMapPageInner() {
           sound.swooshClose();
           setSelectedParcelId(null);
         }}
+        width={panelWidth}
+        onWidthChange={setPanelWidth}
       />
       <WelcomeTour />
       <ParcelsPortalPanel
