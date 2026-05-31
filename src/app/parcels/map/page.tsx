@@ -3878,6 +3878,31 @@ function ParcelsMapPageInner() {
       // safely addLayer/addSource. Purely additive — doesn't affect any
       // existing load-time code path below.
       setMapStyleReady(true);
+
+      // ── Boundary-popup priority gate (founder spec 2026-05-31, Phase 1
+      // hover dedup completion). The native maplibre `popup` instance
+      // (used by master-plan / community / DDA-project / DDA-free-zone
+      // / AD muni-dist-comm / amenity-point hovers) was being re-added
+      // after the JSX zaahi/vault/dda popups had cleared it, because
+      // when the user toggles a boundary layer ON via the Layers panel
+      // its mousemove handler registers AFTER the ZAAHI handlers and
+      // fires later in the dispatch order. Result on the live map:
+      // ZAAHI listing card + "Sama Al Jadaf · COMMERCIAL-HOSPITALITY"
+      // master-plan native popup stacked. This helper lets every
+      // boundary handler defer to ZAAHI listings + shared-vault when
+      // the cursor is already over either of them.
+      const cursorOverZaahiOrVault = (
+        e: MapMouseEvent & { features?: GeoJSON.Feature[] },
+      ): boolean => {
+        const blockingLayers = [ZAAHI_PLOTS_FILL, VAULT_SHARED_3D].filter(
+          (lid) => map.getLayer(lid),
+        );
+        if (blockingLayers.length === 0) return false;
+        return (
+          map.queryRenderedFeatures(e.point, { layers: blockingLayers }).length > 0
+        );
+      };
+
       // ── Hover handlers stashed on a ref so loadLayer can attach them
       // to freshly-loaded layers (since loadLayer fires on demand and
       // doesn't have direct closure access to the popup).
@@ -3892,6 +3917,12 @@ function ParcelsMapPageInner() {
         (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          // Defer to ZAAHI listings / vault if either is at the cursor —
+          // the boundary name popup would stack over the listing card.
+          if (cursorOverZaahiOrVault(e)) {
+            popup.remove();
+            return;
+          }
           map.getCanvas().style.cursor = "pointer";
           const layerRaw = (f.properties?.Layer as string) ?? planLabel;
           const clean = layerRaw.replace(/^PDF\s+_MP_LU_/, "").replace(/_/g, " ");
@@ -3933,6 +3964,12 @@ function ParcelsMapPageInner() {
         (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          // Defer to ZAAHI / vault — amenity point cards must not stack
+          // over a listing card at the same screen position.
+          if (cursorOverZaahiOrVault(e)) {
+            popup.remove();
+            return;
+          }
           map.getCanvas().style.cursor = "pointer";
           popup
             .setLngLat(e.lngLat)
@@ -4187,6 +4224,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", COMMUNITIES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         setHover((f.id as string | number | undefined) ?? f.properties?.COMM_NUM);
         const name = (f.properties?.CNAME_E as string) ?? "—";
@@ -4207,6 +4248,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", AD_MUN_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         const name = (f.properties?.NAMEENGLISH as string) ?? "—";
         popup
@@ -4225,6 +4270,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", AD_DIST_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         const name = (f.properties?.NAMEENGLISH as string) ?? "—";
         popup
@@ -4243,6 +4292,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", AD_COMM_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         const name = (f.properties?.COMMUNITYNAMEENG as string) ?? "—";
         popup
@@ -4264,6 +4317,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", DDA_PROJ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         const name = (f.properties?.ProjectName as string) ?? "—";
         popup
@@ -4282,6 +4339,10 @@ function ParcelsMapPageInner() {
       map.on("mousemove", DDA_FZ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
         const f = e.features?.[0];
         if (!f) return;
+        if (cursorOverZaahiOrVault(e)) {
+          popup.remove();
+          return;
+        }
         map.getCanvas().style.cursor = "pointer";
         const name = (f.properties?.ProjectName as string) ?? "—";
         const fz = f.properties?.IsFreeZone ? " (Free Zone)" : "";
