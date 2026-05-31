@@ -1496,6 +1496,22 @@ function saveLayers(state: Record<string, boolean>): void {
   }
 }
 
+// Vault-only mode is persisted across sessions. Lazy-readable so both
+// `useState` and the matching `useRef` can initialise from the same
+// source on the very first render — the v1 implementation (commit
+// 485711e, reverted 02e837f) split state init from ref init, which
+// left the ref `false` for one frame when the user reopened the map
+// in vault-only mode, briefly painting public listings over the vault
+// polygons before the hydration effect ran.
+function loadVaultOnlyMode(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem("zaahi-vault-only-mode") === "1";
+  } catch {
+    return false;
+  }
+}
+
 function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
   // Saudi (lng < 50) and Oman (lng > 56.5) panels were removed
   // 2026-05-23 (founder spec); out-of-UAE views fall back to Dubai.
@@ -1746,10 +1762,19 @@ function ParcelsMapPageInner() {
   const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
 
-  // Vault-only map mode — when ON, public ZAAHI listings are hidden and
-  // the My Vault / Shared-with-me layers are force-visible. Persists via
+  // Vault-only map mode — when ON, only caller's VAULT_PRIVATE plots
+  // render on the ZAAHI layer; when OFF, only public listings render
+  // (PPV hidden by default). Founder spec 2026-05-31 v2 — see
+  // buildZaahiFilter below for the direction logic. Persists via
   // localStorage "zaahi-vault-only-mode". Default OFF.
-  const [vaultOnlyMode, setVaultOnlyMode] = useState(false);
+  //
+  // Lazy-init from localStorage so state AND ref both start with the
+  // user's last-session value before any useEffect runs. This is what
+  // prevents the first-paint race that bit the v1 attempt
+  // (commit 485711e, reverted 02e837f) — the ref needs to be correct
+  // when loadZaahiPlots fires inside map.on("load"), which can happen
+  // before a state-restoring useEffect.
+  const [vaultOnlyMode, setVaultOnlyMode] = useState(loadVaultOnlyMode);
 
   // ── Archie map filters (Phase 2 archie client, 2026-05-30) ──
   // Refs (not state) so mapControls handlers can read/write them
@@ -1757,7 +1782,7 @@ function ParcelsMapPageInner() {
   // Filter state is composed with vaultOnlyMode in reapplyMapFilters
   // below; the same helper drives both the vault-only useEffect and
   // the Archie tool calls.
-  const vaultOnlyModeRef = useRef(false);
+  const vaultOnlyModeRef = useRef(loadVaultOnlyMode());
   const archieLandUseRef = useRef<string | null>(null);
   const archieStatusRef = useRef<string | null>(null);
   useEffect(() => {
@@ -2990,6 +3015,14 @@ function ParcelsMapPageInner() {
           features: plotFeatures,
         });
       } else {
+        // Initial filter for the three vault-direction layers
+        // (FILL / LINE / BUILDINGS_3D). Baking the composed filter into
+        // addLayer prevents the first-paint race where a freshly created
+        // layer would render unfiltered for one frame and leak the
+        // wrong side of the vault direction (PPV in OFF mode, listings
+        // in ON mode). Subsequent toggles travel via reapplyMapFilters.
+        const initialFilter = buildZaahiFilter();
+
         map.addSource(ZAAHI_PLOTS_SRC, {
           type: "geojson",
           data: { type: "FeatureCollection", features: plotFeatures },
@@ -2999,6 +3032,7 @@ function ParcelsMapPageInner() {
             id: ZAAHI_PLOTS_FILL,
             type: "fill",
             source: ZAAHI_PLOTS_SRC,
+            filter: initialFilter,
             paint: {
               "fill-color": ["get", "color"],
               // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
@@ -3018,6 +3052,7 @@ function ParcelsMapPageInner() {
             id: ZAAHI_PLOTS_LINE,
             type: "line",
             source: ZAAHI_PLOTS_SRC,
+            filter: initialFilter,
             paint: {
               "line-color": ["get", "color"],
               "line-width": 2,
@@ -3070,6 +3105,10 @@ function ParcelsMapPageInner() {
             id: ZAAHI_BUILDINGS_3D,
             type: "fill-extrusion",
             source: ZAAHI_BUILDINGS_SRC,
+            // Same direction filter as the plot fill/line — see comment
+            // in the plot-source branch above for the first-paint race
+            // it prevents.
+            filter: buildZaahiFilter(),
             paint: {
               "fill-extrusion-color": ["get", "color"],
               "fill-extrusion-height": ["get", "height"],
@@ -3101,6 +3140,14 @@ function ParcelsMapPageInner() {
             ["==", ["get", "isVault"], true],
             ["==", ["get", "conflictsWithOthers"], true],
           ],
+          // v2 fix (founder spec 2026-05-31): markers must hide when
+          // vault polygons are hidden, otherwise red dots float on the
+          // map where the underlying VAULT_PRIVATE plot was filtered
+          // out. The v1 attempt missed this — root cause of the revert.
+          // Toggled in the [vaultOnlyMode] useEffect below.
+          layout: {
+            visibility: vaultOnlyModeRef.current ? "visible" : "none",
+          },
           paint: {
             "circle-radius": 6,
             "circle-color": "#E63946",
@@ -3117,32 +3164,37 @@ function ParcelsMapPageInner() {
 
   // ── Map filter composition (Phase 2 archie client, 2026-05-30) ──
   //
-  // ONE filter per layer is a maplibre invariant. Three independent
-  // sources of truth could each want to set the ZAAHI plot/building
-  // filter:
-  //   • vault-only mode (lock button)          — isVault === true
+  // ONE filter per layer is a maplibre invariant. Four sources of
+  // truth feed the composite filter on the ZAAHI plot/building layers:
+  //   • vault-mode DIRECTION (always active)   — see below
   //   • Archie filter_by_land_use tool         — landUse === <enum>
   //   • Archie filter_by_status tool           — status === <enum>
   //
-  // buildZaahiFilter merges whichever are active into a single
-  // ["all", …] expression. When everything is off, returns null
-  // (no filter applied — pre-Phase-2 behaviour exactly).
+  // Vault-mode direction (founder spec 2026-05-31 v2):
+  //   OFF (default): isVault !== true → public listings only,
+  //                  caller's VAULT_PRIVATE plots hidden.
+  //   ON  (lock):    isVault === true → caller's PPV only,
+  //                  public listings hidden.
+  // Because the direction filter is always active, buildZaahiFilter
+  // never returns null. The v1 attempt (commit 485711e) put the
+  // direction flip inline in the useEffect; v2 folds it into the
+  // composer so Archie's filter_by_land_use / filter_by_status tools
+  // continue to compose cleanly via ["all", …].
   //
   // reapplyMapFilters reads the three refs + maps over the three
-  // affected layers. Safe to call multiple times — setFilter
-  // replaces the prior filter atomically.
-  function buildZaahiFilter(): FilterSpecification | null {
-    const parts: FilterSpecification[] = [];
-    if (vaultOnlyModeRef.current) {
-      parts.push(["==", ["get", "isVault"], true]);
-    }
+  // affected layers. Safe to call multiple times — setFilter replaces
+  // the prior filter atomically.
+  function buildZaahiFilter(): FilterSpecification {
+    const direction: FilterSpecification = vaultOnlyModeRef.current
+      ? ["==", ["get", "isVault"], true]
+      : ["!=", ["get", "isVault"], true];
+    const parts: FilterSpecification[] = [direction];
     if (archieLandUseRef.current) {
       parts.push(["==", ["get", "landUse"], archieLandUseRef.current]);
     }
     if (archieStatusRef.current) {
       parts.push(["==", ["get", "status"], archieStatusRef.current]);
     }
-    if (parts.length === 0) return null;
     if (parts.length === 1) return parts[0];
     return ["all", ...parts] as FilterSpecification;
   }
@@ -3152,9 +3204,7 @@ function ParcelsMapPageInner() {
     const expr = buildZaahiFilter();
     for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
       if (map.getLayer(lid)) {
-        // maplibre accepts null to clear the filter; cast satisfies
-        // the FilterSpecification | null union signature on setFilter.
-        map.setFilter(lid, expr as FilterSpecification | null);
+        map.setFilter(lid, expr);
       }
     }
   }
@@ -4428,15 +4478,21 @@ function ParcelsMapPageInner() {
     }
   }, [layers.vaultShared, vaultOnlyMode]);
 
-  // Vault-only mode side effect on public ZAAHI listings + PMTiles +
-  // persistence. Phase 2 archie client (2026-05-30) factored the
-  // filter logic into reapplyMapFilters so Archie's
-  // filter_by_land_use / filter_by_status tools can compose with
-  // vault-only mode.
+  // Vault-only mode side effect — direction flip + PMTiles dim +
+  // conflict marker visibility + localStorage persistence. Phase 2
+  // archie client (2026-05-30) factored the filter logic into
+  // reapplyMapFilters so Archie's filter_by_land_use /
+  // filter_by_status tools compose with vault-mode direction.
   //
-  // ⚠️ INVARIANT: when Archie filters are off (both refs null), the
-  // applied filter matches the pre-Phase-2 behaviour exactly —
-  // ["==", ["get", "isVault"], true] when ON, null when OFF.
+  // ⚠️ INVARIANT (founder spec 2026-05-31 v2):
+  //   OFF (default): direction = isVault !== true  → public listings.
+  //   ON  (lock):    direction = isVault === true  → caller's PPV.
+  // buildZaahiFilter merges this with Archie filters (if any) into
+  // a single ["all", …] expression.
+  //
+  // Conflict markers visibility flips with vaultOnlyMode so red dots
+  // never render over a filtered-out vault polygon (root cause of the
+  // v1 revert, commit 02e837f).
   //
   // PMTiles dim 0.45 → 0.1 on vault-only ON, literal numbers per
   // CLAUDE.md "fill-extrusion-opacity must be literal".
@@ -4451,6 +4507,15 @@ function ParcelsMapPageInner() {
     // value (the mirror useEffect runs after this one).
     vaultOnlyModeRef.current = vaultOnlyMode;
     reapplyMapFilters();
+    // Conflict markers ride the same direction as the vault polygons.
+    // OFF → vault filtered out → markers must hide. ON → markers visible.
+    if (map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
+      map.setLayoutProperty(
+        VAULT_CONFLICT_MARKERS_LAYER,
+        "visibility",
+        vaultOnlyMode ? "visible" : "none",
+      );
+    }
     // PMTiles dim: 0.45 (default) ↔ 0.1 (vault-only mode). Literal
     // numbers per CLAUDE.md "fill-extrusion-opacity must be literal".
     const pmtilesOpacity = vaultOnlyMode ? 0.1 : 0.45;
@@ -4509,16 +4574,6 @@ function ParcelsMapPageInner() {
     })();
     return () => { cancelled = true; };
   }, [vaultOnlyMode]);
-
-  // Hydrate vault-only mode from localStorage once on mount.
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined" &&
-          localStorage.getItem("zaahi-vault-only-mode") === "1") {
-        setVaultOnlyMode(true);
-      }
-    } catch { /* ignore */ }
-  }, []);
 
   useEffect(() => {
     if (!layersOpen) return;
