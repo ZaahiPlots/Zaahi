@@ -31,6 +31,8 @@ interface Props {
   onError?: (message: string) => void;
   /** Override the small uppercase label in the modal header. */
   title?: string;
+  /** Pre-filled plot number — see AddPlotWizard JSDoc. */
+  initialPlotNumber?: string;
 }
 
 export function AddPlotWizardModal({
@@ -39,6 +41,7 @@ export function AddPlotWizardModal({
   onExistingFound,
   onError,
   title = "Add a plot to your vault",
+  initialPlotNumber,
 }: Props) {
   useEscapeClose(onCancel);
   return (
@@ -61,6 +64,7 @@ export function AddPlotWizardModal({
           onCancel={onCancel}
           onExistingFound={onExistingFound}
           onError={onError}
+          initialPlotNumber={initialPlotNumber}
         />
       </div>
     </div>

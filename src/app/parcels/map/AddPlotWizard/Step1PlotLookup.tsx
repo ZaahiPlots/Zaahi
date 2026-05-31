@@ -12,7 +12,7 @@
 // If /api/me/vault/plot-lookup returns existing=<entry>, parent should
 // short-circuit to edit mode (we surface this case via onExistingFound).
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { Spinner } from "../Spinner";
 import {
@@ -55,6 +55,20 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
 
   const canLookup =
     !!plotNumber.match(/^\d{5,10}$/) && !loading;
+
+  // Auto-trigger lookup on mount when the wizard was opened with a
+  // pre-filled plotNumber (hover card "+ Add to Vault" entry point).
+  // Runs once per mount via the ref guard so React 18 StrictMode
+  // double-invocation doesn't fire two parallel lookup requests.
+  const autoLookupFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoLookupFiredRef.current) return;
+    if (state.plotNumber && state.plotNumber.match(/^\d{5,10}$/)) {
+      autoLookupFiredRef.current = true;
+      void handleLookup();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleLookup() {
     setLoading(true);

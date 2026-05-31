@@ -1722,6 +1722,37 @@ function ParcelsMapPageInner() {
   // AddPlotModal / AddPlotWizard internal logic untouched.
   type AddFlow = "none" | "chooser" | "listing" | "vault";
   const [addFlow, setAddFlow] = useState<AddFlow>("none");
+  // Pre-filled plot number passed into AddPlotWizardModal when the
+  // "+ Add to Vault" button on a hover popup opens the wizard.
+  // Cleared whenever the add flow closes so the next manual open
+  // (HeaderBar + button → chooser → vault) starts with an empty form.
+  const [addPlotPrefill, setAddPlotPrefill] = useState<string | null>(null);
+
+  // Shared entry point for both hover-card "+ Add to Vault" buttons
+  // (ZAAHI listings + PMTiles parcels). Validates the plot number,
+  // closes any open hover popup, applies the unauth redirect, then
+  // opens the wizard with the plot pre-filled so Step 1 fires its
+  // mount-only lookup automatically.
+  function openVaultWizardWith(plotNumber: string) {
+    if (!plotNumber.match(/^\d{5,10}$/)) return;
+    setZaahiHover(null);
+    setDdaLandHover(null);
+    setVaultHover(null);
+    try {
+      if (
+        typeof window !== "undefined" &&
+        document.cookie.indexOf("sb-") < 0 &&
+        !localStorage.getItem("supabase.auth.token")
+      ) {
+        window.location.href = "/";
+        return;
+      }
+    } catch {
+      /* noop — fall through to opening the wizard, AuthGuard will catch */
+    }
+    setAddPlotPrefill(plotNumber);
+    setAddFlow("vault");
+  }
 
   // Lightweight toast for success / error feedback after wizard or listing
   // submit. Single slot — newer toast replaces older. Auto-dismiss after 4s,
@@ -3507,6 +3538,12 @@ function ParcelsMapPageInner() {
     map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
       const f = e.features?.[0];
       if (!f) return;
+      // Re-hovering after a brief mouseleave cancels the pending close
+      // so the popup stays alive through the keep-alive window.
+      if (hoverCloseTimerRef.current != null) {
+        window.clearTimeout(hoverCloseTimerRef.current);
+        hoverCloseTimerRef.current = null;
+      }
       map.getCanvas().style.cursor = "pointer";
       const pr = f.properties as Record<string, unknown>;
       const areaSqm = (pr.areaSqm as number) ?? 0;
@@ -3526,7 +3563,20 @@ function ParcelsMapPageInner() {
         district: (pr.district as string) ?? "",
       });
     });
-    map.on("mouseleave", fillId, () => { map.getCanvas().style.cursor = ""; setDdaLandHover(null); });
+    // Delayed close — the hover card now has interactive content ("+"
+    // button), so leaving the PMTiles polygon shouldn't instantly kill
+    // the popup. 220ms window matches the zaahiHover pattern and is
+    // cancellable by the popup's onMouseEnter.
+    map.on("mouseleave", fillId, () => {
+      map.getCanvas().style.cursor = "";
+      if (hoverCloseTimerRef.current != null) {
+        window.clearTimeout(hoverCloseTimerRef.current);
+      }
+      hoverCloseTimerRef.current = window.setTimeout(() => {
+        setDdaLandHover(null);
+        hoverCloseTimerRef.current = null;
+      }, 220);
+    });
   }
 
   function setLandTileVisibility(map: MLMap, fillId: string, lineId: string, extId: string, on: boolean) {
@@ -4899,12 +4949,17 @@ function ParcelsMapPageInner() {
       )}
       {addFlow === "vault" && (
         <AddPlotWizardModal
+          initialPlotNumber={addPlotPrefill ?? undefined}
           // Per Option B: cancel/×/Esc/backdrop inside the vault flow
           // returns to the chooser, not to the bare map.
-          onCancel={() => setAddFlow("chooser")}
+          onCancel={() => {
+            setAddFlow("chooser");
+            setAddPlotPrefill(null);
+          }}
           onCreated={(id, coords) => {
             console.log("[zaahi] vault entry created", id, coords);
             setAddFlow("none");
+            setAddPlotPrefill(null);
             // Phase 3 (2026-05-30): vault rows ride the unified ZAAHI
             // layer, so refreshing /api/parcels/map is enough — the
             // new VAULT_PRIVATE parcel will appear immediately. No
@@ -4933,6 +4988,7 @@ function ParcelsMapPageInner() {
           onExistingFound={(id) => {
             console.log("[zaahi] vault entry already exists", id);
             setAddFlow("none");
+            setAddPlotPrefill(null);
             setToast({
               kind: "success",
               message: "Already in vault",
@@ -5785,16 +5841,24 @@ function ParcelsMapPageInner() {
             onMouseLeave={() => setZaahiHover(null)}
             onClick={handleOpenParcel}
           >
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {title}
               </span>
-              {authority && (
-                <span style={{
-                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                  letterSpacing: "0.06em", textTransform: "uppercase",
-                }}>{authority}</span>
-              )}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                {authority && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+                    letterSpacing: "0.06em", textTransform: "uppercase",
+                  }}>{authority}</span>
+                )}
+                {!!zaahiHover.plotNumber && /^\d{5,10}$/.test(zaahiHover.plotNumber) && (
+                  <VaultAddButton
+                    plotNumber={zaahiHover.plotNumber}
+                    onClick={() => openVaultWizardWith(zaahiHover.plotNumber)}
+                  />
+                )}
+              </span>
             </div>
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
@@ -5813,51 +5877,10 @@ function ParcelsMapPageInner() {
             {planDate && (
               <PmtilesHoverRow label="Affection Plan" value={planDate} />
             )}
-            {/* Add-to-vault CTA — stops propagation so it doesn't also
-                trigger the card's flyTo+open click handler. Page is
-                gated by AuthGuard so an unauthenticated user can't
-                reach this surface; the founder spec mentioned a login
-                redirect for defensive parity (kept as a fallback). */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setZaahiHover(null);
-                try {
-                  if (typeof window !== "undefined" && document.cookie.indexOf("sb-") < 0 && !localStorage.getItem("supabase.auth.token")) {
-                    window.location.href = "/";
-                    return;
-                  }
-                } catch { /* noop */ }
-                setAddFlow("vault");
-              }}
-              style={{
-                marginTop: 8,
-                width: "100%",
-                padding: "6px 10px",
-                background: "rgba(200, 169, 110, 0.10)",
-                border: "1px solid rgba(200, 169, 110, 0.3)",
-                borderRadius: 4,
-                color: GOLD,
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                fontFamily: "inherit",
-                transition: "border-color 150ms ease, background 150ms ease",
-              }}
-              onMouseEnter={(ev) => {
-                ev.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-                ev.currentTarget.style.borderColor = GOLD;
-              }}
-              onMouseLeave={(ev) => {
-                ev.currentTarget.style.background = "rgba(200, 169, 110, 0.10)";
-                ev.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
-              }}
-            >
-              + Add to Vault
-            </button>
+            {/* Add-to-Vault button moved to the header row (top-right
+                "+" icon) as part of the founder spec 2026-05-31. The
+                openVaultWizardWith helper handles auth-redirect, popup
+                close, and plot pre-fill. */}
           </div>
         );
       })()}
@@ -5951,6 +5974,7 @@ function ParcelsMapPageInner() {
           : ddaLandHover.source === "ad" ? "AD"
           : "";
         const status = formatPmtilesStatus(ddaLandHover.status);
+        const canAdd = /^\d{5,10}$/.test(ddaLandHover.plotNumber);
         return (
           <div
             style={{
@@ -5970,20 +5994,45 @@ function ParcelsMapPageInner() {
               fontSize: 11,
               fontFamily: 'Georgia, "Times New Roman", serif',
               lineHeight: 1.45,
-              pointerEvents: "none",
+              // Interactive: the "+" button needs to receive clicks
+              // and the popup needs to survive a brief mouseleave.
+              pointerEvents: "auto",
               zIndex: 30,
             }}
+            onMouseEnter={() => {
+              if (hoverCloseTimerRef.current != null) {
+                window.clearTimeout(hoverCloseTimerRef.current);
+                hoverCloseTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              if (hoverCloseTimerRef.current != null) {
+                window.clearTimeout(hoverCloseTimerRef.current);
+              }
+              hoverCloseTimerRef.current = window.setTimeout(() => {
+                setDdaLandHover(null);
+                hoverCloseTimerRef.current = null;
+              }, 220);
+            }}
           >
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: "#4A90D9", fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontWeight: 700, color: "#4A90D9", fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {ddaLandHover.plotNumber || "—"}
               </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
               {authority && (
                 <span style={{
                   fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
                   letterSpacing: "0.06em", textTransform: "uppercase",
                 }}>{authority}</span>
               )}
+              {canAdd && (
+                <VaultAddButton
+                  plotNumber={ddaLandHover.plotNumber}
+                  onClick={() => openVaultWizardWith(ddaLandHover.plotNumber)}
+                />
+              )}
+              </span>
             </div>
             {ddaLandHover.mainLandUse && (
               <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
@@ -6317,6 +6366,61 @@ function ParcelsMapPageInner() {
 }
 
 // ── Hover-card helpers (PMTiles DDA/AD plot popup) ──
+// Compact "+" icon button placed in the top-right of every hover card
+// (ZAAHI listings + PMTiles parcels). Clicking it opens the vault
+// wizard with the plot pre-filled — Step 1 then auto-fires its DDA
+// lookup so the user lands on Step 2 / 3 (founder spec 2026-05-31).
+// stopPropagation so the click never bubbles to the card's flyTo /
+// SidePanel handler.
+function VaultAddButton({
+  plotNumber,
+  onClick,
+}: {
+  plotNumber: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title="Add to Vault"
+      aria-label={`Add plot ${plotNumber} to your vault`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        border: "1px solid rgba(200, 169, 110, 0.4)",
+        background: "rgba(200, 169, 110, 0.10)",
+        color: GOLD,
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 16,
+        fontWeight: 700,
+        lineHeight: 1,
+        padding: 0,
+        fontFamily: "inherit",
+        flexShrink: 0,
+        transition: "border-color 150ms ease, background 150ms ease",
+      }}
+      onMouseEnter={(ev) => {
+        ev.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
+        ev.currentTarget.style.borderColor = GOLD;
+      }}
+      onMouseLeave={(ev) => {
+        ev.currentTarget.style.background = "rgba(200, 169, 110, 0.10)";
+        ev.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.4)";
+      }}
+    >
+      +
+    </button>
+  );
+}
+
 // One small row of label + value, used inside the ddaLandHover popup
 // JSX. Style mirrors the rest of the hover card (Georgia / SF Mono).
 function PmtilesHoverRow({ label, value }: { label: string; value: string }) {

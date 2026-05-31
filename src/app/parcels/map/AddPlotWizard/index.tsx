@@ -33,11 +33,21 @@ interface Props {
   onExistingFound?: (existingId: string) => void;
   /** Optional channel for submit-side errors — caller can show a toast. */
   onError?: (message: string) => void;
+  /**
+   * Pre-filled plot number — used when the wizard is opened from a hover
+   * card's "+ Add to Vault" button so the user lands on Step 1 with the
+   * lookup already running, not on an empty form. Step 1's mount-only
+   * useEffect kicks off the DDA lookup automatically when this is set.
+   */
+  initialPlotNumber?: string;
 }
 
-export function AddPlotWizard({ onCreated, onCancel, onExistingFound, onError }: Props) {
+export function AddPlotWizard({ onCreated, onCancel, onExistingFound, onError, initialPlotNumber }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [state, setState] = useState<WizardState>(INITIAL_WIZARD_STATE);
+  const [state, setState] = useState<WizardState>(() => ({
+    ...INITIAL_WIZARD_STATE,
+    plotNumber: initialPlotNumber ?? INITIAL_WIZARD_STATE.plotNumber,
+  }));
 
   function patch(p: Partial<WizardState>) {
     setState((prev) => ({ ...prev, ...p }));
