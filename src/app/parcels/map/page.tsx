@@ -1658,13 +1658,15 @@ function ParcelsMapPageInner() {
     }
     popupRef.current?.remove();
   }, [selectedParcelId, selectedVaultEntry]);
-  // Split plotNumber index for PMTiles exclusion (founder spec 2026-05-31).
-  // VAULT plot numbers are ALWAYS excluded from PMTiles — privacy invariant,
-  // a vault entry must never leak as a background polygon. LISTING plot
-  // numbers are only excluded when ZAAHI is currently rendering them
-  // (vault-only OFF) so the PMTiles fallback fills the visual gap when
-  // listings are filter-hidden (vault-only ON, root cause of the v2
-  // "white holes"). See applyZaahiExclusionToTileLayers below.
+  // Split plotNumber index for PMTiles exclusion (founder spec 2026-05-31,
+  // symmetric revision later the same day). Each ref holds one side of
+  // the ZAAHI source — listings and the caller's PPV — so the PMTiles
+  // exclusion filter can swap direction with the vault-only lock:
+  // exclude only what ZAAHI is currently rendering, let PMTiles paint
+  // the other side as background. See applyZaahiExclusionToTileLayers
+  // below for the full rationale (including why showing a vault plot
+  // as a PMTiles background polygon is not a privacy leak — the plot
+  // itself is public DDA data; only the vault metadata is gated).
   const zaahiListingPnRef = useRef<Set<string>>(new Set());
   const zaahiVaultPnRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
@@ -2843,10 +2845,11 @@ function ParcelsMapPageInner() {
       if (!map.getStyle()) return;
 
       // Split plot numbers by isVault so PMTiles exclusion can switch
-      // direction with vault-only mode (founder spec 2026-05-31). The
-      // VAULT side is always in the exclusion set — privacy invariant.
-      // The LISTING side is only excluded when ZAAHI is currently
-      // rendering listings (vault-only OFF).
+      // direction with vault-only mode (founder spec 2026-05-31, symmetric
+      // revision). Each side is excluded from PMTiles only while ZAAHI is
+      // currently rendering it — the other side falls through as PMTiles
+      // background, filling the gap left by the direction-hidden ZAAHI
+      // feature. See applyZaahiExclusionToTileLayers below.
       const listingsPnSet = new Set<string>();
       const vaultPnSet = new Set<string>();
       for (const it of payload.items) {
@@ -2855,12 +2858,12 @@ function ParcelsMapPageInner() {
       zaahiListingPnRef.current = listingsPnSet;
       zaahiVaultPnRef.current = vaultPnSet;
 
-      // Hide PMTiles features that would visually collide with ZAAHI
-      // listings (no double-stacking of curated SIGNATURE building over
-      // the PMTiles background building). The set of excluded plot
-      // numbers depends on vault-only direction — see
-      // applyZaahiExclusionToTileLayers for the privacy + fallback
-      // rules. 12 setFilter calls (4 sources × 3 layers each).
+      // Hide PMTiles features that would visually collide with whichever
+      // ZAAHI side is currently rendering (no double-stacking of curated
+      // SIGNATURE building over the PMTiles background building). The
+      // exclude set depends on vault-only direction — see
+      // applyZaahiExclusionToTileLayers for the full rules and the
+      // privacy rationale. 12 setFilter calls (4 sources × 3 layers each).
       applyZaahiExclusionToTileLayers(map);
 
       const plotFeatures: GeoJSON.Feature[] = [];
@@ -3451,27 +3454,37 @@ function ParcelsMapPageInner() {
    */
   // Exclude ZAAHI plot numbers from the PMTiles fill/line/3D layers so
   // the curated SIGNATURE buildings and the PMTiles background don't
-  // double-stack. The exclusion set switches with vault-only direction:
+  // double-stack. The exclusion set is now SYMMETRIC — it excludes
+  // exactly the side ZAAHI is currently rendering:
   //
-  //   • VAULT plot numbers — ALWAYS in the exclude set (privacy
-  //     invariant: another user must never see a vault entry as a
-  //     PMTiles background polygon, even when that vault entry is
-  //     hidden from the ZAAHI layer).
-  //   • LISTING plot numbers — only in the exclude set when ZAAHI is
-  //     currently rendering listings (vault-only OFF). When vault-only
-  //     is ON, listings drop out of the exclude set so the PMTiles
-  //     background fills the visual gap that the filter-hidden ZAAHI
-  //     listing would otherwise leave (root cause of the v2 "white
-  //     holes" complaint).
+  //   OFF (ZAAHI renders listings): exclude listingsPnSet
+  //                                  → vault polygons fall through to
+  //                                    PMTiles as background, filling
+  //                                    the visual gap left by the
+  //                                    direction-hidden vault row.
+  //   ON  (ZAAHI renders PPV):      exclude vaultPnSet
+  //                                  → listing polygons fall through to
+  //                                    PMTiles as background, filling
+  //                                    the gap left by the hidden
+  //                                    listing row.
   //
-  // Reads vaultOnlyModeRef + the two split refs — both are kept in sync
-  // by loadZaahiPlots and the vault-only useEffect. Safe to call from
+  // Founder spec 2026-05-31 (symmetric revision): the prior "vault
+  // numbers ALWAYS excluded for privacy" was over-cautious. The vault
+  // data (price, owner contacts, broker notes, stage) lives in the
+  // vault tables and is gated by auth + ownership; the *plot itself*
+  // on the map is already public DDA registry data — observable to
+  // anyone with the parcel layer enabled, vault or not. So letting
+  // PMTiles paint the plot as an ordinary DDA background polygon when
+  // ZAAHI doesn't render it leaks nothing the public registry doesn't
+  // already publish.
+  //
+  // Reads vaultOnlyModeRef + the two split refs — both kept in sync by
+  // loadZaahiPlots and the vault-only useEffect. Safe to call from
   // either; setFilter atomically replaces the previous filter.
   function applyZaahiExclusionToTileLayers(map: MLMap) {
-    const excludeSet = new Set<string>(zaahiVaultPnRef.current);
-    if (!vaultOnlyModeRef.current) {
-      for (const pn of zaahiListingPnRef.current) excludeSet.add(pn);
-    }
+    const excludeSet = vaultOnlyModeRef.current
+      ? new Set<string>(zaahiVaultPnRef.current)
+      : new Set<string>(zaahiListingPnRef.current);
     const exclude: maplibregl.FilterSpecification = [
       "!",
       ["in", ["get", "plotNumber"], ["literal", [...excludeSet]]],
