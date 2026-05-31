@@ -39,6 +39,12 @@ import {
 import HeroBuildingsDevPanel from "./HeroBuildingsDevPanel";
 import ParcelsPortalPanel from "./ParcelsPortalPanel";
 import ParcelsNav from "./ParcelsNav";
+// Phase 1 style unification (2026-05-31): Layers panel migrated to
+// the shared Panel + token foundation as the first proof point.
+// Other surfaces (HeaderBar, hover popups, MiniMap dock, SidePanel)
+// follow in the next commit after founder review.
+import { Panel } from "@/components/Panel";
+import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL } from "@/lib/design-tokens";
 
 type Theme = "light" | "dark";
 type BaseMap = "light" | "dark" | "satellite";
@@ -1877,7 +1883,10 @@ function ParcelsMapPageInner() {
   });
   const countryInitialisedRef = useRef(false);
   const [layerSearch, setLayerSearch] = useState("");
-  const panelRef = useRef<HTMLDivElement>(null);
+  // Phase 1 migration: Layers panel renders through <Panel> (polymorphic
+  // element); HTMLElement is the conservative ref type — .contains() works
+  // on any Element, and Panel's forwardRef is typed as React.Ref<HTMLElement>.
+  const panelRef = useRef<HTMLElement>(null);
   const panelBtnRef = useRef<HTMLButtonElement>(null);
   // Layers state is lazy-init'd from localStorage so the user's previous
   // selection is restored when they come back to /parcels/map. Unknown
@@ -5445,25 +5454,17 @@ function ParcelsMapPageInner() {
       </div>
 
       {layersOpen && (
-      <div
+      <Panel
         ref={panelRef}
+        radius={RADIUS_PANEL}
         style={{
           position: "absolute",
           top: 64,
           left: 60,
-          // Unified panel width (320) + login-reference tokens (bg 0.3,
-          // blur 16, neutral white border, radius 12, pure white text).
           width: 320,
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
-          background: "rgba(0, 0, 0, 0.3)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: 12,
           zIndex: 11,
-          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4)",
-          color: "#FFFFFF",
         }}
       >
         <div
@@ -5472,9 +5473,12 @@ function ParcelsMapPageInner() {
             top: 0,
             zIndex: 2,
             padding: "10px 14px",
-            background: "rgba(0, 0, 0, 0.3)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            background: PANEL_BG,
+            backdropFilter: PANEL_BLUR,
+            WebkitBackdropFilter: PANEL_BLUR,
+            // Sub-border on the sticky header is intentionally lighter
+            // (0.08) than PANEL_BORDER — it's a divider inside the
+            // panel, not the panel's own edge.
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
@@ -5774,7 +5778,7 @@ function ParcelsMapPageInner() {
         })()}
 
         {/* DDA + AD Land toggles are in Base Layers above */}
-      </div>
+      </Panel>
       )}
 
       <style jsx global>{`
