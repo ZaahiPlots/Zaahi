@@ -27,8 +27,9 @@ import {
 
 // ZAAHI palette
 const GOLD = "#C8A96E";
-const BG_GLASS = "rgba(10, 22, 40, 0.4)";
-const BORDER_SUBTLE = "rgba(255, 255, 255, 0.1)";
+// Unified panel bg (founder spec 2026-05-29).
+const BG_GLASS = "rgba(0, 0, 0, 0.3)";
+const BORDER_SUBTLE = "rgba(255, 255, 255, 0.15)";
 const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
 const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
 

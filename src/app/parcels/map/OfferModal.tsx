@@ -106,16 +106,16 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "rgba(10, 22, 40, 0.5)",
-          backdropFilter: "blur(24px) saturate(150%)",
-          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           border: `1px solid ${LINE}`,
           borderRadius: 16,
           width: "100%",
           maxWidth: 480,
           maxHeight: "90vh",
           overflowY: "auto",
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: TXT,
         }}
       >
@@ -219,8 +219,8 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
             style={{
               padding: "12px 18px",
               borderRadius: 8,
-              border: 0,
-              background: submitting ? SUBTLE : GOLD,
+              border: `1px solid ${submitting ? SUBTLE : GOLD}`,
+              background: submitting ? SUBTLE : "rgba(200, 169, 110, 0.9)",
               color: "white",
               fontWeight: 700,
               fontSize: 13,
@@ -228,6 +228,8 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
               textTransform: "uppercase",
               cursor: submitting ? "wait" : "pointer",
               boxShadow: "0 4px 12px rgba(200,169,110,0.3)",
+              fontFamily: "inherit",
+              transition: "background 150ms ease",
             }}
           >
             {submitting ? "Submitting…" : "Submit Offer"}

@@ -12,8 +12,9 @@ import { apiFetch } from "@/lib/api-fetch";
 import { useEscapeClose } from "./useEscapeClose";
 
 const GOLD = "#C8A96E";
-const BG_DEEP = "rgba(10, 22, 40, 0.92)";
-const BORDER = "rgba(255, 255, 255, 0.12)";
+// Unified panel bg (founder spec 2026-05-29).
+const BG_DEEP = "rgba(0, 0, 0, 0.3)";
+const BORDER = "rgba(255, 255, 255, 0.15)";
 const TEXT_PRIMARY = "rgba(255, 255, 255, 0.92)";
 const TEXT_DIM = "rgba(255, 255, 255, 0.55)";
 
@@ -224,8 +225,8 @@ const backdropStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(0, 0, 0, 0.6)",
-  backdropFilter: "blur(8px)",
-  WebkitBackdropFilter: "blur(8px)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -235,8 +236,8 @@ const backdropStyle: React.CSSProperties = {
 
 const panelStyle: React.CSSProperties = {
   background: BG_DEEP,
-  backdropFilter: "blur(24px) saturate(150%)",
-  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   border: `1px solid ${BORDER}`,
   borderRadius: 14,
   padding: 22,
@@ -244,7 +245,7 @@ const panelStyle: React.CSSProperties = {
   width: "100%",
   color: TEXT_PRIMARY,
   fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-  boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
+  boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4)",
 };
 
 const headerStyle: React.CSSProperties = {

@@ -563,13 +563,13 @@ export default function FeasibilityCalculator(props: Props) {
 
   // ── Styles ───────────────────────────────────────────────────────
   const shellStyle: React.CSSProperties = {
-    background: "rgba(10, 22, 40, 0.5)",
-    backdropFilter: "blur(24px) saturate(150%)",
-    WebkitBackdropFilter: "blur(24px) saturate(150%)",
+    background: "rgba(0, 0, 0, 0.3)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
     border: `1px solid ${LINE}`,
     borderRadius: 16,
     color: TXT,
-    boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+    boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -921,7 +921,7 @@ export default function FeasibilityCalculator(props: Props) {
       {/* Fixed footer */}
       <div style={{
         display: "flex", gap: 8, padding: "10px 14px", borderTop: `1px solid ${LINE}`,
-        background: "rgba(10, 22, 40, 0.65)",
+        background: "rgba(0, 0, 0, 0.3)",
       }}>
         <button
           type="button"
@@ -953,7 +953,7 @@ export default function FeasibilityCalculator(props: Props) {
             style={{
               flex: 1,
               padding: "10px 12px",
-              background: GOLD,
+              background: "rgba(200, 169, 110, 0.9)",
               border: `1px solid ${GOLD}`,
               borderRadius: 8,
               color: "#1A1A2E",

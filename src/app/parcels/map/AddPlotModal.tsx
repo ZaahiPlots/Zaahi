@@ -196,12 +196,12 @@ export default function AddPlotModal({
         style={{
           width: 520,
           maxHeight: "85vh",
-          background: "rgba(10, 22, 40, 0.5)",
-          backdropFilter: "blur(24px) saturate(150%)",
-          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           borderRadius: 16,
           border: `1px solid ${LINE}`,
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: TXT,
           display: "flex",
           flexDirection: "column",
@@ -922,12 +922,14 @@ function PrimaryBtn({
         fontSize: 12,
         fontWeight: 700,
         borderRadius: 6,
-        border: "none",
-        background: GOLD,
+        border: `1px solid ${GOLD}`,
+        background: "rgba(200, 169, 110, 0.9)",
         color: "white",
         cursor: busy || disabled ? "not-allowed" : "pointer",
         opacity: busy || disabled ? 0.55 : 1,
         flex: 1,
+        fontFamily: "inherit",
+        transition: "background 150ms ease",
       }}
     >
       {busy ? "Submitting…" : children}

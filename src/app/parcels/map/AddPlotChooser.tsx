@@ -134,8 +134,8 @@ const backdropStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(0, 0, 0, 0.6)",
-  backdropFilter: "blur(8px)",
-  WebkitBackdropFilter: "blur(8px)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -144,9 +144,9 @@ const backdropStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  background: "rgba(10, 22, 40, 0.92)",
-  backdropFilter: "blur(24px) saturate(150%)",
-  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  background: "rgba(0, 0, 0, 0.3)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   border: `1px solid ${BORDER}`,
   borderRadius: 14,
   padding: 22,
@@ -154,7 +154,7 @@ const panelStyle: React.CSSProperties = {
   width: "100%",
   color: TEXT_PRIMARY,
   fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-  boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
+  boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4)",
 };
 
 const headerStyle: React.CSSProperties = {

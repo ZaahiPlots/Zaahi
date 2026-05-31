@@ -106,7 +106,7 @@ function CompactTrigger({ onClick }: { onClick: () => void }) {
         padding: 0,
         borderRadius: 6,
         border: "1px solid rgba(200, 169, 110, 0.3)",
-        background: "rgba(10, 22, 40, 0.5)",
+        background: "rgba(0, 0, 0, 0.3)",
         color: GOLD,
         boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         cursor: "pointer",
@@ -118,7 +118,7 @@ function CompactTrigger({ onClick }: { onClick: () => void }) {
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
-        e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)";
+        e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
       }}
     >
       {/* Door-arrow-out glyph; matches the minimalist SVG language of the
@@ -205,16 +205,16 @@ function ConfirmDialog({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "rgba(10, 22, 40, 0.85)",
-          backdropFilter: "blur(24px) saturate(150%)",
-          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           border: "1px solid rgba(200, 169, 110, 0.25)",
           borderRadius: 14,
           padding: 24,
           maxWidth: 440,
           width: "100%",
           color: TXT,
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10)",
+          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.10)",
         }}
       >
         {success ? (

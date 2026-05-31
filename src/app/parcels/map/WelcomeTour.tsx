@@ -13,7 +13,8 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 
 const GOLD = "#C8A96E";
-const BG_BLUR = "blur(24px) saturate(150%)";
+// Unified blur token (founder spec 2026-05-29).
+const BG_BLUR = "blur(16px)";
 
 const STEPS: Array<{ title: string; body: string; icon: string }> = [
   {
@@ -89,12 +90,12 @@ export default function WelcomeTour() {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(440px, calc(100vw - 32px))",
-          background: "rgba(10, 22, 40, 0.85)",
+          background: "rgba(0, 0, 0, 0.3)",
           backdropFilter: BG_BLUR,
           WebkitBackdropFilter: BG_BLUR,
           border: "1px solid rgba(200, 169, 110, 0.25)",
           borderRadius: 16,
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
           color: "#f5f1e8",
           padding: 26,
           fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
@@ -155,9 +156,9 @@ export default function WelcomeTour() {
             onClick={() => (isLast ? complete() : setStep(step + 1))}
             style={{
               padding: "10px 22px",
-              background: GOLD,
+              background: "rgba(200, 169, 110, 0.9)",
               color: "#0A1628",
-              border: 0,
+              border: `1px solid ${GOLD}`,
               borderRadius: 8,
               fontSize: 12,
               fontWeight: 700,

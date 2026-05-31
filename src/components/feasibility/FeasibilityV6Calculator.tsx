@@ -319,9 +319,9 @@ function Panel({
   return (
     <div
       style={{
-        background: 'rgba(10, 22, 40, 0.5)',
-        backdropFilter: 'blur(16px) saturate(150%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(150%)',
+        background: 'rgba(0, 0, 0, 0.3)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         border: `1px solid ${LINE}`,
         borderRadius: 12,
         marginBottom: 10,
@@ -1379,13 +1379,13 @@ export default function FeasibilityV6Calculator({
 
   // ── Layout
   const shellStyle: React.CSSProperties = {
-    background: 'rgba(10, 22, 40, 0.5)',
-    backdropFilter: 'blur(24px) saturate(150%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+    background: 'rgba(0, 0, 0, 0.3)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     border: `1px solid ${LINE_HARD}`,
     borderRadius: 16,
     color: TXT,
-    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
     fontFamily: '-apple-system, Segoe UI, Roboto, sans-serif',
     padding: 20,
   };
@@ -1427,8 +1427,8 @@ export default function FeasibilityV6Calculator({
             fontWeight: 700,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             borderBottom: '1px solid rgba(255,255,255,0.2)',
           }}
           role="alert"
@@ -1574,9 +1574,9 @@ export default function FeasibilityV6Calculator({
                 position: 'sticky',
                 top: 0,
                 zIndex: 20,
-                background: 'rgba(10, 22, 40, 0.92)',
-                backdropFilter: 'blur(20px) saturate(160%)',
-                WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+                background: 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
                 border: `1px solid ${LINE_HARD}`,
                 borderRadius: 14,
                 padding: '14px 16px',
