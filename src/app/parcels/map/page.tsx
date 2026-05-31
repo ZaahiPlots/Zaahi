@@ -1640,7 +1640,15 @@ function ParcelsMapPageInner() {
     municipality: string;
     district: string;
   } | null>(null);
-  const zaahiPlotNumbersRef = useRef<Set<string>>(new Set());
+  // Split plotNumber index for PMTiles exclusion (founder spec 2026-05-31).
+  // VAULT plot numbers are ALWAYS excluded from PMTiles — privacy invariant,
+  // a vault entry must never leak as a background polygon. LISTING plot
+  // numbers are only excluded when ZAAHI is currently rendering them
+  // (vault-only OFF) so the PMTiles fallback fills the visual gap when
+  // listings are filter-hidden (vault-only ON, root cause of the v2
+  // "white holes"). See applyZaahiExclusionToTileLayers below.
+  const zaahiListingPnRef = useRef<Set<string>>(new Set());
+  const zaahiVaultPnRef = useRef<Set<string>>(new Set());
   const mapRef = useRef<MLMap | null>(null);
   // deck.gl MapboxOverlay carrying the spike's hero GLB. Created
   // inside the map-init effect after the map instance is ready,
@@ -2789,17 +2797,26 @@ function ParcelsMapPageInner() {
       // unmount). Bail before touching map.addSource / map.addLayer.
       if (!map.getStyle()) return;
 
-      // Collect all ZAAHI plot numbers so DDA Land layers can skip duplicates
-      const pnSet = new Set<string>();
-      for (const it of payload.items) pnSet.add(it.plotNumber);
-      zaahiPlotNumbersRef.current = pnSet;
+      // Split plot numbers by isVault so PMTiles exclusion can switch
+      // direction with vault-only mode (founder spec 2026-05-31). The
+      // VAULT side is always in the exclusion set — privacy invariant.
+      // The LISTING side is only excluded when ZAAHI is currently
+      // rendering listings (vault-only OFF).
+      const listingsPnSet = new Set<string>();
+      const vaultPnSet = new Set<string>();
+      for (const it of payload.items) {
+        (it.isVault ? vaultPnSet : listingsPnSet).add(it.plotNumber);
+      }
+      zaahiListingPnRef.current = listingsPnSet;
+      zaahiVaultPnRef.current = vaultPnSet;
 
-      // Hide PMTiles features whose plotNumber matches a ZAAHI listing —
-      // without this the curated SIGNATURE building (opacity 1) and the
-      // PMTiles background building (opacity 0.35) render on top of each
-      // other, producing visual double-stacking on the 114 curated plots.
-      // Filter applies to all 4 PMTiles sources × 3 layers each = 12 calls.
-      applyZaahiExclusionToTileLayers(map, pnSet);
+      // Hide PMTiles features that would visually collide with ZAAHI
+      // listings (no double-stacking of curated SIGNATURE building over
+      // the PMTiles background building). The set of excluded plot
+      // numbers depends on vault-only direction — see
+      // applyZaahiExclusionToTileLayers for the privacy + fallback
+      // rules. 12 setFilter calls (4 sources × 3 layers each).
+      applyZaahiExclusionToTileLayers(map);
 
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
@@ -3387,10 +3404,32 @@ function ParcelsMapPageInner() {
    * on top of each other on all 114 curated plots — visible as a
    * darker / double-shadowed silhouette around our listings.
    */
-  function applyZaahiExclusionToTileLayers(map: MLMap, plotNumbers: Set<string>) {
+  // Exclude ZAAHI plot numbers from the PMTiles fill/line/3D layers so
+  // the curated SIGNATURE buildings and the PMTiles background don't
+  // double-stack. The exclusion set switches with vault-only direction:
+  //
+  //   • VAULT plot numbers — ALWAYS in the exclude set (privacy
+  //     invariant: another user must never see a vault entry as a
+  //     PMTiles background polygon, even when that vault entry is
+  //     hidden from the ZAAHI layer).
+  //   • LISTING plot numbers — only in the exclude set when ZAAHI is
+  //     currently rendering listings (vault-only OFF). When vault-only
+  //     is ON, listings drop out of the exclude set so the PMTiles
+  //     background fills the visual gap that the filter-hidden ZAAHI
+  //     listing would otherwise leave (root cause of the v2 "white
+  //     holes" complaint).
+  //
+  // Reads vaultOnlyModeRef + the two split refs — both are kept in sync
+  // by loadZaahiPlots and the vault-only useEffect. Safe to call from
+  // either; setFilter atomically replaces the previous filter.
+  function applyZaahiExclusionToTileLayers(map: MLMap) {
+    const excludeSet = new Set<string>(zaahiVaultPnRef.current);
+    if (!vaultOnlyModeRef.current) {
+      for (const pn of zaahiListingPnRef.current) excludeSet.add(pn);
+    }
     const exclude: maplibregl.FilterSpecification = [
       "!",
-      ["in", ["get", "plotNumber"], ["literal", [...plotNumbers]]],
+      ["in", ["get", "plotNumber"], ["literal", [...excludeSet]]],
     ];
     const flatBase: maplibregl.FilterSpecification = ["==", ["get", "tier"], "flat"];
     const tierBase: maplibregl.FilterSpecification = ["!=", ["get", "tier"], "flat"];
@@ -4478,9 +4517,9 @@ function ParcelsMapPageInner() {
     }
   }, [layers.vaultShared, vaultOnlyMode]);
 
-  // Vault-only mode side effect — direction flip + PMTiles dim +
-  // conflict marker visibility + localStorage persistence. Phase 2
-  // archie client (2026-05-30) factored the filter logic into
+  // Vault-only mode side effect — direction flip + PMTiles exclusion
+  // direction + conflict marker visibility + localStorage persistence.
+  // Phase 2 archie client (2026-05-30) factored the filter logic into
   // reapplyMapFilters so Archie's filter_by_land_use /
   // filter_by_status tools compose with vault-mode direction.
   //
@@ -4494,8 +4533,15 @@ function ParcelsMapPageInner() {
   // never render over a filtered-out vault polygon (root cause of the
   // v1 revert, commit 02e837f).
   //
-  // PMTiles dim 0.45 → 0.1 on vault-only ON, literal numbers per
-  // CLAUDE.md "fill-extrusion-opacity must be literal".
+  // PMTiles exclusion direction flips so the visual gap left by
+  // filter-hidden ZAAHI listings is filled by the PMTiles background
+  // (root cause of the v2 "white holes"). Vault plot numbers stay in
+  // the exclusion set unconditionally — privacy invariant.
+  //
+  // PMTiles 3D opacity is intentionally NOT touched any more — the
+  // pre-2026-05-31 0.45 → 0.1 dim made fond buildings unreadable; the
+  // founder spec now keeps them at the addLandTileSource default 0.45
+  // regardless of vault-only state.
   //
   // DDA districts / amenities / other contextual layers are
   // deliberately NOT touched — they stay user-controlled via the
@@ -4503,10 +4549,13 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    // Sync ref immediately so reapplyMapFilters reads the current
-    // value (the mirror useEffect runs after this one).
+    // Sync ref immediately so reapplyMapFilters + the exclusion helper
+    // read the current value (the mirror useEffect runs after this one).
     vaultOnlyModeRef.current = vaultOnlyMode;
     reapplyMapFilters();
+    // Re-apply PMTiles exclusion so the listing plot numbers drop in
+    // / out of the exclude set in lockstep with the direction flip.
+    applyZaahiExclusionToTileLayers(map);
     // Conflict markers ride the same direction as the vault polygons.
     // OFF → vault filtered out → markers must hide. ON → markers visible.
     if (map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
@@ -4515,14 +4564,6 @@ function ParcelsMapPageInner() {
         "visibility",
         vaultOnlyMode ? "visible" : "none",
       );
-    }
-    // PMTiles dim: 0.45 (default) ↔ 0.1 (vault-only mode). Literal
-    // numbers per CLAUDE.md "fill-extrusion-opacity must be literal".
-    const pmtilesOpacity = vaultOnlyMode ? 0.1 : 0.45;
-    for (const lid of ["dda-land-tiles-3d", "ad-adm-tiles-3d", "ad-other-tiles-3d"]) {
-      if (map.getLayer(lid)) {
-        map.setPaintProperty(lid, "fill-extrusion-opacity", pmtilesOpacity);
-      }
     }
     try {
       localStorage.setItem("zaahi-vault-only-mode", vaultOnlyMode ? "1" : "0");
