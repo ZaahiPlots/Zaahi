@@ -40,17 +40,32 @@ export const GOLD_TEXT_SOFT = "#e8d5a8";
 
 // ── Panel surfaces (the unified glassmorphism stack) ────────────
 // Every card / aside / modal / dropdown / floating panel uses this
-// quartet. Phase 1 style unification (founder spec 2026-05-31):
-// switched from rgba(0,0,0,0.3) + blur(16) to navy-tinted glass
-// + blur(20) so the panel reads as "ZAAHI app surface" over both
-// CartoDB Light (where the previous spec showed the basemap noise
-// through the glass) and Dark. Navy 0.45 sits at the same hue as
-// the BG_GRADIENT top stop (#0A1628), so the panel feels like part
-// of the app rather than a black overlay.
-export const PANEL_BG = "rgba(10, 22, 40, 0.45)";
-export const PANEL_BLUR = "blur(20px)";
-export const PANEL_BORDER = "1px solid rgba(255, 255, 255, 0.15)";
-export const PANEL_SHADOW = "0 16px 64px rgba(0, 0, 0, 0.4)";
+// quartet. Phase "Clear Glass C" (founder spec 2026-06-01):
+//   - Blur 20px → 2px. The previous matte feel hid the map
+//     underneath. The new spec is a near-transparent pane: the user
+//     reads the panel as a thin sheet of glass with content floating
+//     above the live tiles.
+//   - Border switched from a faint white-15% to a 50%-opacity gold
+//     edge so the pane stands off the map without needing a heavy
+//     opacity fill behind the content.
+//   - Inner highlight (added) — a 1px white-15% inset on the top
+//     edge so the pane reads as a 3D piece of glass with a beveled
+//     top, not a flat window cut-out. Stack it with PANEL_SHADOW in
+//     boxShadow.
+//   - Background tightened from rgba(10,22,40,0.45) to
+//     rgba(10,20,38,0.45). Hue is functionally the same; the
+//     literal is rounded so future ports don't drift.
+//
+// IMPORTANT: at blur 2 + bg 0.45, text on the panel competes with
+// the map underneath. All text inside a panel MUST use
+// TEXT_SHADOW_STRONG (below) — that's what keeps the readability
+// without darkening the glass.
+export const PANEL_BG = "rgba(10, 20, 38, 0.45)";
+export const PANEL_BLUR = "blur(2px)";
+export const PANEL_BORDER = "1px solid rgba(200, 169, 110, 0.5)";
+/** Stack with PANEL_SHADOW in boxShadow — top-edge bevel highlight. */
+export const PANEL_INNER_HIGHLIGHT = "inset 0 1px 0 rgba(255, 255, 255, 0.15)";
+export const PANEL_SHADOW = "0 8px 32px rgba(0, 0, 0, 0.4)";
 
 // Panel hover state — used by interactive cards (sidebar items,
 // vault list rows). Static panels never animate to these.
@@ -61,7 +76,45 @@ export const PANEL_HOVER_BORDER = `1px solid ${GOLD}`;
 // flip border-color independently of the rest of the border
 // shorthand (mouse-enter handlers etc.).
 export const PANEL_HOVER_BORDER_COLOR = GOLD;
+// PANEL_BORDER_COLOR — kept at the old white-15% value because some
+// inline borderColor handlers (mouseleave restorations on ChromeBtn
+// etc.) still expect it. The 50% gold edge on PANEL_BORDER is the
+// new resting state for *panels*; the white-15% mid-tone is the
+// resting state for *buttons sitting on a panel* (CHROME_BTN_BG +
+// CHROME_BTN_BORDER chain).
 export const PANEL_BORDER_COLOR = "rgba(255, 255, 255, 0.15)";
+
+// ── Text on glass (clear-glass C readability stack) ──────────────
+// At blur(2px) the panel is nearly transparent — body text needs a
+// hard shadow ring to stay readable against arbitrary basemap noise
+// underneath. Apply via inline `textShadow: TEXT_SHADOW_STRONG` on
+// any text node inside a Panel. The shadow is two stacked drops:
+//   1. 0 1px 6px black — soft glow that fills any background pixel
+//   2. 0 0 3px black — tight halo that hardens character edges
+// Together they read as "etched on glass" without obscuring the
+// background visible behind the pane.
+export const TEXT_SHADOW_STRONG =
+  "0 1px 6px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 1)";
+
+/** Default body text weight on a clear-glass panel. 600 hits enough
+ *  stroke width to stay legible at 12-14px without reading as a
+ *  display weight. */
+export const PANEL_TEXT_WEIGHT_BODY = 600;
+/** Heading weight on glass — paired with HEADING_FONT (Georgia). */
+export const PANEL_TEXT_WEIGHT_HEADING = 700;
+/** Secondary / muted text on glass — slightly thinner than body so
+ *  the eye still treats it as auxiliary, but not so thin it fades
+ *  into the basemap. */
+export const PANEL_TEXT_WEIGHT_SECONDARY = 500;
+/** Gold text fill used on Panel headings (matches GOLD_TEXT but
+ *  re-exported here so the typography stack is co-located). */
+export const PANEL_HEADING_COLOR = "#E8D5A8";
+/** White-on-glass body text. Full opacity — the shadow stack does
+ *  the contrast work, not the alpha. */
+export const PANEL_TEXT_COLOR_BODY = "#FFFFFF";
+/** Secondary on glass — 92% white. Reads as "less important" without
+ *  losing legibility against the basemap. */
+export const PANEL_TEXT_COLOR_SECONDARY = "rgba(255, 255, 255, 0.92)";
 
 // ── Border-radius scale ─────────────────────────────────────────
 // Four tiers that close every panel/card/pill/edge shape on the
