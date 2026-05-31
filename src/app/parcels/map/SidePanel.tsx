@@ -23,6 +23,7 @@ import {
   NUMBER_SMALL,
 } from "@/lib/design-tokens";
 import { useFormatArea } from "@/lib/area-unit";
+import { useFormatPrice } from "@/lib/currency";
 import {
   PANEL_WIDTH_DEFAULT,
   clampPanelWidth,
@@ -177,12 +178,6 @@ function aedFromFils(fils: string | null): number | null {
   if (!fils) return null;
   return Number(BigInt(fils)) / 100;
 }
-function fmtBigAed(aed: number | null): string {
-  if (aed == null) return "—";
-  if (aed >= 1_000_000) return `${(aed / 1_000_000).toFixed(1)}M AED`;
-  if (aed >= 1_000) return `${(aed / 1_000).toFixed(0)}K AED`;
-  return `${aed} AED`;
-}
 
 export default function SidePanel({
   parcelId,
@@ -220,6 +215,9 @@ export default function SidePanel({
   // Area Unit toggle in real time — sqft (Dubai market default) or
   // m² (rest of world). Display-only; internal storage stays sqft.
   const fmtA = useFormatArea();
+  // User-chosen currency (AED / USD). Same shape — display-only,
+  // BigInt storage in fils stays AED.
+  const fmtP = useFormatPrice();
   // Drag-resize state — `isDesktop` gates the inline width / drag
   // handle (mobile still uses the bottom-sheet layout). `isResizing`
   // suppresses the 150ms width transition during drag so the panel
@@ -381,8 +379,10 @@ export default function SidePanel({
     aed != null && plotAreaSqft && plotAreaSqft > 0 ? aed / plotAreaSqft : null;
   const pricePerSqftGfa =
     aed != null && gfaSqft && gfaSqft > 0 ? aed / gfaSqft : null;
-  const fmtPerSqft = (n: number | null): string =>
-    n == null ? "—" : `${Math.round(n).toLocaleString("en-US")} AED`;
+  // Per-sqft (Plot / Max GFA) rendering. fmtP already handles AED /
+  // USD conversion via the user's currency preference; null guards
+  // mirror the earlier helper.
+  const fmtPerSqft = (n: number | null): string => fmtP(n) ?? "—";
 
   // Effective width — falls back to the historical 320 px default
   // when no parent wires up the controlled value. Mobile bottom-sheet
@@ -530,7 +530,7 @@ export default function SidePanel({
                     }
               }
             >
-              {isJvNoPrice ? "Price on request — JV terms negotiable" : fmtBigAed(aed)}
+              {isJvNoPrice ? "Price on request — JV terms negotiable" : (fmtP(aed) ?? "—")}
             </div>
             {/* Per-sqft rows. Plot is always shown when we have an area;
                 GFA is only shown when DDA gave us a Max GFA. Phase A:

@@ -4,6 +4,7 @@ import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import { formatParcelStatus } from "@/lib/format-parcel-status";
 import { useFormatArea } from "@/lib/area-unit";
+import { useFormatPrice } from "@/lib/currency";
 
 // ── Brand tokens (unified against login reference src/app/page.tsx).
 const GOLD = "#C8A96E";
@@ -11,9 +12,6 @@ const PANEL_BG = "rgba(0, 0, 0, 0.3)";
 const ROW_BG = "rgba(255, 255, 255, 0.03)";
 const ROW_HOVER = "rgba(200, 169, 110, 0.10)";
 const BORDER = "1px solid rgba(255, 255, 255, 0.15)";
-
-// 1 AED = 0.2723 USD (founder-supplied static rate, per spec).
-const AED_TO_USD = 0.2723;
 
 type ParcelItem = {
   id: string;
@@ -221,8 +219,8 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
 function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }) {
   const [hover, setHover] = useState(false);
   const fmtA = useFormatArea();
+  const fmtP = useFormatPrice();
   const aed = item.currentValuation ? Math.floor(Number(item.currentValuation) / 100) : null;
-  const usd = aed != null ? Math.round(aed * AED_TO_USD) : null;
 
   return (
     <button
@@ -281,9 +279,7 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
           {item.area > 0 ? (fmtA(item.area, null) ?? "—") : "—"}
         </span>
         <span style={{ color: "rgba(255,255,255,0.95)", textAlign: "right" }}>
-          {aed != null
-            ? `AED ${aed.toLocaleString()}${usd != null ? ` · $${usd.toLocaleString()}` : ""}`
-            : "—"}
+          {fmtP(aed) ?? "—"}
         </span>
       </div>
     </button>

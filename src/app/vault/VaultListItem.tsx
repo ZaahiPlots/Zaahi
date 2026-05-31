@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useFormatPrice } from "@/lib/currency";
 import { AttributionBadge } from "./AttributionBadge";
 import { PriceEditCell } from "./PriceEditCell";
 import { PriceHistoryDropdown } from "./PriceHistoryDropdown";
@@ -38,6 +39,7 @@ interface SharedProps {
 type Props = OwnedProps | SharedProps;
 
 export function VaultListItem(props: Props) {
+  const fmtP = useFormatPrice();
   const [expanded, setExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -144,7 +146,7 @@ export function VaultListItem(props: Props) {
         <span style={stagePillStyle(e.stage)}>{VAULT_STAGE_LABELS[e.stage]}</span>
       </div>
       <div style={{ color: TEXT_PRIMARY, fontSize: 13 }}>
-        {aed !== null ? `AED ${aed.toLocaleString()}` : "—"}
+        {fmtP(aed) ?? "—"}
       </div>
       <div style={{ color: TEXT_DIM, fontSize: 12 }}>—</div>
       <div style={{ color: TEXT_DIM, fontSize: 12 }}>{s.permission}</div>

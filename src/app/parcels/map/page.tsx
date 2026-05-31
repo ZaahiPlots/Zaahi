@@ -16,6 +16,7 @@ import {
   clampPanelWidth,
 } from "./sidepanel-width";
 import { useFormatArea } from "@/lib/area-unit";
+import { useFormatPriceShort } from "@/lib/currency";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
@@ -1565,6 +1566,10 @@ function ParcelsMapPageInner() {
   // Area Unit toggle. Internal storage stays sqft per CLAUDE.md;
   // this only formats display.
   const fmtA = useFormatArea();
+  // Currency (AED vs USD) — subscribes to dashboard Settings →
+  // Currency toggle. Short variant for hover popups where the
+  // headline matters more than the exact digits.
+  const fmtPShort = useFormatPriceShort();
   const [panelWidth, setPanelWidthState] = useState<number>(PANEL_WIDTH_DEFAULT);
   const panelWidthWriteRef = useRef<number | null>(null);
   useEffect(() => {
@@ -6147,7 +6152,7 @@ function ParcelsMapPageInner() {
             )}
             <PmtilesHoverRow
               label="Asking Price"
-              value={vaultHover.askingAed != null ? `AED ${vaultHover.askingAed.toLocaleString()}` : "—"}
+              value={fmtPShort(vaultHover.askingAed) ?? "—"}
             />
           </Panel>
         );

@@ -37,6 +37,7 @@ import {
   type ClaimDocKind,
 } from "@/lib/plot-claim-doc-requirements";
 import { isVerifiableRole, claimDisplayLabel } from "@/lib/plot-claim";
+import { useFormatPrice } from "@/lib/currency";
 import type { UserRole, ClaimStatus } from "@prisma/client";
 
 // Step 11 PDPL fix (P1-1): Path B uploads now write to the private
@@ -1166,6 +1167,7 @@ function MultiClaimView({
 }
 
 function ClaimRow({ claim }: { claim: ExistingClaim }) {
+  const fmtP = useFormatPrice();
   const priceNum = Number(claim.priceAed) / 100; // fils → AED
   return (
     <div
@@ -1191,7 +1193,7 @@ function ClaimRow({ claim }: { claim: ExistingClaim }) {
       <div style={{ fontSize: 11, color: SUBTLE, display: "flex", justifyContent: "space-between" }}>
         <span>{formatRoleLabel(claim.role)}</span>
         <span>
-          AED {Number.isFinite(priceNum) && priceNum > 0 ? priceNum.toLocaleString("en-US") : "—"}
+          {Number.isFinite(priceNum) && priceNum > 0 ? (fmtP(priceNum) ?? "—") : "—"}
         </span>
       </div>
     </div>

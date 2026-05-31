@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { useFormatPriceShort } from "@/lib/currency";
 
 const GOLD = "#C8A96E";
 const TXT = "#f5f1e8";
@@ -16,6 +17,7 @@ interface Props {
 
 export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props) {
   const router = useRouter();
+  const fmtPShort = useFormatPriceShort();
   const [price, setPrice] = useState<string>(askingPriceAed ? String(Math.round(askingPriceAed)) : "");
   const [paymentType, setPaymentType] = useState("CASH");
   const [closingDays, setClosingDays] = useState(90);
@@ -82,12 +84,6 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
     }
   }
 
-  const fmtMoney = (n: number) => {
-    if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-    if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-    return n.toFixed(0);
-  };
-
   return (
     <div
       onClick={onClose}
@@ -138,11 +134,11 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
             />
             {askingPriceAed != null && (
               <div style={{ fontSize: 11, color: SUBTLE, marginTop: 4 }}>
-                Asking: {fmtMoney(askingPriceAed)} AED
+                Asking: {fmtPShort(askingPriceAed) ?? "—"}
                 {diff && (
                   <span style={{ marginLeft: 8, color: diff.delta >= 0 ? "#16a34a" : "#dc2626", fontWeight: 600 }}>
                     {diff.delta >= 0 ? "+" : ""}
-                    {fmtMoney(diff.delta)} ({diff.pct >= 0 ? "+" : ""}{diff.pct.toFixed(1)}%)
+                    {fmtPShort(diff.delta) ?? "—"} ({diff.pct >= 0 ? "+" : ""}{diff.pct.toFixed(1)}%)
                   </span>
                 )}
               </div>

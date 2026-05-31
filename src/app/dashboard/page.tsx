@@ -15,6 +15,12 @@ import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { type AreaUnit, loadAreaUnit, saveAreaUnit, useFormatArea } from "@/lib/area-unit";
+import {
+  type Currency,
+  loadCurrency,
+  saveCurrency,
+  useFormatPriceShort,
+} from "@/lib/currency";
 import { formatParcelStatus } from "@/lib/format-parcel-status";
 
 const GOLD = "#C8A96E";
@@ -723,7 +729,24 @@ function Profile({ user, onSaved }: { user: MeUser | null; onSaved: () => Promis
             </select>
           </Field>
           <Field label="Preferred Currency">
-            <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={input()}>
+            <select
+              value={currency}
+              onChange={(e) => {
+                const next = e.target.value;
+                setCurrency(next);
+                // Variant B sync (founder spec 2026-05-31): mirror
+                // AED/USD picks into localStorage so display
+                // surfaces flip immediately, even before the
+                // Profile `Save` button hits /api/me. EUR is
+                // dropdown-only for now (Settings → Currency only
+                // exposes AED/USD) — picking EUR here just stores
+                // the preference, no broadcast.
+                if (next === "AED" || next === "USD") {
+                  saveCurrency(next);
+                }
+              }}
+              style={input()}
+            >
               <option value="AED">AED</option>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
@@ -781,20 +804,21 @@ const PARCEL_STATUS_BADGE: Record<string, { fg: string; bg: string }> = {
   FROZEN: { fg: "rgba(245,241,232,0.5)", bg: "rgba(255,255,255,0.05)" },
 };
 
-function fmtAedFromFils(filsStr: string | null): string {
-  if (!filsStr) return "—";
+/** Convert a fils-string (BigInt-safe) to a numeric AED value. Null
+ *  on empty / invalid input. Used together with the currency-aware
+ *  formatPriceShort hook so consumers can flip between AED / USD. */
+function filsToAedNumber(filsStr: string | null): number | null {
+  if (!filsStr) return null;
   try {
-    const aed = Number(BigInt(filsStr)) / 100;
-    if (aed >= 1_000_000) return `${(aed / 1_000_000).toFixed(1)}M AED`;
-    if (aed >= 1_000) return `${(aed / 1_000).toFixed(0)}K AED`;
-    return `${aed.toFixed(0)} AED`;
+    return Number(BigInt(filsStr)) / 100;
   } catch {
-    return "—";
+    return null;
   }
 }
 
 function Properties() {
   const fmtA = useFormatArea();
+  const fmtP = useFormatPriceShort();
   const [rows, setRows] = useState<MyPlotRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | "LISTED" | "VACANT" | "IN_DEAL" | "SOLD" | "FROZEN">("ALL");
@@ -855,7 +879,7 @@ function Properties() {
       {rows !== null && rows.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
           <StatCard label="My Properties" value={String(total)} icon="🏗️" accent={GOLD} />
-          <StatCard label="Portfolio Value" value={fmtAedFromFils(totalValueFils.toString())} icon="💰" accent={GOLD} />
+          <StatCard label="Portfolio Value" value={fmtP(filsToAedNumber(totalValueFils.toString())) ?? "—"} icon="💰" accent={GOLD} />
           <StatCard label="Views (30d)" value={totalViews30.toLocaleString("en-US")} icon="👁️" />
           <StatCard label="Unique Viewers (30d)" value={totalUniqueViewers.toLocaleString("en-US")} icon="🔍" />
         </div>
@@ -918,7 +942,7 @@ function Properties() {
                   <Td><span style={{ color: GOLD, fontWeight: 700 }}>{p.plotNumber}</span></Td>
                   <Td><span style={{ fontSize: 11 }}>{p.district}</span><div style={{ fontSize: 9, color: SUBTLE }}>{p.emirate}</div></Td>
                   <Td>{fmtA(p.area, null) ?? "—"}</Td>
-                  <Td><span style={{ color: GOLD }}>{fmtAedFromFils(p.currentValuation)}</span></Td>
+                  <Td><span style={{ color: GOLD }}>{fmtP(filsToAedNumber(p.currentValuation)) ?? "—"}</span></Td>
                   <Td>
                     <span style={{ padding: "2px 8px", borderRadius: 4, background: b.bg, color: b.fg, fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", fontFamily: 'Georgia, "Times New Roman", serif' }}>
                       {formatParcelStatus(p.status)}
@@ -1021,6 +1045,7 @@ interface FavoriteRow {
 
 function Favorites() {
   const fmtA = useFormatArea();
+  const fmtP = useFormatPriceShort();
   const [rows, setRows] = useState<FavoriteRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1078,7 +1103,7 @@ function Favorites() {
                 color: GOLD, fontSize: 16, fontWeight: 800,
                 letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums",
               }}>
-                {fmtAedFromFils(f.parcel.currentValuation)}
+                {fmtP(filsToAedNumber(f.parcel.currentValuation)) ?? "—"}
               </div>
               <div style={{
                 fontSize: 11, color: SUBTLE, marginTop: 2,
@@ -1127,14 +1152,8 @@ const STATUS_LABEL: Record<string, string> = {
   DEAL_CANCELLED: "Cancelled",
   DISPUTE_INITIATED: "Disputed",
 };
-function fmtAedShort(fils: string | null): string {
-  if (!fils) return "—";
-  const aed = Number(BigInt(fils)) / 100;
-  if (aed >= 1_000_000) return `${(aed / 1_000_000).toFixed(2)}M AED`;
-  if (aed >= 1_000) return `${(aed / 1_000).toFixed(0)}K AED`;
-  return `${aed.toFixed(0)} AED`;
-}
 function Deals() {
+  const fmtP = useFormatPriceShort();
   const [deals, setDeals] = useState<DealRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -1180,7 +1199,7 @@ function Deals() {
                     <div style={{ fontSize: 9, color: SUBTLE, marginTop: 4 }}>{new Date(d.updatedAt).toLocaleDateString()}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: TXT }}>{fmtAedShort(price)}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: TXT }}>{fmtP(filsToAedNumber(price)) ?? "—"}</div>
                   </div>
                 </Card>
               </Link>
@@ -1612,6 +1631,7 @@ function Settings() {
 
       <ChangePasswordCard />
       <AreaUnitCard />
+      <CurrencyCard />
 
       <Card>
         <H2>Default Map View</H2>
@@ -1811,6 +1831,81 @@ function AreaUnitButton({
   current: AreaUnit;
   value: AreaUnit;
   onClick: (v: AreaUnit) => void;
+  children: React.ReactNode;
+}) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      style={{
+        padding: "8px 18px",
+        fontSize: 12,
+        letterSpacing: "0.06em",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        background: active ? GOLD_CTA : "transparent",
+        color: active ? "#1A1A2E" : DIM,
+        border: active ? `1px solid ${GOLD}` : "1px solid transparent",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        transition: "background 150ms ease, color 150ms ease",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// CurrencyCard — twin of AreaUnitCard for the AED / USD toggle.
+// Founder spec 2026-05-31 "variant B sync": pick() writes localStorage
+// AND PATCHes /api/me so the User.currency DB column stays in lockstep.
+// That way a fresh login on another device can hydrate from the DB
+// (future enhancement); for now the localStorage value is the live
+// source of truth for display.
+function CurrencyCard() {
+  const [currency, setCurrencyState] = useState<Currency>("AED");
+  useEffect(() => {
+    setCurrencyState(loadCurrency());
+  }, []);
+
+  function pick(next: Currency) {
+    setCurrencyState(next);
+    saveCurrency(next);
+    // Best-effort DB sync — failure (network blip, sign-out race)
+    // does not block the local UX. The local value already broadcast.
+    void apiFetch("/api/me", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ currency: next }),
+    }).catch(() => { /* silent */ });
+  }
+
+  return (
+    <Card>
+      <H2>Currency</H2>
+      <p style={{ fontSize: 11, color: SUBTLE, margin: "0 0 12px" }}>
+        How prices are shown across the platform. AED is the Dubai market
+        standard; USD uses the UAE Central Bank fixed peg (1 USD = 3.6725 AED).
+        Stored values stay in AED — this only affects display.
+      </p>
+      <div style={{ display: "inline-flex", gap: 0, border: `1px solid ${LINE}`, borderRadius: 6, overflow: "hidden" }}>
+        <CurrencyButton current={currency} value="AED" onClick={pick}>AED</CurrencyButton>
+        <CurrencyButton current={currency} value="USD" onClick={pick}>USD</CurrencyButton>
+      </div>
+    </Card>
+  );
+}
+
+function CurrencyButton({
+  current,
+  value,
+  onClick,
+  children,
+}: {
+  current: Currency;
+  value: Currency;
+  onClick: (v: Currency) => void;
   children: React.ReactNode;
 }) {
   const active = current === value;
