@@ -99,10 +99,18 @@ export const BODY_FONT = '-apple-system, "Segoe UI", Roboto, sans-serif';
 
 // Default text on glass surfaces.
 export const TXT = "#FFFFFF";
-// Muted body copy on glass (sub-labels, "Online" status, hint rows).
-export const TXT_DIM = "rgba(255, 255, 255, 0.7)";
-// Faint placeholder / disabled label.
-export const TXT_FAINT = "rgba(255, 255, 255, 0.4)";
+// Muted body copy on glass — sub-labels, status hints, secondary
+// row text. Founder spec 2026-05-31: bumped from 0.7 to 0.85
+// because PANEL_BG dropped to rgba(0,0,0,0.3) and the old 0.7 read
+// as glass against the gradient instead of as text.
+export const TXT_DIM = "rgba(255, 255, 255, 0.85)";
+// Faint placeholder / disabled label / micro-meta. Bumped 0.4 → 0.65
+// in the same pass — the old value was below WCAG AA on PANEL_BG.
+export const TXT_FAINT = "rgba(255, 255, 255, 0.65)";
+// Iconography opacity — close-×, chevrons, search glyphs. Stays at
+// 0.7 because they're glyph-shaped and don't need to read as body
+// copy, but reads brighter than the old TXT_DIM.
+export const TXT_ICON = "rgba(255, 255, 255, 0.7)";
 
 // ── Transitions ──────────────────────────────────────────────────
 // CLAUDE.md forbids `transition: all` — always name the properties.

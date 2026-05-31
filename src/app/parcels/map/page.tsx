@@ -6295,7 +6295,7 @@ function LayerToggle({
         padding: "4px 14px 4px 36px",
         fontSize: 12,
         cursor: comingSoon ? "not-allowed" : "pointer",
-        color: checked ? GOLD : "rgba(255, 255, 255, 0.7)",
+        color: checked ? GOLD : "rgba(255, 255, 255, 0.85)",
         opacity: comingSoon ? 0.4 : 1,
         lineHeight: 1.3,
         borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
@@ -6451,7 +6451,7 @@ function LayerGroup({
             flex: 1,
             background: "transparent",
             border: 0,
-            color: "rgba(255, 255, 255, 0.55)",
+            color: "rgba(255, 255, 255, 0.85)",
             cursor: q ? "default" : "pointer",
             padding: 0,
             textAlign: "left",
@@ -6548,7 +6548,7 @@ function CountryGroup({
           border: 0,
           borderTop: "1px solid rgba(255, 255, 255, 0.08)",
           borderBottom: open ? "1px solid rgba(255, 255, 255, 0.08)" : "none",
-          color: anyOn || open ? GOLD : "rgba(255, 255, 255, 0.75)",
+          color: anyOn || open ? GOLD : "rgba(255, 255, 255, 0.9)",
           cursor: searchActive ? "default" : "pointer",
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: 11,
@@ -6566,23 +6566,23 @@ function CountryGroup({
         onMouseLeave={(e) => {
           if (searchActive) return;
           e.currentTarget.style.background = open ? "rgba(200, 169, 110, 0.06)" : "transparent";
-          e.currentTarget.style.color = anyOn || open ? GOLD : "rgba(255, 255, 255, 0.75)";
+          e.currentTarget.style.color = anyOn || open ? GOLD : "rgba(255, 255, 255, 0.9)";
         }}
       >
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.55)", width: 8, transition: "transform 200ms ease", transform: open ? "rotate(0deg)" : "rotate(-90deg)", display: "inline-block" }}>▾</span>
+          <span style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.65)", width: 8, transition: "transform 200ms ease", transform: open ? "rotate(0deg)" : "rotate(-90deg)", display: "inline-block" }}>▾</span>
           <span>{title}</span>
         </span>
         <span
           style={{
-            color: anyOn ? GOLD : "rgba(255, 255, 255, 0.45)",
+            color: anyOn ? GOLD : "rgba(255, 255, 255, 0.7)",
             fontFamily: '"SF Mono", Menlo, monospace',
             letterSpacing: 0,
             fontSize: 12,
             textTransform: "none",
             padding: "1px 6px",
             borderRadius: 3,
-            border: `1px solid ${anyOn ? "rgba(200, 169, 110, 0.4)" : "rgba(200, 169, 110, 0.15)"}`,
+            border: `1px solid ${anyOn ? "rgba(200, 169, 110, 0.4)" : "rgba(200, 169, 110, 0.25)"}`,
             background: anyOn ? "rgba(200, 169, 110, 0.1)" : "rgba(255, 255, 255, 0.04)",
           }}
         >
