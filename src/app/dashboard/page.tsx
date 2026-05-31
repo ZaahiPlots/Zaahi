@@ -290,13 +290,16 @@ function Header({ user, onMobileMenuClick }: { user: MeUser | null; onMobileMenu
         aria-label="Open navigation"
         className="md:hidden"
         style={{
+          // Phase mobile-fix 2026-05-31: 36 → 44 px so the hamburger
+          // hits the iOS HIG / WCAG AAA tap-target minimum without
+          // any layout reflow (the header has slack at this size).
           background: "transparent",
           border: `1px solid ${LINE}`,
           color: GOLD,
-          width: 36,
-          height: 36,
+          width: 44,
+          height: 44,
           borderRadius: 8,
-          fontSize: 18,
+          fontSize: 20,
           cursor: "pointer",
         }}
       >
@@ -911,7 +914,13 @@ function Properties() {
       {err && <Toast kind="err" text={`Failed to load: ${err}`} />}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        {/* Phase mobile-fix 2026-05-31: wrap the 9-column table in a
+            horizontal scroller so narrow phones (360 px) don't crush
+            the cells. Desktop keeps the same look because the table
+            already fits at 100% width. minWidth on the table ensures
+            columns stay readable instead of overlapping. */}
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)", color: SUBTLE, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               <Th>Plot</Th><Th>District</Th><Th>Area</Th><Th>Price</Th><Th>Status</Th><Th>Views (30d)</Th><Th>Unique</Th><Th>Last view</Th><Th>Actions</Th>
@@ -983,6 +992,7 @@ function Properties() {
             })}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {rows !== null && rows.length > 0 && (

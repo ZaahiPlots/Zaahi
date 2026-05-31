@@ -5586,7 +5586,12 @@ function ParcelsMapPageInner() {
           position: "absolute",
           top: 64,
           left: 60,
-          width: 320,
+          // Phase mobile-fix 2026-05-31: cap the panel at the viewport
+          // width minus the 60 px left offset and a 20 px right gutter
+          // so on a 360 px phone the panel shrinks to 280 px instead of
+          // spilling 20 px off-screen. Desktop (>= 400 px viewport)
+          // gets the historical 320 px because min() picks the smaller.
+          width: "min(320px, calc(100vw - 80px))",
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
           zIndex: 11,
