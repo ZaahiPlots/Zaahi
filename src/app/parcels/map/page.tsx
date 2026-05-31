@@ -1640,6 +1640,24 @@ function ParcelsMapPageInner() {
     municipality: string;
     district: string;
   } | null>(null);
+
+  // When either SidePanel opens, drop the residual hover card state +
+  // any shared maplibre boundary popup. The JSX render is already gated
+  // on !selectedParcelId && !selectedVaultEntry (see the hover popup
+  // blocks below the style block), but clearing state too keeps DevTools
+  // tidy and prevents a flash if the panel closes while the cursor is
+  // still on the same polygon.
+  useEffect(() => {
+    if (!selectedParcelId && !selectedVaultEntry) return;
+    setZaahiHover(null);
+    setVaultHover(null);
+    setDdaLandHover(null);
+    if (hoverCloseTimerRef.current != null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    popupRef.current?.remove();
+  }, [selectedParcelId, selectedVaultEntry]);
   // Split plotNumber index for PMTiles exclusion (founder spec 2026-05-31).
   // VAULT plot numbers are ALWAYS excluded from PMTiles — privacy invariant,
   // a vault entry must never leak as a background polygon. LISTING plot
@@ -3573,6 +3591,8 @@ function ParcelsMapPageInner() {
         municipality: (pr.municipality as string) ?? "",
         district: (pr.district as string) ?? "",
       });
+      // Kill the shared boundary native popup too (see ZAAHI handler).
+      popupRef.current?.remove();
     });
     // Delayed close — the hover card now has interactive content ("+"
     // button), so leaving the PMTiles polygon shouldn't instantly kill
@@ -3989,6 +4009,8 @@ function ParcelsMapPageInner() {
           });
           // Shared-vault popup wins over PMTiles for the same cursor frame.
           setDdaLandHover(null);
+          // Kill the shared boundary native popup too (see ZAAHI handler).
+          popupRef.current?.remove();
         };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
@@ -4085,6 +4107,11 @@ function ParcelsMapPageInner() {
           // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
           setDdaLandHover(null);
           setVaultHover(null);
+          // Also kill the shared maplibre Popup if a boundary FILL layer
+          // (DDA Projects / Communities / AD muni-dist-comm / FZ) had
+          // attached its name-label popup at the same cursor point. The
+          // detailed JSX card always wins over the one-line boundary tag.
+          popupRef.current?.remove();
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
@@ -5804,7 +5831,7 @@ function ParcelsMapPageInner() {
           opacity: 1;
         }
       `}</style>
-      {zaahiHover && (() => {
+      {!selectedParcelId && !selectedVaultEntry && zaahiHover && (() => {
         const title = zaahiHover.projectName || zaahiHover.plotNumber;
         const authority =
           zaahiHover.emirate === "Dubai" ? "DDA"
@@ -5913,7 +5940,7 @@ function ParcelsMapPageInner() {
           </div>
         );
       })()}
-      {vaultHover && (() => {
+      {!selectedParcelId && !selectedVaultEntry && vaultHover && (() => {
         const title = vaultHover.projectName || vaultHover.plotNumber;
         const hasPlotArea = vaultHover.plotAreaSqft > 0 || vaultHover.area > 0;
         const hasGfa = vaultHover.maxGfaSqft > 0;
@@ -5994,7 +6021,7 @@ function ParcelsMapPageInner() {
           </div>
         );
       })()}
-      {ddaLandHover && (() => {
+      {!selectedParcelId && !selectedVaultEntry && ddaLandHover && (() => {
         const m = ddaLandHover.municipality;
         const authority =
           ddaLandHover.source === "dda" ? "DDA"

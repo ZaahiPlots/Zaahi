@@ -941,23 +941,17 @@ export default function SidePanel({
               </div>
 
               <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                gap: 8, paddingTop: 6, borderTop: `1px solid ${LINE}`,
+                paddingTop: 6, borderTop: `1px solid ${LINE}`,
               }}>
                 <span style={{ fontSize: 11, color: "#9CA3AF" }}>
                   Source: {plan.source} · {plan.fetchedAt.slice(0, 10)}
                 </span>
-                <button
-                  type="button"
-                  onClick={triggerDdaFetch}
-                  disabled={ddaPhase !== "idle" && ddaPhase !== "error"}
-                  style={ddaFetchBtnStyle(ddaPhase !== "idle" && ddaPhase !== "error")}
-                  title="Refresh affection plan from DDA"
-                >
-                  ↻ Refresh from DDA
-                </button>
               </div>
-              <DdaFetchProgress phase={ddaPhase} error={ddaErr} />
+              {/* "↻ Refresh from DDA" button removed per founder spec
+                  2026-05-31 — the per-plot refresh affordance shouldn't
+                  live in the public SidePanel. triggerDdaFetch + the
+                  DdaFetchProgress component stay in place so the
+                  upcoming admin-side bulk-refresh tool can reuse them. */}
               {/* Spacer so sticky CTA never covers the last row */}
               <div style={{ height: 72 }} />
             </>
