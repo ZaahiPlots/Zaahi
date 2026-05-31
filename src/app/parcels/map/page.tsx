@@ -4632,13 +4632,30 @@ function ParcelsMapPageInner() {
       try {
         const r = await apiFetch(`/api/parcels/by-plot-number/${plotNumber}`);
         if (!r.ok) return null;
-        return (await r.json()) as {
-          id: string;
-          plotNumber: string;
-          district: string;
-          latitude: number | null;
-          longitude: number | null;
-          projectName: string | null;
+        const data = (await r.json()) as {
+          exists: boolean;
+          parcel?: {
+            id: string;
+            plotNumber: string;
+            district: string;
+            projectName: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            isVault: boolean;
+            vaultEntryId: string | null;
+          };
+        };
+        if (!data.exists || !data.parcel) return null;
+        const p = data.parcel;
+        return {
+          id: p.id,
+          plotNumber: p.plotNumber,
+          district: p.district,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          projectName: p.projectName,
+          isVault: p.isVault,
+          vaultEntryId: p.vaultEntryId,
         };
       } catch {
         return null;

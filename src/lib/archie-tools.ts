@@ -31,7 +31,10 @@ export interface MapControls {
   filterByLandUse(category: string | null): void;
   /** Same composition semantics as filterByLandUse but on ParcelStatus. */
   filterByStatus(status: string | null): void;
-  /** Search a plot by number. Returns plot metadata or null on miss. */
+  /** Search a plot by number. Returns plot metadata or null on miss.
+   *  isVault + vaultEntryId let open_plot route the same way the click
+   *  handler in /parcels/map does — caller's own VAULT_PRIVATE parcels
+   *  open through openVaultEntry instead of openParcel. */
   searchPlot(plotNumber: string): Promise<{
     id: string;
     plotNumber: string;
@@ -39,6 +42,8 @@ export interface MapControls {
     latitude: number | null;
     longitude: number | null;
     projectName: string | null;
+    isVault: boolean;
+    vaultEntryId: string | null;
   } | null>;
   /** Resolve a district name to map bounds via /api/archie/resolve-district.
    *  Returns null when the name doesn't match any indexed district. */
@@ -158,7 +163,15 @@ export async function executeArchieTool(
           message: `Plot ${plotNumber} isn't in our index.`,
         };
       }
-      controls.openParcel(found.id);
+      // Mirrors the ZAAHI_PLOTS_FILL click handler in
+      // src/app/parcels/map/page.tsx: caller's own VAULT_PRIVATE rows
+      // open the broker-side VaultSidePanelAdapter; everything else
+      // opens the public SidePanel.
+      if (found.isVault && found.vaultEntryId) {
+        controls.openVaultEntry(found.vaultEntryId);
+      } else {
+        controls.openParcel(found.id);
+      }
       if (found.latitude != null && found.longitude != null) {
         controls.flyTo(found.longitude, found.latitude, 17);
       }
@@ -168,6 +181,7 @@ export async function executeArchieTool(
         plotNumber: found.plotNumber,
         district: found.district,
         projectName: found.projectName,
+        isVault: found.isVault,
       };
     }
     case "highlight_plot": {

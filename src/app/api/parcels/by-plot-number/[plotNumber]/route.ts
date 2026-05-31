@@ -26,6 +26,34 @@ export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ plotNumber: string }> };
 
+// Centroid of a Polygon's outer ring — average of vertices, skipping the
+// closing duplicate. Used by Archie's open_plot tool to fly the camera
+// to the plot after opening its side panel.
+function polygonCentroid(
+  geom: unknown,
+): { lat: number; lng: number } | null {
+  if (!geom || typeof geom !== "object") return null;
+  const g = geom as { type?: string; coordinates?: unknown };
+  if (g.type !== "Polygon" || !Array.isArray(g.coordinates)) return null;
+  const ring = g.coordinates[0];
+  if (!Array.isArray(ring) || ring.length < 3) return null;
+  let lngSum = 0;
+  let latSum = 0;
+  let n = 0;
+  const last = ring.length - 1;
+  for (let i = 0; i < ring.length; i++) {
+    const pt = ring[i];
+    if (i === last && Array.isArray(pt) && Array.isArray(ring[0])
+      && pt[0] === ring[0][0] && pt[1] === ring[0][1]) continue;
+    if (!Array.isArray(pt) || typeof pt[0] !== "number" || typeof pt[1] !== "number") continue;
+    lngSum += pt[0];
+    latSum += pt[1];
+    n++;
+  }
+  if (n === 0) return null;
+  return { lng: lngSum / n, lat: latSum / n };
+}
+
 export async function GET(req: NextRequest, { params }: Ctx) {
   const userId = await getApprovedUserId(req);
   if (!userId) {
@@ -46,6 +74,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       plotNumber: true,
       emirate: true,
       district: true,
+      geometry: true,
       verifiedOwnerUserId: true,
       affectionPlans: {
         orderBy: { fetchedAt: "desc" },
@@ -59,7 +88,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ exists: false });
   }
 
-  const [claimsCount, callerClaim] = await Promise.all([
+  const [claimsCount, callerClaim, callerVaultEntry] = await Promise.all([
     prisma.plotClaim.count({
       where: {
         parcelId: parcel.id,
@@ -75,7 +104,17 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       where: { parcelId: parcel.id, userId },
       select: { id: true, roleAtClaim: true, status: true },
     }),
+    // Phase 3 vault unification: an open_plot tool call needs to route
+    // to VaultSidePanelAdapter when the parcel is the caller's own
+    // VAULT_PRIVATE entry — mirrors the click-handler branch in
+    // src/app/parcels/map/page.tsx (isVault + vaultEntryId).
+    prisma.vaultEntry.findFirst({
+      where: { ownerId: userId, publicParcelId: parcel.id },
+      select: { id: true },
+    }),
   ]);
+
+  const centroid = polygonCentroid(parcel.geometry);
 
   return NextResponse.json({
     exists: true,
@@ -87,6 +126,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       projectName: parcel.affectionPlans[0]?.projectName ?? parcel.district,
       hasVerifiedOwner: parcel.verifiedOwnerUserId != null,
       claimsCount,
+      // Optional fields consumed by Archie's open_plot tool. AddPlotModal's
+      // ProbeResponse type leaves these unread.
+      latitude: centroid?.lat ?? null,
+      longitude: centroid?.lng ?? null,
+      isVault: callerVaultEntry != null,
+      vaultEntryId: callerVaultEntry?.id ?? null,
     },
     callerHasClaim: callerClaim != null,
     callerClaim: callerClaim
