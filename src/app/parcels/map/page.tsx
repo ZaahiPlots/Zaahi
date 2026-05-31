@@ -5884,19 +5884,17 @@ function ParcelsMapPageInner() {
           setZaahiHover(null);
         };
         return (
-          <div
+          <Panel
+            radius={RADIUS_CARD}
+            noShadow
             style={{
               position: "absolute",
               left: zaahiHover.x + 14,
               top: zaahiHover.y + 14,
               width: 260,
-              background: "rgba(0, 0, 0, 0.3)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.15)",
+              // Gold left-border accent kept — distinguishes ZAAHI
+              // listings from PMTiles (blue) and vault (gold variant).
               borderLeft: `3px solid ${GOLD}`,
-              borderRadius: 6,
               boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
               padding: "10px 12px",
               fontSize: 11,
@@ -5955,7 +5953,7 @@ function ParcelsMapPageInner() {
                 "+" icon) as part of the founder spec 2026-05-31. The
                 openVaultWizardWith helper handles auth-redirect, popup
                 close, and plot pre-fill. */}
-          </div>
+          </Panel>
         );
       })()}
       {!selectedParcelId && !selectedVaultEntry && vaultHover && (() => {
@@ -5974,19 +5972,15 @@ function ParcelsMapPageInner() {
           setVaultHover(null);
         };
         return (
-          <div
+          <Panel
+            radius={RADIUS_CARD}
+            noShadow
             style={{
               position: "absolute",
               left: vaultHover.x + 14,
               top: vaultHover.y + 14,
               width: 260,
-              background: "rgba(0, 0, 0, 0.3)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.15)",
               borderLeft: `3px solid ${GOLD}`,
-              borderRadius: 6,
               boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
               padding: "10px 12px",
               fontSize: 11,
@@ -6036,7 +6030,7 @@ function ParcelsMapPageInner() {
               label="Asking Price"
               value={vaultHover.askingAed != null ? `AED ${vaultHover.askingAed.toLocaleString()}` : "—"}
             />
-          </div>
+          </Panel>
         );
       })()}
       {!selectedParcelId && !selectedVaultEntry && ddaLandHover && (() => {
@@ -6050,19 +6044,17 @@ function ParcelsMapPageInner() {
         const status = formatPmtilesStatus(ddaLandHover.status);
         const canAdd = /^\d{5,10}$/.test(ddaLandHover.plotNumber);
         return (
-          <div
+          <Panel
+            radius={RADIUS_CARD}
+            noShadow
             style={{
               position: "absolute",
               left: ddaLandHover.x + 14,
               top: ddaLandHover.y + 14,
               width: 250,
-              background: "rgba(0, 0, 0, 0.3)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.15)",
+              // PMTiles plots use a blue left-border accent — visually
+              // distinct from the gold-borderLeft ZAAHI listing card.
               borderLeft: "3px solid #4A90D9",
-              borderRadius: 6,
               boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
               padding: "10px 12px",
               fontSize: 11,
@@ -6126,7 +6118,7 @@ function ParcelsMapPageInner() {
                 already) and AFFECTION_PLAN_DATE to baseProps, then
                 rebuild via scripts/update-tiles.sh. */}
             {status && <PmtilesHoverRow label="Status" value={status} />}
-          </div>
+          </Panel>
         );
       })()}
       {/* The music / sound toggle moved into the HeaderBar (next to
@@ -6160,8 +6152,10 @@ function ParcelsMapPageInner() {
             across three rails (top / left / right) so the layer pile
             isn't all on one side. Grid areas keep everything snapped
             flush against the minimap edges. */}
-        <div
+        <Panel
           aria-hidden={!miniOpen}
+          radius={RADIUS_PANEL}
+          noShadow
           style={{
             display: "grid",
             gridTemplateColumns: "auto auto auto",
@@ -6173,11 +6167,9 @@ function ParcelsMapPageInner() {
             columnGap: 6,
             rowGap: 6,
             padding: 8,
-            background: "rgba(0, 0, 0, 0.3)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
+            // Local lighter shadow — the dock has the minimap canvas
+            // inside which we don't want to lift visually as much as a
+            // full-height SidePanel would.
             boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
             opacity: miniOpen ? 1 : 0,
             transform: miniOpen ? "translateY(0)" : "translateY(12px)",
@@ -6322,7 +6314,7 @@ function ParcelsMapPageInner() {
                 link in the header (next to Profile) is the discovery
                 path for now. */}
           </div>
-        </div>
+        </Panel>
 
         {/* Toggle — always visible, bottom-center. Flips the dock open. */}
         <button
