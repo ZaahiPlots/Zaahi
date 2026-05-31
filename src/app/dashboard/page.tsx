@@ -364,10 +364,17 @@ function Sub({ children }: { children: React.ReactNode }) {
   return <p style={{ fontSize: 12, color: SUBTLE, margin: "0 0 20px" }}>{children}</p>;
 }
 function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: string; accent?: string }) {
+  // Phase A 2026-05-31: tabular-nums + letter-spacing -0.02em so the
+  // 22 px metric figures line up across the 4-card row and read
+  // cleanly. Size kept at 22 px (dashboard card scale is smaller than
+  // SidePanel's TOTAL PRICE which uses NUMBER_LARGE / 28).
   return (
     <Card>
       <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: accent ?? TXT, lineHeight: 1.1 }}>{value}</div>
+      <div style={{
+        fontSize: 22, fontWeight: 800, color: accent ?? TXT, lineHeight: 1.1,
+        letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums",
+      }}>{value}</div>
       <div style={{ fontSize: 11, color: SUBTLE, marginTop: 4, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
     </Card>
   );
@@ -1064,10 +1071,16 @@ function Favorites() {
               <div style={{ fontSize: 11, color: SUBTLE, marginBottom: 4 }}>
                 {f.parcel.district} · {f.parcel.emirate}
               </div>
-              <div style={{ color: GOLD, fontSize: 16, fontWeight: 800 }}>
+              <div style={{
+                color: GOLD, fontSize: 16, fontWeight: 800,
+                letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums",
+              }}>
                 {fmtAedFromFils(f.parcel.currentValuation)}
               </div>
-              <div style={{ fontSize: 10, color: SUBTLE, marginTop: 2 }}>
+              <div style={{
+                fontSize: 11, color: SUBTLE, marginTop: 2,
+                fontVariantNumeric: "tabular-nums",
+              }}>
                 {Math.round(f.parcel.area).toLocaleString("en-US")} sqft · {f.parcel.status.replace("_", " ")}
               </div>
               <div style={{ fontSize: 9, color: SUBTLE, marginTop: 8 }}>

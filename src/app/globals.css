@@ -87,6 +87,17 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Body type 2026-05-31 Phase A — Inter is loaded via next/font in
+ * src/app/layout.tsx as the CSS variable --font-inter and applied
+ * here so every descendant inherits it without each component
+ * re-declaring fontFamily. Georgia stays in place for headings and
+ * .zaahi-label via inline style or HEADING_FONT in design-tokens.
+ * The system stack is the fallback when Inter hasn't loaded yet. */
+body {
+  font-family: var(--font-inter), -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+}
+
 /* Reusable utility classes — opt-in, don't replace inline styles unless
  * the callsite is already using className. */
 .zaahi-glass {

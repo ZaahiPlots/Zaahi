@@ -16,7 +16,12 @@ import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 // to the shared Panel + tokens. Inner content keeps its existing
 // styling — Phase 2 will sweep the row colours / chips.
 import { Panel } from "@/components/Panel";
-import { PANEL_BORDER_COLOR, RADIUS_EDGE } from "@/lib/design-tokens";
+import {
+  PANEL_BORDER_COLOR,
+  RADIUS_EDGE,
+  NUMBER_LARGE,
+  NUMBER_SMALL,
+} from "@/lib/design-tokens";
 import {
   PANEL_WIDTH_DEFAULT,
   clampPanelWidth,
@@ -510,29 +515,40 @@ export default function SidePanel({
               {isJvNoPrice ? "Price on Request" : "Total Price"}
             </div>
             <div
-              style={{
-                color: GOLD,
-                fontWeight: isJvNoPrice ? 700 : 800,
-                fontSize: isJvNoPrice ? 14 : 22,
-                lineHeight: 1.25,
-                letterSpacing: isJvNoPrice ? 0 : -0.2,
-              }}
+              style={
+                isJvNoPrice
+                  ? {
+                      color: GOLD,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      lineHeight: 1.25,
+                    }
+                  : {
+                      // Phase A 2026-05-31: NUMBER_LARGE (28 / 800 /
+                      // -0.02em / tabular-nums). Fixed the -0.2em
+                      // copy-error that was crowding big AED figures.
+                      ...NUMBER_LARGE,
+                      color: GOLD,
+                    }
+              }
             >
               {isJvNoPrice ? "Price on request — JV terms negotiable" : fmtBigAed(aed)}
             </div>
             {/* Per-sqft rows. Plot is always shown when we have an area;
-                GFA is only shown when DDA gave us a Max GFA. */}
-            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                GFA is only shown when DDA gave us a Max GFA. Phase A:
+                14 px tabular-nums via NUMBER_SMALL so the two rows
+                align under the headline AED. */}
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
               {pricePerSqftPlot != null && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-                  <span style={{ color: SUBTLE }}>Per sqft (Plot)</span>
-                  <span style={{ color: TXT, fontWeight: 600 }}>{fmtPerSqft(pricePerSqftPlot)}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ color: SUBTLE, fontSize: 12 }}>Per sqft (Plot)</span>
+                  <span style={{ ...NUMBER_SMALL, color: TXT }}>{fmtPerSqft(pricePerSqftPlot)}</span>
                 </div>
               )}
               {pricePerSqftGfa != null && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-                  <span style={{ color: SUBTLE }}>Per sqft (Max GFA)</span>
-                  <span style={{ color: TXT, fontWeight: 600 }}>{fmtPerSqft(pricePerSqftGfa)}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ color: SUBTLE, fontSize: 12 }}>Per sqft (Max GFA)</span>
+                  <span style={{ ...NUMBER_SMALL, color: TXT }}>{fmtPerSqft(pricePerSqftGfa)}</span>
                 </div>
               )}
             </div>
@@ -1241,10 +1257,14 @@ function Section({
 
 function Row({ label, v }: { label: string; v: string | null | undefined }) {
   if (v == null) return null;
+  // Phase A 2026-05-31: value side switched to NUMBER_SMALL (14 px /
+  // 600 / tabular-nums) so dimension columns (Plot Area, Max GFA, FAR,
+  // Floors, etc) align vertically and read clearly. Label stays at a
+  // dimmer 12 px so the eye anchors on the figure.
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, lineHeight: 1.4 }}>
-      <span style={{ color: SUBTLE }}>{label}</span>
-      <span style={{ color: TXT, textAlign: "right" }}>{v}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, lineHeight: 1.4 }}>
+      <span style={{ color: SUBTLE, fontSize: 12 }}>{label}</span>
+      <span style={{ ...NUMBER_SMALL, color: TXT, textAlign: "right" }}>{v}</span>
     </div>
   );
 }

@@ -120,9 +120,14 @@ export const BG_GRADIENT = "linear-gradient(180deg, #0A1628 0%, #050B18 100%)";
 export const HEADING_FONT = 'Georgia, "Times New Roman", serif';
 export const HEADING_LETTER_SPACING = "0.12em";
 
-// Body typeface — system stack. Used for paragraph copy, button
-// labels (when not section labels), table cells, input text.
-export const BODY_FONT = '-apple-system, "Segoe UI", Roboto, sans-serif';
+// Body typeface — Inter (loaded via next/font/google in app/layout.tsx
+// as the CSS variable `--font-inter`) with the prior system stack as
+// the fallback chain. Used for paragraph copy, button labels (when not
+// section labels), table cells, input text.
+// 2026-05-31 Phase A: switched from a system-only stack to Inter so the
+// platform renders the same letterforms on macOS / Windows / Linux.
+export const BODY_FONT =
+  'var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif';
 
 // Default text on glass surfaces.
 export const TXT = "#FFFFFF";
@@ -138,6 +143,51 @@ export const TXT_FAINT = "rgba(255, 255, 255, 0.65)";
 // 0.7 because they're glyph-shaped and don't need to read as body
 // copy, but reads brighter than the old TXT_DIM.
 export const TXT_ICON = "rgba(255, 255, 255, 0.7)";
+
+// ── Number rendering tokens ──────────────────────────────────────
+// Founder spec 2026-05-31 Phase A: numeric surfaces (prices, areas,
+// FAR, floor counts, per-sqft) get tabular-nums so columns line up
+// vertically, plus a consistent weight / size / letter-spacing scale.
+//
+// Use as:
+//   <span style={NUMBER_LARGE}>{aed.toLocaleString()}</span>
+// or merge: { ...NUMBER_LARGE, color: GOLD_CTA }.
+//
+// Letter-spacing is -0.02em (subtle tightening), NOT -0.2em — the
+// latter was a copy-error in early SidePanel work and made big AED
+// figures crowded. CLAUDE.md spec is the source of truth.
+//
+// `fontVariantNumeric: "tabular-nums"` is the React equivalent of
+// `font-variant-numeric: tabular-nums`. Inter's `tnum` feature is
+// what gives us evenly-spaced digits.
+import type { CSSProperties } from "react";
+
+export const NUMBER_LARGE: CSSProperties = {
+  fontFamily: BODY_FONT,
+  fontWeight: 800,
+  fontSize: 28,
+  lineHeight: 1.05,
+  letterSpacing: "-0.02em",
+  fontVariantNumeric: "tabular-nums",
+};
+
+export const NUMBER_MEDIUM: CSSProperties = {
+  fontFamily: BODY_FONT,
+  fontWeight: 700,
+  fontSize: 18,
+  lineHeight: 1.1,
+  letterSpacing: "-0.01em",
+  fontVariantNumeric: "tabular-nums",
+};
+
+export const NUMBER_SMALL: CSSProperties = {
+  fontFamily: BODY_FONT,
+  fontWeight: 600,
+  fontSize: 14,
+  lineHeight: 1.2,
+  letterSpacing: 0,
+  fontVariantNumeric: "tabular-nums",
+};
 
 // ── Transitions ──────────────────────────────────────────────────
 // CLAUDE.md forbids `transition: all` — always name the properties.

@@ -58,6 +58,7 @@ import {
   CHROME_BTN_SIZE_COMPACT,
   RADIUS_PANEL,
   RADIUS_CARD,
+  NUMBER_SMALL,
 } from "@/lib/design-tokens";
 
 type Theme = "light" | "dark";
@@ -6612,18 +6613,23 @@ function VaultAddButton({
 // One small row of label + value, used inside the ddaLandHover popup
 // JSX. Style mirrors the rest of the hover card (Georgia / SF Mono).
 function PmtilesHoverRow({ label, value }: { label: string; value: string }) {
+  // Phase A 2026-05-31: dropped the SF Mono monospace stack — it
+  // visually clashed with the Inter body across the rest of the
+  // platform. Inter's tabular-nums (NUMBER_SMALL) gives even digit
+  // widths without the monospace look. Value sized at 14 px / 600
+  // weight, label stays compact at 11 px uppercase.
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", gap: 8,
-      marginTop: 3, fontSize: 12, lineHeight: 1.35,
+      display: "flex", justifyContent: "space-between", alignItems: "baseline",
+      gap: 8, marginTop: 3, lineHeight: 1.35,
     }}>
       <span style={{
         opacity: 0.55, letterSpacing: "0.04em",
         textTransform: "uppercase", fontSize: 11,
       }}>{label}</span>
       <span style={{
+        ...NUMBER_SMALL,
         color: "rgba(255,255,255,0.95)", textAlign: "right",
-        fontFamily: '"SF Mono", Menlo, monospace', fontSize: 12,
       }}>{value}</span>
     </div>
   );
