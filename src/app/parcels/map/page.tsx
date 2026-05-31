@@ -3605,6 +3605,16 @@ function ParcelsMapPageInner() {
         hoverCloseTimerRef.current = null;
       }
       map.getCanvas().style.cursor = "pointer";
+      // Symmetric hover dedup (founder spec 2026-05-31): when PMTiles
+      // activates, kill ZAAHI + vault state too. The priority gate
+      // above only checks whether the cursor is STILL over ZAAHI on
+      // this frame — it does NOT clear stale state from a sibling
+      // ZAAHI polygon whose 220ms close timer was just cancelled by
+      // our hoverCloseTimerRef clear above. Without this, dragging
+      // from "Business Bay Phase 1" onto adjacent DDA 3460654 leaves
+      // both cards stacked.
+      setZaahiHover(null);
+      setVaultHover(null);
       const pr = f.properties as Record<string, unknown>;
       const areaSqm = (pr.areaSqm as number) ?? 0;
       // DDA tiles carry AREA_SQFT directly; AD tiles only have
@@ -4052,6 +4062,11 @@ function ParcelsMapPageInner() {
             hoverCloseTimerRef.current = null;
           }
           map.getCanvas().style.cursor = "pointer";
+          // Symmetric hover dedup — see PMTiles handler for the race
+          // explanation. Vault clears ZAAHI for the same reason: an
+          // adjacent ZAAHI listing's close timer may have been killed
+          // by the shared hoverCloseTimerRef just above.
+          setZaahiHover(null);
           const p = f.properties as Record<string, unknown>;
           const id = typeof p.id === "string" ? p.id : "";
           const fils = typeof p.askingPriceFils === "string" ? p.askingPriceFils : null;
