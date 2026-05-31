@@ -21,7 +21,9 @@ import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
 import { AddPlotWizardModal } from "./AddPlotWizardModal";
-import MiniMap from "./MiniMap";
+// MiniMap dock unmounted 2026-06-01 (founder spec). The component
+// file is kept in place for the future panel-control overview;
+// no current consumer.
 import DroneHUD from "./DroneHUD";
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
@@ -1919,11 +1921,14 @@ function ParcelsMapPageInner() {
   // with the Layers panel because both anchor at left:60, top:64.
   const [portalOpen, setPortalOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
-  const [miniOpen, setMiniOpen] = useState(false);
+  // MiniMap dock removed 2026-06-01 (founder spec) — `miniOpen`
+  // state is gone. The dock's two unique controls (Drone mode and
+  // Sun-time slider) now live on the left + right rails as slot 6.
+  // All 7 layer toggles that used to live on the dock top + left
+  // rails remain in the Layers panel (LAYER_GROUPS).
   const legendRef = useRef<HTMLDivElement>(null);
-  // Wrapped around the mini-dock Legend button so the click-outside
-  // handler at L4182 skips clicks on that button (was the standalone
-  // top-right button until the 2026-05-24 founder map UI cleanup).
+  // Legend trigger lives on the right rail (slot 1). The
+  // click-outside handler at L4182 skips clicks on this ref.
   const legendBtnRef = useRef<HTMLElement>(null);
   // Country-first hierarchy — one section per country, collapsible.
   // Phase 1: default Dubai expanded (where 114 ZAAHI listings live); on
@@ -5386,10 +5391,9 @@ function ParcelsMapPageInner() {
         </div>
       )}
 
-      {/* Basemap selector moved to mini dock right rail
-          on 2026-05-24 (founder map UI cleanup). baseMap / setBaseMap
-          state lives at the page level and is consumed in MiniRailBtn
-          clicks inside the dock. */}
+      {/* Basemap selector lives on the left rail (slots 2-4). baseMap /
+          setBaseMap state stays at the page level. The historical mini-
+          dock that briefly hosted it was removed 2026-06-01. */}
 
       {/* Cursor coordinates — left bottom corner, mini */}
       <div
@@ -5503,11 +5507,40 @@ function ParcelsMapPageInner() {
             <polyline points="21 4 21 9 16 9" />
           </svg>
         </ChromeBtn>
+        {/* 6. Drone mode — promoted from the removed MiniMap dock to
+            the left rail (founder spec 2026-06-01). Sits directly
+            under Auto-rotate because they are mutually exclusive:
+            enabling one disables the other (state mutex below). */}
+        <ChromeBtn
+          title={droneEnabled ? "Disable drone mode" : "Drone mode (WASD + right-click)"}
+          active={droneEnabled}
+          onClick={() => {
+            sound.whoosh();
+            setDroneEnabled((v) => {
+              const next = !v;
+              // Same mutex as the auto-rotate handler above.
+              if (next) setAutoRotateEnabled(false);
+              return next;
+            });
+          }}
+        >
+          {/* Minimal quadcopter silhouette — same glyph that lived
+              in the mini-dock so existing users recognise it. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="2" />
+            <line x1="12" y1="10" x2="12" y2="5" />
+            <line x1="12" y1="14" x2="12" y2="19" />
+            <line x1="10" y1="12" x2="5" y2="12" />
+            <line x1="14" y1="12" x2="19" y2="12" />
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="19" cy="12" r="2" />
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="12" cy="19" r="2" />
+          </svg>
+        </ChromeBtn>
         {/* Parcels portal toggle moved to the bottom-centre ParcelsNav
-            pill (founder spec 2026-05-29). Left rail is back to its
-            5×5 symmetric stack — no Parcels button here. portalOpen
-            state and ParcelsPortalPanel rendering stay untouched and
-            are now driven by the nav's middle button. */}
+            pill (founder spec 2026-05-29). portalOpen state and
+            ParcelsPortalPanel rendering stay untouched. */}
       </div>
 
       {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
@@ -5526,10 +5559,9 @@ function ParcelsMapPageInner() {
           zIndex: 11,
         }}
       >
-        {/* 1. Legend — Mirrors Layers on the left. data-legend-trigger
+        {/* 1. Legend — mirrors Layers on the left. data-legend-trigger
               keeps the click-outside handler from re-closing the panel
-              when the user clicks this trigger; the mini-dock Legend
-              MiniRailBtn carries the same marker. */}
+              when the user clicks this trigger. */}
         <span ref={legendBtnRef} data-legend-trigger style={{ display: "block" }}>
           <ChromeBtn
             title="Legend"
@@ -5575,6 +5607,25 @@ function ParcelsMapPageInner() {
           <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 12 }}>
             {is3D ? "3D" : "2D"}
           </span>
+        </ChromeBtn>
+        {/* 6. Sun-time slider — promoted from the removed MiniMap
+            dock to the right rail (founder spec 2026-06-01). The
+            slider overlay itself stays rendered at page-level when
+            sunSliderActive is true (see L5059). */}
+        <ChromeBtn
+          title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
+          active={sunSliderActive}
+          onClick={() => {
+            sound.whoosh();
+            setSunSliderActive((v) => !v);
+          }}
+        >
+          {/* Sun — radiating rays around a centred disc. Same glyph
+              that lived in the mini-dock for visual continuity. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
         </ChromeBtn>
       </div>
 
@@ -6254,246 +6305,6 @@ function ParcelsMapPageInner() {
           Profile) per founder spec 2026-04-12. The old floating
           button at top:56 right:16 is gone. */}
 
-      {/* ── MiniMap dock — bottom center ──
-          Civ6-style regional overview. Collapsed by default: only the
-          tiny map-icon toggle is visible at the bottom-center. When
-          the user opens it, the full dock (layer rail · minimap ·
-          action rail) slides up with a 300 ms ease-in-out fade. The
-          MiniMap instance stays mounted while hidden so it keeps
-          syncing with the main map — re-opening is instant.
-          Position: bottom: 16, left: 50% with translateX(-50%) per
-          founder spec 2026-05-23. */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: 16,
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          zIndex: 14,
-          pointerEvents: "none",
-        }}
-      >
-        {/* Dock — unified glass panel around the minimap. Buttons split
-            across three rails (top / left / right) so the layer pile
-            isn't all on one side. Grid areas keep everything snapped
-            flush against the minimap edges. */}
-        <Panel
-          aria-hidden={!miniOpen}
-          radius={RADIUS_PANEL}
-          noShadow
-          style={{
-            display: "grid",
-            gridTemplateColumns: "auto auto auto",
-            gridTemplateRows: "auto auto",
-            gridTemplateAreas: `
-              ".    top   ."
-              "left mid   right"
-            `,
-            columnGap: 6,
-            rowGap: 6,
-            padding: 8,
-            // Local lighter shadow — the dock has the minimap canvas
-            // inside which we don't want to lift visually as much as a
-            // full-height SidePanel would.
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-            opacity: miniOpen ? 1 : 0,
-            transform: miniOpen ? "translateY(0)" : "translateY(12px)",
-            pointerEvents: miniOpen ? "auto" : "none",
-            transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
-          }}
-        >
-          <div
-            style={{
-              gridArea: "top",
-              display: "flex",
-              flexDirection: "row",
-              gap: 6,
-              justifyContent: "space-between",
-            }}
-          >
-            {MINI_TOP_LAYERS.map((l) => (
-              <MiniRailBtn
-                key={l.key}
-                title={l.label}
-                active={!!layers[l.key]}
-                onClick={() =>
-                  setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))
-                }
-              >
-                {l.icon}
-              </MiniRailBtn>
-            ))}
-          </div>
-
-          <div
-            style={{
-              gridArea: "left",
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              alignSelf: "start",
-            }}
-          >
-            {MINI_LEFT_LAYERS.map((l) => (
-              <MiniRailBtn
-                key={l.key}
-                title={l.label}
-                active={!!layers[l.key]}
-                onClick={() =>
-                  setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))
-                }
-              >
-                {l.icon}
-              </MiniRailBtn>
-            ))}
-          </div>
-
-          <div style={{ gridArea: "mid", display: "flex", flexDirection: "column", gap: 4 }}>
-            <MiniMap mainMapRef={mapRef} />
-            {/* Cursor coords + zoom footer under the minimap. Duplicates
-                the bottom-left readout on purpose: power users glance
-                here when the dock is open; the bottom-left version is
-                kept for users who never open the dock. */}
-            <div
-              style={{
-                fontSize: 11,
-                color: "rgba(255, 255, 255, 0.55)",
-                fontFamily: '"SF Mono", "Menlo", monospace',
-                letterSpacing: "0.04em",
-                textAlign: "center",
-                paddingTop: 2,
-                pointerEvents: "none",
-              }}
-            >
-              {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z{zoom.toFixed(2)}
-            </div>
-          </div>
-
-          <div
-            style={{
-              gridArea: "right",
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              alignSelf: "start",
-            }}
-          >
-            {/* Mini-dock right rail cleanup 2026-05-24 (Option A):
-                Legend, the 3 basemap buttons, and Auto-rotate were
-                removed because they duplicate the big-map 5×5 stacks
-                (RIGHT slot 1 = Legend; LEFT slots 2-4 = basemap;
-                LEFT slot 5 = Auto-rotate). The right rail keeps only
-                Sun-slider + Drone — controls that have no big-map
-                counterpart. Yes, the rail is now asymmetric (4 top,
-                5 left, 2 right) — accepted as a trade-off for "no
-                duplicate clicks" per founder spec. */}
-            <MiniRailBtn
-              title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
-              active={sunSliderActive}
-              onClick={() => {
-                sound.whoosh();
-                setSunSliderActive((v) => !v);
-              }}
-            >
-              {/* Sun — radiating rays around a centered disc. */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-              </svg>
-            </MiniRailBtn>
-            {/* Auto-rotate moved exclusively to big-map LEFT slot 5
-                (commit 9f34cc8) — removed from the mini dock to drop
-                the duplicate per Option A. State / mutex against
-                Drone still lives at the page level. */}
-            <MiniRailBtn
-              title={droneEnabled ? "Disable drone mode" : "Enable drone mode (WASD + right-click rotate)"}
-              active={droneEnabled}
-              onClick={() => {
-                sound.whoosh();
-                setDroneEnabled((v) => {
-                  const next = !v;
-                  // Mutual exclusion: enabling drone disables auto-rotate.
-                  if (next) setAutoRotateEnabled(false);
-                  return next;
-                });
-              }}
-            >
-              {/* Minimal quadcopter silhouette. */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="2" />
-                <line x1="12" y1="10" x2="12" y2="5" />
-                <line x1="12" y1="14" x2="12" y2="19" />
-                <line x1="10" y1="12" x2="5" y2="12" />
-                <line x1="14" y1="12" x2="19" y2="12" />
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-                <circle cx="12" cy="5" r="2" />
-                <circle cx="12" cy="19" r="2" />
-              </svg>
-            </MiniRailBtn>
-            {/* Vault-only viewmode toggle removed from the dock on
-                2026-05-24 (rail balance 5/5). vaultOnlyMode / setVaultOnlyMode
-                state stays in page.tsx so the existing visibility
-                effect at L4115 keeps working as a no-op; the toggle
-                will return in a future revamp if needed. The Vault
-                link in the header (next to Profile) is the discovery
-                path for now. */}
-          </div>
-        </Panel>
-
-        {/* Toggle — always visible, bottom-center. Flips the dock open. */}
-        <button
-          onClick={() => setMiniOpen((o) => !o)}
-          title={miniOpen ? "Hide mini map" : "Show mini map"}
-          aria-label={miniOpen ? "Hide mini map" : "Show mini map"}
-          aria-expanded={miniOpen}
-          style={{
-            pointerEvents: "auto",
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            border: `1px solid ${miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-            background: miniOpen ? "rgba(200,169,110,0.25)" : "rgba(0, 0, 0, 0.3)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            color: GOLD,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-            transition: "border-color 150ms ease, background 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = GOLD;
-            e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = miniOpen ? GOLD : "rgba(200, 169, 110, 0.3)";
-            e.currentTarget.style.background = miniOpen
-              ? "rgba(200,169,110,0.25)"
-              : "rgba(0, 0, 0, 0.3)";
-          }}
-        >
-          {miniOpen ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="1 6 7 3 15 6 23 3 23 18 15 21 7 18 1 21 1 6" />
-              <line x1="7" y1="3" x2="7" y2="18" />
-              <line x1="15" y1="6" x2="15" y2="21" />
-            </svg>
-          )}
-        </button>
-      </div>
 
       <BuildingCard
         buildingId={selectedBuildingId}
@@ -7590,168 +7401,6 @@ function HdrField({
   );
 }
 
-// ─── MiniMap dock layer configuration ─────────────────────────────
-// Buttons wrap the minimap on three sides. Top rail = region toggles
-// (the four biggest land datasets). Left rail = contextual toggles
-// (communities, governorates, zones, projects). Right rail lives in
-// page.tsx as Link-wrapped actions (Legend / Ambassador / Profile).
-// Every key must exist on LayersState or setLayers will no-op.
-// Icons are minimal inline SVG — no emoji per CLAUDE.md UI STYLE GUIDE.
-type MiniLayer = { key: keyof LayersState; label: string; icon: React.ReactNode };
-
-const MINI_TOP_LAYERS: MiniLayer[] = [
-  {
-    key: "ddaLandPlots",
-    label: "DDA Land Plots",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-      </svg>
-    ),
-  },
-  {
-    key: "adLandPlots",
-    label: "Abu Dhabi Land Plots",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <path d="M7 12h10M12 7v10" />
-      </svg>
-    ),
-  },
-  // Oman entry dropped 2026-05-24 — coverage removed from platform.
-  {
-    key: "metro",
-    label: "Metro",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="5" y="3" width="14" height="16" rx="3" />
-        <path d="M5 13h14" />
-        <circle cx="9" cy="17" r="1.2" fill="currentColor" />
-        <circle cx="15" cy="17" r="1.2" fill="currentColor" />
-        <path d="M7 21l-2 2M17 21l2 2" />
-      </svg>
-    ),
-  },
-];
-
-const MINI_LEFT_LAYERS: MiniLayer[] = [
-  {
-    key: "communities",
-    label: "Communities",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 21V9l9-6 9 6v12" />
-        <path d="M9 21v-7h6v7" />
-      </svg>
-    ),
-  },
-  {
-    // District names render at zoom ≥ 11 (city scale). Default ON per
-    // LayersState init; persists via zaahi-map-layers in localStorage.
-    key: "districtNames",
-    label: "District Names",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* "Aa" glyph — uppercase A + lowercase a, stylized strokes. */}
-        <path d="M4 19l4-12 4 12M5.5 15h5" />
-        <path d="M18 19v-5a3 3 0 0 0-6 0M18 14v5M12 18a2 2 0 0 0 4 0" />
-      </svg>
-    ),
-  },
-  // Saudi Governorates entry dropped 2026-05-24 along with the rest
-  // of the Saudi coverage (Riyadh Zones, governorate KML route).
-  {
-    key: "ddaFreeZones",
-    label: "Free Zones",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3l8 4v5c0 4-4 7-8 9-4-2-8-5-8-9V7l8-4z" />
-      </svg>
-    ),
-  },
-  {
-    key: "ddaProjects",
-    label: "DDA Projects",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 21h16M6 21V10l6-5 6 5v11" />
-        <rect x="10" y="13" width="4" height="4" />
-      </svg>
-    ),
-  },
-];
-
-/**
- * Icon button for the MiniMap rails. Renders as a `<button>` by default;
- * pass `asSpan` when wrapping in a Link so we don't nest interactive
- * elements. Active = gold fill + gold text. Inactive = dim gold border,
- * hover lifts into the gold tint — same language as ChromeBtn.
- */
-function MiniRailBtn({
-  title,
-  active,
-  onClick,
-  children,
-  asSpan,
-}: {
-  title: string;
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  asSpan?: boolean;
-}) {
-  const base: React.CSSProperties = {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-    border: `1px solid ${active ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
-    background: active ? "rgba(200,169,110,0.25)" : "rgba(10, 22, 40, 0.5)",
-    color: GOLD,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 0,
-    transition: "border-color 150ms ease, background 150ms ease",
-  };
-  const onEnter = (e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.borderColor = GOLD;
-    e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)";
-  };
-  const onLeave = (e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.borderColor = active ? GOLD : "rgba(200, 169, 110, 0.3)";
-    e.currentTarget.style.background = active
-      ? "rgba(200,169,110,0.25)"
-      : "rgba(10, 22, 40, 0.5)";
-  };
-  if (asSpan) {
-    return (
-      <span
-        title={title}
-        aria-label={title}
-        style={base}
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-      >
-        {children}
-      </span>
-    );
-  }
-  return (
-    <button
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      style={base}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-    >
-      {children}
-    </button>
-  );
-}
 
 export default function ParcelsMapPage() {
   return (

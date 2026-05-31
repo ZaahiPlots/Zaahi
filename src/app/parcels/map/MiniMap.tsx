@@ -1,5 +1,22 @@
 "use client";
 /**
+ * Future: panel-control mini overview — unmounted 2026-06-01.
+ *
+ * The MiniMap dock at the bottom-centre of the map screen was removed
+ * by founder spec on 2026-06-01 ahead of the larger control-panel
+ * redesign. This file is intentionally preserved (not deleted) so a
+ * follow-up commit can re-mount the component once the new control
+ * panel ships. Its only known consumer was the dock JSX inside
+ * src/app/parcels/map/page.tsx — that block, the miniOpen state,
+ * the MINI_TOP_LAYERS / MINI_LEFT_LAYERS constants, and the
+ * MiniRailBtn helper are all gone; the two unique controls that
+ * lived inside the dock (Drone mode, Sun-time slider) were promoted
+ * to the left + right rails as slot 6.
+ *
+ * Until a new caller wires this in, the component should not be
+ * imported anywhere. tsc will warn if a stray import sneaks back.
+ *
+ * Original purpose:
  * MiniMap — Civ6-style regional overview at the bottom-center of the
  * map screen. Independent lightweight MapLibre instance (raster only,
  * no 3D, no labels). Keeps in sync with the main map:
