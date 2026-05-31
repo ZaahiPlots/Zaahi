@@ -13,6 +13,11 @@ import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 import { PdfProgressBar } from "./PdfProgressBar";
 import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 
+// rgba(200,169,110,0.9) — translucent solid-gold for primary CTAs
+// (founder spec 2026-05-31 Q1). Same hue as the GOLD constant below
+// but reads as an accent on glass instead of opaque chrome.
+const GOLD_CTA = "rgba(200, 169, 110, 0.9)";
+
 // ZAAHI UI Style Guide — Apple-like glassmorphism over the satellite map.
 // Updated 2026-04-16: warm off-white text + gold-tinted lines, matches
 // the design tokens in src/app/globals.css (--text-primary, --glass-*).
@@ -1006,16 +1011,23 @@ export default function SidePanel({
               width: "100%",
               padding: "14px 16px",
               borderRadius: 10,
-              border: "none",
-              background: GOLD,
+              border: `1px solid ${GOLD}`,
+              background: GOLD_CTA,
               color: NAVY,
               fontWeight: 800,
               fontSize: 13,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               cursor: "pointer",
+              fontFamily: "inherit",
               boxShadow: "0 8px 28px rgba(200, 169, 110, 0.3)",
-              transition: "transform 150ms ease, box-shadow 150ms ease",
+              transition: "background 150ms ease, box-shadow 150ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(200, 169, 110, 1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = GOLD_CTA;
             }}
           >
             Start Negotiation

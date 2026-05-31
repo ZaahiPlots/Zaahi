@@ -164,8 +164,8 @@ export default function AuthPage() {
           position: 'absolute',
           inset: 0,
           zIndex: 1,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           background: 'rgba(10, 15, 30, 0.35)',
           pointerEvents: 'none',
         }}
@@ -198,7 +198,7 @@ export default function AuthPage() {
             pointerEvents: 'auto',
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-            <h2 style={{ fontSize: 22, color: '#FFFFFF', marginBottom: 12, letterSpacing: 2 }}>REQUEST SUBMITTED</h2>
+            <h2 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 22, color: '#FFFFFF', marginBottom: 12, letterSpacing: '0.12em', textTransform: 'uppercase' }}>REQUEST SUBMITTED</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
               Thank you for your interest in ZAAHI.<br/>
               Our team will review your application and contact you shortly.
@@ -377,9 +377,9 @@ export default function AuthPage() {
                 style={{
                   marginTop: 6,
                   padding: '13px',
-                  background: GOLD,
+                  background: 'rgba(200, 169, 110, 0.9)',
                   color: '#1A1A2E',
-                  border: 'none',
+                  border: `1px solid ${GOLD}`,
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: 700,
@@ -387,6 +387,13 @@ export default function AuthPage() {
                   cursor: busy ? 'wait' : 'pointer',
                   opacity: busy ? 0.6 : 1,
                   fontFamily: 'inherit',
+                  transition: 'background 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!busy) e.currentTarget.style.background = 'rgba(200, 169, 110, 1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(200, 169, 110, 0.9)';
                 }}
               >
                 {busy ? '...' : 'SIGN IN'}

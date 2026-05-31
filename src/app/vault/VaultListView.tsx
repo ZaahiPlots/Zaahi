@@ -417,8 +417,8 @@ const selectStyle: React.CSSProperties = {
 
 const tableShellStyle: React.CSSProperties = {
   background: BG_GLASS,
-  backdropFilter: "blur(16px) saturate(150%)",
-  WebkitBackdropFilter: "blur(16px) saturate(150%)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   border: `1px solid ${BORDER}`,
   borderRadius: 12,
   overflow: "hidden",

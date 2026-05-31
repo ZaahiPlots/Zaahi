@@ -17,13 +17,19 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { type AreaUnit, loadAreaUnit, saveAreaUnit } from "@/lib/area-unit";
 
 const GOLD = "#C8A96E";
-const GOLD_TEXT = "#e8d5a8";
-// Style tokens unified against the login reference (src/app/page.tsx):
-// pure white text, neutral white borders, gradient page bg as specced.
+// rgba(200,169,110,0.9) — translucent gold for primary CTAs
+// (founder spec 2026-05-31 Q1). Reads as accent on glass instead
+// of opaque chrome. Used by GoldBtn + the inline "Add New Property"
+// + password-change + Approve + tab-pill actives.
+const GOLD_CTA = "rgba(200, 169, 110, 0.9)";
+// Style tokens unified against design-tokens.ts (founder spec
+// 2026-05-29). Local constants kept for brevity; semantics match
+// PANEL_BG / PANEL_BORDER / TXT / TXT_DIM in src/lib/design-tokens.ts.
 const TXT = "#FFFFFF";
 const SUBTLE = "rgba(255, 255, 255, 0.5)";
 const DIM = "rgba(255, 255, 255, 0.7)";
-const LINE = "rgba(255, 255, 255, 0.1)";
+const LINE = "rgba(255, 255, 255, 0.15)";
+const PANEL_BG = "rgba(0, 0, 0, 0.3)";
 const BG = "linear-gradient(180deg, #0A1628 0%, #050B18 100%)";
 
 type Role = "OWNER" | "BUYER" | "BROKER" | "INVESTOR" | "DEVELOPER" | "ARCHITECT" | "ADMIN";
@@ -149,7 +155,7 @@ function DashboardInner() {
       <aside
         className={`flex flex-col flex-shrink-0 fixed md:static inset-y-0 left-0 z-50 w-[220px] transition-transform duration-200 ease-out ${mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
         style={{
-          background: "rgba(10, 22, 40, 0.92)",
+          background: PANEL_BG,
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
           borderRight: `1px solid ${LINE}`,
@@ -260,9 +266,9 @@ function Header({ user, onMobileMenuClick }: { user: MeUser | null; onMobileMenu
     <div
       style={{
         height: 56,
-        background: "rgba(10, 22, 40, 0.5)",
-        backdropFilter: "blur(24px) saturate(150%)",
-        WebkitBackdropFilter: "blur(24px) saturate(150%)",
+        background: PANEL_BG,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderBottom: `1px solid ${LINE}`,
         display: "flex",
         alignItems: "center",
@@ -326,7 +332,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   return (
     <div
       style={{
-        background: "rgba(10, 22, 40, 0.4)",
+        background: PANEL_BG,
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         border: `1px solid ${LINE}`,
@@ -342,14 +348,14 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 }
 function H1({ children }: { children: React.ReactNode }) {
   return (
-    <h1 style={{ fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 700, color: GOLD, margin: "0 0 4px", letterSpacing: 0.5 }}>
+    <h1 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 22, fontWeight: 700, color: GOLD, margin: "0 0 4px", letterSpacing: "0.12em" }}>
       {children}
     </h1>
   );
 }
 function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: 1.4, margin: "0 0 10px" }}>
+    <h2 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 10px" }}>
       {children}
     </h2>
   );
@@ -394,15 +400,16 @@ function GoldBtn({ children, onClick, disabled }: { children: React.ReactNode; o
       disabled={disabled}
       style={{
         padding: "8px 16px",
-        background: disabled ? "rgba(200, 169, 110, 0.3)" : GOLD,
+        background: disabled ? "rgba(200, 169, 110, 0.3)" : GOLD_CTA,
         color: disabled ? "rgba(255,255,255,0.6)" : "white",
         fontSize: 12,
         fontWeight: 700,
-        border: 0,
+        border: `1px solid ${disabled ? "rgba(200, 169, 110, 0.3)" : GOLD}`,
         borderRadius: 6,
         cursor: disabled ? "not-allowed" : "pointer",
         fontFamily: "inherit",
         letterSpacing: "0.04em",
+        transition: "background 150ms ease",
       }}
     >
       {children}
@@ -831,7 +838,7 @@ function Properties() {
           <H1>My Properties</H1>
           <Sub>{rows === null ? "Loading…" : `${total} listing(s) registered with ZAAHI.`}</Sub>
         </div>
-        <Link href="/parcels/new" style={{ ...actionBtnStyle(), padding: "8px 16px", fontSize: 12, fontWeight: 700, textDecoration: "none", background: GOLD, color: "#0A1628", border: `1px solid ${GOLD}` }}>
+        <Link href="/parcels/new" style={{ ...actionBtnStyle(), padding: "8px 16px", fontSize: 12, fontWeight: 700, textDecoration: "none", background: GOLD_CTA, color: "#0A1628", border: `1px solid ${GOLD}` }}>
           + Add New Property
         </Link>
       </div>
@@ -1712,9 +1719,9 @@ function ChangePasswordCard() {
             disabled={busy || !pw1 || !pw2}
             style={{
               padding: "9px 18px",
-              background: GOLD,
+              background: GOLD_CTA,
               color: "#1A1A2E",
-              border: 0,
+              border: `1px solid ${GOLD}`,
               borderRadius: 6,
               fontSize: 12,
               fontWeight: 700,
@@ -1723,6 +1730,7 @@ function ChangePasswordCard() {
               cursor: busy ? "wait" : "pointer",
               opacity: busy || !pw1 || !pw2 ? 0.5 : 1,
               fontFamily: "inherit",
+              transition: "background 150ms ease",
             }}
           >
             {busy ? "Updating…" : "Update Password"}
@@ -1800,9 +1808,9 @@ function AreaUnitButton({
         letterSpacing: "0.06em",
         fontWeight: 600,
         textTransform: "uppercase",
-        background: active ? GOLD : "transparent",
+        background: active ? GOLD_CTA : "transparent",
         color: active ? "#1A1A2E" : DIM,
-        border: 0,
+        border: active ? `1px solid ${GOLD}` : "1px solid transparent",
         cursor: "pointer",
         fontFamily: "inherit",
         transition: "background 150ms ease, color 150ms ease",
@@ -1985,9 +1993,9 @@ function PendingReviews({ onCount }: { onCount: (n: number) => void }) {
                     disabled={busy === it.id}
                     style={{
                       padding: "9px 18px",
-                      background: busy === it.id ? "rgba(255,255,255,0.1)" : GOLD,
+                      background: busy === it.id ? "rgba(255,255,255,0.1)" : GOLD_CTA,
                       color: "white",
-                      border: 0,
+                      border: `1px solid ${busy === it.id ? "rgba(255,255,255,0.15)" : GOLD}`,
                       borderRadius: 6,
                       fontSize: 12,
                       fontWeight: 700,

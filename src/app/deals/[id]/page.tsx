@@ -5,9 +5,13 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { TIMELINE, currentStepIndex, fmtAed, DealAction, getRole } from "@/lib/deal-flow";
 
 const GOLD = "#C8A96E";
+// rgba(200,169,110,0.9) — translucent gold for primary CTAs
+// (founder spec 2026-05-31 Q1).
+const GOLD_CTA = "rgba(200, 169, 110, 0.9)";
 const TXT = "#FFFFFF";
 const SUBTLE = "rgba(255,255,255,0.55)";
-const LINE = "rgba(255,255,255,0.1)";
+const LINE = "rgba(255,255,255,0.15)";
+const PANEL_BG = "rgba(0, 0, 0, 0.3)";
 const GREEN = "#22C55E";
 const RED = "#F87171";
 const BG = "linear-gradient(180deg, #0A1628 0%, #050B18 100%)";
@@ -119,7 +123,7 @@ export default function DealRoomPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TXT }}>
-      <header style={{ padding: "16px 28px", borderBottom: `1px solid ${LINE}`, background: "rgba(10, 22, 40, 0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <header style={{ padding: "16px 28px", borderBottom: `1px solid ${LINE}`, background: PANEL_BG, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <Link href="/dashboard" style={{ color: SUBTLE, fontSize: 11, textDecoration: "none" }}>← Dashboard</Link>
           <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>
@@ -176,7 +180,7 @@ function Timeline({ currentIdx, cancelled, disputed, events }: {
 }) {
   // Find the most recent tx hash for each step (best-effort by event order matching timeline keys)
   return (
-    <div style={{ background: "rgba(10, 22, 40, 0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: 20, overflowY: "auto" }}>
+    <div style={{ background: PANEL_BG, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: 20, overflowY: "auto" }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 }}>
         Progress
       </div>
@@ -409,7 +413,7 @@ function StepContent({ deal, stepIdx, role, acting, doAction }: {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: "rgba(10, 22, 40, 0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 12, padding: 22, boxShadow: "0 6px 20px rgba(0,0,0,0.2)", border: `1px solid ${LINE}`, maxWidth: 640 }}>
+    <div style={{ background: PANEL_BG, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 12, padding: 22, boxShadow: "0 6px 20px rgba(0,0,0,0.2)", border: `1px solid ${LINE}`, maxWidth: 640 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 14 }}>{title}</div>
       {children}
     </div>
@@ -430,9 +434,13 @@ function ActionBar({ children }: { children: React.ReactNode }) {
   return <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>{children}</div>;
 }
 function Btn({ children, onClick, primary, danger, disabled }: { children: React.ReactNode; onClick: () => void; primary?: boolean; danger?: boolean; disabled?: boolean }) {
-  const bg = danger ? RED : primary ? GOLD : "rgba(255,255,255,0.06)";
+  const bg = danger ? RED : primary ? GOLD_CTA : "rgba(255,255,255,0.06)";
   const color = primary ? "white" : danger ? "white" : GOLD;
-  const border = primary || danger ? 0 : `1px solid rgba(200, 169, 110, 0.3)`;
+  const border = primary
+    ? `1px solid ${GOLD}`
+    : danger
+    ? `1px solid ${RED}`
+    : `1px solid rgba(200, 169, 110, 0.3)`;
   return (
     <button onClick={onClick} disabled={disabled} style={{
       padding: "9px 16px", borderRadius: 6, border,
@@ -502,7 +510,7 @@ function ChatPanel({ dealId, token, me, initialMessages }: {
   }
 
   return (
-    <div style={{ background: "rgba(10, 22, 40, 0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", flexDirection: "column", height: "calc(100vh - 88px)" }}>
+    <div style={{ background: PANEL_BG, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", flexDirection: "column", height: "calc(100vh - 88px)" }}>
       <div style={{ padding: "14px 18px", borderBottom: `1px solid ${LINE}` }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: 1.2 }}>Negotiation Chat</div>
         <div style={{ fontSize: 10, color: SUBTLE, marginTop: 2 }}>Polled every 10 seconds</div>
@@ -543,8 +551,10 @@ function ChatPanel({ dealId, token, me, initialMessages }: {
           style={{ flex: 1, padding: "8px 12px", border: `1px solid ${LINE}`, borderRadius: 6, fontSize: 12, background: "rgba(255,255,255,0.04)", color: TXT, outline: "none", fontFamily: "inherit" }}
         />
         <button onClick={send} style={{
-          padding: "8px 14px", border: 0, background: GOLD, color: "white",
+          padding: "8px 14px", border: `1px solid ${GOLD}`, background: GOLD_CTA, color: "white",
           borderRadius: 6, fontWeight: 700, fontSize: 11, cursor: "pointer",
+          fontFamily: "inherit",
+          transition: "background 150ms ease",
         }}>Send</button>
       </div>
     </div>
