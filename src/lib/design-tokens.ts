@@ -40,10 +40,15 @@ export const GOLD_TEXT_SOFT = "#e8d5a8";
 
 // ── Panel surfaces (the unified glassmorphism stack) ────────────
 // Every card / aside / modal / dropdown / floating panel uses this
-// quartet. No other bg + blur combination should exist on the
-// platform after Step 5.
-export const PANEL_BG = "rgba(0, 0, 0, 0.3)";
-export const PANEL_BLUR = "blur(16px)";
+// quartet. Phase 1 style unification (founder spec 2026-05-31):
+// switched from rgba(0,0,0,0.3) + blur(16) to navy-tinted glass
+// + blur(20) so the panel reads as "ZAAHI app surface" over both
+// CartoDB Light (where the previous spec showed the basemap noise
+// through the glass) and Dark. Navy 0.45 sits at the same hue as
+// the BG_GRADIENT top stop (#0A1628), so the panel feels like part
+// of the app rather than a black overlay.
+export const PANEL_BG = "rgba(10, 22, 40, 0.45)";
+export const PANEL_BLUR = "blur(20px)";
 export const PANEL_BORDER = "1px solid rgba(255, 255, 255, 0.15)";
 export const PANEL_SHADOW = "0 16px 64px rgba(0, 0, 0, 0.4)";
 
@@ -58,6 +63,14 @@ export const PANEL_HOVER_BORDER = `1px solid ${GOLD}`;
 export const PANEL_HOVER_BORDER_COLOR = GOLD;
 export const PANEL_BORDER_COLOR = "rgba(255, 255, 255, 0.15)";
 
+// ── Border-radius scale ─────────────────────────────────────────
+// Four tiers that close every panel/card/pill/edge shape on the
+// platform. Anything else is a special case worth its own variable.
+export const RADIUS_PANEL = 12;   // Layers, MiniMap dock, large floating rectangles
+export const RADIUS_CARD = 6;     // Hover popups, small floating cards
+export const RADIUS_PILL = 999;   // ParcelsNav pill, capsule controls
+export const RADIUS_EDGE = 0;     // SidePanel (full-height, flush to viewport edge)
+
 // ── Inputs (text / number / textarea / select) ──────────────────
 export const INPUT_BG = "rgba(255, 255, 255, 0.04)";
 // Slight bump on focus — keeps the field visually anchored when the
@@ -68,10 +81,17 @@ export const INPUT_FOCUS_BORDER = `1px solid ${GOLD}`;
 export const INPUT_PLACEHOLDER = "rgba(255, 255, 255, 0.4)";
 
 // ── ChromeBtn (the unified glass button) ─────────────────────────
-// Rest: transparent panel chrome. Hover: gold border + gold-25% bg
-// + gold text. Active (toggle on): same as hover. Shadow lifts the
-// button off floating-panel layers.
-export const CHROME_BTN_BG = PANEL_BG;
+// Rest: slightly darker than PANEL_BG so the button reads as
+// "indented" when it sits on a panel; on bare map it still has
+// enough contrast against the gradient. Hover/active: gold border
+// + gold-25% bg + gold icon. Shadow lifts the button off panels.
+//
+// Phase 1 split (founder spec 2026-05-31): CHROME_BTN_BG is
+// intentionally NOT equal to PANEL_BG. Buttons-on-panel need
+// contrast — same bg + border-only would feel like a flat
+// affordance. 0.35 black-tint reads as "darker than the navy
+// panel" while still glassy.
+export const CHROME_BTN_BG = "rgba(0, 0, 0, 0.35)";
 export const CHROME_BTN_BORDER = PANEL_BORDER;
 export const CHROME_BTN_BORDER_COLOR = PANEL_BORDER_COLOR;
 export const CHROME_BTN_HOVER_BG = GOLD_25_BG;
@@ -80,6 +100,13 @@ export const CHROME_BTN_HOVER_BORDER_COLOR = GOLD;
 export const CHROME_BTN_ACTIVE_BG = GOLD_25_BG;
 export const CHROME_BTN_ACTIVE_BORDER = `1px solid ${GOLD}`;
 export const CHROME_BTN_SHADOW = "0 8px 20px rgba(0, 0, 0, 0.3)";
+
+// ChromeBtn size variants — single radius (8) across both. Standard
+// for primary affordances, compact for dense bars like HeaderBar
+// where 32×32 would crowd.
+export const CHROME_BTN_SIZE_DEFAULT = 32;
+export const CHROME_BTN_SIZE_COMPACT = 28;
+export const CHROME_BTN_RADIUS = 8;
 
 // ── Page chrome ──────────────────────────────────────────────────
 // Used by all non-map pages (auth, dashboard, vault, deals, refer,
