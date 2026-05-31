@@ -25,10 +25,21 @@ const PLOT_NUMBER = '6458042';
 const EMIRATE = 'Dubai';
 const DISTRICT = 'MAJAN';            // DDA PROJECT_NAME — community label
 
-// ── Plot corners from the schematic (UTM Zone 40N, EPSG:32640) ──
+// ── Plot corners from the schematic (Dubai Local TM, EPSG:3997) ──
 // 6 vertices — the plot is an irregular hexagon (trapezoidal with two
 // angled corners), not a simple rectangle.
-const UTM_POINTS: Array<[number, number]> = [
+//
+// The original revision of this script registered the source as
+// UTM Zone 40N (EPSG:32640, central meridian 57°E) and shifted the
+// resulting WGS84 polygon ~1.67° east of MAJAN — Capital 6 landed in
+// the Gulf of Oman instead of Dubailand. Dubai Municipality + DDA
+// affection plans / engineer schematics are actually emitted in DLTM
+// (Dubai Local Transverse Mercator, EPSG:3997, central meridian
+// 55.333°E) — the same projection scripts/seed-new-listings.ts and
+// scripts/seed-warsan-dubai-south.ts already use for their Dubai
+// listings. Switching the proj4 def here puts the polygon on the
+// real plot.
+const DLTM_POINTS: Array<[number, number]> = [
   [497981.778, 2775845.719],
   [497984.989, 2775853.574],
   [498011.996, 2775864.909],
@@ -37,20 +48,21 @@ const UTM_POINTS: Array<[number, number]> = [
   [497998.555, 2775805.747],
 ];
 
-// Register UTM 40N projection so proj4 can convert to WGS84 (EPSG:4326).
+// Register Dubai Local TM projection so proj4 can convert to WGS84
+// (EPSG:4326). See note above on why this is NOT UTM Zone 40N.
 proj4.defs(
-  'EPSG:32640',
-  '+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs',
+  'EPSG:3997',
+  '+proj=tmerc +lat_0=0 +lon_0=55.33333333333334 +k=1 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs',
 );
-const utmToWgs = proj4('EPSG:32640', 'EPSG:4326');
+const dubaiToWgs = proj4('EPSG:3997', 'EPSG:4326');
 
-function utmToLngLat([e, n]: [number, number]): [number, number] {
-  const [lng, lat] = utmToWgs.forward([e, n]);
+function dubaiToLngLat([e, n]: [number, number]): [number, number] {
+  const [lng, lat] = dubaiToWgs.forward([e, n]);
   return [lng, lat];
 }
 
 // Plot geometry (closed ring) in WGS84
-const plotRing: number[][] = UTM_POINTS.map(utmToLngLat);
+const plotRing: number[][] = DLTM_POINTS.map(dubaiToLngLat);
 plotRing.push(plotRing[0]); // close the ring (GeoJSON requirement)
 
 const plotGeometry: GeoJSON.Polygon = {
