@@ -1730,26 +1730,22 @@ function ParcelsMapPageInner() {
 
   // Shared entry point for both hover-card "+ Add to Vault" buttons
   // (ZAAHI listings + PMTiles parcels). Validates the plot number,
-  // closes any open hover popup, applies the unauth redirect, then
-  // opens the wizard with the plot pre-filled so Step 1 fires its
-  // mount-only lookup automatically.
+  // closes any open hover popup, then opens the wizard with the plot
+  // pre-filled so Step 1 fires its mount-only lookup automatically.
+  //
+  // No inline auth gate — the page is wrapped in <AuthGuard>, and the
+  // HeaderBar "+" button (onOpenAddModal) doesn't probe either. The
+  // earlier inline check was inherited from a legacy code path that
+  // looked for the Supabase v1 storage keys ("sb-…" cookie +
+  // "supabase.auth.token" localStorage). Supabase v2 stores the
+  // session under "sb-<projectref>-auth-token" instead, so both probes
+  // failed for every authenticated user and the redirect to "/"
+  // misfired on every click of the new "+" hover button.
   function openVaultWizardWith(plotNumber: string) {
     if (!plotNumber.match(/^\d{5,10}$/)) return;
     setZaahiHover(null);
     setDdaLandHover(null);
     setVaultHover(null);
-    try {
-      if (
-        typeof window !== "undefined" &&
-        document.cookie.indexOf("sb-") < 0 &&
-        !localStorage.getItem("supabase.auth.token")
-      ) {
-        window.location.href = "/";
-        return;
-      }
-    } catch {
-      /* noop — fall through to opening the wizard, AuthGuard will catch */
-    }
     setAddPlotPrefill(plotNumber);
     setAddFlow("vault");
   }
@@ -3538,6 +3534,21 @@ function ParcelsMapPageInner() {
     map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
       const f = e.features?.[0];
       if (!f) return;
+      // Priority: ZAAHI listings + shared-vault outrank PMTiles. If the
+      // cursor is over either of those layers at this frame, defer —
+      // those handlers fire on the same event and have their own popup.
+      // Avoids the dual-popup overlap (e.g. "Business Bay" ZAAHI listing
+      // stacked with "3460730 Open Space" PMTiles polygon).
+      const blockingLayers = [ZAAHI_PLOTS_FILL, VAULT_SHARED_3D].filter(
+        (lid) => map.getLayer(lid),
+      );
+      if (blockingLayers.length > 0) {
+        const upper = map.queryRenderedFeatures(e.point, { layers: blockingLayers });
+        if (upper.length > 0) {
+          setDdaLandHover(null);
+          return;
+        }
+      }
       // Re-hovering after a brief mouseleave cancels the pending close
       // so the popup stays alive through the keep-alive window.
       if (hoverCloseTimerRef.current != null) {
@@ -3937,6 +3948,17 @@ function ParcelsMapPageInner() {
         (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
+          // Priority: ZAAHI listings outrank the shared-vault popup.
+          // If the cursor is also on a ZAAHI plot, defer to that handler.
+          if (map.getLayer(ZAAHI_PLOTS_FILL)) {
+            const upper = map.queryRenderedFeatures(e.point, {
+              layers: [ZAAHI_PLOTS_FILL],
+            });
+            if (upper.length > 0) {
+              setVaultHover(null);
+              return;
+            }
+          }
           if (hoverCloseTimerRef.current != null) {
             window.clearTimeout(hoverCloseTimerRef.current);
             hoverCloseTimerRef.current = null;
@@ -3965,6 +3987,8 @@ function ParcelsMapPageInner() {
             planDateIso: typeof p.planDateIso === "string" ? p.planDateIso : "",
             mode,
           });
+          // Shared-vault popup wins over PMTiles for the same cursor frame.
+          setDdaLandHover(null);
         };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
@@ -4056,6 +4080,11 @@ function ParcelsMapPageInner() {
             far: p.far ?? 0,
             planDateIso: p.planDateIso ?? "",
           });
+          // ZAAHI listings take priority — drop any PMTiles / shared-vault
+          // popup that fired for the same cursor frame so only one card
+          // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
+          setDdaLandHover(null);
+          setVaultHover(null);
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
