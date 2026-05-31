@@ -6394,7 +6394,12 @@ function ParcelsMapPageInner() {
           setLayersOpen(false);
         }}
         selectedParcelId={selectedParcelId}
-        onSelectParcel={(id) => setSelectedParcelId(id)}
+        selectedVaultEntryId={selectedVaultEntry?.id ?? null}
+        vaultOnlyMode={vaultOnlyMode}
+        onSelectListing={(id) => setSelectedParcelId(id)}
+        onSelectVaultEntry={(entryId) =>
+          setSelectedVaultEntry({ id: entryId, mode: "owner" })
+        }
       />
       {devModeHero && editingHeroId && (() => {
         const b = HERO_BUILDINGS.find((x) => x.id === editingHeroId);
