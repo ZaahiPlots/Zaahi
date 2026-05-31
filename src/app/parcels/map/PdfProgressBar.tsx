@@ -79,7 +79,8 @@ const trackStyle: React.CSSProperties = {
   border: "1px solid rgba(255, 255, 255, 0.08)",
   borderRadius: 2,
   overflow: "hidden",
-  backdropFilter: "blur(8px)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
 };
 
 const fillStyle: React.CSSProperties = {

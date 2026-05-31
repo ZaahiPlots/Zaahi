@@ -63,5 +63,5 @@ export default function MapPreview({
     };
   }, [plot, building]);
 
-  return <div ref={ref} style={{ width: "100%", height: "100%", background: "rgba(10, 22, 40, 0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }} />;
+  return <div ref={ref} style={{ width: "100%", height: "100%", background: "rgba(0, 0, 0, 0.3)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }} />;
 }

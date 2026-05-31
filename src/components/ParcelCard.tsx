@@ -17,7 +17,12 @@ const ParcelCard: React.FC<ParcelCardProps> = ({
 }) => {
   return (
     <div className="bg-gray-900 rounded-xl p-4 shadow-md">
-      <h3 className="text-white font-bold">{plotNumber}</h3>
+      <h3
+        className="text-white font-bold uppercase"
+        style={{ fontFamily: 'Georgia, "Times New Roman", serif', letterSpacing: '0.12em' }}
+      >
+        {plotNumber}
+      </h3>
       <p className="text-gray-200">Area: {area} sqft</p>
       <p className="text-gray-200">Emirate: {emirate}</p>
       <p className="text-gray-200">District: {district}</p>

@@ -57,7 +57,7 @@ export default function FieldLabel({ label, tooltipKey }: FieldLabelProps) {
             top: '120%',
             left: 0,
             zIndex: 30,
-            background: 'rgba(10, 22, 40, 0.96)',
+            background: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             color: TXT,

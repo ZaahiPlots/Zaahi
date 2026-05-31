@@ -30,8 +30,8 @@ export const card: CSSProperties = {
 export const inputStyle: CSSProperties = {
   width: "100%",
   padding: "10px 12px",
-  background: "rgba(255, 255, 255, 0.12)",
-  border: "1px solid rgba(255, 255, 255, 0.2)",
+  background: "rgba(255, 255, 255, 0.04)",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
   borderRadius: 8,
   color: TEXT,
   fontSize: 13,
@@ -41,15 +41,16 @@ export const inputStyle: CSSProperties = {
 
 export const primaryBtn: CSSProperties = {
   padding: "10px 18px",
-  background: GOLD,
+  background: "rgba(200, 169, 110, 0.9)",
   color: NAVY,
-  border: "none",
+  border: `1px solid ${GOLD}`,
   borderRadius: 8,
   fontSize: 12,
   fontWeight: 700,
   letterSpacing: "0.08em",
   cursor: "pointer",
   fontFamily: "inherit",
+  transition: "background 150ms ease",
 };
 
 export const ghostBtn: CSSProperties = {

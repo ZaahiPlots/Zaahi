@@ -17,7 +17,7 @@ import AuthGuard from "@/components/AuthGuard";
 const GOLD = "#C8A96E";
 // Tokens unified against login reference (src/app/page.tsx).
 const BG_GLASS = "rgba(0, 0, 0, 0.3)";
-const BORDER = "rgba(255, 255, 255, 0.1)";
+const BORDER = "rgba(255, 255, 255, 0.15)";
 const TEXT_PRIMARY = "#FFFFFF";
 const TEXT_DIM = "rgba(255, 255, 255, 0.5)";
 
@@ -181,13 +181,13 @@ const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: 480,
   background: BG_GLASS,
-  backdropFilter: "blur(24px) saturate(150%)",
-  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   border: `1px solid ${BORDER}`,
   borderRadius: 14,
   padding: "28px 26px",
   color: TEXT_PRIMARY,
-  boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
+  boxShadow: "0 16px 64px rgba(0, 0, 0, 0.4)",
 };
 
 const tinyLabelStyle: React.CSSProperties = {
@@ -256,9 +256,9 @@ const previewStyle: React.CSSProperties = {
 const submitButtonStyle: React.CSSProperties = {
   marginTop: 6,
   padding: "13px",
-  background: GOLD,
+  background: "rgba(200, 169, 110, 0.9)",
   color: "#1A1A2E",
-  border: "none",
+  border: `1px solid ${GOLD}`,
   borderRadius: 8,
   fontSize: 13,
   fontWeight: 700,

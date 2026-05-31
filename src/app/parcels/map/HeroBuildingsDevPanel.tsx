@@ -191,7 +191,7 @@ function btnStyle(hover: boolean): React.CSSProperties {
   return {
     flex: 0,
     padding: "6px 12px",
-    background: hover ? "rgba(200, 169, 110, 0.25)" : "rgba(10, 22, 40, 0.4)",
+    background: hover ? "rgba(200, 169, 110, 0.25)" : "rgba(0, 0, 0, 0.3)",
     border: `1px solid ${hover ? GOLD : "rgba(200, 169, 110, 0.3)"}`,
     borderRadius: 6,
     color: GOLD,

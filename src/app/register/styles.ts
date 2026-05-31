@@ -17,8 +17,8 @@ export const ERROR = "#ff6b6b";
 export const inputStyle: CSSProperties = {
   width: "100%",
   padding: "11px 14px",
-  background: "rgba(255, 255, 255, 0.12)",
-  border: "1px solid rgba(255, 255, 255, 0.2)",
+  background: "rgba(255, 255, 255, 0.04)",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
   borderRadius: 8,
   color: TEXT,
   fontSize: 13,
@@ -52,9 +52,9 @@ export const errorStyle: CSSProperties = {
 
 export const primaryButtonStyle: CSSProperties = {
   padding: "12px 20px",
-  background: GOLD,
+  background: "rgba(200, 169, 110, 0.9)",
   color: NAVY,
-  border: "none",
+  border: `1px solid ${GOLD}`,
   borderRadius: 8,
   fontSize: 13,
   fontWeight: 700,

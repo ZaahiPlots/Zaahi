@@ -235,9 +235,9 @@ export default function ResetPasswordPage() {
                 style={{
                   marginTop: 6,
                   padding: "12px 20px",
-                  background: GOLD,
+                  background: "rgba(200, 169, 110, 0.9)",
                   color: NAVY,
-                  border: "none",
+                  border: `1px solid ${GOLD}`,
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: 700,
@@ -245,6 +245,7 @@ export default function ResetPasswordPage() {
                   cursor: phase === "submitting" ? "wait" : "pointer",
                   fontFamily: "inherit",
                   opacity: phase === "submitting" ? 0.6 : 1,
+                  transition: "background 150ms ease",
                 }}
               >
                 {phase === "submitting" ? "SAVING…" : "SAVE & SIGN IN"}

@@ -16,8 +16,9 @@ export default function LegalNavbar() {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '14px 24px',
-        background: 'rgba(10, 15, 30, 0.95)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(0, 0, 0, 0.3)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderBottom: `1px solid rgba(200, 169, 110, 0.15)`,
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
