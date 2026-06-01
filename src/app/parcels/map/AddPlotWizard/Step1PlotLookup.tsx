@@ -15,6 +15,8 @@
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { useFormatArea } from "@/lib/area-unit";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+import CoordsEntry, { type CoordsEntryResult } from "@/components/CoordsEntry";
 import { Spinner } from "../Spinner";
 import {
   EMIRATES,
@@ -25,6 +27,20 @@ import {
   type PlotLookupResponse,
   type WizardState,
 } from "./types";
+
+// Affection Plan PDF upload — Sprint 1 stores the raw file in the
+// registration-docs private bucket (RLS: first folder = userId, see
+// AddPlotModal uploadDoc helper). Path layout puts vault uploads
+// under a separate subfolder so admin-side review surfaces don't
+// have to disambiguate from cohort-pilot title deeds.
+const VAULT_DOC_BUCKET = "registration-docs";
+const MAX_VAULT_DOC_BYTES = 15 * 1024 * 1024; // 15 MB
+const ALLOWED_VAULT_DOC_MIME = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 // ZAAHI palette
 const GOLD = "#C8A96E";
@@ -49,11 +65,35 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
   const [lookupResult, setLookupResult] = useState<PlotLookupResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Manual-mode inputs (revealed when source === "not_found")
-  const [area, setArea] = useState<string>("");
-  const [latitude, setLatitude] = useState<string>("");
-  const [longitude, setLongitude] = useState<string>("");
+  // Manual-mode inputs (revealed when source === "not_found"). The
+  // legacy lat/lng/area stubs are gone — Sprint 1 collects a real
+  // polygon via CoordsEntry. The data fields below are optional for
+  // vault (founder D7); without maxFloors we render flat 2D.
+  const [coords, setCoords] = useState<CoordsEntryResult | null>(null);
   const [landUse, setLandUse] = useState<LandUse | "">("");
+  const [maxFloorsInput, setMaxFloorsInput] = useState<string>("");
+  const [maxHeightCode, setMaxHeightCode] = useState<string>("");
+  const [farInput, setFarInput] = useState<string>("");
+  const [affectionFile, setAffectionFile] = useState<File | null>(null);
+  const [docError, setDocError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  function pickAffectionFile(f: File | null) {
+    setDocError(null);
+    if (!f) {
+      setAffectionFile(null);
+      return;
+    }
+    if (f.size > MAX_VAULT_DOC_BYTES) {
+      setDocError(`${f.name} exceeds 15 MB.`);
+      return;
+    }
+    if (f.type && !ALLOWED_VAULT_DOC_MIME.has(f.type)) {
+      setDocError(`${f.name}: only PDF / JPG / PNG / WebP allowed.`);
+      return;
+    }
+    setAffectionFile(f);
+  }
 
   const canLookup =
     !!plotNumber.match(/^\d{5,10}$/) && !loading;
@@ -132,21 +172,85 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
     });
   }
 
-  function handleContinueManual() {
+  async function handleContinueManual() {
+    // Defensive — the Continue button is also disabled when these
+    // aren't satisfied, but keep the guard here so the flow doesn't
+    // half-complete if a future caller invokes this directly.
+    if (!coords?.polygon) {
+      setDocError("Polygon required (3+ corners).");
+      return;
+    }
+    if (district.trim().length === 0) {
+      setDocError("District required.");
+      return;
+    }
+    if (!affectionFile) {
+      setDocError("Affection Plan PDF is required.");
+      return;
+    }
+    setUploading(true);
+    setDocError(null);
+    let affectionPlanPath: string | null = null;
+    try {
+      const { data: sess } = await supabaseBrowser.auth.getSession();
+      const userId = sess.session?.user.id;
+      if (!userId) {
+        setDocError("Sign in expired — please sign in again.");
+        setUploading(false);
+        return;
+      }
+      const ext =
+        affectionFile.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
+      // RLS: first folder must be the caller's userId. Vault uploads
+      // live under <userId>/vault-affection-plans/<plotNumber>/ so
+      // admin-side review surfaces (Sprint 2) can distinguish them
+      // from cohort-pilot title deeds also stored in this bucket.
+      const path = `${userId}/vault-affection-plans/${plotNumber}/${Date.now()}.${ext}`;
+      const { error } = await supabaseBrowser.storage
+        .from(VAULT_DOC_BUCKET)
+        .upload(path, affectionFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: affectionFile.type || undefined,
+        });
+      if (error) {
+        setDocError(`Upload failed: ${error.message}`);
+        setUploading(false);
+        return;
+      }
+      affectionPlanPath = path;
+    } catch (e) {
+      setDocError(
+        `Upload error: ${e instanceof Error ? e.message : "unknown"}`,
+      );
+      setUploading(false);
+      return;
+    } finally {
+      // setUploading(false) in the success path below — we keep the
+      // button disabled until onComplete fires so a double-click
+      // doesn't queue two uploads.
+    }
+    const parsedFloors = Number(maxFloorsInput);
+    const parsedFar = Number(farInput);
     onComplete({
       emirate,
       district: district.trim(),
       plotNumber,
       source: "manual",
-      area: area ? Number(area) : null,
-      latitude: latitude ? Number(latitude) : null,
-      longitude: longitude ? Number(longitude) : null,
-      geometry: null,
+      area: coords.areaSqft || null, // auto-computed from polygon
+      latitude: null, // centroid lives on the polygon; ensureVaultPrivateParcel derives it
+      longitude: null,
+      geometry: coords.polygon as unknown,
       ddaSnapshot: null,
       plan: null,
       buildingLimit: null,
       landUse: (landUse || null) as LandUse | null,
+      maxFloors: Number.isFinite(parsedFloors) && parsedFloors > 0 ? parsedFloors : null,
+      maxHeightCode: maxHeightCode.trim() || null,
+      far: Number.isFinite(parsedFar) && parsedFar > 0 ? parsedFar : null,
+      affectionPlanPath,
     });
+    setUploading(false);
   }
 
   return (
@@ -234,13 +338,13 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
 
       {lookupResult?.source === "not_found" && (
         <div style={resultBlockStyle}>
-          <div style={{ color: TEXT_DIM, marginBottom: 4 }}>
-            ⚠ This plot isn&apos;t in DDA. Add it manually for now — Phase 2.2 will support
-            Affection Plan PDF upload to auto-build the 3D geometry.
+          <div style={{ color: TEXT_DIM, marginBottom: 12, fontSize: 12 }}>
+            This plot isn&apos;t in DDA. Enter the corner coordinates
+            from your site plan or Affection Plan — we&apos;ll build the
+            polygon and put it on the map.
           </div>
-          {/* District input only on the manual branch — DDA hits fill it
-              automatically from the response. */}
-          <Field label="District" style={{ marginTop: 12 }}>
+
+          <Field label="District">
             <input
               type="text"
               value={district}
@@ -249,58 +353,123 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
               style={inputStyle}
             />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 12 }}>
-            <Field label="Area (sqft)">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={area}
-                onChange={(e) => setArea(e.target.value.replace(/[^\d.]/g, ""))}
-                placeholder="optional"
+
+          <div style={{ marginTop: 14 }}>
+            <CoordsEntry
+              emirate={emirate}
+              onChange={setCoords}
+            />
+          </div>
+
+          {/* Land use is mandatory for 3D color even on vault. Floor
+              count drives 3D extrusion — optional on vault (D7); without
+              it the plot renders as a flat 2D polygon. */}
+          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Land use (drives 3D colour)">
+              <select
+                value={landUse}
+                onChange={(e) => setLandUse(e.target.value as LandUse | "")}
                 style={inputStyle}
-              />
+              >
+                <option value="">— Select —</option>
+                {(Object.keys(LAND_USE_LABELS) as LandUse[]).map((k) => (
+                  <option key={k} value={k}>
+                    {LAND_USE_LABELS[k]}
+                  </option>
+                ))}
+              </select>
             </Field>
-            <Field label="Latitude">
+            <Field label="Max floors (optional, drives 3D height)">
               <input
                 type="text"
-                inputMode="decimal"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value.replace(/[^\d.-]/g, ""))}
-                placeholder="24.45"
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Longitude">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value.replace(/[^\d.-]/g, ""))}
-                placeholder="54.37"
+                inputMode="numeric"
+                value={maxFloorsInput}
+                onChange={(e) =>
+                  setMaxFloorsInput(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
+                }
+                placeholder="e.g. 5"
                 style={inputStyle}
               />
             </Field>
           </div>
-          <Field label="Land use" style={{ marginTop: 12 }}>
-            <select
-              value={landUse}
-              onChange={(e) => setLandUse(e.target.value as LandUse | "")}
-              style={inputStyle}
-            >
-              <option value="">— Select —</option>
-              {(Object.keys(LAND_USE_LABELS) as LandUse[]).map((k) => (
-                <option key={k} value={k}>
-                  {LAND_USE_LABELS[k]}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label='Height code (optional, e.g. "G+7")'>
+              <input
+                type="text"
+                value={maxHeightCode}
+                onChange={(e) => setMaxHeightCode(e.target.value.slice(0, 12))}
+                placeholder="e.g. G+7+R"
+                style={inputStyle}
+              />
+            </Field>
+            <Field label="FAR (optional)">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={farInput}
+                onChange={(e) =>
+                  setFarInput(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))
+                }
+                placeholder="e.g. 2.5"
+                style={inputStyle}
+              />
+            </Field>
+          </div>
+
+          {/* Affection Plan PDF — mandatory in Sprint 1. Sprint 3 will
+              auto-parse this via Claude vision; for now we just store
+              the file for reference (and admin verification on the
+              listing flow). */}
+          <div style={{ marginTop: 16 }}>
+            <Field label="Affection Plan PDF (required)">
+              <input
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={(e) => pickAffectionFile(e.target.files?.[0] ?? null)}
+                style={{
+                  ...inputStyle,
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                }}
+              />
+            </Field>
+            {affectionFile && (
+              <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 4 }}>
+                Selected: {affectionFile.name}{" "}
+                ({Math.round(affectionFile.size / 1024)} KB)
+              </div>
+            )}
+          </div>
+
+          {docError && (
+            <p style={{ ...errorStyle, marginTop: 10 }}>{docError}</p>
+          )}
+
           <button
             onClick={handleContinueManual}
-            disabled={district.trim().length === 0}
-            style={district.trim().length > 0 ? { ...buttonStyle, marginTop: 16 } : { ...buttonDisabledStyle, marginTop: 16 }}
+            disabled={
+              uploading ||
+              district.trim().length === 0 ||
+              !coords?.polygon ||
+              !affectionFile
+            }
+            style={
+              !uploading &&
+              district.trim().length > 0 &&
+              !!coords?.polygon &&
+              !!affectionFile
+                ? { ...buttonStyle, marginTop: 16 }
+                : { ...buttonDisabledStyle, marginTop: 16 }
+            }
           >
-            Continue with manual entry →
+            {uploading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <Spinner size={14} />
+                Uploading document…
+              </span>
+            ) : (
+              "Continue with manual entry →"
+            )}
           </button>
         </div>
       )}

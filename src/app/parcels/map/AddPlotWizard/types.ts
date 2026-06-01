@@ -126,6 +126,24 @@ export interface WizardState {
   buildingLimit: unknown | null;
   landUse: LandUse | null;
 
+  // Step 1 manual-entry additions — Sprint 1 non-DDA pipeline
+  // (founder spec, docs/specs/non-dda-plot-entry-DESIGN.md). All
+  // four are nullable so the DDA path can leave them untouched.
+  /** Floor count for 3D extrusion. Vault: optional — without it the
+   *  map renders a flat polygon (D7). */
+  maxFloors: number | null;
+  /** Raw height code from the affection plan, e.g. "G+15". Either
+   *  this or maxFloors enables 3D tiers in loadZaahiPlots. */
+  maxHeightCode: string | null;
+  /** Floor Area Ratio. Optional for vault; recommended for accurate
+   *  GFA derivation. */
+  far: number | null;
+  /** Supabase Storage path of the uploaded Affection Plan PDF.
+   *  Mandatory for non-DDA Vault entries (Sprint 1). Stored on the
+   *  AffectionPlan.raw blob server-side; not parsed in Sprint 1
+   *  (Sprint 3 wires Claude vision). */
+  affectionPlanPath: string | null;
+
   // Step 2 outputs — broker's own data
   askingPriceFils: string | null; // BigInt as string (matches API)
   stage: VaultStage;
@@ -154,6 +172,10 @@ export const INITIAL_WIZARD_STATE: WizardState = {
   plan: null,
   buildingLimit: null,
   landUse: null,
+  maxFloors: null,
+  maxHeightCode: null,
+  far: null,
+  affectionPlanPath: null,
   askingPriceFils: null,
   stage: "LEAD",
   followUpSource: null,

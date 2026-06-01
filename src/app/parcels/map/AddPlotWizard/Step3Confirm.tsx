@@ -67,6 +67,15 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
         plan: state.plan ?? undefined,
         buildingLimit: state.buildingLimit ?? undefined,
         landUse: state.landUse ?? undefined,
+        // Sprint 1 non-DDA manual fields — passthrough so the
+        // server-side AffectionPlan create can persist them on the
+        // raw blob + the typed columns (maxFloors / maxHeightCode /
+        // far). affectionPlanPath points at the Supabase Storage
+        // upload made in Step 1.
+        maxFloors: state.maxFloors ?? undefined,
+        maxHeightCode: state.maxHeightCode ?? undefined,
+        far: state.far ?? undefined,
+        affectionPlanPath: state.affectionPlanPath ?? undefined,
         askingPriceFils: state.askingPriceFils ?? undefined,
         ownerContact: state.ownerContact ?? undefined,
         brokerNotes: state.brokerNotes ?? undefined,

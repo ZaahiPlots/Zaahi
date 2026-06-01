@@ -60,6 +60,16 @@ const VaultEntryCreateSchema = z.object({
   plan: z.unknown().optional(),
   buildingLimit: z.unknown().optional(),
   landUse: z.string().trim().max(64).optional(),
+  // Sprint 1 non-DDA manual-entry fields (founder spec
+  // docs/specs/non-dda-plot-entry-DESIGN.md). Vault treats 3D fields
+  // as optional (D7) — missing maxFloors → flat 2D polygon on the map.
+  // affectionPlanPath is the Supabase Storage path of the user's
+  // uploaded Affection Plan PDF; it lands in AffectionPlan.raw for
+  // Sprint 3 Claude-vision parsing + admin review.
+  maxFloors: z.number().int().positive().max(200).optional(),
+  maxHeightCode: z.string().trim().max(24).optional(),
+  far: z.number().positive().max(50).optional(),
+  affectionPlanPath: z.string().max(1024).optional(),
   askingPriceFils: z
     .string()
     .regex(/^\d{1,16}$/, "askingPriceFils must be a non-negative integer string")
@@ -194,15 +204,23 @@ export async function POST(req: NextRequest) {
   const askingPriceFils = body.askingPriceFils ? BigInt(body.askingPriceFils) : null;
 
   // Phase 2 of vault refactor: persist a Parcel(VAULT_PRIVATE) +
-  // AffectionPlan when the entry is DDA-sourced (ddaSnapshot present)
-  // so vault rendering can flow through the same listing data path in
-  // Phase 3. Best-effort — failures fall through to the legacy
-  // denormalised VaultEntry-only flow.
+  // AffectionPlan when we have enough to render a polygon on the map.
+  //
+  // Pre-Sprint-1 the gate required (ddaSnapshot != null && emirate ===
+  // "DUBAI"). That cut manual entries (no ddaSnapshot, just
+  // user-supplied geometry) off from the Parcel pipeline and
+  // hard-failed every non-Dubai entry even with a DDA hit. Sprint 1
+  // founder spec (docs/specs/non-dda-plot-entry-DESIGN.md, D11)
+  // widens the gate: any path that arrives with real geometry
+  // (DDA-extracted OR user-entered) gets a Parcel; any emirate works.
   let publicParcelId: string | null = null;
-  if (body.ddaSnapshot != null && body.emirate === "DUBAI") {
+  const hasGeometry =
+    body.geometry != null && typeof body.geometry === "object";
+  if (hasGeometry || body.ddaSnapshot != null) {
     try {
       publicParcelId = await ensureVaultPrivateParcel({
         ownerId: userId,
+        emirate: body.emirate,
         plotNumber: body.plotNumber,
         district: body.district,
         area: body.area ?? null,
@@ -211,6 +229,15 @@ export async function POST(req: NextRequest) {
         geometry: (body.geometry as GeoJSON.Polygon | null | undefined) ?? null,
         clientPlan: (body.plan as AffectionPlan | null | undefined) ?? null,
         clientBuildingLimit: (body.buildingLimit as GeoJSON.Polygon | null | undefined) ?? null,
+        manual: hasGeometry && body.ddaSnapshot == null
+          ? {
+              maxFloors: body.maxFloors ?? null,
+              maxHeightCode: body.maxHeightCode ?? null,
+              far: body.far ?? null,
+              landUse: body.landUse ?? null,
+              affectionPlanPath: body.affectionPlanPath ?? null,
+            }
+          : null,
       });
     } catch (e) {
       console.error("[vault POST] Parcel/AffectionPlan upsert failed:", e);
@@ -373,6 +400,7 @@ export async function POST(req: NextRequest) {
  */
 async function ensureVaultPrivateParcel(args: {
   ownerId: string;
+  emirate: string; // Sprint 1 D11 — was hardcoded "Dubai".
   plotNumber: string;
   district: string;
   area: number | null;
@@ -381,7 +409,27 @@ async function ensureVaultPrivateParcel(args: {
   geometry: GeoJSON.Polygon | null;
   clientPlan: AffectionPlan | null;
   clientBuildingLimit: GeoJSON.Polygon | null;
+  /** Sprint 1 manual entry payload (founder spec D7 — vault-optional
+   *  3D fields + mandatory Affection Plan upload). Null on the DDA
+   *  path, non-null on the user-coords path. */
+  manual: {
+    maxFloors: number | null;
+    maxHeightCode: string | null;
+    far: number | null;
+    landUse: string | null;
+    affectionPlanPath: string | null;
+  } | null;
 }): Promise<string | null> {
+  // The Parcel uniqueness key is (emirate, district, plotNumber)
+  // but we look up by (emirate, plotNumber) for the "is this a
+  // known plot anywhere in the emirate" question — district can
+  // diverge between DDA's official label and the user-typed value.
+  // Normalise emirate to the platform's canonical capitalisation
+  // (Prisma stores "Dubai", "Sharjah", etc — title case).
+  const normalisedEmirate =
+    args.emirate.charAt(0).toUpperCase() +
+    args.emirate.slice(1).toLowerCase().replace(/_/g, " ");
+
   // 1) Existing Parcel for this plot — reuse, do not mutate.
   //    Phase 3.5 (2026-05-30): when the parcel pre-exists (curated
   //    listing, prior vault user, earlier seed) we used to short-
@@ -393,7 +441,7 @@ async function ensureVaultPrivateParcel(args: {
   //    safe for repeated re-adds of curated listings).
   //    LOCK-8 holds — we never touch Parcel.ownerId.
   const existing = await prisma.parcel.findFirst({
-    where: { emirate: "Dubai", plotNumber: args.plotNumber },
+    where: { emirate: normalisedEmirate, plotNumber: args.plotNumber },
     select: { id: true },
   });
   if (existing) {
@@ -448,7 +496,7 @@ async function ensureVaultPrivateParcel(args: {
         plotNumber: args.plotNumber,
         ownerId: args.ownerId,
         area: args.area ?? plan?.plotAreaSqft ?? 0,
-        emirate: "Dubai",
+        emirate: normalisedEmirate,
         district: args.district,
         latitude: cLat,
         longitude: cLng,
@@ -464,7 +512,7 @@ async function ensureVaultPrivateParcel(args: {
       err.code === "P2002"
     ) {
       const racer = await prisma.parcel.findFirst({
-        where: { emirate: "Dubai", plotNumber: args.plotNumber },
+        where: { emirate: normalisedEmirate, plotNumber: args.plotNumber },
         select: { id: true },
       });
       if (racer) return racer.id;
@@ -472,11 +520,47 @@ async function ensureVaultPrivateParcel(args: {
     throw err;
   }
 
-  // 6) AffectionPlan when we have plan data. Skip silently otherwise —
-  //    the Parcel still renders a flat block, identical to vault's
-  //    pre-Phase-2 fallback.
+  // 6) AffectionPlan write — three branches:
+  //    a) DDA plan present → existing writeAffectionPlan path.
+  //    b) Manual entry → synthesise an AffectionPlan row from the
+  //       user-supplied fields (landUse / maxFloors / maxHeightCode /
+  //       far) plus the uploaded affectionPlanPath stored on `raw`.
+  //       This is what enables 3D tiers (podium / body / crown) and
+  //       the SidePanel card to render parity with DDA listings.
+  //    c) Nothing → flat polygon only.
   if (plan) {
     await writeAffectionPlan(parcelId, args.plotNumber, plan, buildingLimit);
+  } else if (args.manual) {
+    const m = args.manual;
+    const areaSqm =
+      typeof args.area === "number" && args.area > 0
+        ? args.area / 10.7639
+        : null;
+    await prisma.affectionPlan.create({
+      data: {
+        parcelId,
+        source: "vault-manual",
+        plotNumber: args.plotNumber,
+        plotAreaSqft: args.area ?? null,
+        plotAreaSqm: areaSqm,
+        maxFloors: m.maxFloors,
+        maxHeightCode: m.maxHeightCode,
+        far: m.far,
+        // Land use lives in the same array shape that DDA produces
+        // so loadZaahiPlots' ZAAHI_LANDUSE_COLOR lookup works as-is.
+        landUseMix: m.landUse
+          ? ([{ category: m.landUse, sub: null, areaSqm }] as unknown as Prisma.InputJsonValue)
+          : ([] as unknown as Prisma.InputJsonValue),
+        // raw holds the bookkeeping the typed columns don't have a
+        // home for — most importantly the uploaded PDF path so
+        // Sprint 3's Claude-vision parser knows where to look.
+        raw: {
+          source: "vault-manual",
+          affectionPlanPath: m.affectionPlanPath,
+          submittedAt: new Date().toISOString(),
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
   }
 
   return parcelId;
