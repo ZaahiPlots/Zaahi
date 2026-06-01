@@ -1387,6 +1387,11 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     roads: { country: "dubai", category: "base" },
     metro: { country: "dubai", category: "base" },
     plotLabels: { country: "dubai", category: "base" },
+    // districtNames sits beside plotLabels — both are text-label
+    // overlays. Lost from the panel UI when the mini-dock was
+    // removed in commit 163542f (it was the only toggle that lived
+    // exclusively on MINI_LEFT_LAYERS). Restored 2026-06-01.
+    districtNames: { country: "dubai", category: "base" },
     // ── Dubai — DDA ──
     ddaProjects: { country: "dubai", category: "dda-admin" },
     ddaFreeZones: { country: "dubai", category: "dda-admin" },
@@ -5888,6 +5893,7 @@ function ParcelsMapPageInner() {
             roads: "Major roads of Dubai",
             metro: "Dubai Metro — lines and stations",
             plotLabels: "Plot numbers (visible when you zoom in)",
+            districtNames: "District Names",
             ddaProjects: "DDA project boundaries (master plans)",
             ddaFreeZones: "Free economic zones in Dubai",
             ddaLandPlots: "Dubai Land Plots · 99K parcels from DDA registry",
@@ -5922,6 +5928,7 @@ function ParcelsMapPageInner() {
             roads: "Major roads of Dubai — highways, primary, and secondary arteries.",
             metro: "Full Dubai Metro line geometries with station markers.",
             plotLabels: "Per-plot numeric labels. Visible at zoom 16+ to avoid clutter.",
+            districtNames: "Dubai community / district name labels (zoom 11+). On by default — navigation aid.",
             ddaProjects: "Boundaries of named projects/developments registered with DDA (Dubai Development Authority).",
             ddaFreeZones: "Designated Free Economic Zones in Dubai (DIFC, JAFZA, DMC, etc.).",
             ddaLandPlots: "All 99,000 land plots in DDA's public registry. Shows ownership, area, and land-use status.",
