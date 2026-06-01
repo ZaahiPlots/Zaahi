@@ -63,7 +63,6 @@ import {
   RADIUS_PANEL,
   RADIUS_CARD,
   NUMBER_SMALL,
-  TEXT_SHADOW_STRONG,
 } from "@/lib/design-tokens";
 
 type Theme = "light" | "dark";
@@ -5647,14 +5646,6 @@ function ParcelsMapPageInner() {
           maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
           zIndex: 11,
-          // Phase Clear-Glass C (founder spec 2026-06-01): text-shadow
-          // is inherited in CSS, so applying it at the panel root pulls
-          // every descendant text node — headers, layer rows, search
-          // placeholder, layer counts — into the legibility stack
-          // without having to thread the token through every inline
-          // style inside the panel. Phase 2 will roll the same line
-          // out to SidePanel / hover popups / MiniMap dock siblings.
-          textShadow: TEXT_SHADOW_STRONG,
         }}
       >
         <div
