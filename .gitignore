@@ -30,7 +30,55 @@ data/master-plans/kadastr/
 .env
 .env.local
 .env.*.local
+# Backup / rotation copies — e.g. .env.local.backup-2026-04-28-rotation.
+# `.env*` below already covers these; the explicit line documents intent
+# and keeps `grep .env.local` in this file useful.
+.env.local.*
 *.log
 dist/
 __pycache__/
 .vercel
+.env*
+
+# ──────────────────────────────────────────────────────────────
+# Founder research data — restored 2026-06-01 from a multi-GB stash
+# carrier. Tracked on the local-only wip-founder-research branch as
+# uncommitted state; on main we ignore so day-to-day git status stays
+# readable. Files remain physically on disk; checkout wip-founder-research
+# to see the same working tree.
+# ──────────────────────────────────────────────────────────────
+
+# Registry / DLD exports + crawler caches
+data/raw/
+data/land-monitor/
+docs/research/data-dubai/
+
+# 3D building research artifacts (Meshy outputs, references, scripts)
+docs/research/3d-buildings-pilot/reference-photos/
+docs/research/3d-buildings-pilot/heroes/
+docs/research/3d-buildings-pilot/textures/
+docs/research/3d-buildings-pilot/meshy-test/
+docs/research/3d-buildings-pilot/*.glb
+docs/research/3d-buildings-pilot/*.py
+docs/research/3d-buildings-pilot/*.png
+docs/research/3d-buildings-pilot/*.jpg
+docs/research/3d-buildings-pilot/*.jpeg
+docs/research/3d-buildings-pilot/*.json
+docs/research/3d-buildings-pilot/*.md
+docs/research/3d-buildings-pilot/*.blend
+docs/research/3d-buildings-pilot/*.blend1
+
+# Diagnostic + resumed-session notes staged on wip-founder-research
+docs/audits/FULL_DIAGNOSTIC_2026-05-25.md
+docs/sessions/2026-05-08-phase-c-resume.md
+docs/sessions/2026-05-21-resume.md
+
+# WIP scripts promoted from the stash carrier; not ready for main yet.
+# Remove a line below + git add -f to track once founder-approved.
+/scripts/add-plot-1340498.ts
+/scripts/seed-al-reem-rs3-shams.ts
+/scripts/test-createuser.ts
+/scripts/update-al-reem-rs3-design.ts
+
+# Supabase CLI temp files
+supabase/.temp/
