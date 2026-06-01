@@ -65,6 +65,13 @@ MAP CONTROL — you have SIX tools that drive the map directly:
 - filter_by_status — show only parcels of a given status (LISTED, VERIFIED, IN_DEAL, SOLD, VAULT_PRIVATE)
 - toggle_vault_only — flip the lock that scopes the map to the caller's private vault plots
 
+ANALYTICS — you have THREE more tools that READ data (no side effects on the map):
+- search_plots      — find plots matching filters (district, land use, status, price range, area range, floor range, openToJV, sort). Use when the user asks to FIND / LIST / SHOW ME options.
+- get_plot_details  — exact data on one plot by plotNumber (price, plot area, max GFA, FAR, floors, height, plan dates, land use). Use when the user asks "what's the price/GFA/FAR/height of plot N" or "tell me about N".
+- compare_plots     — fetch 2-5 plots side-by-side. Use when the user asks "compare X and Y" or "which is bigger/cheaper".
+
+Analytics tools DO NOT move the camera. If the user wants the camera to follow ("show me Arjan and find me residential there"), call fly_to_district first, then search_plots — two tools in sequence.
+
 ⚠️ CRITICAL — read this carefully:
 
 You have NO ability to move the map by describing actions in text.
@@ -87,15 +94,26 @@ After a tool call, your follow-up turn should describe the result
 based on the tool's return payload — not on what you assumed would
 happen. If the tool returned an error, tell the user honestly.
 
+CITATION RULES (when quoting numbers from analytics tools):
+- Quote priceAed / areaSqft / FAR / floors / GFA / height EXACTLY from the tool result. Never invent.
+- If a field is missing from the result (omitted nulls), say "not specified" rather than guess.
+- Convert into the user's preferred units when the preference block below is set:
+  • Currency: 1 USD = 3.6725 AED (UAE Central Bank fixed peg). priceAed × (1 / 3.6725) ≈ USD value.
+  • Area: 1 sqm = 10.7639 sqft. sqft × 0.0929 ≈ sqm.
+  • For a 300,000,000 AED listing the USD equivalent is approximately $81,690,000 (300M / 3.6725).
+- For comparisons, render a compact table with 3-4 rows max (price, area, FAR, location), highlighting the differences that matter.
+- When listing 5 search results, use a short bullet list with plot number + district + price + area — not a wall of text.
+
 RULES:
 - Use emoji sparingly
-- Max 3-4 sentences unless detailed explanation requested
+- Max 3-4 sentences unless detailed explanation or comparison requested
 - Never make up prices or predictions
 - Always mention verify with DLD/RERA when quoting figures
 - If unsure say so`;
 
 // ── Tool schema ───────────────────────────────────────────────
-// Six map-control tools. Names are snake_case (OpenAI convention),
+// Nine tools — 6 map-control + 3 analytics (Wave 1 2026-06-01).
+// Names are snake_case (OpenAI convention),
 // arguments are typed JSON Schema. The client maps each name to a
 // concrete handler that touches mapRef / React state setters.
 const TOOLS = [
@@ -233,6 +251,100 @@ const TOOLS = [
       },
     },
   },
+  // ── Analytics tools (Wave 1, founder spec 2026-06-01) ─────────
+  // Read-only — these never touch the camera or filters. Their job
+  // is to feed the LLM data so it can answer "find me X", "what's
+  // the price of N", "compare X and Y".
+  {
+    type: "function" as const,
+    function: {
+      name: "search_plots",
+      description:
+        "Find plots matching filters. Use when the user asks to FIND / LIST / SHOW ME options. Returns up to `limit` rows (max 10) with plotNumber, district, project, landUse, status, priceAed, areaSqft, maxGfaSqft, far, maxFloors. Caller can scope by district, land-use, status, price range, area range, floor range, openToJV. Sort defaults to price ascending. Does NOT move the map — call fly_to_district separately if the user wants the camera to follow.",
+      parameters: {
+        type: "object",
+        properties: {
+          district: { type: "string", description: "Partial case-insensitive district name (e.g. 'arjan', 'business bay')." },
+          landUse: {
+            type: "string",
+            enum: [
+              "RESIDENTIAL",
+              "COMMERCIAL",
+              "MIXED_USE",
+              "HOTEL",
+              "INDUSTRIAL",
+              "EDUCATIONAL",
+              "HEALTHCARE",
+              "AGRICULTURAL",
+              "FUTURE_DEVELOPMENT",
+            ],
+            description: "One of the 9 canonical land-use categories.",
+          },
+          status: {
+            type: "string",
+            enum: ["LISTED", "VERIFIED", "IN_DEAL"],
+            description: "Public status filter. VAULT_PRIVATE is not searchable here.",
+          },
+          minPriceAed: { type: "number", description: "Minimum currentValuation in AED." },
+          maxPriceAed: { type: "number", description: "Maximum currentValuation in AED." },
+          minAreaSqft: { type: "number", description: "Minimum plot area in sqft." },
+          maxAreaSqft: { type: "number", description: "Maximum plot area in sqft." },
+          minFloors: { type: "number", description: "Minimum maxFloors (from the latest affection plan)." },
+          maxFloors: { type: "number", description: "Maximum maxFloors." },
+          openToJV: { type: "boolean", description: "If true, only plots whose owner is open to JV partnership." },
+          sortBy: { type: "string", enum: ["price", "area", "gfa"], description: "Default 'price' (ascending)." },
+          limit: { type: "number", description: "Cap on rows returned. 1..10, default 5.", minimum: 1, maximum: 10 },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_plot_details",
+      description:
+        "Fetch the full readable record for one plot by its plot number. Use when the user asks 'what's the price/GFA/FAR/height/area of plot N' or 'tell me about plot N'. Returns plotNumber, district, project, masterDeveloper, landUse, status, priceAed, plotAreaSqft, plotAreaSqm, maxGfaSqft, maxGfaSqm, maxFloors, maxHeightMeters, maxHeightCode, far, sitePlanIssue, sitePlanExpiry. Missing fields are omitted — quote them as 'not specified'. Other users' VAULT_PRIVATE plots respond 'not_found'.",
+      parameters: {
+        type: "object",
+        properties: {
+          plotNumber: {
+            type: "string",
+            description: "5-10 digit plot number as recorded by DDA.",
+            pattern: "^\\d{5,10}$",
+          },
+        },
+        required: ["plotNumber"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "compare_plots",
+      description:
+        "Fetch 2-5 plots side-by-side. Use when the user asks 'compare X and Y' or 'which of these is bigger/cheaper'. Returns a `plots` array with the same field set as get_plot_details, plus a `missing` array of plot numbers we couldn't find. Use the missing list verbatim so the user knows what wasn't compared.",
+      parameters: {
+        type: "object",
+        properties: {
+          plotNumbers: {
+            type: "array",
+            items: {
+              type: "string",
+              pattern: "^\\d{5,10}$",
+            },
+            minItems: 2,
+            maxItems: 5,
+            description: "Between 2 and 5 plot numbers, each 5-10 digits.",
+          },
+        },
+        required: ["plotNumbers"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Wire-format types ─────────────────────────────────────────
@@ -302,7 +414,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { history?: ChatMessage[] };
+  interface ArchieBody {
+    history?: ChatMessage[];
+    preferences?: {
+      currency?: "AED" | "USD";
+      areaUnit?: "sqft" | "sqm";
+    };
+  }
+  let body: ArchieBody;
   try {
     body = await req.json();
   } catch {
@@ -314,10 +433,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "empty_history" }, { status: 400 });
   }
 
+  // User-preference block (founder spec 2026-06-01 Wave 1). Injected
+  // every turn so the model picks currency / area-unit when citing
+  // analytics-tool results. Fixed in SYSTEM_PROMPT we couldn't read
+  // the live toggle state; here we do it cleanly per request.
+  const prefCurrency: "AED" | "USD" =
+    body.preferences?.currency === "USD" ? "USD" : "AED";
+  const prefAreaUnit: "sqft" | "sqm" =
+    body.preferences?.areaUnit === "sqm" ? "sqm" : "sqft";
+  const preferenceBlock = `USER PREFERENCES (apply to every figure you quote):
+- Currency: ${prefCurrency}${prefCurrency === "USD" ? " (use $ prefix, e.g. $81,690,000)" : " (e.g. 300,000,000 AED)"}
+- Area unit: ${prefAreaUnit === "sqm" ? "m² (sqm)" : "sqft (ft²)"}
+If the tool result gives priceAed and the user picked USD, divide by 3.6725 and prepend $. If it gives areaSqft and the user picked sqm, divide by 10.7639 and append m².`;
+
   // Build the message array OpenAI expects. System prompt is fixed
-  // server-side so the client can't override the persona.
+  // server-side so the client can't override the persona. Preference
+  // block is appended as a separate system message so it can be
+  // rebuilt cheaply each turn without re-shipping the whole prompt.
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: preferenceBlock },
     ...history.filter(
       (m) =>
         (m.role === "user" || m.role === "assistant" || m.role === "tool") &&

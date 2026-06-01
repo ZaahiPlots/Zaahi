@@ -87,7 +87,7 @@ export type ArchieReply =
     }
   | { error: string; reply?: undefined; tool_calls?: undefined };
 
-/** Human-friendly label for the "Archibald is …" pending hint. */
+/** Human-friendly label for the "Archie is …" pending hint. */
 export function toolHumanLabel(name: string, argsJson: string): string {
   try {
     const a = JSON.parse(argsJson) as Record<string, unknown>;
@@ -104,6 +104,13 @@ export function toolHumanLabel(name: string, argsJson: string): string {
         return `filtering to ${String(a.status ?? "status")}…`;
       case "toggle_vault_only":
         return a.enabled === true ? `entering vault view…` : `exiting vault view…`;
+      // ── Wave 1 analytics tools ──
+      case "search_plots":
+        return "searching plots…";
+      case "get_plot_details":
+        return `reading plot ${String(a.plotNumber ?? "")}…`;
+      case "compare_plots":
+        return "comparing plots…";
       default:
         return `working on ${name}…`;
     }
@@ -111,6 +118,11 @@ export function toolHumanLabel(name: string, argsJson: string): string {
     return `working on ${name}…`;
   }
 }
+
+// Shared apiFetch import path — the analytics tools call the
+// new /api/archie/{search-plots, plot-details, compare-plots}
+// endpoints to read DB data. apiFetch attaches the Bearer token.
+import { apiFetch } from "@/lib/api-fetch";
 
 /** Execute one tool call against the live MapControls. Returns the
  *  structured result that goes back to OpenAI as the role:"tool"
@@ -204,6 +216,71 @@ export async function executeArchieTool(
       const enabled = args.enabled === true;
       controls.setVaultOnly(enabled);
       return { ok: true, enabled };
+    }
+    // ── Wave 1 analytics tools (founder spec 2026-06-01) ─────────
+    // Read-only — these never touch the camera or filters. They
+    // fetch the relevant /api/archie/* endpoint, parse JSON, and
+    // return the payload (or error envelope) verbatim back to the
+    // LLM as the role:"tool" content.
+    case "search_plots": {
+      // Forward the args object — the API silently drops anything it
+      // doesn't recognise + clamps limit. The LLM might pass extra
+      // junk; we don't pre-validate to keep this layer thin.
+      const r = await apiFetch("/api/archie/search-plots", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(args),
+      });
+      if (!r.ok) {
+        return {
+          error: "search_failed",
+          status: r.status,
+          message: `Search returned ${r.status}.`,
+        };
+      }
+      return await r.json();
+    }
+    case "get_plot_details": {
+      const plotNumber = String(args.plotNumber ?? "").trim();
+      if (!/^\d{5,10}$/.test(plotNumber)) {
+        return { error: "bad_plot_number" };
+      }
+      const r = await apiFetch(`/api/archie/plot-details/${plotNumber}`);
+      if (r.status === 404) {
+        return {
+          error: "not_found",
+          message: `Plot ${plotNumber} isn't in our catalogue (or is privately held by another user).`,
+        };
+      }
+      if (!r.ok) {
+        return {
+          error: "details_failed",
+          status: r.status,
+          message: `Details lookup returned ${r.status}.`,
+        };
+      }
+      return await r.json();
+    }
+    case "compare_plots": {
+      // Pass through plotNumbers — the API validates length + format
+      // server-side and returns missing[] for anything it skipped.
+      const r = await apiFetch("/api/archie/compare-plots", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(args),
+      });
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        return {
+          error: "compare_failed",
+          status: r.status,
+          message:
+            typeof errBody?.message === "string"
+              ? errBody.message
+              : `Compare returned ${r.status}.`,
+        };
+      }
+      return await r.json();
     }
     default:
       return { error: "unknown_tool", name: call.name };
