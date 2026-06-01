@@ -10,6 +10,36 @@
 // Keep this file UI-framework-free — it's imported by both sides and
 // must not pull in maplibre or React.
 
+/** Layer keys exposed to Archie's toggle_layer tool. Whitelist of
+ *  commonly-asked overlays — the full LayersState carries ~230 keys
+ *  (mostly individual master plans) which would balloon the tool
+ *  schema; master plans get their own fuzzy-match tool in Wave 3. */
+export type ArchieLayerKey =
+  | "communities"
+  | "roads"
+  | "metro"
+  | "metroStations"
+  | "tramStations"
+  | "marineStations"
+  | "evChargers"
+  | "plotLabels"
+  | "districtNames"
+  | "ddaLandPlots"
+  | "adLandPlots"
+  | "ddaProjects"
+  | "ddaFreeZones"
+  | "adCommunities"
+  | "adDistricts"
+  | "vaultShared";
+
+/** Pair of mutually-exclusive camera-motion flags. Used as the return
+ *  shape of setDroneMode + setAutoRotate so the tool can echo the live
+ *  state after the mutex resolves. */
+export interface CameraMotionState {
+  drone: boolean;
+  autoRotate: boolean;
+}
+
 /** All map actions Archie can request via OpenAI function-calling. */
 export interface MapControls {
   /** Camera fly to a single point. */
@@ -54,6 +84,32 @@ export interface MapControls {
     center: [number, number];
     bounds: [[number, number], [number, number]] | null;
   } | null>;
+
+  // ── Wave 2: chrome / camera / overlay controls ──
+  /** Cycle the basemap raster between Cartocdn light, Cartocdn dark,
+   *  and ArcGIS satellite. */
+  setBaseMap(theme: "light" | "dark" | "satellite"): void;
+  /** Flip the camera between flat 2D and 45° pitch 3D. Re-uses the
+   *  existing easeTo pitch transition from the rail button. */
+  setViewMode(mode: "2D" | "3D"): void;
+  /** One zoom step in either direction — same as the +/− rail
+   *  buttons. */
+  zoomMap(direction: "in" | "out"): void;
+  /** Toggle drone-fly mode (WASD + right-click pointer-lock). Mutex
+   *  with auto-rotate: enabling drone disables auto-rotate (and vice
+   *  versa). Returns the resolved state so the tool can echo it. */
+  setDroneMode(enabled: boolean): CameraMotionState;
+  /** Toggle the sun-time slider overlay. */
+  setSunSlider(enabled: boolean): void;
+  /** Toggle auto-rotate camera. Mutex partner of setDroneMode. */
+  setAutoRotate(enabled: boolean): CameraMotionState;
+  /** Open / close the Legend panel (mirrors the rail Legend button). */
+  setLegendOpen(open: boolean): void;
+  /** Toggle one of the whitelisted layer keys. The key MUST be a
+   *  member of ArchieLayerKey; the implementation in page.tsx does a
+   *  partial setLayers update + persists via the existing
+   *  zaahi-map-layers localStorage path. */
+  setLayer(key: ArchieLayerKey, enabled: boolean): void;
 }
 
 /** A single OpenAI tool_call entry from /api/archie. */
@@ -111,6 +167,23 @@ export function toolHumanLabel(name: string, argsJson: string): string {
         return `reading plot ${String(a.plotNumber ?? "")}…`;
       case "compare_plots":
         return "comparing plots…";
+      // ── Wave 2 chrome / camera / overlay tools ──
+      case "change_basemap":
+        return `switching basemap to ${String(a.theme ?? "")}…`;
+      case "toggle_layer":
+        return `${a.enabled === true ? "showing" : "hiding"} ${String(a.layer ?? "layer")}…`;
+      case "set_view_mode":
+        return `switching to ${String(a.mode ?? "")}…`;
+      case "zoom_map":
+        return `zooming ${String(a.direction ?? "")}…`;
+      case "toggle_drone":
+        return a.enabled === true ? `enabling drone mode…` : `exiting drone mode…`;
+      case "toggle_sun_slider":
+        return a.enabled === true ? `showing sun-time slider…` : `hiding sun slider…`;
+      case "toggle_auto_rotate":
+        return a.enabled === true ? `starting auto-rotate…` : `stopping auto-rotate…`;
+      case "toggle_legend":
+        return a.visible === true ? `opening legend…` : `closing legend…`;
       default:
         return `working on ${name}…`;
     }
@@ -281,6 +354,78 @@ export async function executeArchieTool(
         };
       }
       return await r.json();
+    }
+    // ── Wave 2 chrome / camera / overlay tools (founder spec 2026-06-01) ──
+    // Fire-and-forget — invoke the corresponding MapControls method and
+    // echo {ok, …} so the LLM can confirm the action in its reply.
+    // Mutex semantics for drone ⇄ auto-rotate live inside MapControls
+    // itself (page.tsx); the tools just relay the post-mutex state.
+    case "change_basemap": {
+      const theme = String(args.theme ?? "").toLowerCase();
+      if (theme !== "light" && theme !== "dark" && theme !== "satellite") {
+        return { error: "bad_theme", message: "theme must be light|dark|satellite" };
+      }
+      controls.setBaseMap(theme);
+      return { ok: true, theme };
+    }
+    case "toggle_layer": {
+      const layer = String(args.layer ?? "");
+      const enabled = args.enabled === true;
+      const ALLOWED: ArchieLayerKey[] = [
+        "communities", "roads", "metro", "metroStations", "tramStations",
+        "marineStations", "evChargers", "plotLabels", "districtNames",
+        "ddaLandPlots", "adLandPlots", "ddaProjects", "ddaFreeZones",
+        "adCommunities", "adDistricts", "vaultShared",
+      ];
+      if (!ALLOWED.includes(layer as ArchieLayerKey)) {
+        return {
+          error: "bad_layer",
+          message: `Unknown layer "${layer}". Pick one of: ${ALLOWED.join(", ")}.`,
+        };
+      }
+      controls.setLayer(layer as ArchieLayerKey, enabled);
+      return { ok: true, layer, enabled };
+    }
+    case "set_view_mode": {
+      const mode = String(args.mode ?? "").toUpperCase();
+      if (mode !== "2D" && mode !== "3D") {
+        return { error: "bad_mode", message: "mode must be 2D|3D" };
+      }
+      controls.setViewMode(mode);
+      return { ok: true, mode };
+    }
+    case "zoom_map": {
+      const direction = String(args.direction ?? "").toLowerCase();
+      if (direction !== "in" && direction !== "out") {
+        return { error: "bad_direction", message: "direction must be in|out" };
+      }
+      controls.zoomMap(direction);
+      return { ok: true, direction };
+    }
+    case "toggle_drone": {
+      // MapControls handles mutex with auto-rotate internally and
+      // returns the resolved camera-motion state (drone, autoRotate).
+      // The tool echoes both so the LLM phrases the result honestly
+      // even when enabling drone also flipped auto-rotate off.
+      const enabled = args.enabled === true;
+      const state = controls.setDroneMode(enabled);
+      return { ok: true, ...state };
+    }
+    case "toggle_sun_slider": {
+      const enabled = args.enabled === true;
+      controls.setSunSlider(enabled);
+      return { ok: true, enabled };
+    }
+    case "toggle_auto_rotate": {
+      // Same mutex pattern as toggle_drone — see comment above.
+      const enabled = args.enabled === true;
+      const state = controls.setAutoRotate(enabled);
+      return { ok: true, ...state };
+    }
+    case "toggle_legend": {
+      const visible = args.visible === true;
+      controls.setLegendOpen(visible);
+      return { ok: true, visible };
     }
     default:
       return { error: "unknown_tool", name: call.name };

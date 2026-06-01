@@ -5040,6 +5040,67 @@ function ParcelsMapPageInner() {
         return null;
       }
     },
+    // ── Wave 2 chrome / camera / overlay controls (founder spec 2026-06-01) ──
+    // Each method shadows the rail-button handler so the LLM tools
+    // produce the exact same on-screen effect as a manual click. mutex
+    // for drone ⇄ auto-rotate lives here (single source of truth)
+    // and the return value echoes the post-mutex state so the chat
+    // can describe what actually changed.
+    setBaseMap: (theme) => {
+      setBaseMap(theme);
+    },
+    setViewMode: (mode) => {
+      const m = mapRef.current;
+      const next3D = mode === "3D";
+      setIs3D(next3D);
+      sound.whoosh();
+      if (m) m.easeTo({ pitch: next3D ? 45 : 0, duration: 400 });
+    },
+    zoomMap: (direction) => {
+      const m = mapRef.current;
+      if (!m) return;
+      if (direction === "in") m.zoomIn();
+      else m.zoomOut();
+    },
+    setDroneMode: (enabled) => {
+      // Mirrors the rail Drone button (line ~5519): enabling drone
+      // also clears auto-rotate. Return the resolved pair so the
+      // tool result can echo "{drone:true, autoRotate:false}" even
+      // when the user only asked for drone.
+      sound.whoosh();
+      setDroneEnabled(enabled);
+      if (enabled) setAutoRotateEnabled(false);
+      return {
+        drone: enabled,
+        autoRotate: enabled ? false : autoRotateEnabled,
+      };
+    },
+    setSunSlider: (enabled) => {
+      sound.whoosh();
+      setSunSliderActive(enabled);
+    },
+    setAutoRotate: (enabled) => {
+      // Mirror of setDroneMode — enabling auto-rotate clears drone.
+      sound.whoosh();
+      setAutoRotateEnabled(enabled);
+      if (enabled) setDroneEnabled(false);
+      return {
+        drone: enabled ? false : droneEnabled,
+        autoRotate: enabled,
+      };
+    },
+    setLegendOpen: (open) => {
+      setLegendOpen(open);
+      if (open) setLayersOpen(false);
+    },
+    setLayer: (key, enabled) => {
+      // Partial setLayers — the existing useEffect at L1957's setter
+      // persists the new state to localStorage and triggers the
+      // layer-attach reconciler. No need to touch reapplyMapFilters
+      // here — toggle_layer drives overlay visibility, not the
+      // ZAAHI listing layer's filters.
+      setLayers((s) => ({ ...s, [key]: enabled }));
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
