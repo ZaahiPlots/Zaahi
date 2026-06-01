@@ -48,7 +48,14 @@ const GOLD_TEXT = "#e8d5a8";
 const NAVY = "#0A1628";
 const TXT = "#FFFFFF";
 const DIM = "rgba(245, 241, 232, 0.75)";
-const SUBTLE = "rgba(255, 255, 255, 0.5)";
+// SUBTLE drives every secondary label on the panel — "Per sqft (Plot)",
+// the left side of every Row component (Community / Master Dev / Issued
+// / Expires / Plot Area / Max GFA / …), button hint text, the
+// affection-plan land-use sub-row. Founder spec 2026-06-01: bumped
+// 0.5 → 0.78 so those labels stop melting into the navy backdrop
+// without changing layout / size / spacing. 0.78 puts them in the
+// same visibility band as Layers panel body text (0.85 - 0.92).
+const SUBTLE = "rgba(255, 255, 255, 0.78)";
 const LINE = "rgba(255, 255, 255, 0.1)";
 
 // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
@@ -1253,7 +1260,12 @@ function Section({
         }}
       >
         <div style={{
-          color: "rgba(255, 255, 255, 0.35)",
+          // Section titles ("DIMENSIONS", "LAND USE", "AFFECTION
+          // PLAN", "GENERAL NOTES") were at 0.35 — practically
+          // invisible against PANEL_BG navy. Founder spec
+          // 2026-06-01: 0.35 → 0.6 so the headers anchor each
+          // group without competing with the gold price headline.
+          color: "rgba(255, 255, 255, 0.6)",
           fontWeight: 700,
           fontSize: 11,
           textTransform: "uppercase",

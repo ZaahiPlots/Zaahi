@@ -6450,7 +6450,13 @@ function PmtilesHoverRow({ label, value }: { label: string; value: string }) {
       gap: 8, marginTop: 3, lineHeight: 1.35,
     }}>
       <span style={{
-        opacity: 0.55, letterSpacing: "0.04em",
+        // Hover-card sub-labels ("Plot Area", "Max GFA", "FAR",
+        // "Max Height", "Affection Plan", "Asking Price") — bumped
+        // 0.55 → 0.8 so the left column reads against the navy
+        // glass without looking ghosted. Right-side value stays at
+        // 0.95 (set on its own span below) so the visual hierarchy
+        // is preserved.
+        opacity: 0.8, letterSpacing: "0.04em",
         textTransform: "uppercase", fontSize: 11,
       }}>{label}</span>
       <span style={{
