@@ -62,7 +62,7 @@ interface UiMsg {
 const GREETING: UiMsg = {
   role: "assistant",
   content:
-    "Hi! I'm Archibald — your Dubai real estate expert. Ask me anything about properties, fees, procedures, or tell me where to fly the map.",
+    "Hi! I'm Archie — your Dubai real estate expert. Ask me anything about properties, fees, procedures, or tell me where to fly the map.",
 };
 
 // Safety cap for the dispatch loop. Eight turns covers any sensible
@@ -191,7 +191,7 @@ export default function ArchibaldChat({
         const data = (await r.json()) as ArchieReply;
 
         if (!r.ok || data.error) {
-          const errText = data.error ?? "Archibald is sleeping";
+          const errText = data.error ?? "Archie is sleeping";
           setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${errText}` }]);
           break;
         }
@@ -214,7 +214,7 @@ export default function ArchibaldChat({
             tool_calls: data.assistant_message.tool_calls,
           });
           for (const tc of data.tool_calls) {
-            setPendingTool(`Archibald is ${toolHumanLabel(tc.name, tc.arguments)}`);
+            setPendingTool(`Archie is ${toolHumanLabel(tc.name, tc.arguments)}`);
             let result: unknown;
             try {
               result = await executeArchieTool(tc, mapControls);
@@ -242,7 +242,7 @@ export default function ArchibaldChat({
         // Defensive — neither path matched.
         setMessages((m) => [
           ...m,
-          { role: "assistant", content: "⚠️ Empty response from Archibald" },
+          { role: "assistant", content: "⚠️ Empty response from Archie" },
         ]);
         break;
       }
@@ -376,8 +376,8 @@ export default function ArchibaldChat({
         onPointerMove={onLauncherPointerMove}
         onPointerUp={onLauncherPointerUp}
         onPointerCancel={onLauncherPointerCancel}
-        title="Archibald — AI assistant"
-        aria-label="Open Archibald assistant"
+        title="Archie — AI assistant"
+        aria-label="Open Archie assistant"
         className="archibald-launcher"
         style={launcherStyle}
       >
@@ -411,7 +411,7 @@ export default function ArchibaldChat({
                 <CatAvatar mode="open" size={18} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-                <span className="archibald-header-title">Archibald</span>
+                <span className="archibald-header-title">Archie</span>
                 <span className="archibald-header-status">
                   <span
                     style={{
@@ -454,7 +454,7 @@ export default function ArchibaldChat({
                   paddingLeft: 32,
                 }}
               >
-                {pendingTool ?? "Archibald is thinking"}
+                {pendingTool ?? "Archie is thinking"}
                 <span className="archibald-dots">
                   <i />
                   <i />
@@ -475,7 +475,7 @@ export default function ArchibaldChat({
                   send();
                 }
               }}
-              placeholder="Ask Archibald..."
+              placeholder="Ask Archie..."
               disabled={thinking}
               className="archibald-input"
             />

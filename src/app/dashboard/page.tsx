@@ -500,13 +500,13 @@ function Overview({ user }: { user: MeUser | null }) {
         ))}
       </div>
 
-      {/* Archibald advice */}
+      {/* Archie advice */}
       <Card style={{ borderColor: GOLD, background: "rgba(200,169,110,0.05)" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
           <div style={{ fontSize: 32 }}>🐱</div>
           <div>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
-              Archibald says
+              Archie says
             </div>
             <p style={{ fontSize: 12, color: TXT, margin: 0, lineHeight: 1.5 }}>
               {ROLE_TIPS[role] ?? ROLE_TIPS.BUYER}
@@ -596,7 +596,7 @@ const RECENT_ACTIVITY = [
   { icon: "👁️", text: "Plot 6457940 viewed 12 times today", when: "2 hours ago" },
   { icon: "✅", text: "Listing 6457940 verified by ZAAHI team", when: "Yesterday" },
   { icon: "📊", text: "Feasibility report generated for plot 6457940 (ROI 24.1%)", when: "Yesterday" },
-  { icon: "🐱", text: "Archibald answered 4 questions about Dubai RE", when: "2 days ago" },
+  { icon: "🐱", text: "Archie answered 4 questions about Dubai RE", when: "2 days ago" },
   { icon: "🏗️", text: "Plot 6457940 added to ZAAHI", when: "3 days ago" },
 ];
 
