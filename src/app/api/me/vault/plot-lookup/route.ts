@@ -25,6 +25,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
+import { emirateMatchVariants } from "@/lib/emirate";
 
 export const runtime = "nodejs";
 
@@ -90,18 +91,13 @@ export async function POST(req: NextRequest) {
   // table returned `source: not_found` because of this filter, forcing
   // every AD vault entry into manual coords entry from cold start.
   //
-  // The body schema already enforces `emirate: z.enum(EMIRATES)`
-  // (line 42), so we can trust `emirate` here. Prisma stores parcels
-  // title-case ("Dubai", "Abu Dhabi", "Sharjah", …) while the cohort
-  // wizard ships SCREAMING_SNAKE_CASE ("DUBAI", "ABU_DHABI"), so we
-  // normalise + accept both spellings to bridge the two conventions.
-  const normalisedEmirate =
-    emirate.charAt(0).toUpperCase() +
-    emirate.slice(1).toLowerCase().replace(/_/g, " ");
+  // emirateMatchVariants returns title-case + SCREAMING_SNAKE + the
+  // raw input so the lookup bridges the cohort wizard's enum and the
+  // listing/AffectionPlan title-case storage convention.
   const ddaParcel = await prisma.parcel.findFirst({
     where: {
       plotNumber,
-      emirate: { in: [normalisedEmirate, emirate.toUpperCase(), emirate] },
+      emirate: { in: emirateMatchVariants(emirate) },
     },
     select: {
       id: true,

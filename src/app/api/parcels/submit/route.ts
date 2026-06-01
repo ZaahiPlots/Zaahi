@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 import { claimStatusForRole } from '@/lib/plot-claim';
+import { normalizeEmirate } from '@/lib/emirate';
 
 export const runtime = 'nodejs';
 
@@ -34,6 +35,19 @@ const UploadedDoc = z.object({
 const SubmitSchema = z
   .object({
     plotNumber: z.string().trim().regex(/^\d{5,10}$/, 'plotNumber must be 5-10 digits'),
+    // AD-1 hardcode fix (founder spec 2026-06-01, completes D11):
+    // submit used to hardcode `emirate: 'Dubai'` in both the upsert
+    // where-key and the create payload. New `emirate` field accepts the
+    // cohort wizard's SCREAMING_SNAKE enum and the listings flow's
+    // title-case; both normalise to title-case server-side before the
+    // upsert. Optional with default "DUBAI" so the existing AddPlotModal
+    // (which doesn't pass emirate yet — design spec Sprint 2) still
+    // creates Dubai parcels exactly as before.
+    emirate: z
+      .string()
+      .trim()
+      .max(40)
+      .optional(),
     askingPriceAed: z
       .number()
       .positive('asking_price_must_be_positive')
@@ -153,16 +167,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'user_sync_failed' }, { status: 500 });
   }
 
+  // Normalise the emirate the caller supplied (or default "DUBAI" so
+  // the existing AddPlotModal — which doesn't pass emirate yet —
+  // keeps creating Dubai parcels). title-case matches the rest of
+  // the platform's Parcel.emirate convention.
+  const emirate = normalizeEmirate(body.emirate ?? 'DUBAI');
+
   try {
     const parcel = await prisma.parcel.upsert({
       where: {
-        emirate_district_plotNumber: { emirate: 'Dubai', district, plotNumber },
+        emirate_district_plotNumber: { emirate, district, plotNumber },
       },
       create: {
         plotNumber,
         ownerId: callerId,
         area: areaSqft,
-        emirate: 'Dubai',
+        emirate,
         district,
         latitude: lat,
         longitude: lng,

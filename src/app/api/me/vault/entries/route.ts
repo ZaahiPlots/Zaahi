@@ -14,6 +14,7 @@ import { getApprovedUserId } from "@/lib/auth";
 import { recordVaultEvent } from "@/lib/vault-activity";
 import { recomputeConflictsForPlot } from "@/lib/vault-conflict";
 import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
+import { normalizeEmirate } from "@/lib/emirate";
 import {
   writeAffectionPlan,
   maybeAppendAffectionPlan,
@@ -426,9 +427,11 @@ async function ensureVaultPrivateParcel(args: {
   // diverge between DDA's official label and the user-typed value.
   // Normalise emirate to the platform's canonical capitalisation
   // (Prisma stores "Dubai", "Sharjah", etc — title case).
-  const normalisedEmirate =
-    args.emirate.charAt(0).toUpperCase() +
-    args.emirate.slice(1).toLowerCase().replace(/_/g, " ");
+  // AD-1 follow-up (2026-06-01): the naïve normaliser shipped in
+  // Sprint 1 produced "Abu dhabi" for "ABU_DHABI" — lowercased the
+  // second word. Switched to the shared `normalizeEmirate` helper
+  // so two-word emirates land correctly.
+  const normalisedEmirate = normalizeEmirate(args.emirate);
 
   // 1) Existing Parcel for this plot — reuse, do not mutate.
   //    Phase 3.5 (2026-05-30): when the parcel pre-exists (curated

@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ParcelStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
+import { emirateMatchVariants } from "@/lib/emirate";
 
 export const runtime = "nodejs";
 
@@ -59,12 +60,8 @@ export async function GET(req: NextRequest) {
   // user who just types "Yas Island" without knowing the platform's
   // emirate enum).
   const emirateParam = req.nextUrl.searchParams.get("emirate")?.trim();
-  const normalisedEmirate = emirateParam
-    ? emirateParam.charAt(0).toUpperCase() +
-      emirateParam.slice(1).toLowerCase().replace(/_/g, " ")
-    : null;
-  const emirateFilter = normalisedEmirate
-    ? [{ emirate: normalisedEmirate }]
+  const emirateFilter = emirateParam
+    ? [{ emirate: { in: emirateMatchVariants(emirateParam) } }]
     : [];
 
   // Match the caller's own VAULT_PRIVATE rows too, in case Archie is

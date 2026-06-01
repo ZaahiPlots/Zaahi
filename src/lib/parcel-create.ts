@@ -31,6 +31,7 @@ import { prisma } from "./prisma";
 import { logActivity } from "./activity";
 import { supabase } from "./supabase";
 import { claimStatusForRole } from "./plot-claim";
+import { normalizeEmirate } from "./emirate";
 
 /** Best-effort DDA enrichment shape. */
 interface PolyFeature {
@@ -109,7 +110,24 @@ export async function createParcelFromSubmission(
   let areaSqft = input.prefilled?.areaSqft ?? 0;
   let lng: number | null = input.prefilled?.longitude ?? null;
   let lat: number | null = input.prefilled?.latitude ?? null;
-  const emirate = input.prefilled?.emirate ?? "Dubai";
+  // AD-1 hardcode fix (founder spec 2026-06-01, completes D11): the
+  // historical `?? "Dubai"` default silently turned every vault →
+  // listing promote of a non-Dubai entry into a Dubai parcel, even
+  // when the vault entry's `entry.emirate` clearly said otherwise.
+  // The only existing caller (promote/route.ts) always passes
+  // prefilled.emirate (vault entries always have one), so an
+  // explicit-required contract is safe today and prevents the
+  // silent-Dubai trap if a future caller forgets to thread emirate
+  // through.
+  const rawEmirate = input.prefilled?.emirate;
+  if (!rawEmirate || rawEmirate.trim() === "") {
+    throw new Error(
+      "createParcelFromSubmission: prefilled.emirate is required — caller must pass an explicit emirate to avoid the silent-Dubai default.",
+    );
+  }
+  // Normalise SCREAMING_SNAKE / lowercase / mixed → title-case
+  // ("ABU_DHABI" → "Abu Dhabi"). Shared helper, single source of truth.
+  const emirate = normalizeEmirate(rawEmirate);
 
   if (!input.prefilled) {
     try {
