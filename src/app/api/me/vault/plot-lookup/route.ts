@@ -82,8 +82,27 @@ export async function POST(req: NextRequest) {
   // 2) Is the plot in our scraped Parcel index? Match on plotNumber only
   //    (district may diverge from the user-typed value vs DDA's authoritative
   //    PROJECT_NAME). For the wizard, a hit means we can prefill facts.
+  //
+  // AD-1 hardcode fix (founder spec 2026-06-01, completes D11): was
+  // `emirate: { in: ["Dubai", "DUBAI"] }` — pinned the lookup to Dubai
+  // even when the caller's body declared a different emirate. AD plots
+  // (Saadiyat, Yas Island, Reem, etc) that already lived in our Parcel
+  // table returned `source: not_found` because of this filter, forcing
+  // every AD vault entry into manual coords entry from cold start.
+  //
+  // The body schema already enforces `emirate: z.enum(EMIRATES)`
+  // (line 42), so we can trust `emirate` here. Prisma stores parcels
+  // title-case ("Dubai", "Abu Dhabi", "Sharjah", …) while the cohort
+  // wizard ships SCREAMING_SNAKE_CASE ("DUBAI", "ABU_DHABI"), so we
+  // normalise + accept both spellings to bridge the two conventions.
+  const normalisedEmirate =
+    emirate.charAt(0).toUpperCase() +
+    emirate.slice(1).toLowerCase().replace(/_/g, " ");
   const ddaParcel = await prisma.parcel.findFirst({
-    where: { plotNumber, emirate: { in: ["Dubai", "DUBAI"] } },
+    where: {
+      plotNumber,
+      emirate: { in: [normalisedEmirate, emirate.toUpperCase(), emirate] },
+    },
     select: {
       id: true,
       area: true,
