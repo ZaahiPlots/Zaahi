@@ -50,6 +50,23 @@ export async function GET(req: NextRequest) {
   if (!name) return NextResponse.json({ error: "missing_name" }, { status: 400 });
   if (name.length > 80) return NextResponse.json({ error: "name_too_long" }, { status: 400 });
 
+  // AD-1 hardcode fix (founder spec 2026-06-01, completes D11):
+  // the two queries below used to pin `emirate: "Dubai"`, so Archie's
+  // fly_to_district tool returned 404 for any AD district (Saadiyat,
+  // Yas Island, Al Reem, …). Optional ?emirate= query param now scopes
+  // the lookup when the caller knows the answer; absent emirate
+  // searches across all emirates (the most useful default for an LLM
+  // user who just types "Yas Island" without knowing the platform's
+  // emirate enum).
+  const emirateParam = req.nextUrl.searchParams.get("emirate")?.trim();
+  const normalisedEmirate = emirateParam
+    ? emirateParam.charAt(0).toUpperCase() +
+      emirateParam.slice(1).toLowerCase().replace(/_/g, " ")
+    : null;
+  const emirateFilter = normalisedEmirate
+    ? [{ emirate: normalisedEmirate }]
+    : [];
+
   // Match the caller's own VAULT_PRIVATE rows too, in case Archie is
   // helping them navigate their personal portfolio. Public statuses
   // are visible to everyone.
@@ -65,7 +82,7 @@ export async function GET(req: NextRequest) {
     where: {
       AND: [
         baseStatusFilter,
-        { emirate: "Dubai" },
+        ...emirateFilter,
         { district: { equals: name, mode: "insensitive" } },
       ],
     },
@@ -79,7 +96,7 @@ export async function GET(req: NextRequest) {
       where: {
         AND: [
           baseStatusFilter,
-          { emirate: "Dubai" },
+          ...emirateFilter,
           { district: { contains: name, mode: "insensitive" } },
         ],
       },
