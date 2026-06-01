@@ -21,6 +21,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
+import { useAreaUnit } from "@/lib/area-unit";
+import { useCurrency } from "@/lib/currency";
 import {
   type MapControls,
   type ArchieReply,
@@ -92,6 +94,14 @@ export default function ArchibaldChat({
   const [thinking, setThinking] = useState(false);
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Wave 1 preferences (founder spec 2026-06-01): the dashboard
+  // Settings → Currency + Area Unit toggles get threaded into the
+  // /api/archie body so the system prompt's "USER PREFERENCES"
+  // block carries the live choice every turn. The hooks subscribe
+  // to the CustomEvent broadcast, so toggling mid-chat updates
+  // the next request without a remount.
+  const areaUnit = useAreaUnit();
+  const currency = useCurrency();
 
   // Draggable launcher. null = use CSS defaults (bottom-right with
   // safe-area). Set from localStorage on mount and updated on drag.
@@ -186,7 +196,10 @@ export default function ArchibaldChat({
         const r = await apiFetch("/api/archie", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ history: wireHistory.slice(-30) }),
+          body: JSON.stringify({
+            history: wireHistory.slice(-30),
+            preferences: { currency, areaUnit },
+          }),
         });
         const data = (await r.json()) as ArchieReply;
 
