@@ -65,12 +65,37 @@ MAP CONTROL — you have SIX tools that drive the map directly:
 - filter_by_status — show only parcels of a given status (LISTED, VERIFIED, IN_DEAL, SOLD, VAULT_PRIVATE)
 - toggle_vault_only — flip the lock that scopes the map to the caller's private vault plots
 
+CHROME / CAMERA / OVERLAY — you have EIGHT more tools that change the map's chrome (Wave 2):
+- change_basemap   — light | dark | satellite raster
+- toggle_layer     — show / hide one of the 16 whitelisted overlays (communities, roads, metro, metroStations, tramStations, marineStations, evChargers, plotLabels, districtNames, ddaLandPlots, adLandPlots, ddaProjects, ddaFreeZones, adCommunities, adDistricts, vaultShared)
+- set_view_mode    — flip the camera between flat 2D and 45° pitch 3D
+- zoom_map         — one step "in" or "out"
+- toggle_drone     — enter / exit drone-fly mode (WASD + right-click rotate). Mutex with auto-rotate — enabling drone disables auto-rotate.
+- toggle_sun_slider — show / hide the sun-time overlay
+- toggle_auto_rotate — start / stop auto-rotate camera. Mutex with drone.
+- toggle_legend    — open / close the legend panel
+
+The mutex between drone and auto-rotate is enforced by the map — you don't have to deactivate the other one yourself. The tool result echoes both flags so you can describe what happened ("I enabled drone, which also turned off auto-rotate").
+
 ANALYTICS — you have THREE more tools that READ data (no side effects on the map):
 - search_plots      — find plots matching filters (district, land use, status, price range, area range, floor range, openToJV, sort). Use when the user asks to FIND / LIST / SHOW ME options.
 - get_plot_details  — exact data on one plot by plotNumber (price, plot area, max GFA, FAR, floors, height, plan dates, land use). Use when the user asks "what's the price/GFA/FAR/height of plot N" or "tell me about N".
 - compare_plots     — fetch 2-5 plots side-by-side. Use when the user asks "compare X and Y" or "which is bigger/cheaper".
 
 Analytics tools DO NOT move the camera. If the user wants the camera to follow ("show me Arjan and find me residential there"), call fly_to_district first, then search_plots — two tools in sequence.
+
+DISTRICT NAMES — always pass English Latin to tools (Wave 2 transliteration spec 2026-06-01):
+- The DB stores district names in English uppercase (ARJAN, BUSINESS BAY, DUBAI HILLS, JUMEIRAH VILLAGE CIRCLE, MAJAN, …). The matcher is case-insensitive, but the alphabet must be Latin — Cyrillic / Arabic / any non-Latin script will NOT match.
+- Translate every district reference to its standard real-estate Latin form BEFORE calling fly_to_district / search_plots / resolve_district / open_plot / any tool that takes a "district" argument.
+- Examples:
+  • "Арджан" → "ARJAN"
+  • "أرجان" → "ARJAN"
+  • "Дубай Хиллс" / "دبي هيلز" → "DUBAI HILLS"
+  • "Бизнес Бэй" / "بزنس باي" → "BUSINESS BAY"
+  • "Маджан" / "مجان" → "MAJAN"
+  • "Джумейра Виллидж Сёркл" → "JUMEIRAH VILLAGE CIRCLE"
+- Case doesn't matter — "arjan", "Arjan", "ARJAN" all match. Alphabet does.
+- If you're unsure which Latin spelling is canonical, pick the most common one in Dubai property listings (e.g. "Business Bay", not "Business Baby" or "Business Bey").
 
 ⚠️ CRITICAL — read this carefully:
 
@@ -112,7 +137,8 @@ RULES:
 - If unsure say so`;
 
 // ── Tool schema ───────────────────────────────────────────────
-// Nine tools — 6 map-control + 3 analytics (Wave 1 2026-06-01).
+// Seventeen tools — 6 navigation + 8 chrome/camera/overlay (Wave 2
+// 2026-06-01) + 3 analytics (Wave 1 2026-06-01).
 // Names are snake_case (OpenAI convention),
 // arguments are typed JSON Schema. The client maps each name to a
 // concrete handler that touches mapRef / React state setters.
@@ -345,6 +371,177 @@ const TOOLS = [
       },
     },
   },
+  // ── Wave 2 chrome / camera / overlay tools (founder spec 2026-06-01) ──
+  // Fire-and-forget. Each maps 1:1 to a rail button on the main map.
+  // Mutex for drone ⇄ auto-rotate is enforced by MapControls inside
+  // page.tsx; the tool result echoes the resolved pair so the LLM can
+  // describe what actually changed.
+  {
+    type: "function" as const,
+    function: {
+      name: "change_basemap",
+      description:
+        "Switch the basemap raster between Cartocdn Light, Cartocdn Dark, or ArcGIS Satellite. Use when the user says 'switch to dark mode', 'show satellite', 'go light', etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          theme: {
+            type: "string",
+            enum: ["light", "dark", "satellite"],
+            description: "Basemap to load.",
+          },
+        },
+        required: ["theme"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_layer",
+      description:
+        "Show or hide one of the 16 whitelisted map overlays. Use when the user asks to enable/disable a specific layer ('show the metro', 'hide EV chargers', 'turn on plot numbers'). Master-plan polygons live elsewhere and are not in this whitelist.",
+      parameters: {
+        type: "object",
+        properties: {
+          layer: {
+            type: "string",
+            enum: [
+              "communities", "roads", "metro", "metroStations",
+              "tramStations", "marineStations", "evChargers",
+              "plotLabels", "districtNames", "ddaLandPlots",
+              "adLandPlots", "ddaProjects", "ddaFreeZones",
+              "adCommunities", "adDistricts", "vaultShared",
+            ],
+            description: "Whitelisted layer key.",
+          },
+          enabled: {
+            type: "boolean",
+            description: "true → show the layer, false → hide it.",
+          },
+        },
+        required: ["layer", "enabled"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "set_view_mode",
+      description:
+        "Flip the camera between flat 2D and 45° pitch 3D. Use when the user says 'switch to 2D', 'show 3D', 'flatten the map', etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["2D", "3D"],
+            description: "Target view mode.",
+          },
+        },
+        required: ["mode"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "zoom_map",
+      description:
+        "Zoom the map one step in either direction. Use for 'zoom in', 'zoom out', 'closer', 'farther'. For precise zoom to a district use fly_to_district with the zoom parameter instead.",
+      parameters: {
+        type: "object",
+        properties: {
+          direction: {
+            type: "string",
+            enum: ["in", "out"],
+            description: "in → closer, out → farther.",
+          },
+        },
+        required: ["direction"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_drone",
+      description:
+        "Enter or exit drone-fly mode (WASD + right-click pointer-lock rotation). Mutually exclusive with auto-rotate — enabling drone automatically disables auto-rotate. Returns { ok, drone, autoRotate } so you can describe both effects.",
+      parameters: {
+        type: "object",
+        properties: {
+          enabled: {
+            type: "boolean",
+            description: "true → enter drone mode, false → exit.",
+          },
+        },
+        required: ["enabled"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_sun_slider",
+      description:
+        "Show or hide the sun-time slider overlay (controls 3D shadow direction). Use when the user mentions 'sun', 'shadows', 'time of day' on the map.",
+      parameters: {
+        type: "object",
+        properties: {
+          enabled: {
+            type: "boolean",
+            description: "true → show slider, false → hide.",
+          },
+        },
+        required: ["enabled"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_auto_rotate",
+      description:
+        "Start or stop auto-rotate camera. Mutually exclusive with drone — enabling auto-rotate automatically disables drone. Returns { ok, drone, autoRotate } so you can describe both effects.",
+      parameters: {
+        type: "object",
+        properties: {
+          enabled: {
+            type: "boolean",
+            description: "true → start auto-rotate, false → stop.",
+          },
+        },
+        required: ["enabled"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_legend",
+      description:
+        "Open or close the Legend panel. Use when the user asks 'show legend', 'what do these colours mean', 'open legend', 'close legend'.",
+      parameters: {
+        type: "object",
+        properties: {
+          visible: {
+            type: "boolean",
+            description: "true → open legend, false → close.",
+          },
+        },
+        required: ["visible"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Wire-format types ─────────────────────────────────────────
@@ -388,8 +585,12 @@ interface OpenAIResponse {
 //
 // Word-list is deliberately conservative — only verbs that imply a
 // map action, in all three platform languages.
+// Wave 2 (2026-06-01) extends the EN regex with chrome verbs
+// (zoom / basemap / layer / 2D / 3D / drone / legend / etc) so the
+// model is forced into tool_choice="required" when the user clearly
+// asks for a chrome change, not just a navigation.
 const NAV_INTENT_RE =
-  /\b(show|go to|open|filter|fly|find|navigate|highlight|take me to|zoom to|filter by|only)\b|покажи|откро[йи]|найди|лети|фильтр|перейди|выдели|показать|только|أرني|افتح|اعرض|انتقل|فلتر|ابحث/iu;
+  /\b(show|go to|open|close|filter|fly|find|navigate|highlight|take me to|zoom|zoom in|zoom out|filter by|only|switch to|hide|enable|disable|turn on|turn off|2d|3d|satellite|dark mode|light mode|drone|auto.?rotate|sun slider|legend|layer|basemap)\b|покажи|откро[йи]|найди|лети|фильтр|перейди|выдели|показать|только|закрой|спрячь|включи|выключи|приблизь|отдали|2д|3д|спутник|тёмный|светлый|дрон|вращ|солнце|легенд|слой|карт|أرني|افتح|اعرض|انتقل|فلتر|ابحث|أغلق|أخفي|قرّب|أبعد|طبقة|أساس/iu;
 
 function detectToolChoice(history: ChatMessage[]): "auto" | "required" {
   for (let i = history.length - 1; i >= 0; i--) {
