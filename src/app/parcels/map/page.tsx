@@ -36,6 +36,16 @@ import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
 import type { MapControls } from "@/lib/archie-tools";
+import {
+  EMPTY_FILTER_STATE,
+  countActiveFilters,
+  parcelStatusToUnified,
+  unifiedToPmtilesStatusList,
+  unifiedToZaahiStatusList,
+  type FilterState,
+  type UnifiedStatus,
+} from "@/lib/filter-state";
+import FilterPanel from "./FilterPanel";
 import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
@@ -1908,11 +1918,59 @@ function ParcelsMapPageInner() {
   // below; the same helper drives both the vault-only useEffect and
   // the Archie tool calls.
   const vaultOnlyModeRef = useRef(loadVaultOnlyMode());
-  const archieLandUseRef = useRef<string | null>(null);
-  const archieStatusRef = useRef<string | null>(null);
+
+  // Wave 2 (Filter Panel, 2026-06-02): filter state lives in
+  // React.useState so the panel can render off it; refs are kept in
+  // lockstep below so build*Filter() can read sync without going
+  // through React render. Wave 1 archieLandUseRef / archieStatusRef
+  // are replaced by the multi-valued + range refs below — the same
+  // single source of truth for both Archie and the panel.
+  const filterLandUseRef = useRef<string[]>([]);
+  const filterUnifiedStatusRef = useRef<UnifiedStatus[]>([]);
+  const filterAreaRangeRef = useRef<FilterState["areaRange"]>(null);
+  const filterGfaRangeRef = useRef<FilterState["gfaRange"]>(null);
+  const filterFarRangeRef = useRef<FilterState["farRange"]>(null);
+  const filterPriceRangeRef = useRef<FilterState["priceRange"]>(null);
+  const filterDistrictsRef = useRef<string[]>([]);
+
+  const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  // Distinct ZAAHI listing districts — populated after /api/parcels/map
+  // resolves inside loadZaahiPlots so the panel's District multi-select
+  // has real options.
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
   useEffect(() => {
     vaultOnlyModeRef.current = vaultOnlyMode;
   }, [vaultOnlyMode]);
+
+  // ── Wave 2: filter state → refs sync (2026-06-02) ──
+  // Mirror the canonical React state into the refs that build*Filter()
+  // reads, then call reapplyMapFilters so all 12 layers update. When
+  // any dimension is active and the user hasn't already enabled the
+  // PMTiles overlays, auto-enable them so the filter is visible —
+  // matches the Wave 1 behaviour for filter_by_land_use / by_status
+  // but now applies regardless of entry point (panel or Archie).
+  useEffect(() => {
+    filterLandUseRef.current = filterState.landUse;
+    filterUnifiedStatusRef.current = filterState.unifiedStatus;
+    filterAreaRangeRef.current = filterState.areaRange;
+    filterGfaRangeRef.current = filterState.gfaRange;
+    filterFarRangeRef.current = filterState.farRange;
+    filterPriceRangeRef.current = filterState.priceRange;
+    filterDistrictsRef.current = filterState.districts;
+    if (countActiveFilters(filterState) > 0) {
+      setLayers((s) =>
+        s.ddaLandPlots && s.adLandPlots
+          ? s
+          : { ...s, ddaLandPlots: true, adLandPlots: true },
+      );
+    }
+    reapplyMapFilters();
+    // reapplyMapFilters is a stable closure declared in the component
+    // body; ESLint thinks it's a dependency but it's effectively a
+    // ref-reader. Same exemption pattern as other map-side effects.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterState]);
 
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
@@ -3143,6 +3201,18 @@ function ParcelsMapPageInner() {
         "buildingFeatures:", buildingFeatures.length,
         "(of", payload.items.length, "parcels)",
       );
+
+      // Wave 2: surface the distinct district names so the Filter
+      // Panel's District multi-select has real options. Listings only —
+      // PMTiles tiles don't carry district names today.
+      const districts = Array.from(
+        new Set(
+          plotFeatures
+            .map((f) => (f.properties as { district?: string }).district ?? "")
+            .filter((d) => d.length > 0),
+        ),
+      ).sort();
+      setAvailableDistricts(districts);
       // Plot source: setData when it already exists (refresh path used
       // after a vault add), else addSource + register all four plot
       // layers (FILL / LINE / GLOW / GLOW_CRISP). The race-guard
@@ -3339,12 +3409,70 @@ function ParcelsMapPageInner() {
       ? ["==", ["get", "isVault"], true]
       : ["!=", ["get", "isVault"], true];
     const parts: FilterSpecification[] = [direction];
-    if (archieLandUseRef.current) {
-      parts.push(["==", ["get", "landUse"], archieLandUseRef.current]);
+
+    // ── Land use multi-select (461K + 114 — shared filter ref)
+    if (filterLandUseRef.current.length > 0) {
+      parts.push([
+        "in",
+        ["get", "landUse"],
+        ["literal", filterLandUseRef.current],
+      ] as FilterSpecification);
     }
-    if (archieStatusRef.current) {
-      parts.push(["==", ["get", "status"], archieStatusRef.current]);
+
+    // ── Unified status → ZAAHI ParcelStatus list (multi-side mapping)
+    if (filterUnifiedStatusRef.current.length > 0) {
+      const zaahiList = unifiedToZaahiStatusList(filterUnifiedStatusRef.current);
+      if (zaahiList === null) {
+        // Selection is exclusively DDA-only chips (Built / Under
+        // construction) — listings carry no equivalent state, hide all.
+        parts.push(["literal", false] as FilterSpecification);
+      } else if (zaahiList.length > 0) {
+        parts.push([
+          "in",
+          ["get", "status"],
+          ["literal", zaahiList],
+        ] as FilterSpecification);
+      }
     }
+
+    // ── Plot area range (sqft) — listings have plotAreaSqft
+    if (filterAreaRangeRef.current) {
+      const { min, max } = filterAreaRangeRef.current;
+      parts.push([">=", ["get", "plotAreaSqft"], min] as FilterSpecification);
+      parts.push(["<=", ["get", "plotAreaSqft"], max] as FilterSpecification);
+    }
+
+    // ── GFA range (sqft) — listings have maxGfaSqft
+    if (filterGfaRangeRef.current) {
+      const { min, max } = filterGfaRangeRef.current;
+      parts.push([">=", ["get", "maxGfaSqft"], min] as FilterSpecification);
+      parts.push(["<=", ["get", "maxGfaSqft"], max] as FilterSpecification);
+    }
+
+    // ── FAR range — listings have far pre-stored
+    if (filterFarRangeRef.current) {
+      const { min, max } = filterFarRangeRef.current;
+      parts.push([">=", ["get", "far"], min] as FilterSpecification);
+      parts.push(["<=", ["get", "far"], max] as FilterSpecification);
+    }
+
+    // ── Price range (AED) — LISTINGS ONLY (PMTiles has no price)
+    if (filterPriceRangeRef.current) {
+      const { min, max } = filterPriceRangeRef.current;
+      parts.push([">=", ["get", "priceAed"], min] as FilterSpecification);
+      parts.push(["<=", ["get", "priceAed"], max] as FilterSpecification);
+    }
+
+    // ── District multi-select — LISTINGS ONLY (PMTiles base props
+    //    don't carry district name; would need a tile re-bake)
+    if (filterDistrictsRef.current.length > 0) {
+      parts.push([
+        "in",
+        ["get", "district"],
+        ["literal", filterDistrictsRef.current],
+      ] as FilterSpecification);
+    }
+
     if (parts.length === 1) return parts[0];
     return ["all", ...parts] as FilterSpecification;
   }
@@ -3572,42 +3700,27 @@ function ParcelsMapPageInner() {
   // Reads vaultOnlyModeRef + the two split refs — both kept in sync by
   // loadZaahiPlots and the vault-only useEffect. Safe to call from
   // either; setFilter atomically replaces the previous filter.
-  // ── Wave 1: unified status mapping (ParcelStatus → DDA values) ──
-  //
-  // Bridges the two enum spaces: ZAAHI ParcelStatus (LISTED/VERIFIED/
-  // IN_DEAL/SOLD/VAULT_PRIVATE) ↔ raw DDA CONSTRUCTION_STATUS strings
-  // baked into PMTiles ("Vacant" / "Not Started" / "Under Construction"
-  // / "Completed" / ""). Returns:
-  //   • string[] of CONSTRUCTION_STATUS values to match
-  //   • [] when nothing to constrain (don't filter PMTiles by status)
-  //   • null when the ZAAHI state has no PMTiles equivalent — caller
-  //     hides all PMTiles by appending ["literal", false].
-  // Wave 2 unified-UI chips ("Built" / "Under construction") will plug
-  // in here via additional cases — the mapping table stays the only
-  // place that knows the CONSTRUCTION_STATUS vocabulary.
-  function zaahiStatusToPmtilesValues(zs: string): string[] | null {
-    switch (zs) {
-      case "LISTED":
-      case "VERIFIED":
-        // "Vacant / For sale" bucket — DDA's pre-construction states.
-        return ["Vacant", "Not Started", ""];
-      case "IN_DEAL":
-      case "SOLD":
-      case "VAULT_PRIVATE":
-        // ZAAHI-only states — DDA registry has no equivalent.
-        return null;
-      default:
-        return [];
-    }
-  }
-
   // Compose one PMTiles layer's full filter: tier base + ZAAHI plot-
-  // number exclusion + active Archie filters. layerKind selects the
+  // number exclusion + active filter dimensions. layerKind selects the
   // tier predicate (FILL/LINE draw "flat" features; 3D draws non-flat
   // podium/body/crown tiers). Called from applyZaahiExclusionToTileLayers
   // — which itself runs both after loadZaahiPlots populates the
   // exclusion sets AND after reapplyMapFilters whenever an Archie /
   // panel filter mutation happens.
+  //
+  // Wave 2 (2026-06-02) extensions over Wave 1: multi-valued land use,
+  // multi-valued unified-status (translated to DDA CONSTRUCTION_STATUS
+  // strings via unifiedToPmtilesStatusList), plot area + GFA + FAR
+  // sliders. Price + district are listings-only and NOT applied here.
+  // Status translation lives in src/lib/filter-state.ts (shared with
+  // the panel and the buildZaahiFilter side).
+  //
+  // GFA conversion: panel exposes GFA in sqft (UAE standard); PMTiles
+  // store gfaSqm only. We convert the threshold sqft → sqm inline
+  // (1 sqft = 0.0929 sqm; we divide by 10.7639 — the inverse).
+  //
+  // FAR: derived runtime as gfaSqm / areaSqm. Plots without GFA data
+  // (gfaSqm = 0) are excluded from the FAR filter by the guard.
   function buildPmtilesFilter(layerKind: "fill" | "line" | "3d"): FilterSpecification {
     const tierBase: FilterSpecification = layerKind === "3d"
       ? ["!=", ["get", "tier"], "flat"]
@@ -3623,18 +3736,69 @@ function ParcelsMapPageInner() {
 
     const parts: FilterSpecification[] = [tierBase, exclude];
 
-    if (archieLandUseRef.current) {
-      parts.push(["==", ["get", "landUse"], archieLandUseRef.current]);
+    // ── Land use multi-select
+    if (filterLandUseRef.current.length > 0) {
+      parts.push([
+        "in",
+        ["get", "landUse"],
+        ["literal", filterLandUseRef.current],
+      ] as FilterSpecification);
     }
-    if (archieStatusRef.current) {
-      const ddaList = zaahiStatusToPmtilesValues(archieStatusRef.current);
+
+    // ── Unified status → DDA CONSTRUCTION_STATUS list
+    if (filterUnifiedStatusRef.current.length > 0) {
+      const ddaList = unifiedToPmtilesStatusList(filterUnifiedStatusRef.current);
       if (ddaList === null) {
-        // ZAAHI-only status — no PMTiles plot can satisfy.
+        // Selection is exclusively ZAAHI-only chips (In deal / Sold) —
+        // PMTiles registry can't satisfy, hide all.
         parts.push(["literal", false] as FilterSpecification);
       } else if (ddaList.length > 0) {
-        parts.push(["in", ["get", "status"], ["literal", ddaList]] as FilterSpecification);
+        parts.push([
+          "in",
+          ["get", "status"],
+          ["literal", ddaList],
+        ] as FilterSpecification);
       }
     }
+
+    // ── Plot area range (sqft) — PMTiles has areaSqft directly
+    if (filterAreaRangeRef.current) {
+      const { min, max } = filterAreaRangeRef.current;
+      parts.push([">=", ["get", "areaSqft"], min] as FilterSpecification);
+      parts.push(["<=", ["get", "areaSqft"], max] as FilterSpecification);
+    }
+
+    // ── GFA range (sqft) — PMTiles store gfaSqm; convert threshold
+    //    sqft → sqm by dividing by 10.7639 to compare against gfaSqm
+    if (filterGfaRangeRef.current) {
+      const { min, max } = filterGfaRangeRef.current;
+      const minSqm = min / 10.7639;
+      const maxSqm = max / 10.7639;
+      parts.push([">=", ["get", "gfaSqm"], minSqm] as FilterSpecification);
+      parts.push(["<=", ["get", "gfaSqm"], maxSqm] as FilterSpecification);
+    }
+
+    // ── FAR derived (gfaSqm / areaSqm) with div-by-zero guard
+    if (filterFarRangeRef.current) {
+      const { min, max } = filterFarRangeRef.current;
+      parts.push([">", ["get", "areaSqm"], 0] as FilterSpecification);
+      parts.push([">", ["get", "gfaSqm"], 0] as FilterSpecification);
+      parts.push([
+        ">=",
+        ["/", ["get", "gfaSqm"], ["get", "areaSqm"]],
+        min,
+      ] as FilterSpecification);
+      parts.push([
+        "<=",
+        ["/", ["get", "gfaSqm"], ["get", "areaSqm"]],
+        max,
+      ] as FilterSpecification);
+    }
+
+    // Price + district are NOT applied to PMTiles — those fields
+    // simply don't exist in the tile properties. The realtor-facing
+    // panel makes that explicit through the "LISTINGS ONLY · 114"
+    // divider above those two sections.
 
     return ["all", ...parts] as FilterSpecification;
   }
@@ -5060,31 +5224,24 @@ function ParcelsMapPageInner() {
     },
     setVaultOnly: (enabled) => setVaultOnlyMode(enabled),
     filterByLandUse: (cat) => {
-      archieLandUseRef.current = cat;
-      // Wave 1: auto-enable PMTiles overlays so the filter is visible
-      // when a realtor asks "show me schools" without manually toggling
-      // the Layers panel. No-op when both layers are already on; we
-      // intentionally don't auto-enable on clear (cat == null) so a
-      // user who explicitly turned the layer off doesn't get it back.
-      if (cat) {
-        setLayers((s) =>
-          s.ddaLandPlots && s.adLandPlots
-            ? s
-            : { ...s, ddaLandPlots: true, adLandPlots: true },
-        );
-      }
-      reapplyMapFilters();
+      // Wave 2: Archie's single-string land use input writes into the
+      // multi-valued FilterState as a one-element array. Layer auto-
+      // enable + reapplyMapFilters happen in the filterState sync
+      // useEffect — single code path for both Archie and the panel.
+      setFilterState((s) => ({ ...s, landUse: cat ? [cat] : [] }));
     },
     filterByStatus: (st) => {
-      archieStatusRef.current = st;
-      if (st) {
-        setLayers((s) =>
-          s.ddaLandPlots && s.adLandPlots
-            ? s
-            : { ...s, ddaLandPlots: true, adLandPlots: true },
-        );
+      // Translate Archie's ParcelStatus → UnifiedStatus chip. When the
+      // input is null, clear. When it's VAULT_PRIVATE (no UI chip;
+      // covered by setVaultOnly), leave the existing status selection
+      // untouched so the user's prior panel state isn't wiped.
+      if (!st) {
+        setFilterState((s) => ({ ...s, unifiedStatus: [] }));
+        return;
       }
-      reapplyMapFilters();
+      const unified = parcelStatusToUnified(st);
+      if (unified === null) return;
+      setFilterState((s) => ({ ...s, unifiedStatus: [unified] }));
     },
     searchPlot: async (plotNumber) => {
       try {
@@ -5695,6 +5852,23 @@ function ParcelsMapPageInner() {
             <circle cx="12" cy="19" r="2" />
           </svg>
         </ChromeBtn>
+        {/* 7. Filters — Wave 2 (2026-06-02). Opens the FilterPanel on
+            the right side of the map. Sits at the bottom of the left
+            rail (below Drone) because the rail already runs 1–6 and
+            the right rail is documented as 5×5 symmetric (founder
+            spec 2026-05-24). Visually grouped with Layers (also left
+            rail) since both gate map content: Layers = which overlays
+            are drawn, Filters = which features within them are kept. */}
+        <ChromeBtn
+          title={filterPanelOpen ? "Close filters" : "Filters"}
+          active={filterPanelOpen}
+          onClick={() => setFilterPanelOpen((o) => !o)}
+        >
+          {/* Funnel — minimalist filter glyph. */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+        </ChromeBtn>
         {/* Parcels portal toggle moved to the bottom-centre ParcelsNav
             pill (founder spec 2026-05-29). portalOpen state and
             ParcelsPortalPanel rendering stay untouched. */}
@@ -5785,6 +5959,22 @@ function ParcelsMapPageInner() {
           </svg>
         </ChromeBtn>
       </div>
+
+      {/* Wave 2: Filter Panel — right-anchored side panel. Mounts on
+          top of the map (zIndex 12 above other rails). Single source
+          of truth: filterState here, panel reads via state prop and
+          writes via onChange (debounced). Archie writes via
+          mapControls.filterByLandUse / filterByStatus which mutate the
+          same filterState. The sync useEffect mirrors state → refs
+          and calls reapplyMapFilters. */}
+      <FilterPanel
+        open={filterPanelOpen}
+        onClose={() => setFilterPanelOpen(false)}
+        state={filterState}
+        onChange={(next) => setFilterState(next)}
+        onReset={() => setFilterState(EMPTY_FILTER_STATE)}
+        availableDistricts={availableDistricts}
+      />
 
       {layersOpen && (
       <Panel
