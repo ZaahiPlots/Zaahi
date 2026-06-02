@@ -1939,6 +1939,14 @@ function ParcelsMapPageInner() {
   // resolves inside loadZaahiPlots so the panel's District multi-select
   // has real options.
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
+  // Wave 2 follow-up (2026-06-02): the FilterPanel district autocomplete
+  // wants a richer source pool than the 114 listing districts alone.
+  // We lazy-fetch the DDA Communities KML + AD Communities GeoJSON the
+  // first time the panel opens, then merge with the listings list. Both
+  // /api/layers/* endpoints are public per CLAUDE.md, so plain fetch is
+  // fine (no Bearer required). District filter STILL applies listings-
+  // only — the divider in the panel keeps that explicit.
+  const [availableCommunities, setAvailableCommunities] = useState<string[]>([]);
   // Live count of features visible inside the current viewport.
   // Computed via queryRenderedFeatures, debounced 500ms on moveend and
   // also after every filterState change. PMTiles count is "in viewport
@@ -2005,6 +2013,62 @@ function ParcelsMapPageInner() {
       map.off("moveend", debounced);
     };
   }, [filterPanelOpen, filterState]);
+
+  // ── Wave 2 follow-up: lazy district pool fetch (2026-06-02) ──
+  // Runs only when the FilterPanel first opens. Result cached in
+  // availableCommunities state so subsequent opens are instant.
+  // Both /api/layers/communities and /api/layers/abu-dhabi-communities
+  // are public (CLAUDE.md SECURITY RULES) — plain fetch.
+  useEffect(() => {
+    if (!filterPanelOpen) return;
+    if (availableCommunities.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [ddaRes, adRes] = await Promise.all([
+          fetch("/api/layers/communities").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetch("/api/layers/abu-dhabi-communities").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const names = new Set<string>();
+        // DDA Communities KML — parseCommunitiesKml exposes CNAME_E via
+        // properties (KML parser uses lowercase OR uppercase depending
+        // on attribute reading order; handle both defensively).
+        const ddaFeats = (ddaRes as { features?: Array<{ properties?: Record<string, unknown> }> })?.features ?? [];
+        for (const f of ddaFeats) {
+          const p = f.properties ?? {};
+          const raw = (p.CNAME_E ?? p.cname_e ?? "") as string;
+          const n = String(raw).trim();
+          if (n) names.add(n);
+        }
+        // AD Communities GeoJSON — COMMUNITYNAMEENG per
+        // data/layers/abu-dhabi-communities.geojson schema.
+        const adFeats = (adRes as { features?: Array<{ properties?: Record<string, unknown> }> })?.features ?? [];
+        for (const f of adFeats) {
+          const p = f.properties ?? {};
+          const n = String(p.COMMUNITYNAMEENG ?? "").trim();
+          if (n) names.add(n);
+        }
+        setAvailableCommunities(Array.from(names).sort());
+      } catch {
+        // Best-effort — leave the dropdown to the listings-only set if
+        // both endpoints fail. Panel still works, just with fewer
+        // suggestions.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filterPanelOpen, availableCommunities.length]);
+
+  // Merged district pool: 114 listing districts ∪ DDA communities (~224)
+  // ∪ AD communities (~1.9K). Sorted alphabetically. The filter itself
+  // still hits Parcel.district only (listings-only invariant).
+  const mergedDistricts = useMemo(
+    () =>
+      Array.from(new Set([...availableDistricts, ...availableCommunities])).sort(),
+    [availableDistricts, availableCommunities],
+  );
 
   // ── Wave 2: filter state → refs sync (2026-06-02) ──
   // Mirror the canonical React state into the refs that build*Filter()
@@ -6072,7 +6136,7 @@ function ParcelsMapPageInner() {
         state={filterState}
         onChange={(next) => setFilterState(next)}
         onReset={() => setFilterState(EMPTY_FILTER_STATE)}
-        availableDistricts={availableDistricts}
+        availableDistricts={mergedDistricts}
         visibleCount={visibleCount}
       />
 

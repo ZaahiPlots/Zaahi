@@ -166,6 +166,19 @@ function Chip({
   );
 }
 
+// Parses a free-text range input. Strips commas and surrounding
+// whitespace; returns null for empty / non-numeric / negative input
+// (treated as "no constraint on this side", reverting to the slider
+// bound on commit). Decimals are accepted — areaSqft can be 5000.5
+// from DDA, the MapLibre numeric compare handles floats fine.
+function parseRangeInput(raw: string): number | null {
+  const cleaned = raw.replace(/[,\s]/g, "");
+  if (cleaned === "") return null;
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
 function DualRange({
   bounds,
   value,
@@ -180,21 +193,75 @@ function DualRange({
   const v = value ?? { min: bounds.min, max: bounds.max };
   const isActive = value !== null;
 
-  const handleMin = (n: number) => {
-    const clamped = Math.min(n, v.max);
-    const next: NumberRange = { min: clamped, max: v.max };
-    if (next.min <= bounds.min && next.max >= bounds.max) onChange(null);
-    else onChange(next);
+  // Sliders are visually clamped to bounds; the underlying state can
+  // exceed them via the text inputs below (founder spec 2026-06-02:
+  // "вписал 500000 при потолке 200K → фильтр применяется, ползунок
+  // визуально упёрся"). Slider drag DOES override an out-of-range
+  // value — that's an explicit user choice to bring the bound back
+  // inside the slider range.
+  const sliderMin = Math.max(bounds.min, Math.min(bounds.max, v.min));
+  const sliderMax = Math.max(bounds.min, Math.min(bounds.max, v.max));
+
+  // Apply a new {min, max} from any path (slider or text). Auto-nulls
+  // back to "no constraint" when both sides equal their bounds, so
+  // the badge counter + filter expression match prior semantics.
+  function applyChange(newMin: number, newMax: number) {
+    if (newMin <= bounds.min && newMax >= bounds.max) {
+      onChange(null);
+      return;
+    }
+    onChange({ min: newMin, max: newMax });
+  }
+
+  const handleSliderMin = (n: number) => applyChange(Math.min(n, v.max), v.max);
+  const handleSliderMax = (n: number) => applyChange(v.min, Math.max(n, v.min));
+
+  const handleTextMin = (raw: string) => {
+    const parsed = parseRangeInput(raw);
+    if (parsed === null) {
+      // Empty → revert min side to bound (no constraint).
+      applyChange(bounds.min, v.max);
+      return;
+    }
+    // Don't clamp to v.max here — that would lose the typed number
+    // if the user enters min before max. Just enforce min ≤ max by
+    // swapping or capping at v.max.
+    applyChange(Math.min(parsed, v.max), v.max);
   };
-  const handleMax = (n: number) => {
-    const clamped = Math.max(n, v.min);
-    const next: NumberRange = { min: v.min, max: clamped };
-    if (next.min <= bounds.min && next.max >= bounds.max) onChange(null);
-    else onChange(next);
+  const handleTextMax = (raw: string) => {
+    const parsed = parseRangeInput(raw);
+    if (parsed === null) {
+      applyChange(v.min, bounds.max);
+      return;
+    }
+    applyChange(v.min, Math.max(parsed, v.min));
+  };
+
+  // Display text inputs only when the value is "set". An empty input
+  // means "no constraint on this side"; we use bounds equality as the
+  // empty marker (matches the auto-null logic).
+  const minDisplay =
+    v.min > bounds.min ? Math.round(v.min).toLocaleString("en-US") : "";
+  const maxDisplay =
+    v.max < bounds.max ? Math.round(v.max).toLocaleString("en-US") : "";
+
+  const inputStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+    background: "rgba(255, 255, 255, 0.04)",
+    border: `1px solid ${isActive ? "rgba(200, 169, 110, 0.45)" : "rgba(255, 255, 255, 0.1)"}`,
+    borderRadius: 6,
+    padding: "4px 8px",
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontFamily: "inherit",
+    outline: "none",
+    fontVariantNumeric: "tabular-nums",
   };
 
   return (
     <div>
+      {/* Header values — keep the "X | Y" label above for quick read */}
       <div
         style={{
           display: "flex",
@@ -208,14 +275,38 @@ function DualRange({
         <span>{format(v.min)}</span>
         <span>{format(v.max)}</span>
       </div>
+      {/* Wave 2 follow-up: precise text inputs above the sliders. Accepts
+          numbers beyond the slider ceiling (slider visually clamps).
+          Slider drag overrides text — that's intentional, drag = "bring
+          it back inside the range". Comma input parsed cleanly. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={minDisplay}
+          onChange={(e) => handleTextMin(e.target.value)}
+          placeholder="min"
+          aria-label="Minimum (type exact)"
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          inputMode="decimal"
+          value={maxDisplay}
+          onChange={(e) => handleTextMax(e.target.value)}
+          placeholder="max"
+          aria-label="Maximum (type exact)"
+          style={inputStyle}
+        />
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <input
           type="range"
           min={bounds.min}
           max={bounds.max}
           step={bounds.step}
-          value={v.min}
-          onChange={(e) => handleMin(Number(e.target.value))}
+          value={sliderMin}
+          onChange={(e) => handleSliderMin(Number(e.target.value))}
           style={{
             width: "100%",
             accentColor: "#C8A96E",
@@ -228,8 +319,8 @@ function DualRange({
           min={bounds.min}
           max={bounds.max}
           step={bounds.step}
-          value={v.max}
-          onChange={(e) => handleMax(Number(e.target.value))}
+          value={sliderMax}
+          onChange={(e) => handleSliderMax(Number(e.target.value))}
           style={{
             width: "100%",
             accentColor: "#C8A96E",
@@ -242,69 +333,189 @@ function DualRange({
   );
 }
 
-function MultiCheckList({
+// Autocomplete district picker — typing filters the dropdown by
+// substring (case-insensitive). Click an option to add it; selected
+// districts render as removable chips above the input. Sources merged
+// by the parent: 114 ZAAHI listing districts + ~224 DDA communities
+// (via /api/layers/communities) + ~1.9K AD communities (via
+// /api/layers/abu-dhabi-communities). The filter mechanism itself is
+// unchanged — district still matches against Parcel.district on the
+// 114 listings only (PMTiles base props don't carry district name).
+// The "LISTINGS ONLY · 114" divider above this section keeps that
+// honest in the UI.
+function DistrictAutocomplete({
   options,
   selected,
   onChange,
-  maxHeight = 180,
 }: {
   options: string[];
   selected: string[];
   onChange: (next: string[]) => void;
-  maxHeight?: number;
 }) {
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const pool = q
+      ? options.filter((o) => o.toLowerCase().includes(q))
+      : options;
+    return pool.filter((o) => !selected.includes(o)).slice(0, 80);
+  }, [options, query, selected]);
+
+  function add(district: string) {
+    if (selected.includes(district)) return;
+    onChange([...selected, district]);
+    setQuery("");
+  }
+  function remove(district: string) {
+    onChange(selected.filter((d) => d !== district));
+  }
+
   return (
-    <div
-      style={{
-        maxHeight,
-        overflowY: "auto",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        borderRadius: 8,
-        background: "rgba(255, 255, 255, 0.04)",
-        padding: 4,
-      }}
-    >
-      {options.length === 0 && (
+    <div style={{ position: "relative" }}>
+      {selected.length > 0 && (
         <div
           style={{
-            padding: 8,
-            fontSize: 12,
-            color: "rgba(255, 255, 255, 0.45)",
-            textAlign: "center",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 4,
+            marginBottom: 6,
           }}
         >
-          No districts available
+          {selected.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => remove(d)}
+              title="Click to remove"
+              style={{
+                background: "rgba(200, 169, 110, 0.25)",
+                border: "1px solid #C8A96E",
+                color: "#FFFFFF",
+                borderRadius: 999,
+                padding: "3px 9px",
+                fontSize: 11,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                outline: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {d} <span style={{ opacity: 0.7, marginLeft: 4 }}>×</span>
+            </button>
+          ))}
         </div>
       )}
-      {options.map((opt) => {
-        const isOn = selected.includes(opt);
-        return (
-          <label
-            key={opt}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "6px 8px",
-              cursor: "pointer",
-              borderRadius: 4,
-              fontSize: 12,
-              color: isOn ? "#FFFFFF" : "rgba(255, 255, 255, 0.75)",
-              fontFamily: "inherit",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={isOn}
-              onChange={() => onChange(toggleString(selected, opt))}
-              style={{ accentColor: "#C8A96E", cursor: "pointer" }}
-            />
-            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {opt}
-            </span>
-          </label>
-        );
-      })}
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        // Defer close so click on a dropdown item fires before blur
+        // tears the dropdown down.
+        onBlur={() => window.setTimeout(() => setIsOpen(false), 160)}
+        placeholder={
+          options.length === 0
+            ? "Loading districts…"
+            : "Type district name…"
+        }
+        aria-label="District search"
+        style={{
+          width: "100%",
+          background: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          borderRadius: 6,
+          padding: "6px 10px",
+          fontSize: 12,
+          color: "#FFFFFF",
+          fontFamily: "inherit",
+          outline: "none",
+          boxSizing: "border-box",
+        }}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            maxHeight: 220,
+            overflowY: "auto",
+            background: "rgba(10, 22, 40, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(200, 169, 110, 0.3)",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+            zIndex: 5,
+          }}
+        >
+          {filtered.map((d) => (
+            <button
+              key={d}
+              type="button"
+              // Use onMouseDown — fires before blur, so the click
+              // registers even if the input would lose focus first.
+              onMouseDown={(e) => {
+                e.preventDefault();
+                add(d);
+              }}
+              style={{
+                display: "block",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.85)",
+                padding: "7px 10px",
+                fontSize: 12,
+                cursor: "pointer",
+                textAlign: "left",
+                fontFamily: "inherit",
+                outline: "none",
+                transition: "background 100ms ease",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(200, 169, 110, 0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      )}
+      {isOpen && query && filtered.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            padding: "8px 10px",
+            background: "rgba(10, 22, 40, 0.95)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: 8,
+            fontSize: 12,
+            color: "rgba(255, 255, 255, 0.55)",
+            zIndex: 5,
+          }}
+        >
+          No matches
+        </div>
+      )}
     </div>
   );
 }
@@ -651,10 +862,14 @@ export default function FilterPanel({
           />
         </div>
 
-        {/* DISTRICT */}
+        {/* DISTRICT — Wave 2 follow-up: autocomplete instead of full
+            scrolling checklist. Source pool is parent-merged
+            (114 listings + DDA + AD community names ≈ 2,200
+            options). Filter still applies LISTINGS ONLY — divider
+            above this section is the honest UI gate. */}
         <div style={{ marginBottom: 6 }}>
           <SectionLabel>District</SectionLabel>
-          <MultiCheckList
+          <DistrictAutocomplete
             options={availableDistricts}
             selected={draft.districts}
             onChange={setDistricts}
