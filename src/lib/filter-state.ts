@@ -1,0 +1,217 @@
+// Filter state — Wave 2 (Filter Panel, 2026-06-02).
+//
+// Single source of truth for the map's filter parameters. Shared by
+// page.tsx (lives in React.useState there, mirrored into refs for the
+// build*Filter() functions) and FilterPanel.tsx (reads + writes via
+// props). Archie's existing filter_by_land_use / filter_by_status
+// tools translate through the helpers here so the panel UI never has
+// to think in raw ParcelStatus or CONSTRUCTION_STATUS vocabularies.
+
+/**
+ * Unified status chips a realtor actually sees in the panel. Each chip
+ * maps to BOTH ZAAHI ParcelStatus values (114 listings) AND raw DDA
+ * CONSTRUCTION_STATUS values (461K PMTiles registry). The two-side
+ * mapping handles the gap where some chips only make sense on one side
+ * (e.g. "Built" only exists in DDA — listings have no "completed
+ * building" status orthogonal to the listing lifecycle).
+ */
+export type UnifiedStatus =
+  | "VACANT"
+  | "IN_DEAL"
+  | "SOLD"
+  | "BUILT"
+  | "UNDER_CONSTRUCTION";
+
+/** Min/max range for a slider-driven filter. */
+export interface NumberRange {
+  min: number;
+  max: number;
+}
+
+/** Complete filter state read by build*Filter(). */
+export interface FilterState {
+  /** Land-use category multi-select. Empty = no land-use constraint.
+   *  Values are the 9 canonical ZAAHI categories (RESIDENTIAL,
+   *  COMMERCIAL, MIXED_USE, HOTEL, INDUSTRIAL, EDUCATIONAL, HEALTHCARE,
+   *  AGRICULTURAL, FUTURE_DEVELOPMENT). */
+  landUse: string[];
+  /** Status multi-select (unified UI chips). */
+  unifiedStatus: UnifiedStatus[];
+  /** Plot area range in sqft. null = no area constraint. */
+  areaRange: NumberRange | null;
+  /** GFA range in sqft. null = no GFA constraint. */
+  gfaRange: NumberRange | null;
+  /** FAR range 0–10. null = no FAR constraint. */
+  farRange: NumberRange | null;
+  /** Price range in AED. Listings-only filter. null = no constraint. */
+  priceRange: NumberRange | null;
+  /** District multi-select. Listings-only filter (PMTiles tiles don't
+   *  carry district name — would require a tile re-bake to support). */
+  districts: string[];
+}
+
+/** Default empty state — produces byte-identical filter output to the
+ *  pre-panel build*Filter() path (Wave 1). */
+export const EMPTY_FILTER_STATE: FilterState = {
+  landUse: [],
+  unifiedStatus: [],
+  areaRange: null,
+  gfaRange: null,
+  farRange: null,
+  priceRange: null,
+  districts: [],
+};
+
+/**
+ * Unified status → ZAAHI ParcelStatus values to match.
+ *
+ * BUILT / UNDER_CONSTRUCTION map to empty arrays on the ZAAHI side
+ * because listings have no "construction-stage" semantic (status
+ * tracks the listing lifecycle). When the panel selects ONLY those
+ * chips, the union below is empty — the helper toZaahiStatusList
+ * returns null → buildZaahiFilter pushes ["literal", false] → all
+ * listings hidden. That's the correct outcome: realtor asked for
+ * "built buildings" — listings don't model that, so the layer hides.
+ */
+export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
+  VACANT: ["LISTED", "VERIFIED"],
+  IN_DEAL: ["IN_DEAL"],
+  SOLD: ["SOLD"],
+  BUILT: [],
+  UNDER_CONSTRUCTION: [],
+};
+
+/**
+ * Unified status → raw DDA CONSTRUCTION_STATUS strings (as baked into
+ * PMTiles). Empty array on the DDA side has the symmetric meaning of
+ * the ZAAHI side: chip is ZAAHI-only, so DDA shows nothing matching.
+ */
+export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
+  VACANT: ["Vacant", "Not Started", ""],
+  IN_DEAL: [],
+  SOLD: [],
+  BUILT: ["Completed"],
+  UNDER_CONSTRUCTION: ["Under Construction"],
+};
+
+/**
+ * Translate a list of unified chips to the ZAAHI ParcelStatus values
+ * to match. Returns:
+ *   • string[] non-empty — ["in", "status", literal] matches these
+ *   • null — selection is exclusively DDA-only chips; ZAAHI layer
+ *     should render nothing (caller pushes ["literal", false])
+ */
+export function unifiedToZaahiStatusList(
+  unified: UnifiedStatus[],
+): string[] | null {
+  if (unified.length === 0) return [];
+  const out = new Set<string>();
+  let anyZaahiMapping = false;
+  for (const u of unified) {
+    const list = UNIFIED_STATUS_TO_ZAAHI[u];
+    if (list.length > 0) anyZaahiMapping = true;
+    for (const v of list) out.add(v);
+  }
+  if (!anyZaahiMapping) return null;
+  return Array.from(out);
+}
+
+/**
+ * Symmetric helper for the PMTiles side — translates unified chips to
+ * raw CONSTRUCTION_STATUS values. Returns null when selection is
+ * exclusively ZAAHI-only chips (caller hides all PMTiles features).
+ */
+export function unifiedToPmtilesStatusList(
+  unified: UnifiedStatus[],
+): string[] | null {
+  if (unified.length === 0) return [];
+  const out = new Set<string>();
+  let anyPmtilesMapping = false;
+  for (const u of unified) {
+    const list = UNIFIED_STATUS_TO_PMTILES[u];
+    if (list.length > 0) anyPmtilesMapping = true;
+    for (const v of list) out.add(v);
+  }
+  if (!anyPmtilesMapping) return null;
+  return Array.from(out);
+}
+
+/**
+ * Translate Archie's filter_by_status tool input (ParcelStatus enum)
+ * into the closest UnifiedStatus chip the panel speaks. VAULT_PRIVATE
+ * intentionally returns null — it's covered by the separate
+ * toggle_vault_only flow, not by the status filter.
+ */
+export function parcelStatusToUnified(s: string): UnifiedStatus | null {
+  switch (s) {
+    case "LISTED":
+    case "VERIFIED":
+      return "VACANT";
+    case "IN_DEAL":
+      return "IN_DEAL";
+    case "SOLD":
+      return "SOLD";
+    default:
+      return null;
+  }
+}
+
+/** Count of distinct active filter dimensions — drives the
+ *  "Filters [N]" badge on the trigger button. A dimension is "active"
+ *  when its array is non-empty or its range is non-null. */
+export function countActiveFilters(s: FilterState): number {
+  let n = 0;
+  if (s.landUse.length > 0) n++;
+  if (s.unifiedStatus.length > 0) n++;
+  if (s.areaRange) n++;
+  if (s.gfaRange) n++;
+  if (s.farRange) n++;
+  if (s.priceRange) n++;
+  if (s.districts.length > 0) n++;
+  return n;
+}
+
+/** Land-use category metadata for the panel chips. Colors mirror
+ *  ZAAHI_LANDUSE_COLOR in page.tsx (CLAUDE.md founder-approved
+ *  palette 2026-04-11 — DO NOT change without explicit approval). */
+export const LAND_USE_OPTIONS: ReadonlyArray<{
+  key: string;
+  label: string;
+  color: string;
+}> = [
+  { key: "RESIDENTIAL", label: "Residential", color: "#FFD700" },
+  { key: "COMMERCIAL", label: "Commercial", color: "#4A90D9" },
+  { key: "MIXED_USE", label: "Mixed Use", color: "#9B59B6" },
+  { key: "HOTEL", label: "Hotel", color: "#E67E22" },
+  { key: "INDUSTRIAL", label: "Industrial", color: "#708090" },
+  { key: "EDUCATIONAL", label: "Educational", color: "#1ABC9C" },
+  { key: "HEALTHCARE", label: "Healthcare", color: "#E74C3C" },
+  { key: "AGRICULTURAL", label: "Agricultural", color: "#6B8E23" },
+  { key: "FUTURE_DEVELOPMENT", label: "Future Dev", color: "#84CC16" },
+];
+
+/** Unified status chip metadata for the panel. `appliesTo` text shows
+ *  the realtor honestly which dataset each chip filters. */
+export const STATUS_OPTIONS: ReadonlyArray<{
+  key: UnifiedStatus;
+  label: string;
+  appliesTo: string;
+}> = [
+  { key: "VACANT", label: "Vacant / For sale", appliesTo: "461K + 114" },
+  { key: "IN_DEAL", label: "In deal", appliesTo: "114 listings only" },
+  { key: "SOLD", label: "Sold", appliesTo: "114 listings only" },
+  { key: "BUILT", label: "Built", appliesTo: "461K registry only" },
+  {
+    key: "UNDER_CONSTRUCTION",
+    label: "Under construction",
+    appliesTo: "461K registry only",
+  },
+];
+
+/** Slider bounds for the four numeric filters. Tuned to the observed
+ *  ranges in current DDA + AD data; outliers above the cap are still
+ *  matched by the range (slider just doesn't extend that far). */
+export const AREA_BOUNDS = { min: 0, max: 200_000, step: 500 }; // sqft
+export const GFA_BOUNDS = { min: 0, max: 2_000_000, step: 5_000 }; // sqft
+export const FAR_BOUNDS = { min: 0, max: 10, step: 0.1 };
+export const PRICE_BOUNDS = { min: 0, max: 500_000_000, step: 1_000_000 }; // AED
