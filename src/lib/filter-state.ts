@@ -82,15 +82,28 @@ export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
 };
 
 /**
- * Unified status → raw DDA CONSTRUCTION_STATUS strings (as baked into
- * PMTiles). Empty array on the DDA side has the symmetric meaning of
- * the ZAAHI side: chip is ZAAHI-only, so DDA shows nothing matching.
+ * Unified status → raw PMTiles status strings. Covers DDA's
+ * CONSTRUCTION_STATUS vocabulary AND AD's Construction_Status
+ * vocabulary in one list per chip — the filter uses ["in", "status",
+ * literal[]] so a single value-match against either taxonomy resolves
+ * the row. Empty array on a chip means "no PMTiles row can satisfy
+ * this chip" (e.g. IN_DEAL / SOLD are ZAAHI-only).
+ *
+ * Synonyms added 2026-06-02 after Part C recon revealed ~127K plots
+ * were invisible to the existing list:
+ *   • VACANT  ← DDA "Empty" (38,591) + AD "Not Constructed" (48,520).
+ *               Both mean "no building / land parcel only" in their
+ *               respective taxonomies.
+ *   • BUILT   ← AD "Constructed" (40,757). Same semantic as DDA
+ *               "Completed" — a finished building.
+ * No new chips and no tile rebake — pure mapping expansion. The
+ * existing 5 unified chips render the full registry honestly.
  */
 export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
-  VACANT: ["Vacant", "Not Started", ""],
+  VACANT: ["Vacant", "Not Started", "", "Empty", "Not Constructed"],
   IN_DEAL: [],
   SOLD: [],
-  BUILT: ["Completed"],
+  BUILT: ["Completed", "Constructed"],
   UNDER_CONSTRUCTION: ["Under Construction"],
 };
 
