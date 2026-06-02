@@ -17,6 +17,7 @@ import { apiFetch } from "@/lib/api-fetch";
 import { useFormatArea } from "@/lib/area-unit";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import CoordsEntry, { type CoordsEntryResult } from "@/components/CoordsEntry";
+import { type ProjectionKey } from "@/lib/coords-projection";
 import { Spinner } from "../Spinner";
 import {
   EMIRATES,
@@ -65,10 +66,33 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
   const [lookupResult, setLookupResult] = useState<PlotLookupResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Manual-mode inputs (revealed when source === "not_found"). The
-  // legacy lat/lng/area stubs are gone — Sprint 1 collects a real
-  // polygon via CoordsEntry. The data fields below are optional for
-  // vault (founder D7); without maxFloors we render flat 2D.
+  // Document-first manual entry (founder spec 2026-06-02):
+  //   mode "init"    → file picker + "skip to manual" fallback
+  //   mode "parsing" → spinner; Claude vision running
+  //   mode "review"  → CoordsEntry + data fields, pre-filled from parser
+  //                    (or blank for fallback). User edits + confirms.
+  // We always land in "review" before save — even after a high-confidence
+  // parse — because the founder rule "parser never saves silently"
+  // requires explicit user verification (Capital 6 prevention).
+  type Mode = "init" | "parsing" | "review";
+  const [mode, setMode] = useState<Mode>("init");
+  const [parserSource, setParserSource] = useState<"parser" | "manual" | null>(
+    null,
+  );
+  const [parserConfidence, setParserConfidence] = useState<
+    "high" | "partial" | "low" | null
+  >(null);
+  const [parserWarnings, setParserWarnings] = useState<string[]>([]);
+  // Bumps when the parser returns new data — forces CoordsEntry to
+  // remount with the fresh initialText/initialProjection seeded from
+  // the parse result. Keeps the user's subsequent edits sticky
+  // until the next parse round.
+  const [coordsSeedKey, setCoordsSeedKey] = useState(0);
+  const [seedText, setSeedText] = useState("");
+  const [seedProjection, setSeedProjection] = useState<ProjectionKey | undefined>(
+    undefined,
+  );
+
   const [coords, setCoords] = useState<CoordsEntryResult | null>(null);
   const [landUse, setLandUse] = useState<LandUse | "">("");
   const [maxFloorsInput, setMaxFloorsInput] = useState<string>("");
@@ -94,6 +118,199 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
     }
     setAffectionFile(f);
   }
+
+  // Read a File as base64 (sans data: prefix). Used to feed the
+  // affection plan into /api/parcels/parse-affection-plan.
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const out = reader.result;
+        if (typeof out === "string") {
+          // strip "data:<mime>;base64," prefix
+          const i = out.indexOf(",");
+          resolve(i >= 0 ? out.slice(i + 1) : out);
+        } else {
+          reject(new Error("FileReader gave non-string result"));
+        }
+      };
+      reader.onerror = () => reject(reader.error ?? new Error("read failed"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Convert parser-emitted points back into the textarea format
+  // CoordsEntry expects. Founder rule: parser is a suggestor — the
+  // user sees these exact numbers and can edit/override.
+  function pointsToTextarea(points: Array<[number, number]>): string {
+    return points
+      .map(([a, b]) => `${a}, ${b}`)
+      .join("\n");
+  }
+
+  type ParserResponse = {
+    fields?: {
+      coords?: {
+        points?: Array<[number, number]> | null;
+        projection?: "DLTM" | "UTM40N" | "WGS84" | null;
+        source?: "table" | "diagram" | null;
+      };
+      data?: {
+        plotAreaSqft?: number | null;
+        maxGfaSqft?: number | null;
+        far?: number | null;
+        maxFloors?: number | null;
+        maxHeightCode?: string | null;
+        landUseCategory?: string | null;
+        projectName?: string | null;
+        community?: string | null;
+        masterDeveloper?: string | null;
+      };
+      confidence?: "high" | "partial" | "low";
+      warnings?: string[];
+    };
+    cached?: boolean;
+    error?: string;
+  };
+
+  // ── Document-first entry path (founder spec 2026-06-02) ──
+  // Upload the file (if present) → call parse-affection-plan →
+  // pre-fill the review form. The user lands in mode="review"
+  // regardless of parser outcome; high-confidence parses just
+  // start with most fields filled.
+  async function handleParseDocument() {
+    if (!affectionFile) {
+      setDocError("Pick an Affection Plan file first.");
+      return;
+    }
+    setUploading(true);
+    setDocError(null);
+    setMode("parsing");
+    try {
+      // 1) Upload to Supabase Storage. Path identical to Sprint 1 so
+      //    admin review surfaces (Sprint 2 listing) can find vault
+      //    uploads under a stable convention.
+      const { data: sess } = await supabaseBrowser.auth.getSession();
+      const userId = sess.session?.user.id;
+      if (!userId) {
+        setDocError("Sign in expired — please sign in again.");
+        setMode("init");
+        setUploading(false);
+        return;
+      }
+      const ext =
+        affectionFile.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
+      const path = `${userId}/vault-affection-plans/${plotNumber}/${Date.now()}.${ext}`;
+      const upload = await supabaseBrowser.storage
+        .from(VAULT_DOC_BUCKET)
+        .upload(path, affectionFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: affectionFile.type || undefined,
+        });
+      if (upload.error) {
+        setDocError(`Upload failed: ${upload.error.message}`);
+        setMode("init");
+        setUploading(false);
+        return;
+      }
+      // Stash the path so handleContinueManual reuses it without
+      // re-uploading on Continue.
+      uploadedPathRef.current = path;
+
+      // 2) Parse via Claude vision. Convert to base64 first so the
+      //    Anthropic API receives an inline document/image.
+      const base64 = await fileToBase64(affectionFile);
+      const parseRes = await apiFetch("/api/parcels/parse-affection-plan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          fileBase64: base64,
+          mediaType: affectionFile.type || "application/pdf",
+          emirate,
+        }),
+      });
+
+      if (!parseRes.ok) {
+        // Founder rule: parser outage falls back to manual review,
+        // does NOT block the user. The file is already uploaded so
+        // Continue still works once they fill the fields by hand.
+        setParserSource("manual");
+        setParserConfidence("low");
+        setParserWarnings([
+          `Parser unavailable (${parseRes.status}) — enter fields manually below.`,
+        ]);
+        setMode("review");
+        setUploading(false);
+        return;
+      }
+
+      const json = (await parseRes.json()) as ParserResponse;
+      const fields = json.fields ?? {};
+
+      // 3) Seed the review form from the parser output. Empty / null
+      //    fields stay empty — user fills them. Capital 6 prevention
+      //    is built into CoordsEntry (sanity check on centroid vs
+      //    emirate centre), so even a wrong-projection parse surfaces
+      //    a red warning instead of a silent save.
+      const parsedPoints = fields.coords?.points ?? null;
+      if (parsedPoints && parsedPoints.length >= 3) {
+        setSeedText(pointsToTextarea(parsedPoints));
+      } else {
+        setSeedText("");
+      }
+      const parsedProjection = fields.coords?.projection ?? null;
+      setSeedProjection(parsedProjection ?? undefined);
+      // Data fields
+      const dataFields = fields.data ?? {};
+      if (typeof dataFields.maxFloors === "number" && dataFields.maxFloors > 0) {
+        setMaxFloorsInput(String(dataFields.maxFloors));
+      }
+      if (typeof dataFields.maxHeightCode === "string" && dataFields.maxHeightCode.trim()) {
+        setMaxHeightCode(dataFields.maxHeightCode.trim());
+      }
+      if (typeof dataFields.far === "number" && dataFields.far > 0) {
+        setFarInput(String(dataFields.far));
+      }
+      const cat = dataFields.landUseCategory;
+      if (typeof cat === "string" && (Object.keys(LAND_USE_LABELS) as string[]).includes(cat)) {
+        setLandUse(cat as LandUse);
+      }
+
+      setParserSource("parser");
+      setParserConfidence(json.fields?.confidence ?? "low");
+      setParserWarnings(json.fields?.warnings ?? []);
+      setCoordsSeedKey((k) => k + 1);
+      setMode("review");
+    } catch (e) {
+      console.error("[wizard step1 parse-affection-plan]", e);
+      setDocError(
+        `Parser error: ${e instanceof Error ? e.message : "unknown"}`,
+      );
+      setMode("init");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Skip parser, go straight to manual entry (founder Q1 fallback).
+  // Affection Plan file is still required for save — user must come
+  // back and upload before hitting Continue.
+  function handleManualEntryFallback() {
+    setParserSource("manual");
+    setParserConfidence(null);
+    setParserWarnings([]);
+    setSeedText("");
+    setSeedProjection(undefined);
+    setCoordsSeedKey((k) => k + 1);
+    setMode("review");
+  }
+
+  // Path of the uploaded PDF (set during handleParseDocument or, when
+  // the user took the manual-entry fallback, set inside
+  // handleContinueManual). Cached so the Continue flow doesn't
+  // double-upload.
+  const uploadedPathRef = useRef<string | null>(null);
 
   const canLookup =
     !!plotNumber.match(/^\d{5,10}$/) && !loading;
@@ -190,35 +407,41 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
     }
     setUploading(true);
     setDocError(null);
-    let affectionPlanPath: string | null = null;
+    // Reuse the path captured during handleParseDocument if it ran;
+    // if the user took the manual-entry fallback, the file hasn't
+    // been uploaded yet so do it now.
+    let affectionPlanPath: string | null = uploadedPathRef.current;
     try {
-      const { data: sess } = await supabaseBrowser.auth.getSession();
-      const userId = sess.session?.user.id;
-      if (!userId) {
-        setDocError("Sign in expired — please sign in again.");
-        setUploading(false);
-        return;
+      if (!affectionPlanPath) {
+        const { data: sess } = await supabaseBrowser.auth.getSession();
+        const userId = sess.session?.user.id;
+        if (!userId) {
+          setDocError("Sign in expired — please sign in again.");
+          setUploading(false);
+          return;
+        }
+        const ext =
+          affectionFile.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
+        // RLS: first folder must be the caller's userId. Vault uploads
+        // live under <userId>/vault-affection-plans/<plotNumber>/ so
+        // admin-side review surfaces (Sprint 2) can distinguish them
+        // from cohort-pilot title deeds also stored in this bucket.
+        const path = `${userId}/vault-affection-plans/${plotNumber}/${Date.now()}.${ext}`;
+        const { error } = await supabaseBrowser.storage
+          .from(VAULT_DOC_BUCKET)
+          .upload(path, affectionFile, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: affectionFile.type || undefined,
+          });
+        if (error) {
+          setDocError(`Upload failed: ${error.message}`);
+          setUploading(false);
+          return;
+        }
+        affectionPlanPath = path;
+        uploadedPathRef.current = path;
       }
-      const ext =
-        affectionFile.name.split(".").pop()?.toLowerCase().slice(0, 8) || "bin";
-      // RLS: first folder must be the caller's userId. Vault uploads
-      // live under <userId>/vault-affection-plans/<plotNumber>/ so
-      // admin-side review surfaces (Sprint 2) can distinguish them
-      // from cohort-pilot title deeds also stored in this bucket.
-      const path = `${userId}/vault-affection-plans/${plotNumber}/${Date.now()}.${ext}`;
-      const { error } = await supabaseBrowser.storage
-        .from(VAULT_DOC_BUCKET)
-        .upload(path, affectionFile, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: affectionFile.type || undefined,
-        });
-      if (error) {
-        setDocError(`Upload failed: ${error.message}`);
-        setUploading(false);
-        return;
-      }
-      affectionPlanPath = path;
     } catch (e) {
       setDocError(
         `Upload error: ${e instanceof Error ? e.message : "unknown"}`,
@@ -338,139 +561,299 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
 
       {lookupResult?.source === "not_found" && (
         <div style={resultBlockStyle}>
-          <div style={{ color: TEXT_DIM, marginBottom: 12, fontSize: 12 }}>
-            This plot isn&apos;t in DDA. Enter the corner coordinates
-            from your site plan or Affection Plan — we&apos;ll build the
-            polygon and put it on the map.
-          </div>
-
-          <Field label="District">
-            <input
-              type="text"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              placeholder="e.g. Al Barari"
-              style={inputStyle}
-            />
-          </Field>
-
-          <div style={{ marginTop: 14 }}>
-            <CoordsEntry
-              emirate={emirate}
-              onChange={setCoords}
-            />
-          </div>
-
-          {/* Land use is mandatory for 3D color even on vault. Floor
-              count drives 3D extrusion — optional on vault (D7); without
-              it the plot renders as a flat 2D polygon. */}
-          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Land use (drives 3D colour)">
-              <select
-                value={landUse}
-                onChange={(e) => setLandUse(e.target.value as LandUse | "")}
-                style={inputStyle}
-              >
-                <option value="">— Select —</option>
-                {(Object.keys(LAND_USE_LABELS) as LandUse[]).map((k) => (
-                  <option key={k} value={k}>
-                    {LAND_USE_LABELS[k]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Max floors (optional, drives 3D height)">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={maxFloorsInput}
-                onChange={(e) =>
-                  setMaxFloorsInput(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
-                }
-                placeholder="e.g. 5"
-                style={inputStyle}
-              />
-            </Field>
-          </div>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label='Height code (optional, e.g. "G+7")'>
-              <input
-                type="text"
-                value={maxHeightCode}
-                onChange={(e) => setMaxHeightCode(e.target.value.slice(0, 12))}
-                placeholder="e.g. G+7+R"
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="FAR (optional)">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={farInput}
-                onChange={(e) =>
-                  setFarInput(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))
-                }
-                placeholder="e.g. 2.5"
-                style={inputStyle}
-              />
-            </Field>
-          </div>
-
-          {/* Affection Plan PDF — mandatory in Sprint 1. Sprint 3 will
-              auto-parse this via Claude vision; for now we just store
-              the file for reference (and admin verification on the
-              listing flow). */}
-          <div style={{ marginTop: 16 }}>
-            <Field label="Affection Plan PDF (required)">
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={(e) => pickAffectionFile(e.target.files?.[0] ?? null)}
-                style={{
-                  ...inputStyle,
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                }}
-              />
-            </Field>
-            {affectionFile && (
-              <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 4 }}>
-                Selected: {affectionFile.name}{" "}
-                ({Math.round(affectionFile.size / 1024)} KB)
+          {/* ── Document-first flow (founder spec 2026-06-02) ──
+              Three sub-modes inside the not_found branch:
+                init     → file picker + skip-to-manual fallback
+                parsing  → Claude vision spinner
+                review   → CoordsEntry + data fields, pre-filled
+                           from the parser (or blank when the user
+                           skipped). Always landed in for explicit
+                           Confirm — parser is a suggestor, never
+                           autosaves. */}
+          {mode === "init" && (
+            <>
+              <div style={{ color: TEXT_DIM, marginBottom: 12, fontSize: 12 }}>
+                This plot isn&apos;t in DDA. Upload the Affection Plan
+                (or DCR for Abu Dhabi) — we&apos;ll read the corners,
+                area, FAR and floor count from it, then you confirm
+                on the map before saving.
               </div>
-            )}
-          </div>
 
-          {docError && (
-            <p style={{ ...errorStyle, marginTop: 10 }}>{docError}</p>
+              <Field label="Affection Plan PDF / image (required)">
+                <input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => pickAffectionFile(e.target.files?.[0] ?? null)}
+                  style={{
+                    ...inputStyle,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                  }}
+                />
+              </Field>
+              {affectionFile && (
+                <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 4 }}>
+                  Selected: {affectionFile.name}{" "}
+                  ({Math.round(affectionFile.size / 1024)} KB)
+                </div>
+              )}
+
+              {docError && (
+                <p style={{ ...errorStyle, marginTop: 10 }}>{docError}</p>
+              )}
+
+              <button
+                onClick={handleParseDocument}
+                disabled={!affectionFile || uploading}
+                style={
+                  affectionFile && !uploading
+                    ? { ...buttonStyle, marginTop: 16 }
+                    : { ...buttonDisabledStyle, marginTop: 16 }
+                }
+              >
+                Parse document →
+              </button>
+              <button
+                onClick={handleManualEntryFallback}
+                style={{
+                  ...buttonStyle,
+                  marginTop: 8,
+                  background: "transparent",
+                  border: `1px solid ${BORDER_SUBTLE}`,
+                  color: TEXT_DIM,
+                }}
+              >
+                Manual entry instead
+              </button>
+              <div style={{ fontSize: 10, color: TEXT_DIM, marginTop: 6 }}>
+                Use manual entry if your document doesn&apos;t parse
+                cleanly — the file is still required at the Confirm step.
+              </div>
+            </>
           )}
 
-          <button
-            onClick={handleContinueManual}
-            disabled={
-              uploading ||
-              district.trim().length === 0 ||
-              !coords?.polygon ||
-              !affectionFile
-            }
-            style={
-              !uploading &&
-              district.trim().length > 0 &&
-              !!coords?.polygon &&
-              !!affectionFile
-                ? { ...buttonStyle, marginTop: 16 }
-                : { ...buttonDisabledStyle, marginTop: 16 }
-            }
-          >
-            {uploading ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <Spinner size={14} />
-                Uploading document…
-              </span>
-            ) : (
-              "Continue with manual entry →"
-            )}
-          </button>
+          {mode === "parsing" && (
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <Spinner size={28} />
+              <div style={{ marginTop: 14, color: TEXT_PRIMARY, fontSize: 13 }}>
+                Reading the document…
+              </div>
+              <div style={{ marginTop: 4, color: TEXT_DIM, fontSize: 11 }}>
+                Usually 3–8 seconds.
+              </div>
+            </div>
+          )}
+
+          {mode === "review" && (
+            <>
+              {/* Parser provenance banner — colour depends on confidence. */}
+              {parserSource === "parser" && (
+                <div
+                  style={{
+                    padding: 10,
+                    marginBottom: 12,
+                    borderRadius: 6,
+                    border: `1px solid ${
+                      parserConfidence === "high"
+                        ? "rgba(45, 106, 79, 0.6)"
+                        : parserConfidence === "partial"
+                          ? "rgba(230, 126, 34, 0.6)"
+                          : "rgba(230, 126, 34, 0.4)"
+                    }`,
+                    background:
+                      parserConfidence === "high"
+                        ? "rgba(45, 106, 79, 0.10)"
+                        : "rgba(230, 126, 34, 0.10)",
+                    fontSize: 12,
+                    color: TEXT_PRIMARY,
+                  }}
+                >
+                  <strong>
+                    {parserConfidence === "high"
+                      ? "✓ Parsed from document — verify before save"
+                      : parserConfidence === "partial"
+                        ? "⚠ Partially parsed — fill the gaps and verify"
+                        : "⚠ Low-confidence parse — review everything below"}
+                  </strong>
+                  {parserWarnings.length > 0 && (
+                    <ul style={{ margin: "6px 0 0 18px", padding: 0 }}>
+                      {parserWarnings.slice(0, 6).map((w, i) => (
+                        <li key={i} style={{ marginBottom: 2 }}>
+                          {w}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {parserSource === "manual" && parserWarnings.length > 0 && (
+                <div
+                  style={{
+                    padding: 10,
+                    marginBottom: 12,
+                    borderRadius: 6,
+                    border: "1px solid rgba(230, 126, 34, 0.5)",
+                    background: "rgba(230, 126, 34, 0.10)",
+                    fontSize: 12,
+                    color: TEXT_PRIMARY,
+                  }}
+                >
+                  {parserWarnings[0]}
+                </div>
+              )}
+
+              <Field label="District">
+                <input
+                  type="text"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  placeholder="e.g. Al Barari"
+                  style={inputStyle}
+                />
+              </Field>
+
+              <div style={{ marginTop: 14 }}>
+                <CoordsEntry
+                  key={coordsSeedKey}
+                  emirate={emirate}
+                  initialText={seedText}
+                  initialProjection={seedProjection}
+                  onChange={setCoords}
+                />
+              </div>
+
+              <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Field label="Land use (drives 3D colour)">
+                  <select
+                    value={landUse}
+                    onChange={(e) => setLandUse(e.target.value as LandUse | "")}
+                    style={inputStyle}
+                  >
+                    <option value="">— Select —</option>
+                    {(Object.keys(LAND_USE_LABELS) as LandUse[]).map((k) => (
+                      <option key={k} value={k}>
+                        {LAND_USE_LABELS[k]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Max floors (optional, drives 3D height)">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={maxFloorsInput}
+                    onChange={(e) =>
+                      setMaxFloorsInput(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
+                    }
+                    placeholder="e.g. 5"
+                    style={inputStyle}
+                  />
+                </Field>
+              </div>
+              <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Field label='Height code (optional, e.g. "G+7")'>
+                  <input
+                    type="text"
+                    value={maxHeightCode}
+                    onChange={(e) => setMaxHeightCode(e.target.value.slice(0, 12))}
+                    placeholder="e.g. G+7+R"
+                    style={inputStyle}
+                  />
+                </Field>
+                <Field label="FAR (optional)">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={farInput}
+                    onChange={(e) =>
+                      setFarInput(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))
+                    }
+                    placeholder="e.g. 2.5"
+                    style={inputStyle}
+                  />
+                </Field>
+              </div>
+
+              {/* Affection Plan picker — for the manual-entry fallback
+                  path where the file wasn't uploaded during parsing. */}
+              {!uploadedPathRef.current && (
+                <div style={{ marginTop: 16 }}>
+                  <Field label="Affection Plan PDF / image (required)">
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      onChange={(e) => pickAffectionFile(e.target.files?.[0] ?? null)}
+                      style={{
+                        ...inputStyle,
+                        padding: "8px 10px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </Field>
+                  {affectionFile && (
+                    <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 4 }}>
+                      Selected: {affectionFile.name}{" "}
+                      ({Math.round(affectionFile.size / 1024)} KB)
+                    </div>
+                  )}
+                </div>
+              )}
+              {uploadedPathRef.current && affectionFile && (
+                <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 12 }}>
+                  Document on file: {affectionFile.name}
+                  {parserSource === "parser" ? " (parsed)" : ""}
+                </div>
+              )}
+
+              {docError && (
+                <p style={{ ...errorStyle, marginTop: 10 }}>{docError}</p>
+              )}
+
+              <button
+                onClick={handleContinueManual}
+                disabled={
+                  uploading ||
+                  district.trim().length === 0 ||
+                  !coords?.polygon ||
+                  !affectionFile
+                }
+                style={
+                  !uploading &&
+                  district.trim().length > 0 &&
+                  !!coords?.polygon &&
+                  !!affectionFile
+                    ? { ...buttonStyle, marginTop: 16 }
+                    : { ...buttonDisabledStyle, marginTop: 16 }
+                }
+              >
+                {uploading ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <Spinner size={14} />
+                    Saving…
+                  </span>
+                ) : (
+                  "Save & continue →"
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setMode("init");
+                  setParserSource(null);
+                  setParserConfidence(null);
+                  setParserWarnings([]);
+                }}
+                style={{
+                  ...buttonStyle,
+                  marginTop: 8,
+                  background: "transparent",
+                  border: `1px solid ${BORDER_SUBTLE}`,
+                  color: TEXT_DIM,
+                }}
+              >
+                ← Re-upload / re-parse
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
