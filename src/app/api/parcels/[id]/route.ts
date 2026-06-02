@@ -100,24 +100,28 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   return NextResponse.json(serialize(updated));
 }
 
-// DELETE /api/parcels/:id  — only the owner.
-export async function DELETE(req: NextRequest, { params }: Ctx) {
-  const userId = await getApprovedUserId(req);
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
-  // CLAUDE.md "NEVER delete parcels — ever" — this handler is kept
-  // defensively intact. Same LOCK-8 gating as PATCH so the rule is
-  // consistent if a future surface ever invokes DELETE.
-  const { id } = await params;
-  const existing = await prisma.parcel.findUnique({
-    where: { id },
-    select: { ownerId: true, verifiedOwnerUserId: true },
-  });
-  if (!existing) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (existing.ownerId !== userId && existing.verifiedOwnerUserId !== userId) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
-
-  await prisma.parcel.delete({ where: { id } });
-  return new NextResponse(null, { status: 204 });
+// DELETE /api/parcels/:id  — disabled. Parcels are never deleted from
+// the database (CLAUDE.md "NEVER delete parcels — ever"). The platform
+// instead transitions a parcel through its ParcelStatus lifecycle
+// (PENDING_REVIEW → REJECTED for failed reviews, LISTED → IN_DEAL →
+// SOLD for live trades, etc) so the row is preserved for audit, deal
+// history, AffectionPlan provenance, and LOCK-8 owner-immutability.
+//
+// 2026-06-02 diagnostic finding: the previous handler claimed to be
+// "kept defensively intact" but actually called prisma.parcel.delete().
+// No client surface invoked it, but the latent endpoint contradicted
+// the invariant the comment claimed to defend. Switched to an explicit
+// 405 Method Not Allowed so the rule is enforced at the HTTP boundary.
+// If a future surface needs to "remove" a parcel from user-facing
+// views, route it through PATCH with status: "REJECTED" or
+// status: "FROZEN" instead — the row stays.
+export async function DELETE(_req: NextRequest, _ctx: Ctx) {
+  return NextResponse.json(
+    {
+      error: 'method_not_allowed',
+      message:
+        'Parcels cannot be deleted. Use PATCH with status REJECTED or FROZEN to retire a listing without losing the row.',
+    },
+    { status: 405, headers: { Allow: 'GET, PATCH' } },
+  );
 }
