@@ -3305,6 +3305,15 @@ function ParcelsMapPageInner() {
 
   // ── Map filter composition (Phase 2 archie client, 2026-05-30) ──
   //
+  // Wave 1 (Filter Panel, 2026-06-02): the same Archie filter refs now
+  // also drive the PMTiles overlay (99K DDA + ~362K AD). buildZaahiFilter
+  // still composes the 114 ZAAHI listings' filter; the new
+  // buildPmtilesFilter (declared next to applyZaahiExclusionToTileLayers
+  // below) composes tier-base + ZAAHI plot-number exclusion + the same
+  // Archie refs, translated through zaahiStatusToPmtilesValues for the
+  // ParcelStatus → CONSTRUCTION_STATUS gap. reapplyMapFilters now also
+  // calls applyZaahiExclusionToTileLayers so all 12 layers stay in sync.
+  //
   // ONE filter per layer is a maplibre invariant. Four sources of
   // truth feed the composite filter on the ZAAHI plot/building layers:
   //   • vault-mode DIRECTION (always active)   — see below
@@ -3348,6 +3357,12 @@ function ParcelsMapPageInner() {
         map.setFilter(lid, expr);
       }
     }
+    // Wave 1: propagate Archie landUse/status filters to PMTiles too.
+    // applyZaahiExclusionToTileLayers now composes everything (tier base
+    // + ZAAHI exclusion + Archie filters) via buildPmtilesFilter, so
+    // calling it here keeps the 9 PMTiles layers in sync with the 3
+    // ZAAHI layers we just updated.
+    applyZaahiExclusionToTileLayers(map);
   }
 
   // ── Private Plot Vault — Phase 3 (2026-05-30) ────────────────────
@@ -3557,32 +3572,89 @@ function ParcelsMapPageInner() {
   // Reads vaultOnlyModeRef + the two split refs — both kept in sync by
   // loadZaahiPlots and the vault-only useEffect. Safe to call from
   // either; setFilter atomically replaces the previous filter.
-  function applyZaahiExclusionToTileLayers(map: MLMap) {
+  // ── Wave 1: unified status mapping (ParcelStatus → DDA values) ──
+  //
+  // Bridges the two enum spaces: ZAAHI ParcelStatus (LISTED/VERIFIED/
+  // IN_DEAL/SOLD/VAULT_PRIVATE) ↔ raw DDA CONSTRUCTION_STATUS strings
+  // baked into PMTiles ("Vacant" / "Not Started" / "Under Construction"
+  // / "Completed" / ""). Returns:
+  //   • string[] of CONSTRUCTION_STATUS values to match
+  //   • [] when nothing to constrain (don't filter PMTiles by status)
+  //   • null when the ZAAHI state has no PMTiles equivalent — caller
+  //     hides all PMTiles by appending ["literal", false].
+  // Wave 2 unified-UI chips ("Built" / "Under construction") will plug
+  // in here via additional cases — the mapping table stays the only
+  // place that knows the CONSTRUCTION_STATUS vocabulary.
+  function zaahiStatusToPmtilesValues(zs: string): string[] | null {
+    switch (zs) {
+      case "LISTED":
+      case "VERIFIED":
+        // "Vacant / For sale" bucket — DDA's pre-construction states.
+        return ["Vacant", "Not Started", ""];
+      case "IN_DEAL":
+      case "SOLD":
+      case "VAULT_PRIVATE":
+        // ZAAHI-only states — DDA registry has no equivalent.
+        return null;
+      default:
+        return [];
+    }
+  }
+
+  // Compose one PMTiles layer's full filter: tier base + ZAAHI plot-
+  // number exclusion + active Archie filters. layerKind selects the
+  // tier predicate (FILL/LINE draw "flat" features; 3D draws non-flat
+  // podium/body/crown tiers). Called from applyZaahiExclusionToTileLayers
+  // — which itself runs both after loadZaahiPlots populates the
+  // exclusion sets AND after reapplyMapFilters whenever an Archie /
+  // panel filter mutation happens.
+  function buildPmtilesFilter(layerKind: "fill" | "line" | "3d"): FilterSpecification {
+    const tierBase: FilterSpecification = layerKind === "3d"
+      ? ["!=", ["get", "tier"], "flat"]
+      : ["==", ["get", "tier"], "flat"];
+
     const excludeSet = vaultOnlyModeRef.current
       ? new Set<string>(zaahiVaultPnRef.current)
       : new Set<string>(zaahiListingPnRef.current);
-    const exclude: maplibregl.FilterSpecification = [
+    const exclude: FilterSpecification = [
       "!",
       ["in", ["get", "plotNumber"], ["literal", [...excludeSet]]],
     ];
-    const flatBase: maplibregl.FilterSpecification = ["==", ["get", "tier"], "flat"];
-    const tierBase: maplibregl.FilterSpecification = ["!=", ["get", "tier"], "flat"];
 
+    const parts: FilterSpecification[] = [tierBase, exclude];
+
+    if (archieLandUseRef.current) {
+      parts.push(["==", ["get", "landUse"], archieLandUseRef.current]);
+    }
+    if (archieStatusRef.current) {
+      const ddaList = zaahiStatusToPmtilesValues(archieStatusRef.current);
+      if (ddaList === null) {
+        // ZAAHI-only status — no PMTiles plot can satisfy.
+        parts.push(["literal", false] as FilterSpecification);
+      } else if (ddaList.length > 0) {
+        parts.push(["in", ["get", "status"], ["literal", ddaList]] as FilterSpecification);
+      }
+    }
+
+    return ["all", ...parts] as FilterSpecification;
+  }
+
+  function applyZaahiExclusionToTileLayers(map: MLMap) {
     const FILL_LAYERS = [DDA_LAND_TILES_FILL, AD_ADM_TILES_FILL, AD_OTHER_TILES_FILL];
     const LINE_LAYERS = [DDA_LAND_TILES_LINE, AD_ADM_TILES_LINE, AD_OTHER_TILES_LINE];
     const EXT_LAYERS  = [DDA_LAND_TILES_3D,   AD_ADM_TILES_3D,   AD_OTHER_TILES_3D];
 
     for (const id of FILL_LAYERS) {
       if (!map.getLayer(id)) continue;
-      map.setFilter(id, ["all", flatBase, exclude]);
+      map.setFilter(id, buildPmtilesFilter("fill"));
     }
     for (const id of LINE_LAYERS) {
       if (!map.getLayer(id)) continue;
-      map.setFilter(id, ["all", flatBase, exclude]);
+      map.setFilter(id, buildPmtilesFilter("line"));
     }
     for (const id of EXT_LAYERS) {
       if (!map.getLayer(id)) continue;
-      map.setFilter(id, ["all", tierBase, exclude]);
+      map.setFilter(id, buildPmtilesFilter("3d"));
     }
   }
 
@@ -4989,10 +5061,29 @@ function ParcelsMapPageInner() {
     setVaultOnly: (enabled) => setVaultOnlyMode(enabled),
     filterByLandUse: (cat) => {
       archieLandUseRef.current = cat;
+      // Wave 1: auto-enable PMTiles overlays so the filter is visible
+      // when a realtor asks "show me schools" without manually toggling
+      // the Layers panel. No-op when both layers are already on; we
+      // intentionally don't auto-enable on clear (cat == null) so a
+      // user who explicitly turned the layer off doesn't get it back.
+      if (cat) {
+        setLayers((s) =>
+          s.ddaLandPlots && s.adLandPlots
+            ? s
+            : { ...s, ddaLandPlots: true, adLandPlots: true },
+        );
+      }
       reapplyMapFilters();
     },
     filterByStatus: (st) => {
       archieStatusRef.current = st;
+      if (st) {
+        setLayers((s) =>
+          s.ddaLandPlots && s.adLandPlots
+            ? s
+            : { ...s, ddaLandPlots: true, adLandPlots: true },
+        );
+      }
       reapplyMapFilters();
     },
     searchPlot: async (plotNumber) => {
