@@ -1939,9 +1939,72 @@ function ParcelsMapPageInner() {
   // resolves inside loadZaahiPlots so the panel's District multi-select
   // has real options.
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
+  // Live count of features visible inside the current viewport.
+  // Computed via queryRenderedFeatures, debounced 500ms on moveend and
+  // also after every filterState change. PMTiles count is "in viewport
+  // only" because tile-level features have no global index — the panel
+  // surfaces that honestly in its tooltip.
+  const [visibleCount, setVisibleCount] = useState<{ listings: number; pmtiles: number } | undefined>(undefined);
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filterState),
+    [filterState],
+  );
   useEffect(() => {
     vaultOnlyModeRef.current = vaultOnlyMode;
   }, [vaultOnlyMode]);
+
+  // ── Wave 2 C3: live visible-feature counter (2026-06-02) ──
+  // Only runs while the FilterPanel is open — otherwise we don't pay
+  // the queryRenderedFeatures cost on every map move. PMTiles count
+  // is viewport-bound (no global index); listings count is precise
+  // since the 114 features are all loaded into the GeoJSON source.
+  // Layer ID strings duplicated from the inner scope at L3499+; both
+  // must stay in sync if those constants are ever renamed.
+  useEffect(() => {
+    if (!filterPanelOpen) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const ZAAHI_FILL = "zaahi-plots-fill";
+    const PMTILES_FILLS = [
+      "dda-land-tiles-fill",
+      "ad-adm-tiles-fill",
+      "ad-other-tiles-fill",
+    ];
+    let timer: number | null = null;
+    function compute() {
+      if (!map) return;
+      try {
+        const zaahiLayers = map.getLayer(ZAAHI_FILL) ? [ZAAHI_FILL] : [];
+        const pmtilesLayers = PMTILES_FILLS.filter((id) => map.getLayer(id));
+        const listingFeats = zaahiLayers.length
+          ? map.queryRenderedFeatures({ layers: zaahiLayers })
+          : [];
+        const pmtilesFeats = pmtilesLayers.length
+          ? map.queryRenderedFeatures({ layers: pmtilesLayers })
+          : [];
+        // De-dupe across tier-stacked PMTiles features (one plot
+        // can have podium/body/crown tiers — count the plot once).
+        const listingIds = new Set(listingFeats.map((f) => f.id));
+        const pmtilesIds = new Set(
+          pmtilesFeats.map((f) => String((f.properties as { plotNumber?: string })?.plotNumber ?? f.id)),
+        );
+        setVisibleCount({ listings: listingIds.size, pmtiles: pmtilesIds.size });
+      } catch {
+        // queryRenderedFeatures can throw mid-style-swap — silent recover.
+      }
+    }
+    function debounced() {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(compute, 500);
+    }
+    map.on("moveend", debounced);
+    // Initial measurement — wait a tick for the current filter to flush.
+    timer = window.setTimeout(compute, 200);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      map.off("moveend", debounced);
+    };
+  }, [filterPanelOpen, filterState]);
 
   // ── Wave 2: filter state → refs sync (2026-06-02) ──
   // Mirror the canonical React state into the refs that build*Filter()
@@ -5858,17 +5921,53 @@ function ParcelsMapPageInner() {
             the right rail is documented as 5×5 symmetric (founder
             spec 2026-05-24). Visually grouped with Layers (also left
             rail) since both gate map content: Layers = which overlays
-            are drawn, Filters = which features within them are kept. */}
-        <ChromeBtn
-          title={filterPanelOpen ? "Close filters" : "Filters"}
-          active={filterPanelOpen}
-          onClick={() => setFilterPanelOpen((o) => !o)}
-        >
-          {/* Funnel — minimalist filter glyph. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-          </svg>
-        </ChromeBtn>
+            are drawn, Filters = which features within them are kept.
+            Badge overlay shows active filter dimension count (C3). */}
+        <span style={{ position: "relative", display: "inline-block" }}>
+          <ChromeBtn
+            title={
+              filterPanelOpen
+                ? "Close filters"
+                : activeFilterCount > 0
+                  ? `Filters · ${activeFilterCount} active`
+                  : "Filters"
+            }
+            active={filterPanelOpen}
+            onClick={() => setFilterPanelOpen((o) => !o)}
+          >
+            {/* Funnel — minimalist filter glyph. */}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </ChromeBtn>
+          {activeFilterCount > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                minWidth: 16,
+                height: 16,
+                padding: "0 4px",
+                background: "#C8A96E",
+                color: "#1A1A2E",
+                borderRadius: 8,
+                fontSize: 10,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontVariantNumeric: "tabular-nums",
+                pointerEvents: "none",
+                lineHeight: 1,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.4)",
+              }}
+              aria-label={`${activeFilterCount} filters active`}
+            >
+              {activeFilterCount}
+            </span>
+          )}
+        </span>
         {/* Parcels portal toggle moved to the bottom-centre ParcelsNav
             pill (founder spec 2026-05-29). portalOpen state and
             ParcelsPortalPanel rendering stay untouched. */}
@@ -5974,6 +6073,7 @@ function ParcelsMapPageInner() {
         onChange={(next) => setFilterState(next)}
         onReset={() => setFilterState(EMPTY_FILTER_STATE)}
         availableDistricts={availableDistricts}
+        visibleCount={visibleCount}
       />
 
       {layersOpen && (

@@ -61,6 +61,24 @@ interface FilterPanelProps {
 }
 
 const COMMIT_DEBOUNCE_MS = 250;
+const MOBILE_BREAKPOINT = 640;
+
+// Lightweight viewport-width hook — SSR-safe (returns desktop width on
+// the server then re-measures on mount). Used to switch the panel
+// between desktop side-rail and mobile bottom-sheet layouts.
+function useViewportWidth(): number {
+  const [width, setWidth] = useState<number>(
+    typeof window === "undefined" ? 1024 : window.innerWidth,
+  );
+  useEffect(() => {
+    function onResize() {
+      setWidth(window.innerWidth);
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return width;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -356,21 +374,41 @@ export default function FilterPanel({
     onReset();
   };
 
+  const vw = useViewportWidth();
+  const isMobile = vw < MOBILE_BREAKPOINT;
+
   if (!open) return null;
 
-  return (
-    <div
-      style={{
+  // Desktop = right-side rail (350px, 100px from top, near-full-height).
+  // Mobile = bottom-sheet (full-width, 70vh max, rounded top corners).
+  // Wave 5 will add snap points + drag handle; Wave 2 keeps it static.
+  const positionStyle: React.CSSProperties = isMobile
+    ? {
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: "100%",
+        maxHeight: "70vh",
+        borderRadius: "12px 12px 0 0",
+      }
+    : {
         position: "absolute",
         right: 60,
         top: 64,
         width: 350,
         maxHeight: "calc(100vh - 100px)",
+        borderRadius: 12,
+      };
+
+  return (
+    <div
+      style={{
+        ...positionStyle,
         background: "rgba(10, 22, 40, 0.4)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         border: "1px solid rgba(255, 255, 255, 0.1)",
-        borderRadius: 12,
         boxShadow: "0 6px 20px rgba(0, 0, 0, 0.2)",
         zIndex: 12,
         display: "flex",
