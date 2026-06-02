@@ -1,6 +1,10 @@
 node_modules/
 .next/
 tsconfig.tsbuildinfo
+# Local wrangler / miniflare emulator state from `wrangler r2 ...`
+# without --remote (gets created automatically by the v4 CLI even on
+# upload calls). Never commit — leaks the entire local PMTiles blob.
+.wrangler/
 # data/layers/ is the source of truth for map overlays — must ship to
 # Vercel via git, otherwise every /api/layers/* route 500s with ENOENT.
 # Reference PDFs in data/meydan/ are not needed at runtime, stay ignored.

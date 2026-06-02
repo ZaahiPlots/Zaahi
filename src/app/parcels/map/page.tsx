@@ -303,6 +303,19 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
+// Hover-highlight target — shared by ZAAHI (geojson, stable string id)
+// and the three PMTiles fill layers (vector, tile-local integer id
+// auto-assigned by MapLibre). Founder spec 2026-06-02: ALL parcels
+// highlight on hover, including OPEN SPACE / UTILITIES rows whose
+// `plotNumber` is empty — that's why we rely on tile-local feature.id
+// instead of `promoteId: "plotNumber"`, which would collapse all
+// empty-plotNumber features into a single highlight group.
+type HoverFeatureRef = {
+  source: string;
+  sourceLayer?: string;
+  id: string | number;
+};
+
 // Apply / clear selection highlight on the ZAAHI plot + building layers.
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
@@ -313,13 +326,21 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (selectedId) {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
-      ["!=", ["get", "hasLandUse"], true], 0,
+      // Selected plot wins absolutely (above hover, above outline-only).
       ["==", ["get", "id"], sel], 0.85,
+      // Hover next — visible but yields to selection.
+      ["boolean", ["feature-state", "hover"], false], 0.6,
+      // Outline-only stays invisible (CLAUDE.md "outline-only when no
+      // land use") unless the user is selecting or hovering it.
+      ["!=", ["get", "hasLandUse"], true], 0,
       0.08,
     ]);
   } else {
     map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
       "case",
+      // Hover overrides the outline-only=0 baseline per founder Wave 2
+      // spec "ALL plots, including empty plotNumber, must highlight".
+      ["boolean", ["feature-state", "hover"], false], 0.7,
       ["==", ["get", "hasLandUse"], true], 0.4,
       0,
     ]);
@@ -1933,6 +1954,55 @@ function ParcelsMapPageInner() {
   const filterPriceRangeRef = useRef<FilterState["priceRange"]>(null);
   const filterDistrictsRef = useRef<string[]>([]);
 
+  // Wave 2 hover highlight (2026-06-02). Tracks the last hovered
+  // feature so the next setHoverFeature call can clear it before
+  // flipping the new one — mousemove naturally crosses parcel
+  // boundaries without a mouseleave between, so we self-manage the
+  // transition. mouseleave clears immediately; the 220 ms popup-
+  // card close defer (hoverCloseTimerRef) is independent.
+  const hoverFeatureRef = useRef<HoverFeatureRef | null>(null);
+
+  function clearHoverFeature(m: MLMap) {
+    const cur = hoverFeatureRef.current;
+    if (!cur) return;
+    try {
+      m.setFeatureState(
+        { source: cur.source, sourceLayer: cur.sourceLayer, id: cur.id },
+        { hover: false },
+      );
+    } catch {
+      // Source removed during basemap swap — safe to ignore.
+    }
+    hoverFeatureRef.current = null;
+  }
+
+  function setHoverFeature(
+    m: MLMap,
+    source: string,
+    sourceLayer: string | undefined,
+    id: string | number | undefined,
+  ) {
+    if (id === undefined || id === null) return;
+    const cur = hoverFeatureRef.current;
+    if (cur && cur.source === source && cur.id === id) return;
+    if (cur) {
+      try {
+        m.setFeatureState(
+          { source: cur.source, sourceLayer: cur.sourceLayer, id: cur.id },
+          { hover: false },
+        );
+      } catch {
+        // Source removed during basemap swap — safe to ignore.
+      }
+    }
+    try {
+      m.setFeatureState({ source, sourceLayer, id }, { hover: true });
+      hoverFeatureRef.current = { source, sourceLayer, id };
+    } catch {
+      // Source not yet attached — leave ref null, next mousemove retries.
+    }
+  }
+
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   // Distinct ZAAHI listing districts — populated after /api/parcels/map
@@ -3309,11 +3379,15 @@ function ParcelsMapPageInner() {
             filter: initialFilter,
             paint: {
               "fill-color": ["get", "color"],
-              // 0.4 when DDA has assigned a land use, 0 (outline-only) when not.
+              // 0.4 baseline when DDA assigned a land use, 0 outline-only.
+              // Hover lifts to 0.7 regardless of hasLandUse per founder
+              // Wave 2 spec. applySelectionPaint overwrites this on the
+              // first useEffect tick — the initial value covers the
+              // single frame before that fires.
               "fill-opacity": [
                 "case",
-                ["==", ["get", "hasLandUse"], true],
-                0.4,
+                ["boolean", ["feature-state", "hover"], false], 0.7,
+                ["==", ["get", "hasLandUse"], true], 0.4,
                 0,
               ],
               "fill-opacity-transition": { duration: 300 },
@@ -3916,7 +3990,17 @@ function ParcelsMapPageInner() {
       filter: ["==", ["get", "tier"], "flat"],
       paint: {
         "fill-color": ["get", "color"],
-        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.1, 13, 0.35],
+        // Wave 2 hover (founder spec 2026-06-02): 0.75 when this feature
+        // is the hover target, else zoom-interpolated baseline 0.1 (z10)
+        // → 0.35 (z13+). Tile-local feature ID is what feature-state
+        // keys on — works for ALL plots including those with empty
+        // plotNumber. Cross-tile boundary plots highlight only the
+        // tile under the cursor (rare at typical hover zoom z15+).
+        "fill-opacity": [
+          "case",
+          ["boolean", ["feature-state", "hover"], false], 0.75,
+          ["interpolate", ["linear"], ["zoom"], 10, 0.1, 13, 0.35],
+        ],
     }});
     // 2D line — only "flat" features
     map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" },
@@ -3952,6 +4036,12 @@ function ParcelsMapPageInner() {
         const upper = map.queryRenderedFeatures(e.point, { layers: blockingLayers });
         if (upper.length > 0) {
           setDdaLandHover(null);
+          // Founder spec 2026-06-02 Wave 2: also drop any lingering
+          // PMTiles hover-highlight so a neighbouring DDA plot doesn't
+          // stay glowing when the cursor drifts onto a ZAAHI listing
+          // overlay. The ZAAHI mousemove that fires on the same frame
+          // will then set hover on the listing instead.
+          clearHoverFeature(map);
           return;
         }
       }
@@ -3962,6 +4052,11 @@ function ParcelsMapPageInner() {
         hoverCloseTimerRef.current = null;
       }
       map.getCanvas().style.cursor = "pointer";
+      // Wave 2 hover highlight on PMTiles plots — vector source uses
+      // tile-local feature.id auto-assigned by MapLibre, so every plot
+      // (incl OPEN SPACE / UTILITIES with empty plotNumber) gets a
+      // unique highlight target within its rendered tile.
+      setHoverFeature(map, srcId, "plots", f.id);
       // Symmetric hover dedup (founder spec 2026-05-31): when PMTiles
       // activates, kill ZAAHI + vault state too. The priority gate
       // above only checks whether the cursor is STILL over ZAAHI on
@@ -3998,6 +4093,10 @@ function ParcelsMapPageInner() {
     // cancellable by the popup's onMouseEnter.
     map.on("mouseleave", fillId, () => {
       map.getCanvas().style.cursor = "";
+      // Wave 2 hover-highlight cleared immediately. The 220 ms popup
+      // card defer below is independent (it lets the cursor transit
+      // onto the now-clickable hover card without it vanishing).
+      clearHoverFeature(map);
       if (hoverCloseTimerRef.current != null) {
         window.clearTimeout(hoverCloseTimerRef.current);
       }
@@ -4489,6 +4588,9 @@ function ParcelsMapPageInner() {
             hoverCloseTimerRef.current = null;
           }
           map.getCanvas().style.cursor = "pointer";
+          // Wave 2 hover highlight on the polygon itself. f.id is the
+          // stable string id baked into the ZAAHI plotFeatures source.
+          setHoverFeature(map, ZAAHI_PLOTS_SRC, undefined, f.id);
           const p = f.properties as {
             id?: string;
             plotNumber: string;
@@ -4555,6 +4657,10 @@ function ParcelsMapPageInner() {
         });
         map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
+          // Hover-highlight state cleared immediately (the 220 ms
+          // popup-card defer below is independent — that one buys time
+          // for the cursor to transit onto the now-clickable card).
+          clearHoverFeature(map);
           // Defer close ~220 ms so the cursor can transit onto the now
           // clickable card without it vanishing. Card's onMouseEnter
           // cancels the timer; onMouseLeave closes immediately.
