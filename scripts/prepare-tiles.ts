@@ -52,10 +52,34 @@ function scaleRingFromCentroid(ring: number[][], scale: number): number[][] {
 
 // ── Land use parsers ──
 
-function parseDdaLandUse(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const parts = raw.split(/\s*-\s*/);
+// DDA taxonomy quirk (2026-06-02 diagnosis): schools / hospitals /
+// clinics are stored as MAIN_LANDUSE = "FACILITIES" (sometimes
+// compound like "COMMERCIAL - FACILITIES") with the actual kind in
+// SUB_LANDUSE — "SCHOOL", "CHILDREN NURSERY", "UNIVERSITY",
+// "KINDERGARTEN", "CLINIC", "PRIVATE HOSPITAL". The pre-fix parser
+// looked only at MAIN_LANDUSE → 0 of 99K DDA plots ever became
+// EDUCATIONAL or HEALTHCARE despite 299 + 242 actually being in the
+// registry. The fix: when MAIN contains "FACILITIES" (alone or as a
+// component) AND SUB carries an education / healthcare keyword, add
+// the matching category to the cats set. Combined mains like
+// "COMMERCIAL - FACILITIES" + sub "CHILDREN NURSERY" now correctly
+// produce MIXED_USE (commercial + educational), which the Sub-side
+// detection wouldn't otherwise reach.
+//
+// Edge case: "PLANT NURSERY" (3 DDA plots) is a real plant nursery,
+// not a children's nursery — explicitly excluded from the educational
+// detection so it stays in the bucket the main MAIN_LANDUSE regex
+// gave it (typically null / agricultural-ish).
+function parseDdaLandUse(
+  main: string | null | undefined,
+  sub?: string | null | undefined,
+): string | null {
+  if (!main && !sub) return null;
+  const mainStr = main ?? "";
+  const subStr = sub ?? "";
+  const parts = mainStr.split(/\s*-\s*/);
   const cats = new Set<string>();
+  let hasFacilitiesComponent = false;
   for (const p of parts) {
     const l = p.trim().toLowerCase();
     if (/residential|villa|townhouse|apartment/.test(l)) cats.add("RESIDENTIAL");
@@ -66,6 +90,25 @@ function parseDdaLandUse(raw: string | null | undefined): string | null {
     else if (/health|hospital|clinic|medical/.test(l)) cats.add("HEALTHCARE");
     else if (/agricult|farm/.test(l)) cats.add("AGRICULTURAL");
     else if (/future.*development/.test(l)) cats.add("FUTURE_DEVELOPMENT");
+    if (/facilities/.test(l)) hasFacilitiesComponent = true;
+  }
+  // When the plot has a FACILITIES component, consult SUB_LANDUSE for
+  // the kind. Substring match on the lowercased sub — DDA sub strings
+  // look like "APARTMENT - CHILDREN NURSERY - RETAIL"; a substring
+  // hit means at least one specific facility kind is present, and
+  // multi-kind subs naturally drop into MIXED_USE via cats.size > 1.
+  if (hasFacilitiesComponent && subStr) {
+    const subL = subStr.toLowerCase();
+    const isPlantNursery = /plant nursery/.test(subL);
+    if (
+      !isPlantNursery &&
+      /school|university|kindergarten|college|academy|educat|nursery/.test(subL)
+    ) {
+      cats.add("EDUCATIONAL");
+    }
+    if (/clinic|hospital|medical/.test(subL)) {
+      cats.add("HEALTHCARE");
+    }
   }
   if (cats.size > 1) return "MIXED_USE";
   if (cats.size === 1) return [...cats][0];
@@ -301,7 +344,7 @@ function processDdaDir(
       const status = (p.CONSTRUCTION_STATUS as string) ?? "";
       const floorsRaw = (p.MAX_HEIGHT_FLOORS as string) ?? "";
 
-      const landUse = parseDdaLandUse(mainLandUse);
+      const landUse = parseDdaLandUse(mainLandUse, subLandUse);
       const hasLandUse = landUse != null;
       const color = hasLandUse ? (ZAAHI_LANDUSE_COLOR[landUse] ?? DEFAULT_COLOR) : DEFAULT_COLOR;
 
