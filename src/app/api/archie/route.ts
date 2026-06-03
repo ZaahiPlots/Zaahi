@@ -699,7 +699,11 @@ If the tool result gives priceAed and the user picked USD, divide by 3.6725 and 
         authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        // 2026-06-03 — switched from gpt-4o ($2.50 in / $10 out per 1M)
+        // to gpt-5-nano ($0.05 in / $0.40 out) for ~43× cost reduction.
+        // Native OpenAI Chat Completions API, identical tool-calling
+        // schema, no other code changes. See research/archie-cost.
+        model: "gpt-5-nano",
         messages,
         tools: TOOLS,
         // "required" when the user's latest turn looks like a
