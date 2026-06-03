@@ -309,6 +309,57 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
+// ── Map event-listener leak guard (founder fix 2026-06-03) ─────────
+// MapLibre's setStyle() wipes layers/sources but NOT the internal
+// _delegateListeners registry. attachOverlays() + loadLayer() add
+// 25+ map.on() bindings on every style swap; without the cleanup
+// below, each swap doubles the active listener count → 5 swaps =
+// 5× click/hover handlers fire per event → Firefox locks up. The
+// registry stores an `off` closure per (event_type, layer/global)
+// key so each re-bind first removes the previous one. Module-scope
+// because only one map exists per page in ZAAHI; if that ever
+// changes the key must include a map id. See research/map-freeze-diag.
+const _layerEventRegistry = new Map<string, () => void>();
+
+function bindLayerEvent(
+  map: MLMap,
+  type: string,
+  layerId: string,
+  handler: (e: unknown) => void,
+): void {
+  const key = `${type}::${layerId}`;
+  const prevOff = _layerEventRegistry.get(key);
+  if (prevOff) {
+    try { prevOff(); } catch { /* layer may already be gone */ }
+  }
+  // Casts mirror MapLibre's overloaded on/off — the type union is
+  // unwieldy here but TypeScript can't narrow across the call site.
+  map.on(type as never, layerId, handler as never);
+  _layerEventRegistry.set(key, () => {
+    try { map.off(type as never, layerId, handler as never); } catch { /* ignore */ }
+  });
+}
+
+function bindGlobalMapEvent(
+  map: MLMap,
+  /** Unique name within the type — multiple global handlers for the
+   *  same MapLibre event coexist (e.g. zoomend has scheduleSave AND
+   *  cityAmbient). Without a name we'd clobber siblings. */
+  name: string,
+  type: string,
+  handler: (e: unknown) => void,
+): void {
+  const key = `_global::${type}::${name}`;
+  const prevOff = _layerEventRegistry.get(key);
+  if (prevOff) {
+    try { prevOff(); } catch { /* ignore */ }
+  }
+  map.on(type as never, handler as never);
+  _layerEventRegistry.set(key, () => {
+    try { map.off(type as never, handler as never); } catch { /* ignore */ }
+  });
+}
+
 // Apply / clear selection highlight on the ZAAHI plot + building layers.
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
@@ -1817,6 +1868,22 @@ function ParcelsMapPageInner() {
   loadedBuildingsRef.current = loadedBuildings;
   const [theme, setTheme] = useState<Theme>("light");
   const [baseMap, setBaseMap] = useState<BaseMap>("light");
+  // Throttle basemap swaps so impatient clicking can't queue multiple
+  // setStyle()s while the previous styledata handler is still loading
+  // (founder fix 2026-06-03 — companion to the listener-leak fix in
+  // attachOverlays). Each setStyle re-binds listeners and re-fetches
+  // tiles; bursting 3 swaps in 100 ms used to compound the leak before
+  // bindLayerEvent ran.
+  const [baseMapBusy, setBaseMapBusy] = useState(false);
+  const swapBaseMap = useCallback((target: BaseMap) => {
+    if (baseMapBusy) return;
+    setBaseMap((current) => {
+      if (current === target) return current;
+      setBaseMapBusy(true);
+      window.setTimeout(() => setBaseMapBusy(false), 600);
+      return target;
+    });
+  }, [baseMapBusy]);
   const [is3D, setIs3D] = useState(true);
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   const [zoom, setZoom] = useState(12);
@@ -2865,9 +2932,9 @@ function ParcelsMapPageInner() {
         const h = hoverHandlersRef.current;
         const fields = def.pointPopupFields ?? [];
         if (h.pointHover && h.pointLeave && h.pointClick) {
-          map.on("mousemove", def.symbolId, h.pointHover(def.label, fields));
-          map.on("mouseleave", def.symbolId, h.pointLeave);
-          map.on("click", def.symbolId, h.pointClick(def.label, fields));
+          bindLayerEvent(map, "mousemove", def.symbolId, h.pointHover(def.label, fields) as (e: unknown) => void);
+          bindLayerEvent(map, "mouseleave", def.symbolId, h.pointLeave as (e: unknown) => void);
+          bindLayerEvent(map, "click", def.symbolId, h.pointClick(def.label, fields) as (e: unknown) => void);
         }
       }
       if (def.kind === "dda" && def.lineId) {
@@ -2907,15 +2974,15 @@ function ParcelsMapPageInner() {
         }
         const h = hoverHandlersRef.current;
         if (h.ddaPlotHover && h.masterPlanLeave) {
-          map.on("mousemove", def.lineId, h.ddaPlotHover);
-          map.on("mouseleave", def.lineId, h.masterPlanLeave);
+          bindLayerEvent(map, "mousemove", def.lineId, h.ddaPlotHover as (e: unknown) => void);
+          bindLayerEvent(map, "mouseleave", def.lineId, h.masterPlanLeave as (e: unknown) => void);
         }
       }
       if (def.kind === "masterplan" && def.hoverLabel && def.lineId) {
         const h = hoverHandlersRef.current;
         if (h.masterPlanHover && h.masterPlanLeave) {
-          map.on("mousemove", def.lineId, h.masterPlanHover(def.hoverLabel));
-          map.on("mouseleave", def.lineId, h.masterPlanLeave);
+          bindLayerEvent(map, "mousemove", def.lineId, h.masterPlanHover(def.hoverLabel) as (e: unknown) => void);
+          bindLayerEvent(map, "mouseleave", def.lineId, h.masterPlanLeave as (e: unknown) => void);
         }
       }
       loadedLayersRef.current.add(def.key);
@@ -4016,8 +4083,11 @@ function ParcelsMapPageInner() {
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.45,
     }});
-    // Hover
-    map.on("mousemove", fillId, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+    // Hover — bindLayerEvent clears any previous binding for this
+    // (event, layer) pair so style swaps don't pile up extra hover
+    // callbacks. Same guard as the listeners in attachOverlays.
+    bindLayerEvent(map, "mousemove", fillId, (e0: unknown) => {
+      const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
       const f = e.features?.[0];
       if (!f) return;
       // Priority: ZAAHI listings + shared-vault outrank PMTiles. If the
@@ -4076,7 +4146,7 @@ function ParcelsMapPageInner() {
     // button), so leaving the PMTiles polygon shouldn't instantly kill
     // the popup. 220ms window matches the zaahiHover pattern and is
     // cancellable by the popup's onMouseEnter.
-    map.on("mouseleave", fillId, () => {
+    bindLayerEvent(map, "mouseleave", fillId, () => {
       map.getCanvas().style.cursor = "";
       if (hoverCloseTimerRef.current != null) {
         window.clearTimeout(hoverCloseTimerRef.current);
@@ -4470,8 +4540,9 @@ function ParcelsMapPageInner() {
       // ── Vault side-panel click handler — shared layer only. ──
       // Owner-side click routes from the ZAAHI_PLOTS_FILL handler below
       // via the `isVault` branch (Phase 3 unification).
-      map.on("click", VAULT_SHARED_3D, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
+      bindLayerEvent(map, "click", VAULT_SHARED_3D, (e: unknown) => {
+        const ev = e as MapMouseEvent & { features?: GeoJSON.Feature[] };
+        const f = ev.features?.[0];
         const id = f?.properties?.id as string | undefined;
         if (id) setSelectedVaultEntry({ id, mode: "share" });
       });
@@ -4544,8 +4615,8 @@ function ParcelsMapPageInner() {
       };
       // Owner-side hover flows through the ZAAHI_PLOTS_FILL mousemove
       // handler (Phase 3 unification). Shared layer keeps its own.
-      map.on("mousemove", VAULT_SHARED_3D, vaultMove("share"));
-      map.on("mouseleave", VAULT_SHARED_3D, vaultLeave);
+      bindLayerEvent(map, "mousemove", VAULT_SHARED_3D, vaultMove("share") as (e: unknown) => void);
+      bindLayerEvent(map, "mouseleave", VAULT_SHARED_3D, vaultLeave as (e: unknown) => void);
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
@@ -4555,12 +4626,13 @@ function ParcelsMapPageInner() {
 
       // ── City ambient on zoom > 16 ──
       const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
-      map.on("zoomend", updateCityAmbient);
+      bindGlobalMapEvent(map, "cityAmbient", "zoomend", updateCityAmbient as (e: unknown) => void);
       updateCityAmbient();
 
       // ── ZAAHI Plots hover + click ──
       if (map.getLayer(ZAAHI_PLOTS_FILL)) {
-        map.on("mousemove", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        bindLayerEvent(map, "mousemove", ZAAHI_PLOTS_FILL, (e0: unknown) => {
+          const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
           const f = e.features?.[0];
           if (!f) return;
           // Cancel any scheduled close — we're back on a polygon.
@@ -4633,7 +4705,7 @@ function ParcelsMapPageInner() {
           // detailed JSX card always wins over the one-line boundary tag.
           popupRef.current?.remove();
         });
-        map.on("mouseleave", ZAAHI_PLOTS_FILL, () => {
+        bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
           // Defer close ~220 ms so the cursor can transit onto the now
           // clickable card without it vanishing. Card's onMouseEnter
@@ -4646,7 +4718,8 @@ function ParcelsMapPageInner() {
             hoverCloseTimerRef.current = null;
           }, 220);
         });
-        map.on("click", ZAAHI_PLOTS_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        bindLayerEvent(map, "click", ZAAHI_PLOTS_FILL, (e0: unknown) => {
+          const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
           const f = e.features?.[0];
           if (!f) return;
           const props = f.properties as {
@@ -4673,7 +4746,8 @@ function ParcelsMapPageInner() {
       }
 
       // ── Communities hover ──
-      map.on("mousemove", COMMUNITIES_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", COMMUNITIES_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4690,14 +4764,15 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", COMMUNITIES_FILL, () => {
+      bindLayerEvent(map, "mouseleave", COMMUNITIES_FILL, () => {
         map.getCanvas().style.cursor = "";
         setHover(undefined);
         popup.remove();
       });
 
       // ── AD Municipalities hover ──
-      map.on("mousemove", AD_MUN_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", AD_MUN_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4713,13 +4788,14 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", AD_MUN_FILL, () => {
+      bindLayerEvent(map, "mouseleave", AD_MUN_FILL, () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       });
 
       // ── AD Districts hover ──
-      map.on("mousemove", AD_DIST_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", AD_DIST_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4735,13 +4811,14 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", AD_DIST_FILL, () => {
+      bindLayerEvent(map, "mouseleave", AD_DIST_FILL, () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       });
 
       // ── AD Communities hover ──
-      map.on("mousemove", AD_COMM_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", AD_COMM_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4757,7 +4834,7 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", AD_COMM_FILL, () => {
+      bindLayerEvent(map, "mouseleave", AD_COMM_FILL, () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       });
@@ -4766,7 +4843,8 @@ function ParcelsMapPageInner() {
       // 2026-05-24 along with the rest of the Saudi coverage.
 
       // ── DDA Project Boundaries hover ──
-      map.on("mousemove", DDA_PROJ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", DDA_PROJ_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4782,13 +4860,14 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", DDA_PROJ_FILL, () => {
+      bindLayerEvent(map, "mouseleave", DDA_PROJ_FILL, () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       });
 
       // ── DDA Free Zones hover ──
-      map.on("mousemove", DDA_FZ_FILL, (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      bindLayerEvent(map, "mousemove", DDA_FZ_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = e.features?.[0];
         if (!f) return;
         if (cursorOverZaahiOrVault(e)) {
@@ -4805,7 +4884,7 @@ function ParcelsMapPageInner() {
           )
           .addTo(map);
       });
-      map.on("mouseleave", DDA_FZ_FILL, () => {
+      bindLayerEvent(map, "mouseleave", DDA_FZ_FILL, () => {
         map.getCanvas().style.cursor = "";
         popup.remove();
       });
@@ -5895,9 +5974,9 @@ function ParcelsMapPageInner() {
         </span>
         {/* 2. Basemap Light */}
         <ChromeBtn
-          title="Light basemap"
+          title={baseMapBusy ? "Loading style…" : "Light basemap"}
           active={baseMap === "light"}
-          onClick={() => setBaseMap("light")}
+          onClick={() => swapBaseMap("light")}
         >
           {/* Sun — solid disc with rays. */}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -5907,9 +5986,9 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 3. Basemap Dark */}
         <ChromeBtn
-          title="Dark basemap"
+          title={baseMapBusy ? "Loading style…" : "Dark basemap"}
           active={baseMap === "dark"}
-          onClick={() => setBaseMap("dark")}
+          onClick={() => swapBaseMap("dark")}
         >
           {/* Crescent moon. */}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -5918,9 +5997,9 @@ function ParcelsMapPageInner() {
         </ChromeBtn>
         {/* 4. Basemap Satellite */}
         <ChromeBtn
-          title="Satellite basemap"
+          title={baseMapBusy ? "Loading style…" : "Satellite basemap"}
           active={baseMap === "satellite"}
-          onClick={() => setBaseMap("satellite")}
+          onClick={() => swapBaseMap("satellite")}
         >
           {/* Satellite dish — minimalist parabolic glyph. */}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
