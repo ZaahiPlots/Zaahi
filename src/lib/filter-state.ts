@@ -220,6 +220,11 @@ export const LAND_USE_OPTIONS: ReadonlyArray<{
   { key: "HEALTHCARE", label: "Healthcare", color: "#E74C3C" },
   { key: "AGRICULTURAL", label: "Agricultural", color: "#6B8E23" },
   { key: "FUTURE_DEVELOPMENT", label: "Future Dev", color: "#84CC16" },
+  // 10th category — founder approval 2026-06-03. Covers ~29K AD
+  // off-plan plots (primaryUse="Investment") previously invisible
+  // under any chip. Chip colour follows ZAAHI_LANDUSE_COLOR in
+  // page.tsx + LAND_USE_LEGEND + SidePanel LANDUSE_COLORS.
+  { key: "INVESTMENT", label: "Investment", color: "#14B8A6" },
 ];
 
 /** Unified status chip metadata for the panel. `appliesTo` text shows

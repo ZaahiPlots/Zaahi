@@ -29,6 +29,10 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   AGRICULTURE: "#606C38",
   FUTURE_DEVELOPMENT: "#C8A96E",
   "FUTURE DEVELOPMENT": "#C8A96E",
+  // 10th category — added 2026-06-03 (founder approval). Covers AD
+  // primaryUse="Investment" plots that don't already match another
+  // mapped category via devCategory fallback (strategy B: safe).
+  INVESTMENT: "#14B8A6",
 };
 const DEFAULT_COLOR = "#888888";
 
@@ -422,12 +426,25 @@ function processAdDir(
       const maxHeightStr = (p.MAXALLOWABLEHEIGHTS as string) ?? "";
       const maxGfa = (p.DevCode_MaxGFA as number) ?? 0;
 
-      const landUse = parseAdLandUse(primaryUse) ?? parseAdLandUse(devCategory);
+      // 2026-06-03 — strategy B (safe) for the new INVESTMENT category:
+      //   primaryUse-mapped → devCategory-mapped → last-resort INVESTMENT
+      // if the raw primaryUse is literally "Investment". Plots that
+      // already classify as Residential / Commercial via devCategory
+      // fallback (~4,382 in AD-ADM) keep their existing category — only
+      // the ~29,112 currently-unmapped Investment plots flip to
+      // INVESTMENT. No visual regression for any plot mapped today.
+      const landUse =
+        parseAdLandUse(primaryUse) ??
+        parseAdLandUse(devCategory) ??
+        (primaryUse?.toLowerCase() === "investment" ? "INVESTMENT" : null);
       const hasLandUse = landUse != null;
       const color = hasLandUse ? (ZAAHI_LANDUSE_COLOR[landUse] ?? DEFAULT_COLOR) : DEFAULT_COLOR;
 
       let height = 0;
-      if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT") {
+      // INVESTMENT joins FUTURE_DEVELOPMENT in the no-extrusion list
+      // because off-plan / planned-only land has no actual building
+      // yet; rendering 5-floor blocks would misrepresent the parcel.
+      if (hasLandUse && landUse !== "FUTURE_DEVELOPMENT" && landUse !== "INVESTMENT") {
         // Founder spec 2026-05-23: drop the GFA/regulatory-ceiling
         // approach (was clamping to MAXALLOWABLEHEIGHTS, which is a
         // zoning cap up to 500 m, producing wildly tall buildings on

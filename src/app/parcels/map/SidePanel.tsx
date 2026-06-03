@@ -79,6 +79,9 @@ const LANDUSE_COLORS: Record<string, string> = {
   AGRICULTURE:           "#606C38",
   FUTURE_DEVELOPMENT:    "#C8A96E",
   "FUTURE DEVELOPMENT":  "#C8A96E",
+  // 10th category added 2026-06-03 (founder approval). Mirrors
+  // ZAAHI_LANDUSE_COLOR + LAND_USE_LEGEND in page.tsx.
+  INVESTMENT:            "#14B8A6",
 };
 
 function ddaFetchBtnStyle(busy: boolean): React.CSSProperties {

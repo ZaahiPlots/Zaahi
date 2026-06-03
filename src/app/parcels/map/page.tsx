@@ -300,6 +300,12 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   AGRICULTURE: "#606C38",         // olive (alias)
   FUTURE_DEVELOPMENT: "#A8926E",  // sandstone (warm earth · distinct from gold brand colour)
   "FUTURE DEVELOPMENT": "#A8926E",
+  // 10th category — added 2026-06-03 (founder approval — was 9). Covers
+  // AD primaryUse="Investment" plots (off-plan / planned land) that
+  // would otherwise stay invisible under any land-use filter. Strategy
+  // B (safe): only plots that don't already match another category via
+  // devCategory fallback flip to INVESTMENT, so no plot recolours.
+  INVESTMENT: "#14B8A6",          // teal (finance signal · distinct from all 9 above)
 };
 const ZAAHI_DEFAULT_COLOR = "#C8A96E"; // brand gold — used for the outline of unknown-land-use plots only
 
@@ -5269,10 +5275,12 @@ function ParcelsMapPageInner() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [legendOpen]);
 
-  // APPROVED by founder 2026-04-11. 9 canonical categories. NEVER add,
-  // remove, or recolor without explicit founder approval. The same set
-  // is mirrored in ZAAHI_LANDUSE_COLOR, the loadZaahiPlots match
-  // expression, SidePanel LANDUSE_COLORS, and CLAUDE.md.
+  // APPROVED by founder — 10 canonical categories (extended 2026-06-03
+  // from 9; INVESTMENT added for ~29K AD off-plan plots that were
+  // invisible under any land-use filter). NEVER add, remove, or recolor
+  // further without explicit founder approval. Mirrored in
+  // ZAAHI_LANDUSE_COLOR (page.tsx + prepare-tiles.ts), SidePanel
+  // LANDUSE_COLORS, filter-state LAND_USE_OPTIONS, and CLAUDE.md.
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
     { color: "#2D6A4F", name: "Residential",          desc: "Жилое" },
     { color: "#1B4965", name: "Commercial",           desc: "Коммерческое" },
@@ -5283,6 +5291,7 @@ function ParcelsMapPageInner() {
     { color: "#E63946", name: "Healthcare",           desc: "Медицина" },
     { color: "#606C38", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
     { color: "#C8A96E", name: "Future Development",   desc: "Под застройку" },
+    { color: "#14B8A6", name: "Investment",           desc: "Инвестиционные (AD off-plan)" },
   ];
 
   const c = PALETTE[theme];

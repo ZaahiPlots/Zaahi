@@ -267,7 +267,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
 - Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
 
-### Цвета по Land Use — APPROVED 9 категорий (утверждено основателем 2026-04-11)
+### Цвета по Land Use — APPROVED 10 категорий (9 утверждены 2026-04-11, INVESTMENT добавлен 2026-06-03)
 **НЕ менять без явного согласия основателя.** Это финальный список.
 
 | # | Category | Hex | Цвет |
@@ -281,6 +281,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 | 7 | Healthcare | `#E74C3C` | красный |
 | 8 | Agricultural / Farm | `#6B8E23` | оливковый |
 | 9 | Future Development | `#84CC16` | лайм |
+| 10 | Investment | `#14B8A6` | бирюзовый-teal (AD off-plan, ~29K плотов) |
 
 DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour).
 
@@ -294,12 +295,13 @@ DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT
 - `health`, `hospital`, `clinic`, `medical` → Healthcare
 - `agriculture`, `farm`, `agricultural` → Agricultural
 - `future development` → Future Development
+- AD `primaryUse="Investment"` без другого devCategory mapping → Investment (strategy B — added 2026-06-03; plots already classified via devCategory keep their existing category)
 - Несколько разных категорий в `landUseMix` → Mixed Use
 - Пустое или неизвестное → `null` → участок рендерится только как контур (outline), без 3D модели, до того как DDA присвоит категорию
 
-**Source-of-truth in code:** `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx`. The 3D `fill-extrusion-color` match expression in `loadZaahiPlots`, the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx`, and the `LAND_USE_LEGEND` array in the map page MUST stay in sync. CLAUDE.md is the human-readable source of truth — code is the machine-readable one.
+**Source-of-truth in code:** `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx` AND `scripts/prepare-tiles.ts` (tile-build mirror — both must stay in sync). The 3D `fill-extrusion-color` match expression in `loadZaahiPlots`, the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx`, the `LAND_USE_LEGEND` array in the map page, and `LAND_USE_OPTIONS` in `src/lib/filter-state.ts` MUST stay in sync. CLAUDE.md is the human-readable source of truth — code is the machine-readable one.
 
-**Land Use легенда (9 категорий) утверждена основателем 2026-04-11. НЕ менять без явного согласия.**
+**Land Use легенда (10 категорий) — 9 утверждены основателем 2026-04-11, INVESTMENT добавлен 2026-06-03. НЕ менять без явного согласия.**
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
