@@ -5578,6 +5578,9 @@ function ParcelsMapPageInner() {
         onOpenAddModal={() => setAddFlow("chooser")}
         vaultOnlyMode={vaultOnlyMode}
         onToggleVaultOnly={() => setVaultOnlyMode((v) => !v)}
+        filterPanelOpen={filterPanelOpen}
+        activeFilterCount={activeFilterCount}
+        onToggleFilterPanel={() => setFilterPanelOpen((o) => !o)}
       />
       {addFlow === "chooser" && (
         <AddPlotChooser
@@ -5979,62 +5982,10 @@ function ParcelsMapPageInner() {
             <circle cx="12" cy="19" r="2" />
           </svg>
         </ChromeBtn>
-        {/* 7. Filters — Wave 2 (2026-06-02). Opens the FilterPanel on
-            the right side of the map. Sits at the bottom of the left
-            rail (below Drone) because the rail already runs 1–6 and
-            the right rail is documented as 5×5 symmetric (founder
-            spec 2026-05-24). Visually grouped with Layers (also left
-            rail) since both gate map content: Layers = which overlays
-            are drawn, Filters = which features within them are kept.
-            Badge overlay shows active filter dimension count (C3). */}
-        <span style={{ position: "relative", display: "inline-block" }}>
-          <ChromeBtn
-            title={
-              filterPanelOpen
-                ? "Close filters"
-                : activeFilterCount > 0
-                  ? `Filters · ${activeFilterCount} active`
-                  : "Filters"
-            }
-            active={filterPanelOpen}
-            onClick={() => setFilterPanelOpen((o) => !o)}
-          >
-            {/* Funnel — minimalist filter glyph. */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-          </ChromeBtn>
-          {activeFilterCount > 0 && (
-            <span
-              style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                minWidth: 16,
-                height: 16,
-                padding: "0 4px",
-                background: "#C8A96E",
-                color: "#1A1A2E",
-                borderRadius: 8,
-                fontSize: 10,
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontVariantNumeric: "tabular-nums",
-                pointerEvents: "none",
-                lineHeight: 1,
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.4)",
-              }}
-              aria-label={`${activeFilterCount} filters active`}
-            >
-              {activeFilterCount}
-            </span>
-          )}
-        </span>
-        {/* Parcels portal toggle moved to the bottom-centre ParcelsNav
-            pill (founder spec 2026-05-29). portalOpen state and
-            ParcelsPortalPanel rendering stay untouched. */}
+        {/* Filters button moved to the HeaderBar (founder spec
+            2026-06-03). The left rail now ends at 6 (Drone). The
+            Parcels portal toggle had previously moved to the bottom-
+            centre ParcelsNav pill (founder spec 2026-05-29). */}
       </div>
 
       {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
@@ -7436,6 +7387,9 @@ function HeaderBar({
   onOpenAddModal,
   vaultOnlyMode,
   onToggleVaultOnly,
+  filterPanelOpen,
+  activeFilterCount,
+  onToggleFilterPanel,
 }: {
   c: ChromeTheme;
   isDark: boolean;
@@ -7444,6 +7398,9 @@ function HeaderBar({
   onOpenAddModal: () => void;
   vaultOnlyMode: boolean;
   onToggleVaultOnly: () => void;
+  filterPanelOpen: boolean;
+  activeFilterCount: number;
+  onToggleFilterPanel: () => void;
 }) {
   const [find, setFind] = useState("");
   const [findOpen, setFindOpen] = useState(false);
@@ -7616,6 +7573,58 @@ function HeaderBar({
           busy={findBusy}
           error={findError}
         />
+        {/* Filters — moved from the left vertical rail to the header
+            (founder spec 2026-06-03). Sits next to Find because they
+            share intent: Find narrows visibility to a single plot,
+            Filter narrows it to a set. Same toggle / active-state
+            behaviour as before; badge counter shows active filter
+            dimensions. */}
+        <span style={{ position: "relative", display: "inline-block" }}>
+          <ChromeBtn
+            title={
+              filterPanelOpen
+                ? "Close filters"
+                : activeFilterCount > 0
+                  ? `Filters · ${activeFilterCount} active`
+                  : "Filters"
+            }
+            ariaLabel="Toggle filter panel"
+            active={filterPanelOpen}
+            onClick={onToggleFilterPanel}
+            size={CHROME_BTN_SIZE_COMPACT}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </ChromeBtn>
+          {activeFilterCount > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                minWidth: 16,
+                height: 16,
+                padding: "0 4px",
+                background: GOLD,
+                color: "#1A1A2E",
+                borderRadius: 8,
+                fontSize: 10,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontVariantNumeric: "tabular-nums",
+                pointerEvents: "none",
+                lineHeight: 1,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.4)",
+              }}
+              aria-label={`${activeFilterCount} filters active`}
+            >
+              {activeFilterCount}
+            </span>
+          )}
+        </span>
         {/* Check DLD — links to the dedicated /parcels/check-plot page
             where the user enters the 3+4-digit split and lands on DLD's
             inquiry form with the number copied. Stays as Next <Link>
