@@ -25,12 +25,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AREA_BOUNDS,
   EMPTY_FILTER_STATE,
-  FAR_BOUNDS,
-  GFA_BOUNDS,
   LAND_USE_OPTIONS,
-  PRICE_BOUNDS,
   STATUS_OPTIONS,
   countActiveFilters,
   type FilterState,
@@ -97,16 +93,6 @@ function fmtThousands(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-function fmtAed(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
-}
-
-function fmtFar(n: number): string {
-  return n.toFixed(1);
-}
-
 // ── Sub-components ────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -167,10 +153,9 @@ function Chip({
 }
 
 // Parses a free-text range input. Strips commas and surrounding
-// whitespace; returns null for empty / non-numeric / negative input
-// (treated as "no constraint on this side", reverting to the slider
-// bound on commit). Decimals are accepted — areaSqft can be 5000.5
-// from DDA, the MapLibre numeric compare handles floats fine.
+// whitespace; returns null for empty / non-numeric / negative input.
+// Decimals are accepted — areaSqft can be 5000.5 from DDA, the
+// MapLibre numeric compare handles floats fine.
 function parseRangeInput(raw: string): number | null {
   const cleaned = raw.replace(/[,\s]/g, "");
   if (cleaned === "") return null;
@@ -179,71 +164,50 @@ function parseRangeInput(raw: string): number | null {
   return n;
 }
 
+// Sentinel for the "no upper limit" side of a range. The filter
+// expression is `<= max`, so substituting MAX_SAFE_INTEGER matches
+// every numeric row — effectively the constraint disappears.
+const OPEN_MAX = Number.MAX_SAFE_INTEGER;
+
 function DualRange({
-  bounds,
   value,
   onChange,
-  format,
 }: {
-  bounds: { min: number; max: number; step: number };
   value: NumberRange | null;
   onChange: (next: NumberRange | null) => void;
-  format: (n: number) => string;
 }) {
-  const v = value ?? { min: bounds.min, max: bounds.max };
   const isActive = value !== null;
 
-  // Sliders are visually clamped to bounds; the underlying state can
-  // exceed them via the text inputs below (founder spec 2026-06-02:
-  // "вписал 500000 при потолке 200K → фильтр применяется, ползунок
-  // визуально упёрся"). Slider drag DOES override an out-of-range
-  // value — that's an explicit user choice to bring the bound back
-  // inside the slider range.
-  const sliderMin = Math.max(bounds.min, Math.min(bounds.max, v.min));
-  const sliderMax = Math.max(bounds.min, Math.min(bounds.max, v.max));
+  // Display strings derived from the canonical value. Founder spec
+  // 2026-06-03: no ceilings — plots reach 37M sqft and beyond, so
+  // any fixed bound is misleading. Empty min text = 0, empty max
+  // text = OPEN_MAX, both empty = null (filter not applied).
+  const minDisplay =
+    value && value.min > 0
+      ? Math.round(value.min).toLocaleString("en-US")
+      : "";
+  const maxDisplay =
+    value && value.max < OPEN_MAX
+      ? Math.round(value.max).toLocaleString("en-US")
+      : "";
 
-  // Apply a new {min, max} from any path (slider or text). Auto-nulls
-  // back to "no constraint" when both sides equal their bounds, so
-  // the badge counter + filter expression match prior semantics.
-  function applyChange(newMin: number, newMax: number) {
-    if (newMin <= bounds.min && newMax >= bounds.max) {
+  function applyTexts(rawMin: string, rawMax: string) {
+    const minParsed = parseRangeInput(rawMin);
+    const maxParsed = parseRangeInput(rawMax);
+    if (minParsed === null && maxParsed === null) {
       onChange(null);
       return;
     }
-    onChange({ min: newMin, max: newMax });
+    let minVal = minParsed ?? 0;
+    let maxVal = maxParsed ?? OPEN_MAX;
+    // min ≤ max invariant — swap on reversed entry so the filter
+    // never degenerates to an empty intersection.
+    if (minVal > maxVal) [minVal, maxVal] = [maxVal, minVal];
+    onChange({ min: minVal, max: maxVal });
   }
 
-  const handleSliderMin = (n: number) => applyChange(Math.min(n, v.max), v.max);
-  const handleSliderMax = (n: number) => applyChange(v.min, Math.max(n, v.min));
-
-  const handleTextMin = (raw: string) => {
-    const parsed = parseRangeInput(raw);
-    if (parsed === null) {
-      // Empty → revert min side to bound (no constraint).
-      applyChange(bounds.min, v.max);
-      return;
-    }
-    // Don't clamp to v.max here — that would lose the typed number
-    // if the user enters min before max. Just enforce min ≤ max by
-    // swapping or capping at v.max.
-    applyChange(Math.min(parsed, v.max), v.max);
-  };
-  const handleTextMax = (raw: string) => {
-    const parsed = parseRangeInput(raw);
-    if (parsed === null) {
-      applyChange(v.min, bounds.max);
-      return;
-    }
-    applyChange(v.min, Math.max(parsed, v.min));
-  };
-
-  // Display text inputs only when the value is "set". An empty input
-  // means "no constraint on this side"; we use bounds equality as the
-  // empty marker (matches the auto-null logic).
-  const minDisplay =
-    v.min > bounds.min ? Math.round(v.min).toLocaleString("en-US") : "";
-  const maxDisplay =
-    v.max < bounds.max ? Math.round(v.max).toLocaleString("en-US") : "";
+  const handleTextMin = (raw: string) => applyTexts(raw, maxDisplay);
+  const handleTextMax = (raw: string) => applyTexts(minDisplay, raw);
 
   const inputStyle: React.CSSProperties = {
     flex: 1,
@@ -251,7 +215,7 @@ function DualRange({
     background: "rgba(255, 255, 255, 0.04)",
     border: `1px solid ${isActive ? "rgba(200, 169, 110, 0.45)" : "rgba(255, 255, 255, 0.1)"}`,
     borderRadius: 6,
-    padding: "4px 8px",
+    padding: "6px 10px",
     fontSize: 12,
     color: "#FFFFFF",
     fontFamily: "inherit",
@@ -260,75 +224,25 @@ function DualRange({
   };
 
   return (
-    <div>
-      {/* Header values — keep the "X | Y" label above for quick read */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 12,
-          color: isActive ? "#C8A96E" : "rgba(255, 255, 255, 0.65)",
-          marginBottom: 6,
-          fontVariantNumeric: "tabular-nums",
-        }}
-      >
-        <span>{format(v.min)}</span>
-        <span>{format(v.max)}</span>
-      </div>
-      {/* Wave 2 follow-up: precise text inputs above the sliders. Accepts
-          numbers beyond the slider ceiling (slider visually clamps).
-          Slider drag overrides text — that's intentional, drag = "bring
-          it back inside the range". Comma input parsed cleanly. */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input
-          type="text"
-          inputMode="decimal"
-          value={minDisplay}
-          onChange={(e) => handleTextMin(e.target.value)}
-          placeholder="min"
-          aria-label="Minimum (type exact)"
-          style={inputStyle}
-        />
-        <input
-          type="text"
-          inputMode="decimal"
-          value={maxDisplay}
-          onChange={(e) => handleTextMax(e.target.value)}
-          placeholder="max"
-          aria-label="Maximum (type exact)"
-          style={inputStyle}
-        />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <input
-          type="range"
-          min={bounds.min}
-          max={bounds.max}
-          step={bounds.step}
-          value={sliderMin}
-          onChange={(e) => handleSliderMin(Number(e.target.value))}
-          style={{
-            width: "100%",
-            accentColor: "#C8A96E",
-            cursor: "pointer",
-          }}
-          aria-label="Minimum"
-        />
-        <input
-          type="range"
-          min={bounds.min}
-          max={bounds.max}
-          step={bounds.step}
-          value={sliderMax}
-          onChange={(e) => handleSliderMax(Number(e.target.value))}
-          style={{
-            width: "100%",
-            accentColor: "#C8A96E",
-            cursor: "pointer",
-          }}
-          aria-label="Maximum"
-        />
-      </div>
+    <div style={{ display: "flex", gap: 8 }}>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={minDisplay}
+        onChange={(e) => handleTextMin(e.target.value)}
+        placeholder="min"
+        aria-label="Minimum"
+        style={inputStyle}
+      />
+      <input
+        type="text"
+        inputMode="decimal"
+        value={maxDisplay}
+        onChange={(e) => handleTextMax(e.target.value)}
+        placeholder="max (∞ if blank)"
+        aria-label="Maximum"
+        style={inputStyle}
+      />
     </div>
   );
 }
@@ -762,34 +676,19 @@ export default function FilterPanel({
         {/* PLOT AREA */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>Plot area · sqft</SectionLabel>
-          <DualRange
-            bounds={AREA_BOUNDS}
-            value={draft.areaRange}
-            onChange={setAreaRange}
-            format={fmtThousands}
-          />
+          <DualRange value={draft.areaRange} onChange={setAreaRange} />
         </div>
 
         {/* GFA */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>GFA · sqft</SectionLabel>
-          <DualRange
-            bounds={GFA_BOUNDS}
-            value={draft.gfaRange}
-            onChange={setGfaRange}
-            format={fmtThousands}
-          />
+          <DualRange value={draft.gfaRange} onChange={setGfaRange} />
         </div>
 
         {/* FAR */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>FAR</SectionLabel>
-          <DualRange
-            bounds={FAR_BOUNDS}
-            value={draft.farRange}
-            onChange={setFarRange}
-            format={fmtFar}
-          />
+          <DualRange value={draft.farRange} onChange={setFarRange} />
           <div
             style={{
               fontSize: 10,
@@ -854,12 +753,7 @@ export default function FilterPanel({
         {/* PRICE */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>Price · AED</SectionLabel>
-          <DualRange
-            bounds={PRICE_BOUNDS}
-            value={draft.priceRange}
-            onChange={setPriceRange}
-            format={fmtAed}
-          />
+          <DualRange value={draft.priceRange} onChange={setPriceRange} />
         </div>
 
         {/* DISTRICT — Wave 2 follow-up: autocomplete instead of full

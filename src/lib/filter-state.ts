@@ -221,10 +221,8 @@ export const STATUS_OPTIONS: ReadonlyArray<{
   },
 ];
 
-/** Slider bounds for the four numeric filters. Tuned to the observed
- *  ranges in current DDA + AD data; outliers above the cap are still
- *  matched by the range (slider just doesn't extend that far). */
-export const AREA_BOUNDS = { min: 0, max: 200_000, step: 500 }; // sqft
-export const GFA_BOUNDS = { min: 0, max: 2_000_000, step: 5_000 }; // sqft
-export const FAR_BOUNDS = { min: 0, max: 10, step: 0.1 };
-export const PRICE_BOUNDS = { min: 0, max: 500_000_000, step: 1_000_000 }; // AED
+// Numeric-range filters (Plot Area, GFA, FAR, Price) are unbounded
+// since 2026-06-03 (founder spec — plots exist up to 37M sqft and
+// beyond; any fixed ceiling is misleading). The panel renders text
+// inputs only; empty min = 0, empty max = no upper limit. There are
+// no slider bounds to expose.
