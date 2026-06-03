@@ -1870,6 +1870,16 @@ function ParcelsMapPageInner() {
   // ontouchstart once on mount, no resize listener (device class
   // doesn't change mid-session for the platforms we ship to).
   const [droneAvailable, setDroneAvailable] = useState(true);
+  // Cursor coords driven by drone-controls' onCursorMove callback.
+  // Used to position DroneHUD's crosshair at the mouse (founder spec
+  // 2026-06-03 v3 — cursor = crosshair). Initialised at viewport
+  // centre so the first paint after enable() has something to draw.
+  const [droneCursor, setDroneCursor] = useState<{ x: number; y: number }>(
+    () => ({
+      x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+      y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+    }),
+  );
 
   // Sun-time override — null means "use real wall-clock time" so the
   // shadow direction tracks live; a Date overrides it to the slider's
@@ -4814,9 +4824,13 @@ function ParcelsMapPageInner() {
     // installed for the map's lifetime; a separate effect drives
     // enable/disable based on `droneEnabled` state. Default is OFF so
     // WASD / mouse do NOT hijack the page until the user opts in.
-    // onExit wires Escape → exit drone mode (founder spec 2026-06-03).
+    //   onExit       → Escape exits drone mode (founder spec 2026-06-03).
+    //   onCursorMove → relay viewport pixel coordinates so DroneHUD's
+    //                  crosshair can render at the cursor (v3 spec
+    //                  2026-06-03: cursor IS the crosshair).
     const droneCtrl = installDroneControls(map, {
       onExit: () => setDroneEnabled(false),
+      onCursorMove: (x, y) => setDroneCursor({ x, y }),
     });
     droneCtrlRef.current = droneCtrl;
     setDroneAvailable(droneCtrl.isAvailable());
@@ -5446,6 +5460,7 @@ function ParcelsMapPageInner() {
   return (
     <div
       data-map-page=""
+      data-drone-mode={droneEnabled ? "on" : undefined}
       style={{
         // `fixed` instead of `absolute` so the map stays pinned to the
         // visual viewport on mobile — iOS Safari's URL bar show/hide and
@@ -5477,7 +5492,14 @@ function ParcelsMapPageInner() {
           chrome (crosshair, horizon, compass tape, coords, ALT/VS/SPD/
           HDG/PCH rails, corner brackets, status, time, zoom) reads
           live from mapRef. Founder spec 2026-05-23. */}
-      {droneEnabled && <DroneHUD mainMapRef={mapRef} firing={false} />}
+      {droneEnabled && (
+        <DroneHUD
+          mainMapRef={mapRef}
+          firing={false}
+          mouseX={droneCursor.x}
+          mouseY={droneCursor.y}
+        />
+      )}
 
       {/* Drone-mode on-enable toast — shown each time the user turns drone mode ON */}
       {showDroneHint && (
@@ -5501,7 +5523,7 @@ function ParcelsMapPageInner() {
             boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
           }}
         >
-          Drone mode activated — WASD to fly, mouse to look, Esc to exit
+          Drone mode activated — mouse aims the crosshair, WASD flies, Esc exits
         </div>
       )}
 
@@ -5927,7 +5949,7 @@ function ParcelsMapPageInner() {
             is a no-op there — keeps the rail clean on mobile. */}
         {droneAvailable && (
         <ChromeBtn
-          title={droneEnabled ? "Disable drone mode (Esc)" : "Drone mode (WASD + mouse, Esc to exit)"}
+          title={droneEnabled ? "Disable drone mode (Esc)" : "Drone mode — cursor aims, WASD flies (Esc to exit)"}
           active={droneEnabled}
           onClick={() => {
             sound.whoosh();

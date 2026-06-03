@@ -3,19 +3,21 @@
 // `installDroneControls(map, opts?)` wires listeners once, but they're
 // gated by an internal `enabled` flag that the caller flips via the
 // returned controller. Default is OFF. The map page renders a toggle
-// button on the chrome (near 2D/3D) and calls `enable()` / `disable()`
-// when the user clicks it.
+// button on the chrome and calls `enable()` / `disable()` when the
+// user clicks it.
 //
-// Controls when enabled (founder spec 2026-06-03 refresh):
-//   Mouse    — free-look. Pointer is locked on enable() so cursor
-//              disappears; movement rotates bearing + pitch (0..85)
-//              directly, no button held. The HUD crosshair is now the
-//              aim point.
-//   W/A/S/D  — fly in look direction. W/S blend horizontal pan with a
-//              zoom delta so a downward-tilted camera descends as it
-//              moves "forward"; A/D stay pure strafing (independent of
-//              pitch). Uses e.code so AZERTY users get the same
-//              physical-key bindings as QWERTY.
+// Controls when enabled (founder spec 2026-06-03 v3 — cursor=crosshair):
+//   Mouse    — cursor is the crosshair. Move the mouse anywhere on the
+//              viewport; the map's bearing eases toward the cursor's
+//              screen-angle from centre, so "up the screen" always
+//              points at the cursor. Cursor at centre = no rotation
+//              (deadzone 60 px). Strength scales with cursor distance.
+//              NO pointer lock — the cursor stays visible (we hide the
+//              native cursor via CSS and render DroneHUD's green
+//              crosshair at the mouse position instead).
+//   W/A/S/D  — fly. W is forward in the (now cursor-derived) bearing,
+//              S is reverse, A/D are strafing perpendicular. Uses
+//              e.code so AZERTY users get the same physical bindings.
 //   Space    — ascend  (zoom out by 0.05 per frame)
 //   Shift    — descend (zoom in  by 0.05 per frame) — ONLY when no WASD
 //   Shift+W/A/S/D — ×3 speed (turbo)
@@ -23,12 +25,12 @@
 //
 // Rules:
 //   - When disabled: keyboard + mouse handlers early-return. WASD/Space
-//     don't move the map, mouse movement falls through to the browser /
-//     MapLibre default behaviour.
-//   - Never interferes with left-click parcel handlers. In pointer-lock
-//     state, the click is registered at the locked center, so the
-//     existing MapLibre click handler still opens the parcel under the
-//     crosshair (intentional — "aim and click").
+//     don't move the map, the cursor returns to its normal style, and
+//     MapLibre's dragPan/dragRotate that were silenced for drone come
+//     back to their previous state.
+//   - Never interferes with left-click parcel handlers. MapLibre's
+//     click event still fires under the cursor in drone mode, so
+//     clicking a plot opens the SidePanel as usual.
 //   - Ignores keys when an <input>/<textarea>/contenteditable has focus.
 //   - Skips install on touch / coarse-pointer devices — the controller
 //     is returned as a no-op so the caller's code path stays the same.
@@ -39,11 +41,10 @@ import type maplibregl from "maplibre-gl";
 const BASE_SPEED = 0.00002; // degrees per frame at zoom=20 baseline
 const SPEED_ZOOM_CAP = 10;  // clamp (20-zoom) so we don't explode at zoom=0
 const ZOOM_STEP = 0.05;     // per-frame zoom delta for Space/Shift
-const PITCH_MIN = 0;
-const PITCH_MAX = 85;
 const EASING = 0.15;        // velocity easing factor per frame
-const ROTATE_BEARING_SENS = 0.3;  // deg per px
-const ROTATE_PITCH_SENS = 0.3;    // deg per px
+const BEARING_DEADZONE_PX = 60;   // cursor distance from centre that triggers rotation
+const BEARING_EASE_MAX_PX = 300;  // distance at which bearing ease reaches its max rate
+const BEARING_EASE_MAX = 0.08;    // max bearing ease fraction toward target per frame
 
 export type DroneController = {
   enable(): void;
@@ -57,9 +58,15 @@ export type DroneController = {
 
 export interface DroneControlsOptions {
   /** Called when the user presses Escape (founder spec 2026-06-03:
-   *  ESC must exit drone mode entirely, not just release pointer lock).
-   *  React side wires this to setDroneEnabled(false). */
+   *  ESC must exit drone mode entirely). React side wires this to
+   *  setDroneEnabled(false). */
   onExit?: () => void;
+  /** Called on every mousemove while drone mode is enabled, so the
+   *  caller (page.tsx) can drive DroneHUD's crosshair position via
+   *  React state. Receives viewport pixel coordinates (clientX/Y).
+   *  Throttling is not needed — DroneHUD uses transform which is
+   *  GPU-accelerated and React batches state updates. */
+  onCursorMove?: (x: number, y: number) => void;
 }
 
 export function installDroneControls(
@@ -101,10 +108,18 @@ export function installDroneControls(
   let vLat = 0;
   let vZoom = 0;
 
-  // Right-click / pointer-lock rotate state.
-  let pointerLocked = false;
+  // Cursor position in viewport pixels. Initial centre is the fallback
+  // until the first mousemove fires (user hasn't moved the mouse yet).
+  const cursor = {
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+  };
 
-  const container = map.getCanvasContainer();
+  // MapLibre drag handlers we silence while drone is on so they don't
+  // fight the cursor-driven bearing. We restore whatever state they
+  // were in (someone else might have already disabled them) on exit.
+  let savedDragPanEnabled = false;
+  let savedDragRotateEnabled = false;
 
   function isTypingTarget(): boolean {
     const el = (typeof document !== "undefined" ? document.activeElement : null) as
@@ -131,9 +146,7 @@ export function installDroneControls(
   function onKeyDown(e: KeyboardEvent) {
     if (!enabled) return;
     if (isTypingTarget()) return;
-    // ESC exits drone mode entirely. The browser also auto-releases
-    // pointer lock on Escape (always, regardless of preventDefault),
-    // so disable() can safely run here too.
+    // ESC exits drone mode entirely.
     if (e.code === "Escape") {
       opts.onExit?.();
       return;
@@ -154,54 +167,11 @@ export function installDroneControls(
     keys.clear();
   }
 
-  function onContextMenu(e: MouseEvent) {
+  function onMouseMove(e: MouseEvent) {
     if (!enabled) return;
-    // Suppress browser context menu over the map while flying — right-
-    // click is otherwise meaningless in drone mode (no longer the lock
-    // trigger; lock is auto-acquired in enable()).
-    e.preventDefault();
-  }
-
-  function requestLock() {
-    try {
-      container.requestPointerLock();
-    } catch {
-      /* some browsers reject outside user gesture — silent. The user
-       * can re-trigger by toggling the button again, which is a fresh
-       * gesture. We also log nothing — pointerlockerror handler trips
-       * the same lock=false state. */
-    }
-  }
-
-  function onPointerLockChange() {
-    pointerLocked = document.pointerLockElement === container;
-  }
-
-  function onPointerLockError() {
-    pointerLocked = false;
-  }
-
-  function onLockedMouseMove(e: MouseEvent) {
-    if (!enabled || !pointerLocked) return;
-    const dx = e.movementX;
-    const dy = e.movementY;
-    if (!dx && !dy) return;
-    const nextBearing = map.getBearing() - dx * ROTATE_BEARING_SENS;
-    const nextPitchRaw = map.getPitch() + dy * ROTATE_PITCH_SENS;
-    const nextPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, nextPitchRaw));
-    map.setBearing(nextBearing);
-    map.setPitch(nextPitch);
-  }
-
-  function releasePointerLock() {
-    try {
-      if (document.pointerLockElement === container) {
-        document.exitPointerLock();
-      }
-    } catch {
-      /* ignore */
-    }
-    pointerLocked = false;
+    cursor.x = e.clientX;
+    cursor.y = e.clientY;
+    opts.onCursorMove?.(e.clientX, e.clientY);
   }
 
   // Animation loop — runs always, but does nothing when disabled. Cheaper
@@ -211,20 +181,39 @@ export function installDroneControls(
     rafId = requestAnimationFrame(tick);
     if (!enabled) return;
 
+    // ── Bearing tracking: ease toward the cursor's screen-angle from
+    // viewport centre. Stable convergence — once cursor is at angle θ
+    // and we set bearing = θ, the cursor's screen-angle is unchanged
+    // (it's fixed in screen coordinates), so there's no oscillation.
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const dX = cursor.x - vw / 2;
+    const dY = -(cursor.y - vh / 2); // invert Y so screen-up = math-up
+    const cursorDist = Math.sqrt(dX * dX + dY * dY);
+    if (cursorDist > BEARING_DEADZONE_PX) {
+      // Target bearing: atan2(dX, dY) maps screen-up to 0 (north),
+      // screen-right to +90 (east), matching MapLibre's bearing space.
+      const targetBearing = (Math.atan2(dX, dY) * 180 / Math.PI + 360) % 360;
+      const currentBearing = map.getBearing();
+      let diff = targetBearing - currentBearing;
+      // Shortest signed delta in [-180, 180].
+      while (diff > 180) diff -= 360;
+      while (diff < -180) diff += 360;
+      // Ease factor scales with distance: at deadzone edge → 0,
+      // at BEARING_EASE_MAX_PX → BEARING_EASE_MAX. Capped at the max.
+      const distRatio = Math.min(
+        1,
+        (cursorDist - BEARING_DEADZONE_PX) / (BEARING_EASE_MAX_PX - BEARING_DEADZONE_PX),
+      );
+      const easeFactor = distRatio * BEARING_EASE_MAX;
+      if (Math.abs(diff) > 0.01) {
+        map.setBearing(currentBearing + diff * easeFactor);
+      }
+    }
+
+    // ── WASD movement in the (just-updated) bearing direction.
     const zoom = map.getZoom();
     const bearingRad = (map.getBearing() * Math.PI) / 180;
-    // MapLibre pitch: 0 = looking straight DOWN (top-down 2D view),
-    // 85 = looking nearly horizontal (toward the horizon). For "fly
-    // toward the crosshair":
-    //   horizontalScale = sin(pitch) → 0 when looking down, ~1 when
-    //     looking forward (the look direction has more horizontal).
-    //   verticalScale   = cos(pitch) → 1 when looking down, ~0 when
-    //     looking forward (the look direction has more downward).
-    // W blends horizontal pan with a zoom-in (=descend); S reverses.
-    // A/D stay pure strafing — independent of pitch.
-    const pitchRad = (map.getPitch() * Math.PI) / 180;
-    const horizontalScale = Math.sin(pitchRad);
-    const verticalScale = Math.cos(pitchRad);
     const zoomFactor = Math.pow(2, Math.min(SPEED_ZOOM_CAP, 20 - zoom));
     const speed = BASE_SPEED * zoomFactor;
 
@@ -237,14 +226,12 @@ export function installDroneControls(
     let tZoom = 0;
 
     if (keys.has("w")) {
-      tLng += Math.sin(bearingRad) * speed * horizontalScale;
-      tLat += Math.cos(bearingRad) * speed * horizontalScale;
-      tZoom += ZOOM_STEP * verticalScale; // +zoom = camera closer = descend
+      tLng += Math.sin(bearingRad) * speed;
+      tLat += Math.cos(bearingRad) * speed;
     }
     if (keys.has("s")) {
-      tLng -= Math.sin(bearingRad) * speed * horizontalScale;
-      tLat -= Math.cos(bearingRad) * speed * horizontalScale;
-      tZoom -= ZOOM_STEP * verticalScale;
+      tLng -= Math.sin(bearingRad) * speed;
+      tLat -= Math.cos(bearingRad) * speed;
     }
     if (keys.has("a")) {
       tLng -= Math.cos(bearingRad) * speed;
@@ -278,11 +265,8 @@ export function installDroneControls(
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", clearKeys);
+  window.addEventListener("mousemove", onMouseMove);
   document.addEventListener("visibilitychange", clearKeys);
-  document.addEventListener("pointerlockchange", onPointerLockChange);
-  document.addEventListener("pointerlockerror", onPointerLockError);
-  document.addEventListener("mousemove", onLockedMouseMove);
-  container.addEventListener("contextmenu", onContextMenu);
 
   rafId = requestAnimationFrame(tick);
 
@@ -290,14 +274,14 @@ export function installDroneControls(
     enable() {
       if (disposed) return;
       enabled = true;
-      // Acquire pointer lock immediately so the mouse free-looks the
-      // moment drone mode starts. The toggle-button click is the user
-      // gesture that authorises the request; React's useEffect runs
-      // synchronously after the click commits, so most browsers honour
-      // the request. If it fails (some browsers reject outside a fresh
-      // gesture), the user can simply toggle the button again or rely
-      // on the next click on the canvas re-acquiring it.
-      requestLock();
+      // Silence MapLibre drag handlers so they don't fight the cursor-
+      // driven bearing. We remember the prior state so an accidental
+      // toggle doesn't permanently re-enable handlers the rest of the
+      // app meant to leave off.
+      savedDragPanEnabled = map.dragPan.isEnabled();
+      savedDragRotateEnabled = map.dragRotate.isEnabled();
+      map.dragPan.disable();
+      map.dragRotate.disable();
     },
     disable() {
       if (disposed) return;
@@ -307,7 +291,8 @@ export function installDroneControls(
       vLat = 0;
       vZoom = 0;
       keys.clear();
-      releasePointerLock();
+      if (savedDragPanEnabled) map.dragPan.enable();
+      if (savedDragRotateEnabled) map.dragRotate.enable();
     },
     isEnabled: () => enabled,
     isAvailable: () => true,
@@ -319,16 +304,16 @@ export function installDroneControls(
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", clearKeys);
+      window.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("visibilitychange", clearKeys);
-      document.removeEventListener("pointerlockchange", onPointerLockChange);
-      document.removeEventListener("pointerlockerror", onPointerLockError);
-      document.removeEventListener("mousemove", onLockedMouseMove);
+      // Best-effort restore drag handlers if we were the one that
+      // disabled them.
       try {
-        container.removeEventListener("contextmenu", onContextMenu);
+        if (savedDragPanEnabled) map.dragPan.enable();
+        if (savedDragRotateEnabled) map.dragRotate.enable();
       } catch {
-        /* container may already be gone if map.remove() ran first */
+        /* map may already be torn down */
       }
-      releasePointerLock();
       keys.clear();
     },
   };

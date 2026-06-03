@@ -77,12 +77,22 @@ function cardinal(deg: number): string | null {
 export default function DroneHUD({
   mainMapRef,
   firing = false,
+  mouseX,
+  mouseY,
 }: {
   mainMapRef: RefObject<MLMap | null>;
-  /** When true, the crosshair runs a 3× white→green pulse for ~900 ms
-   *  to confirm a fire (Space / map click in drone mode). Parent flips
-   *  it back to false via setTimeout. */
+  /** When true, the crosshair runs a 3× white→green pulse for ~900 ms.
+   *  Currently unused (the Space/click "fire" path was removed
+   *  2026-06-03 in favour of cursor=crosshair), but the prop is kept
+   *  so the pulse animation can be re-triggered if needed. */
   firing?: boolean;
+  /** Cursor position in viewport pixels. When provided, the crosshair
+   *  renders AT the cursor instead of fixed at viewport centre
+   *  (founder spec 2026-06-03 v3 — cursor = crosshair). Undefined falls
+   *  back to centre for legacy callers and the very first render before
+   *  mousemove fires. */
+  mouseX?: number;
+  mouseY?: number;
 }) {
   const [sample, setSample] = useState<HudSample | null>(null);
   const prevRef = useRef<PrevSample | null>(null);
@@ -312,8 +322,10 @@ export default function DroneHUD({
         }}
       />
 
-      {/* 1. Crosshair — center reticle. Pulses on fire. */}
-      <Crosshair firing={firing} />
+      {/* 1. Crosshair — follows the mouse (founder spec 2026-06-03 v3).
+            Falls back to viewport centre if no cursor pos is provided.
+            Pulses on fire (currently unused). */}
+      <Crosshair firing={firing} mouseX={mouseX} mouseY={mouseY} />
 
       {/* 5. Left rail — ALT + VS. Vertically centered. */}
       <div
@@ -389,7 +401,15 @@ export default function DroneHUD({
   );
 }
 
-function Crosshair({ firing }: { firing: boolean }) {
+function Crosshair({
+  firing,
+  mouseX,
+  mouseY,
+}: {
+  firing: boolean;
+  mouseX?: number;
+  mouseY?: number;
+}) {
   // Each pulse: 300 ms × 3 = 900 ms total. The parent flips firing back
   // to false on a matching 900 ms timer, so the animation property
   // returns to "none" and is ready to re-trigger on the next fire.
@@ -401,16 +421,34 @@ function Crosshair({ firing }: { firing: boolean }) {
     background: GREEN_SOFT,
     animation: armAnim,
   };
-  return (
-    <div
-      style={{
+
+  // If a cursor position is provided we anchor the reticle at the
+  // cursor via top:0/left:0 + transform translate; otherwise we fall
+  // back to the historical centre-of-viewport reticle so the HUD
+  // still works for any caller that doesn't pass coordinates yet.
+  const usesCursor = typeof mouseX === "number" && typeof mouseY === "number";
+  const containerStyle: CSSProperties = usesCursor
+    ? {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0,
+        transform: `translate(${mouseX}px, ${mouseY}px)`,
+        willChange: "transform",
+        pointerEvents: "none",
+      }
+    : {
         position: "absolute",
         top: "50%",
         left: "50%",
         width: 0,
         height: 0,
-      }}
-    >
+        pointerEvents: "none",
+      };
+
+  return (
+    <div style={containerStyle}>
       {/* Up arm */}
       <div style={{ ...armStyle, width: 1, height: 40, left: -0.5, top: -48 }} />
       {/* Down arm */}
