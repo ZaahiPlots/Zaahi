@@ -98,6 +98,29 @@ body {
     sans-serif;
 }
 
+/* Mobile viewport lock — scoped to /parcels/map only via the
+ * `data-map-page` attribute on the page root (2026-06-03 founder spec).
+ *
+ * Before this lock: iOS Safari's rubber-band overscroll and Android
+ * Chrome's pull-to-refresh would expose the body's `bg-black`
+ * (layout.tsx), reading visually as "the screen suddenly darkens" on
+ * a downward swipe. The bounce also propagated into MapLibre's touch
+ * handlers, manifesting as random panels seeming to open.
+ *
+ * Scoping via `body:has(...)` means dashboard / profile / admin /
+ * landing pages keep their normal vertical scroll. Safari ≥15.4,
+ * Chrome ≥105, Firefox ≥121 support :has — older browsers simply skip
+ * the rule (no regression; they revert to today's behaviour). */
+html:has([data-map-page]),
+body:has([data-map-page]) {
+  height: 100%;
+  overscroll-behavior: none;
+}
+body:has([data-map-page]) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Reusable utility classes — opt-in, don't replace inline styles unless
  * the callsite is already using className. */
 .zaahi-glass {

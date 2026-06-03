@@ -5486,9 +5486,18 @@ function ParcelsMapPageInner() {
 
   return (
     <div
+      data-map-page=""
       style={{
-        position: "absolute",
+        // `fixed` instead of `absolute` so the map stays pinned to the
+        // visual viewport on mobile — iOS Safari's URL bar show/hide and
+        // any body overscroll bounce can no longer reflow this container.
+        // overflow:hidden caps any accidental child scroll. Desktop renders
+        // identically (the page already wasn't scrollable). The
+        // `data-map-page` attribute scopes the overscroll-behavior /
+        // touch-action rules in globals.css to this route only.
+        position: "fixed",
         inset: 0,
+        overflow: "hidden",
         background: c.bg,
         color: c.text,
         fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
@@ -7509,6 +7518,11 @@ function HeaderBar({
         // hamburger) is still TODO.
         overflowX: "auto",
         whiteSpace: "nowrap",
+        // Constrain mobile touch to horizontal panning only — vertical
+        // swipes inside this 44px bar previously got hijacked by the
+        // browser (body bounce / pull-to-refresh) and competed with map
+        // gestures. Desktop mouse unaffected.
+        touchAction: "pan-x",
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
