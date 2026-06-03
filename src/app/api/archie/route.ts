@@ -699,10 +699,20 @@ If the tool result gives priceAed and the user picked USD, divide by 3.6725 and 
         authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        // 2026-06-03 — switched from gpt-4o ($2.50 in / $10 out per 1M)
-        // to gpt-5-nano ($0.05 in / $0.40 out) for ~43× cost reduction.
-        // Native OpenAI Chat Completions API, identical tool-calling
-        // schema, no other code changes. See research/archie-cost.
+        // 2026-06-03 — gpt-5-nano ($0.05 in / $0.40 out per 1M) is a
+        // reasoning model. Its API surface differs from gpt-4o:
+        //   • `max_tokens` is rejected — must use `max_completion_tokens`
+        //   • `temperature` is rejected (reasoning models sample
+        //     internally) — omit
+        //   • `reasoning_effort` controls how much budget goes into
+        //     internal thought; "minimal" keeps latency low for the
+        //     fast tool-routing job Archie does (founder doesn't need
+        //     deep deliberation to dispatch fly_to_district).
+        //   • Function calling + tool_choice still work unchanged.
+        // Budget rationale: 2000 covers ~500-700 internal reasoning
+        // + ~300-500 user-visible output + roundtrip headroom for the
+        // 17-tool schema. gpt-4o ran at max_tokens:600 because it had
+        // no internal-thought tax; with reasoning we need more.
         model: "gpt-5-nano",
         messages,
         tools: TOOLS,
@@ -711,18 +721,38 @@ If the tool result gives priceAed and the user picked USD, divide by 3.6725 and 
         // invoke a tool); "auto" otherwise so RE-knowledge questions
         // still get plain text replies. See detectToolChoice above.
         tool_choice: detectToolChoice(history),
-        max_tokens: 600,
-        // Slight non-determinism so repeated identical queries don't
-        // bore returning users. Same posture as gpt-4o defaults.
-        temperature: 0.7,
+        max_completion_tokens: 2000,
+        reasoning_effort: "minimal",
       }),
     });
 
     if (!r.ok) {
       const errText = await r.text();
-      console.error("[archie] openai error:", r.status, errText);
+      // Try to surface OpenAI's structured error so future diagnoses
+      // don't need raw-log spelunking. The shape is
+      // {"error":{"code":"...","message":"...","type":"..."}}.
+      // For 429: code distinguishes "rate_limit_exceeded" (TPM hit)
+      // from "insufficient_quota" (out of credit). For 400: typical
+      // codes are "model_not_found" or "unsupported_parameter".
+      let errCode: string | undefined;
+      let errMessage: string | undefined;
+      try {
+        const parsed = JSON.parse(errText) as {
+          error?: { code?: string; message?: string; type?: string };
+        };
+        errCode = parsed.error?.code;
+        errMessage = parsed.error?.message;
+      } catch {
+        /* not JSON — keep raw text in the log line below */
+      }
+      console.error(
+        "[archie] openai error:",
+        r.status,
+        errCode ?? "(no-code)",
+        errMessage ?? errText,
+      );
       return NextResponse.json(
-        { error: `openai_${r.status}` },
+        { error: `openai_${r.status}`, code: errCode },
         { status: 502 },
       );
     }
