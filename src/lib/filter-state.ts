@@ -21,7 +21,8 @@ export type UnifiedStatus =
   | "SOLD"
   | "BUILT"
   | "UNDER_CONSTRUCTION"
-  | "PRE_CONSTRUCTION";
+  | "PRE_CONSTRUCTION"
+  | "SUSPENDED";
 
 /** Min/max range for a slider-driven filter. */
 export interface NumberRange {
@@ -81,6 +82,7 @@ export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
   BUILT: [],
   UNDER_CONSTRUCTION: [],
   PRE_CONSTRUCTION: [],
+  SUSPENDED: [],
 };
 
 /**
@@ -100,10 +102,18 @@ export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
  *               "Completed" — a finished building.
  *
  * 2026-06-03 — PRE_CONSTRUCTION chip added:
- *   • DDA "Pre-Construction" (~7.7K) — off-plan / early prep stage.
- *   • AD  "Only Boundary Wall" — wall is up but the building isn't,
- *     i.e. early-stage in AD's vocabulary. Conceptually the same
- *     transitional state. Was previously invisible under any chip.
+ *   • DDA "Pre-Construction" (~15.7K) — off-plan / early prep stage.
+ *   • AD  "Only Boundary Wall" (~846) — wall is up but the building
+ *     isn't, i.e. early-stage in AD's vocabulary. Conceptually the
+ *     same transitional state. Previously invisible under any chip.
+ *
+ * 2026-06-03 — SUSPENDED chip added:
+ *   • DDA "Suspended" (~1,054) — permit halted / construction paused.
+ *     No AD vocabulary equivalent (recon 2026-06-03 — AD only has
+ *     Constructed / Not Constructed / Under Construction / Only
+ *     Boundary Wall). DDA "No Data" (~6 plots) intentionally NOT
+ *     mapped — too small to warrant a row, and "no data" isn't
+ *     semantically Suspended.
  * Still no tile rebake — values were already in the tile properties.
  */
 export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
@@ -113,6 +123,7 @@ export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
   BUILT: ["Completed", "Constructed"],
   UNDER_CONSTRUCTION: ["Under Construction"],
   PRE_CONSTRUCTION: ["Pre-Construction", "Only Boundary Wall"],
+  SUSPENDED: ["Suspended"],
 };
 
 /**
@@ -230,6 +241,11 @@ export const STATUS_OPTIONS: ReadonlyArray<{
   {
     key: "PRE_CONSTRUCTION",
     label: "Pre-Construction",
+    appliesTo: "461K registry only",
+  },
+  {
+    key: "SUSPENDED",
+    label: "Suspended",
     appliesTo: "461K registry only",
   },
 ];
