@@ -156,3 +156,27 @@ Controller code ready (`src/lib/auto-rotate.ts` 166 lines + `src/app/parcels/map
 Resume: `git stash pop stash@{0}` restores both files exactly as parked.
 
 **Context added:** 2026-05-13
+
+---
+
+## `feat/oman-full-removal` — orphan Oman cleanup
+
+`oman-land.pmtiles` (35.9 MB on R2, last-modified 2026-05-24) is not
+referenced in `src/` — only in comments documenting the 2026-05-24
+retirement. BUT three scripts still actively build and upload it:
+
+| File | What to remove |
+|---|---|
+| `scripts/upload-tiles-r2.sh` | line 57 — `oman-land.pmtiles` from upload list (−1 line) |
+| `scripts/update-tiles.sh` | mkdir (line 62), inset pass (75-80), tippecanoe build (122-125), verify (132), stats (159) — ~−15 lines |
+| `scripts/prepare-tiles.ts` | `parseOmanLandUse` (118-135), `omanKey` (321), `processOmanDir` + main() wiring (469-562) — ~−100 lines |
+
+Then `npx wrangler r2 object delete zaahi-tiles/tiles/oman-land.pmtiles --remote`
+(or Cloudflare dashboard if wrangler 403).
+
+⚠️ **Keep `data/tiles/oman-plots.geojson.nl` + `data/layers/oman-plots/` on disk** — CLAUDE.md rule never delete `data/`.
+
+Diagnosis: `research/oman-cleanup` (2026-06-03 session, founder deferred).
+Saves ~$0.0005/мес R2 storage — micro impact, do when convenient.
+
+**Context added:** 2026-06-03
