@@ -20,7 +20,8 @@ export type UnifiedStatus =
   | "IN_DEAL"
   | "SOLD"
   | "BUILT"
-  | "UNDER_CONSTRUCTION";
+  | "UNDER_CONSTRUCTION"
+  | "PRE_CONSTRUCTION";
 
 /** Min/max range for a slider-driven filter. */
 export interface NumberRange {
@@ -79,6 +80,7 @@ export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
   SOLD: ["SOLD"],
   BUILT: [],
   UNDER_CONSTRUCTION: [],
+  PRE_CONSTRUCTION: [],
 };
 
 /**
@@ -96,8 +98,13 @@ export const UNIFIED_STATUS_TO_ZAAHI: Record<UnifiedStatus, string[]> = {
  *               respective taxonomies.
  *   • BUILT   ← AD "Constructed" (40,757). Same semantic as DDA
  *               "Completed" — a finished building.
- * No new chips and no tile rebake — pure mapping expansion. The
- * existing 5 unified chips render the full registry honestly.
+ *
+ * 2026-06-03 — PRE_CONSTRUCTION chip added:
+ *   • DDA "Pre-Construction" (~7.7K) — off-plan / early prep stage.
+ *   • AD  "Only Boundary Wall" — wall is up but the building isn't,
+ *     i.e. early-stage in AD's vocabulary. Conceptually the same
+ *     transitional state. Was previously invisible under any chip.
+ * Still no tile rebake — values were already in the tile properties.
  */
 export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
   VACANT: ["Vacant", "Not Started", "", "Empty", "Not Constructed"],
@@ -105,6 +112,7 @@ export const UNIFIED_STATUS_TO_PMTILES: Record<UnifiedStatus, string[]> = {
   SOLD: [],
   BUILT: ["Completed", "Constructed"],
   UNDER_CONSTRUCTION: ["Under Construction"],
+  PRE_CONSTRUCTION: ["Pre-Construction", "Only Boundary Wall"],
 };
 
 /**
@@ -217,6 +225,11 @@ export const STATUS_OPTIONS: ReadonlyArray<{
   {
     key: "UNDER_CONSTRUCTION",
     label: "Under construction",
+    appliesTo: "461K registry only",
+  },
+  {
+    key: "PRE_CONSTRUCTION",
+    label: "Pre-Construction",
     appliesTo: "461K registry only",
   },
 ];
