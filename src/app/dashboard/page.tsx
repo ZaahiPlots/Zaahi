@@ -9,7 +9,7 @@
  * live vs. coming soon.
  */
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
@@ -822,6 +822,131 @@ function filsToAedNumber(filsStr: string | null): number | null {
   }
 }
 
+// Inline price editor for "My Properties" rows. Adapted from
+// src/app/vault/PriceEditCell.tsx (Vault editor pattern reused per
+// task spec). Click → edit; Enter saves via PATCH /api/parcels/{id}
+// with `currentValuation` in fils; Esc cancels; blur saves if changed.
+// Refuses empty/zero — CLAUDE.md "Цена устанавливается ТОЛЬКО вручную"
+// implies positive currentValuation; clearing would silently no-op on
+// the parcel route's whitelist.
+function PropertyPriceCell({
+  parcelId,
+  priceFils,
+  onSaved,
+}: {
+  parcelId: string;
+  priceFils: string | null;
+  onSaved: (newFils: string) => void;
+}) {
+  const fmtP = useFormatPriceShort();
+  const initialAed = priceFils ? String(BigInt(priceFils) / BigInt(100)) : "";
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(initialAed);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+  useEffect(() => { if (!editing) setValue(initialAed); }, [initialAed, editing]);
+
+  async function save() {
+    const newAed = value.trim();
+    if (newAed === initialAed) { setEditing(false); return; }
+    const n = Number(newAed);
+    if (!newAed || !Number.isFinite(n) || n <= 0) {
+      setError("Price must be > 0");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const newPriceFils = String(BigInt(Math.round(n)) * BigInt(100));
+      const r = await apiFetch(`/api/parcels/${parcelId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ currentValuation: newPriceFils }),
+      });
+      if (!r.ok) { setError(`Save failed (${r.status})`); return; }
+      onSaved(newPriceFils);
+      setEditing(false);
+    } catch (e) {
+      console.error("[PropertyPriceCell] save:", e);
+      setError("Network error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancel() {
+    setValue(initialAed);
+    setEditing(false);
+    setError(null);
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        title="Click to edit price"
+        style={{
+          background: "transparent",
+          border: "1px solid transparent",
+          color: GOLD,
+          padding: "4px 8px",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          fontSize: 12,
+          textAlign: "left",
+          transition: "border-color 150ms ease, background 150ms ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)";
+          e.currentTarget.style.background = "rgba(200, 169, 110, 0.04)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "transparent";
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        {fmtP(filsToAedNumber(priceFils)) ?? "—"}
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <span style={{ color: SUBTLE, fontSize: 11 }}>AED</span>
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ""))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void save();
+            else if (e.key === "Escape") cancel();
+          }}
+          onBlur={() => { if (!saving) void save(); }}
+          disabled={saving}
+          style={{
+            background: "rgba(255, 255, 255, 0.06)",
+            border: `1px solid ${GOLD}`,
+            color: TXT,
+            borderRadius: 4,
+            padding: "4px 6px",
+            fontSize: 12,
+            width: 140,
+            outline: "none",
+            fontFamily: "inherit",
+          }}
+        />
+      </div>
+      {error && <span style={{ color: "#E63946", fontSize: 11 }}>{error}</span>}
+    </div>
+  );
+}
+
 function Properties() {
   const fmtA = useFormatArea();
   const fmtP = useFormatPriceShort();
@@ -954,7 +1079,17 @@ function Properties() {
                   <Td><span style={{ color: GOLD, fontWeight: 700 }}>{p.plotNumber}</span></Td>
                   <Td><span style={{ fontSize: 11 }}>{p.district}</span><div style={{ fontSize: 9, color: SUBTLE }}>{p.emirate}</div></Td>
                   <Td>{fmtA(p.area, null) ?? "—"}</Td>
-                  <Td><span style={{ color: GOLD }}>{fmtP(filsToAedNumber(p.currentValuation)) ?? "—"}</span></Td>
+                  <Td>
+                    <PropertyPriceCell
+                      parcelId={p.id}
+                      priceFils={p.currentValuation}
+                      onSaved={(newFils) =>
+                        setRows((prev) =>
+                          prev?.map((r) => (r.id === p.id ? { ...r, currentValuation: newFils } : r)) ?? prev,
+                        )
+                      }
+                    />
+                  </Td>
                   <Td>
                     <span style={{ padding: "2px 8px", borderRadius: 4, background: b.bg, color: b.fg, fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", fontFamily: 'Georgia, "Times New Roman", serif' }}>
                       {formatParcelStatus(p.status)}
