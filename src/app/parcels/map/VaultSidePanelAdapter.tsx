@@ -9,7 +9,7 @@
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §6.4, §6.5, §6.6.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import { ConflictBanner } from "./ConflictBanner";
@@ -239,6 +239,29 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef, width, o
     return () => { cancelled = true; };
   }, [entryId, mode]);
 
+  // Memoise the SidePanel directData prop so the panel's useEffect
+  // with deps [parcelId, directData] doesn't re-fire on every
+  // page-level rerender. auto-rotate ticks 60fps via map.on("rotate")
+  // → setBearing → page rerender; without the memo, a fresh object
+  // reference here resets feasOpen / docsOpen / isFavorite / ddaPhase
+  // on each frame and the Vault accordion sections can't stay open.
+  //
+  // Hook is declared at the top of the function BEFORE the loading /
+  // error early returns below — Rules of Hooks. The previous attempt
+  // (aefa842, reverted in 40f0d54) placed this hook after the early
+  // returns and crashed prod with "Rendered more hooks than during
+  // the previous render".
+  //
+  // view may be null during loading / error states (those paths
+  // return their own Panel before this value is read); return null
+  // there so the hook call is unconditional.
+  //
+  // See docs/research/autorotate-vault-diag.md for full cause chain.
+  const directData = useMemo(
+    () => (view ? mapEntryToParcelDetail(view) : null),
+    [view],
+  );
+
   // Founder spec 2026-05-31 Q1: loading/error transients inherit the
   // saved width so opening a vault entry doesn't snap from 350 →
   // saved when the loaded SidePanel takes over. Falls back to the
@@ -294,7 +317,8 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef, width, o
     );
   }
 
-  const directData = mapEntryToParcelDetail(view);
+  // directData declared via useMemo above (guaranteed non-null here
+  // because the loading/error early returns above filter view=null).
   const askingAed = view.askingPriceFils
     ? Number(BigInt(view.askingPriceFils) / BigInt(100))
     : null;
