@@ -5262,52 +5262,6 @@ function ParcelsMapPageInner() {
     } catch { /* ignore quota / SSR */ }
   }, [vaultOnlyMode]);
 
-  // Fly to the bounds of the caller's vault entries whenever vault-only
-  // mode flips on. Empty vault → toast + no-op. We DO NOT touch the
-  // viewport when vault-only mode is turned off — the founder spec
-  // explicitly asked for that to stay where the user left it.
-  useEffect(() => {
-    if (!vaultOnlyMode) return;
-    const map = mapRef.current;
-    if (!map) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await apiFetch("/api/me/vault/map");
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const fc = (await r.json()) as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
-        if (cancelled) return;
-        if (!fc.features || fc.features.length === 0) {
-          setToast({ kind: "success", message: "No vault plots yet" });
-          return;
-        }
-        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-        for (const f of fc.features) {
-          if (!f.geometry || f.geometry.type !== "Polygon") continue;
-          for (const ring of f.geometry.coordinates) {
-            for (const [lng, lat] of ring) {
-              if (lng < minLng) minLng = lng;
-              if (lat < minLat) minLat = lat;
-              if (lng > maxLng) maxLng = lng;
-              if (lat > maxLat) maxLat = lat;
-            }
-          }
-        }
-        if (!Number.isFinite(minLng)) {
-          setToast({ kind: "success", message: "No vault plots with geometry yet" });
-          return;
-        }
-        map.fitBounds(
-          [[minLng, minLat], [maxLng, maxLat]],
-          { padding: 80, duration: 1500, maxZoom: 17 },
-        );
-      } catch (err) {
-        console.error("[vault map] flyTo bounds failed:", err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [vaultOnlyMode]);
-
   useEffect(() => {
     if (!layersOpen) return;
     const onDown = (e: MouseEvent) => {
