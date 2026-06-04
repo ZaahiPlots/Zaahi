@@ -30,10 +30,21 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "@next/next": nextPlugin,
+      // Register the @typescript-eslint plugin namespace so pre-existing
+      // `eslint-disable @typescript-eslint/no-unused-vars` directives
+      // resolve to a known rule. Next 15 runs ESLint during `next build`
+      // once a config exists; without registration the directive in
+      // src/lib/vault-serialize.ts:168 fails the build. Founder chose
+      // not to mass-fix existing comments — we register-and-silence.
+      "@typescript-eslint": tseslint.plugin,
     },
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      // Rule registered above; keep off so it doesn't surface a new
+      // wave of findings on a codebase that has never been audited
+      // for unused vars.
+      "@typescript-eslint/no-unused-vars": "off",
     },
   },
   {
