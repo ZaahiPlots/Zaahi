@@ -14,6 +14,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { apiFetch } from "@/lib/api-fetch";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
+import { VaultListView } from "@/app/vault/VaultListView";
 import { type AreaUnit, loadAreaUnit, saveAreaUnit, useFormatArea } from "@/lib/area-unit";
 import {
   type Currency,
@@ -85,7 +86,7 @@ function initialsFromName(name: string | undefined | null): string {
 }
 
 type SectionKey =
-  | "overview" | "profile" | "properties" | "favorites" | "savedSearches"
+  | "overview" | "profile" | "properties" | "vault" | "favorites" | "savedSearches"
   | "deals" | "documents" | "financials" | "notifications"
   | "pending" | "settings";
 
@@ -93,6 +94,7 @@ const NAV: Array<{ key: SectionKey; icon: string; label: string; rolesOnly?: Rol
   { key: "overview", icon: "📊", label: "Overview" },
   { key: "profile", icon: "👤", label: "Profile" },
   { key: "properties", icon: "🏗️", label: "My Properties", rolesOnly: ["OWNER", "BROKER", "INVESTOR", "DEVELOPER"] },
+  { key: "vault", icon: "🗄️", label: "Vault" },
   { key: "favorites", icon: "❤️", label: "Favorites" },
   { key: "savedSearches", icon: "🔍", label: "Saved Searches" },
   { key: "deals", icon: "📋", label: "My Deals" },
@@ -252,6 +254,7 @@ function DashboardInner() {
           {section === "overview" && <Overview user={user} />}
           {section === "profile" && <Profile user={user} onSaved={reload} />}
           {section === "properties" && <Properties />}
+          {section === "vault" && user && <VaultListView selfUserId={user.id} />}
           {section === "favorites" && <Favorites />}
           {section === "savedSearches" && <SavedSearches />}
           {section === "deals" && <Deals />}
