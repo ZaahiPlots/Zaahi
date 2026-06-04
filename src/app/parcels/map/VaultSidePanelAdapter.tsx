@@ -9,7 +9,7 @@
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §6.4, §6.5, §6.6.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import { ConflictBanner } from "./ConflictBanner";
@@ -294,7 +294,15 @@ export function VaultSidePanelAdapter({ entryId, mode, onClose, mapRef, width, o
     );
   }
 
-  const directData = mapEntryToParcelDetail(view);
+  // Memoised so the SidePanel useEffect with deps [parcelId, directData]
+  // doesn't re-fire (and reset feasOpen / docsOpen / isFavorite /
+  // ddaPhase) on every page-level rerender. auto-rotate drives 60fps
+  // rerenders via the map.on("rotate") → setBearing chain on page.tsx;
+  // without this memo the Vault accordion sections refused to stay
+  // open while auto-rotate was running. `view` is the only input —
+  // refetch (entryId/mode change) is the legitimate cue to rebuild.
+  // See docs/research/autorotate-vault-diag.md.
+  const directData = useMemo(() => mapEntryToParcelDetail(view), [view]);
   const askingAed = view.askingPriceFils
     ? Number(BigInt(view.askingPriceFils) / BigInt(100))
     : null;
