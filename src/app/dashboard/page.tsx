@@ -482,10 +482,79 @@ function Toast({ kind, text }: { kind: "ok" | "err"; text: string }) {
   );
 }
 
+// Overview stats hook — pulls real numbers from the user's existing
+// endpoints (plots / favorites / deals). Each request 401s for the
+// unauthorised path; .catch falls back to null so a single endpoint
+// outage doesn't black-hole the whole overview. Notifications surface
+// in the sidebar badge already and Vault has no matching stat card
+// label, so neither is fetched here.
+interface OverviewStats {
+  plotCount: number;
+  totalViews30d: number;
+  totalPortfolioFils: bigint;
+  favoritesCount: number;
+  activeDealsCount: number;
+}
+
+// Deal statuses considered "active" (still in-flight). COMPLETED and
+// CANCELLED are the only terminal states; everything else is active.
+const ACTIVE_DEAL_EXCLUDED = new Set(["DEAL_COMPLETED", "DEAL_CANCELLED"]);
+
+function useOverviewStats(): { data: OverviewStats | null; loading: boolean } {
+  const [data, setData] = useState<OverviewStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [plotsR, favR, dealsR] = await Promise.all([
+          apiFetch("/api/me/plots").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          apiFetch("/api/me/favorites").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          apiFetch("/api/deals").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const plots = (plotsR?.items ?? []) as Array<{
+          currentValuation: string | null;
+          stats?: { views30d?: number };
+        }>;
+        const totalPortfolioFils = plots.reduce<bigint>((acc, p) => {
+          try {
+            return acc + (p.currentValuation ? BigInt(p.currentValuation) : BigInt(0));
+          } catch {
+            return acc;
+          }
+        }, BigInt(0));
+        const totalViews30d = plots.reduce((acc, p) => acc + (p.stats?.views30d ?? 0), 0);
+        const deals = Array.isArray(dealsR) ? (dealsR as Array<{ status?: string }>) : [];
+        const activeDealsCount = deals.filter(
+          (d) => typeof d.status === "string" && !ACTIVE_DEAL_EXCLUDED.has(d.status),
+        ).length;
+        setData({
+          plotCount: typeof plotsR?.count === "number" ? plotsR.count : plots.length,
+          totalViews30d,
+          totalPortfolioFils,
+          favoritesCount: typeof favR?.count === "number" ? favR.count : 0,
+          activeDealsCount,
+        });
+      } catch (e) {
+        console.error("[Overview] stats:", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return { data, loading };
+}
+
 // ─── Section: Overview ──────────────────────────────────────────────
 function Overview({ user }: { user: MeUser | null }) {
   const role = user?.role ?? "BUYER";
-  const stats = STATS_BY_ROLE[role] ?? STATS_BY_ROLE.BUYER ?? [];
+  const fmtP = useFormatPriceShort();
+  const { data, loading } = useOverviewStats();
+  const stats = useMemo(() => statsForRole(role, data, fmtP, loading), [role, data, fmtP, loading]);
   const firstName = (user?.name ?? "").split(" ")[0] || "there";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -496,7 +565,7 @@ function Overview({ user }: { user: MeUser | null }) {
           {user?.ambassadorActive && <span style={{ color: GOLD }}> · Ambassador active</span>}
         </Sub>
       </div>
-      <ComingSoonBanner text="Portfolio stats below are placeholder figures — live data lands in Phase 2 (OWNER analytics, BROKER commissions). Your Plots + Favorites + Saved Searches sections are fully live." />
+      <ComingSoonBanner text="Stats marked '—' wait on Phase 2 endpoints (commissions, ROI projections, feasibility reports, project pipeline). Live figures are pulled from your plots, favorites, and deals." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
         {stats.map((s) => (
           <StatCard key={s.label} {...s} />
@@ -546,44 +615,86 @@ function Overview({ user }: { user: MeUser | null }) {
   );
 }
 
-const STATS_BY_ROLE: Partial<Record<Role, Array<{ label: string; value: string; icon: string; accent?: string }>>> = {
-  OWNER: [
-    { label: "My Properties", value: "—", icon: "🏗️" },
-    { label: "Active Deals", value: "—", icon: "🤝" },
-    { label: "Portfolio Value", value: "— AED", icon: "💰", accent: GOLD },
-    { label: "Views This Month", value: "—", icon: "👁️" },
-  ],
-  BROKER: [
-    { label: "Active Listings", value: "—", icon: "🏗️" },
-    { label: "Pending Deals", value: "—", icon: "📋" },
-    { label: "Commission Earned", value: "— AED", icon: "💰", accent: GOLD },
-    { label: "Commission Pending", value: "— AED", icon: "⏳" },
-  ],
-  BUYER: [
-    { label: "Saved Properties", value: "—", icon: "❤️" },
-    { label: "Active Offers", value: "—", icon: "📋" },
-    { label: "Feasibility Reports", value: "—", icon: "📊" },
-    { label: "Viewed This Month", value: "—", icon: "👁️" },
-  ],
-  DEVELOPER: [
-    { label: "Projects", value: "—", icon: "🏗️" },
-    { label: "Plots Under Dev", value: "—", icon: "🚧" },
-    { label: "Pipeline Value", value: "— AED", icon: "💰", accent: GOLD },
-    { label: "Active Tenders", value: "—", icon: "📑" },
-  ],
-  INVESTOR: [
-    { label: "Portfolio Plots", value: "—", icon: "🏗️" },
-    { label: "Total Invested", value: "— AED", icon: "💰", accent: GOLD },
-    { label: "Projected ROI", value: "—%", icon: "📈" },
-    { label: "Watchlist", value: "—", icon: "👁️" },
-  ],
-  ARCHITECT: [
-    { label: "Active Projects", value: "—", icon: "🏗️" },
-    { label: "Feasibility Reports", value: "—", icon: "📊" },
-    { label: "Client Proposals", value: "—", icon: "📋" },
-    { label: "Templates", value: "—", icon: "📄" },
-  ],
-};
+// Role × stat-card → real value if we have a source endpoint, "—"
+// otherwise. While loading, show "…" so users can distinguish
+// in-flight from no-source. Sources (per task 4 spec):
+//   /api/me/plots       → plotCount, totalPortfolioFils, totalViews30d
+//   /api/me/favorites   → favoritesCount
+//   /api/deals          → activeDealsCount (excludes COMPLETED/CANCELLED)
+// Slots without an endpoint (commissions / ROI / feasibility /
+// project pipeline / tenders / templates) stay "—" — do NOT invent
+// metrics, per task spec.
+function statsForRole(
+  role: Role,
+  data: OverviewStats | null,
+  fmtP: ReturnType<typeof useFormatPriceShort>,
+  loading: boolean,
+): Array<{ label: string; value: string; icon: string; accent?: string }> {
+  const num = (n: number | null | undefined) => {
+    if (loading && data === null) return "…";
+    if (n == null) return "—";
+    return n.toLocaleString("en-US");
+  };
+  const money = (fils: bigint | null | undefined) => {
+    if (loading && data === null) return "…";
+    if (fils == null) return "— AED";
+    const aed = Number(fils) / 100;
+    return fmtP(aed) ?? "— AED";
+  };
+  switch (role) {
+    case "OWNER":
+      return [
+        { label: "My Properties", value: num(data?.plotCount), icon: "🏗️" },
+        { label: "Active Deals", value: num(data?.activeDealsCount), icon: "🤝" },
+        { label: "Portfolio Value", value: money(data?.totalPortfolioFils), icon: "💰", accent: GOLD },
+        { label: "Views This Month", value: num(data?.totalViews30d), icon: "👁️" },
+      ];
+    case "BROKER":
+      return [
+        { label: "Active Listings", value: num(data?.plotCount), icon: "🏗️" },
+        { label: "Pending Deals", value: num(data?.activeDealsCount), icon: "📋" },
+        { label: "Commission Earned", value: "— AED", icon: "💰", accent: GOLD },
+        { label: "Commission Pending", value: "— AED", icon: "⏳" },
+      ];
+    case "BUYER":
+      return [
+        { label: "Saved Properties", value: num(data?.favoritesCount), icon: "❤️" },
+        { label: "Active Offers", value: num(data?.activeDealsCount), icon: "📋" },
+        { label: "Feasibility Reports", value: "—", icon: "📊" },
+        { label: "Viewed This Month", value: "—", icon: "👁️" },
+      ];
+    case "DEVELOPER":
+      return [
+        { label: "Projects", value: "—", icon: "🏗️" },
+        { label: "Plots Under Dev", value: "—", icon: "🚧" },
+        { label: "Pipeline Value", value: "— AED", icon: "💰", accent: GOLD },
+        { label: "Active Tenders", value: "—", icon: "📑" },
+      ];
+    case "INVESTOR":
+      return [
+        { label: "Portfolio Plots", value: num(data?.plotCount), icon: "🏗️" },
+        { label: "Total Invested", value: money(data?.totalPortfolioFils), icon: "💰", accent: GOLD },
+        { label: "Projected ROI", value: "—%", icon: "📈" },
+        { label: "Watchlist", value: num(data?.favoritesCount), icon: "👁️" },
+      ];
+    case "ARCHITECT":
+      return [
+        { label: "Active Projects", value: "—", icon: "🏗️" },
+        { label: "Feasibility Reports", value: "—", icon: "📊" },
+        { label: "Client Proposals", value: "—", icon: "📋" },
+        { label: "Templates", value: "—", icon: "📄" },
+      ];
+    default:
+      // ADMIN falls through to the buyer view (existing pre-task-4
+      // behavior). Founder has /admin/* for the real admin tools.
+      return [
+        { label: "Saved Properties", value: num(data?.favoritesCount), icon: "❤️" },
+        { label: "Active Offers", value: num(data?.activeDealsCount), icon: "📋" },
+        { label: "Feasibility Reports", value: "—", icon: "📊" },
+        { label: "Viewed This Month", value: "—", icon: "👁️" },
+      ];
+  }
+}
 
 const ROLE_TIPS: Partial<Record<Role, string>> = {
   OWNER: "Use \"My Properties\" to see live view counts and who's opening your Site Plan PDF. Detailed analytics land in Phase 2.",
