@@ -113,13 +113,12 @@ export const HERO_BUILDINGS: HeroBuilding[] = [
   // Source: Prolific architectural CAD (vendor sample 2026-06-05).
   // Decimate-only pipeline (process_atlantis_palm.py, ratio 0.40):
   // 451K → 180K tris, 36 MB → 14.4 MB, 0 textures (procedural materials).
-  // Scale preserved (CAD near-real-world: 308×121×155 m source); founder
-  // tunes via dev panel — defaultSize 1.0 placeholder.
+  // Founder-tuned 2026-06-05 via dev panel.
   { id: "atlantis-palm", label: "Atlantis The Palm",
     glb: "/glb/buildings/atlantis-palm.glb",
-    defaultCoords: [55.1175, 25.1308, 0],
-    defaultOrientation: [0, 0, 90],
-    defaultSize: 1.0 },
+    defaultCoords: [55.1171024, 25.1303946, 0],
+    defaultOrientation: [0, 49, 90],
+    defaultSize: 0.89 },
 ];
 
 export function effectiveValues(b: HeroBuilding, ov: HeroOverride | undefined) {
