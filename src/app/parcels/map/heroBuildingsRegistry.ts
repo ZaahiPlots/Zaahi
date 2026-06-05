@@ -108,6 +108,18 @@ export const HERO_BUILDINGS: HeroBuilding[] = [
     defaultCoords: [55.1455254, 25.1111202, 0],
     defaultOrientation: [0, -39, 90],
     defaultSize: 2.50 },
+
+  // Atlantis The Palm (Nakheel, Palm Jumeirah crescent) — VENDOR EVAL.
+  // Source: Prolific architectural CAD (vendor sample 2026-06-05).
+  // Decimate-only pipeline (process_atlantis_palm.py, ratio 0.40):
+  // 451K → 180K tris, 36 MB → 14.4 MB, 0 textures (procedural materials).
+  // Scale preserved (CAD near-real-world: 308×121×155 m source); founder
+  // tunes via dev panel — defaultSize 1.0 placeholder.
+  { id: "atlantis-palm", label: "Atlantis The Palm",
+    glb: "/glb/buildings/atlantis-palm.glb",
+    defaultCoords: [55.1175, 25.1308, 0],
+    defaultOrientation: [0, 0, 90],
+    defaultSize: 1.0 },
 ];
 
 export function effectiveValues(b: HeroBuilding, ov: HeroOverride | undefined) {

@@ -1,0 +1,11 @@
+name=atlantis-palm
+source=Prolific (vendor eval 2026-06-05)
+faces_imported=451795
+verts_imported=1050352
+faces_final=180700
+verts_final=787709
+decimate_ratio=0.4
+scale=preserved (CAD source already near real-world meters)
+rotation=preserved (source Y-up per glTF spec)
+bbox_blender_zup=(308.67, 121.37, 154.82)
+size_bytes=15070660
