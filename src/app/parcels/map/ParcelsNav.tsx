@@ -64,6 +64,19 @@ export default function ParcelsNav({
 }: Props) {
   const [items, setItems] = useState<ParcelMini[] | null>(null);
   const fetchedRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile breakpoint — matches SidePanel/ArchibaldChat at sm: (640 px).
+  // On mobile the arrow keeps the camera flyTo but suppresses the
+  // auto-card pop, so the user can see the plot on the map first
+  // (founder spec 2026-06-05). Tap on the plot still opens the card.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (fetchedRef.current) return;
@@ -115,13 +128,17 @@ export default function ParcelsNav({
     // Mirror HeaderBar Find: wait for the camera to land before
     // popping the right SidePanel. Vault entries open the vault
     // adapter; everything else opens the public SidePanel.
-    window.setTimeout(() => {
-      if (target.isVault && target.vaultEntryId) {
-        onSelectVaultEntry(target.vaultEntryId);
-      } else {
-        onSelectListing(target.id);
-      }
-    }, 2000);
+    // Mobile: suppress auto-card so the user can see the plot on the
+    // map first; tap on the plot opens it (page.tsx handlers).
+    if (!isMobile) {
+      window.setTimeout(() => {
+        if (target.isVault && target.vaultEntryId) {
+          onSelectVaultEntry(target.vaultEntryId);
+        } else {
+          onSelectListing(target.id);
+        }
+      }, 2000);
+    }
   }
 
   // "Parcels (N)" pill label reflects the active set (listings or PPV),
