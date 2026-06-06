@@ -13,6 +13,23 @@
 //   v6 wrappers call v5, then add time-weighted metrics (IRR over the
 //     monthly cashflow timeline, ROE on peak equity, NPV at a default
 //     discount rate).
+//
+// DRAWN-MONTHLY interest correction (2026-06-06, founder-ratified)
+// ────────────────────────────────────────────────────────────────
+// v5 deriveFinance() computes simple interest on the FULL loan principal
+// for the FULL period — overstates by ~50% vs reality. Real-world
+// construction loans amortise interest on the DRAWN BALANCE, which grows
+// linearly as construction draws happen monthly (Brueggeman & Fisher
+// Ch.21 "Development Financing"). For a linear monthly drawdown over N
+// months at annual rate r, total accrued interest is approximately
+// loanAed × r × N/12 × 0.5 (average outstanding balance = 50% of peak),
+// plus a small capitalised-interest reserve that itself accrues interest
+// during the build. We use the closed-form solution for monthly compounding
+// over a linear drawdown, which is institutionally defensible.
+//
+// v5 deriveFinance() is NOT modified — it remains the historical "upper
+// bound" used by v5 SidePanel for backwards compatibility. The v6 wrappers
+// recompute and replace the interest figure before passing it downstream.
 
 import {
   computeBtS,
@@ -68,6 +85,68 @@ export const DEFAULT_TERMINAL_CAP_RATE = 7.5;
 // margin 4.5% = 10% blended.
 export const DEFAULT_NPV_DISCOUNT_RATE = 10;
 
+// ── DRAWN-MONTHLY interest (institutional construction-loan accrual) ──
+//
+// For a construction loan drawn linearly over `drawMonths` at annual rate
+// `ratePct`, the total interest paid by exit equals the sum, over each
+// drawn slice, of slice × monthlyRate × (months it remained outstanding).
+//
+// Linear drawdown: slice_m = loan / drawMonths, drawn at month m, retained
+// until exit at month `holdMonths` (= drawMonths for a BtS at handover).
+// Interest on slice_m alone over the hold = slice_m × monthlyRate × (holdMonths - m + 1).
+//
+// Total interest = Σ_{m=1..drawMonths} (loan/drawMonths) × i × (hold − m + 1)
+//                = (loan × i / drawMonths) × Σ (hold − m + 1)
+//                = (loan × i / drawMonths) × Σ_{k=hold−drawMonths+1..hold} k
+//                = (loan × i / drawMonths) × ((hold + (hold−drawMonths+1)) × drawMonths / 2)
+//                = (loan × i / 2) × (2×hold − drawMonths + 1)
+//
+// Where i = ratePct/100/12 (monthly simple interest, capitalised at exit).
+// This produces ~50% of the v5 simple-on-full-principal figure for the
+// trivial case of drawMonths = holdMonths, and grows correctly when the
+// loan is held past the drawdown period.
+export function drawnMonthlyInterest(
+  loanAed: number,
+  ratePct: number,
+  drawMonths: number,
+  holdMonths: number,
+): number {
+  if (loanAed <= 0 || ratePct <= 0 || drawMonths <= 0 || holdMonths <= 0) return 0;
+  const D = Math.max(1, Math.round(drawMonths));
+  const H = Math.max(D, Math.round(holdMonths));
+  const i = ratePct / 100 / 12;
+  return (loanAed * i / 2) * (2 * H - D + 1);
+}
+
+// ── Brokerage on land purchase (v6 wrapper, 2026-06-08) ───────────────
+//
+// Real-world deals often go through a buyer-side broker who takes a
+// commission off the closing price. v5 deriveLand does NOT model this
+// (totalLandCost = landCost + DLD only). The v6 wrapper folds the broker
+// fee into totalLandCostAed BEFORE downstream math, so ROI / IRR / NPV
+// reflect the real all-in land cost. Brokerage is exposed separately so
+// the UI / PDF can print it as its own line below DLD.
+//
+//   brokerageAed = landCostAed × brokerageOnLandPct / 100
+//
+// Default 0% — most ZAAHI users transact directly with the developer
+// and pay no buyer-side broker.
+export function applyLandBrokerageV6(
+  land: LandDerived,
+  brokerageOnLandPct: number,
+): { land: LandDerived; brokerageAed: number } {
+  const pct = brokerageOnLandPct > 0 ? brokerageOnLandPct : 0;
+  const brokerageAed = land.landCostAed * (pct / 100);
+  if (brokerageAed <= 0) return { land, brokerageAed: 0 };
+  return {
+    land: {
+      ...land,
+      totalLandCostAed: land.totalLandCostAed + brokerageAed,
+    },
+    brokerageAed,
+  };
+}
+
 // ── BtS V6 ────────────────────────────────────────────────────────────
 
 export interface BtSResultV6 extends BtSResult {
@@ -78,6 +157,14 @@ export interface BtSResultV6 extends BtSResult {
   cashflows: CashflowEntry[]; // for PDF rendering of timeline
   constructionMonths: number;
   escrow?: EscrowDrawdownResult; // present when escrow is enabled (Sprint 9c)
+  // v6 DRAWN-MONTHLY interest figures (replace v5 simple-interest line).
+  interestBasis: 'simple-v5' | 'drawn-monthly-v6';
+  drawnInterestAed: number;      // recomputed per Brueggeman Ch.21
+  v5InterestAed: number;         // for transparency / before-after delta
+  // Brokerage on land purchase (2026-06-08). Buyer-side broker fee
+  // folded into totalLandCostAed before downstream math. 0 when off.
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeBtSV6(
@@ -90,12 +177,39 @@ export function computeBtSV6(
   options?: {
     constructionMonths?: number;
     loanAed?: number;
+    ratePct?: number;             // annual rate, needed for drawn-monthly recompute
+    financePeriodMonths?: number; // v5 period; falls back to constructionMonths
+    brokerageOnLandPct?: number;  // buyer-side land broker fee %, default 0
     escrow?: Omit<EscrowDrawdownInputs, 'monthsToCompletion' | 'totalConstructionAed' | 'totalRevenueAed'>;
   },
 ): BtSResultV6 {
-  const v5 = computeBtS(area, land, construction, finance, revenue, paymentMode);
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
+
+  // Brokerage on land — paid at closing alongside land + DLD.
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
+
+  // ── Override v5 interest with DRAWN-MONTHLY per Brueggeman Ch.21. ──
+  // Loan drawn linearly over `constructionMonths`, held until handover.
+  // v5 deriveFinance simple interest is replaced with the institutionally
+  // correct figure before flowing into totalInvestmentAed and ROI/IRR.
+  const v5InterestAed = finance.totalInterestAed;
+  const loan = options?.loanAed ?? 0;
+  const rate = options?.ratePct ?? 0;
+  const interestBasis: BtSResultV6['interestBasis'] =
+    loan > 0 && rate > 0 ? 'drawn-monthly-v6' : 'simple-v5';
+  const drawnInterestAed =
+    interestBasis === 'drawn-monthly-v6'
+      ? drawnMonthlyInterest(loan, rate, constructionMonths, constructionMonths)
+      : v5InterestAed;
+  const correctedFinance: FinanceDerived =
+    interestBasis === 'drawn-monthly-v6'
+      ? { totalInterestAed: drawnInterestAed }
+      : finance;
+  const v5 = computeBtS(area, land, construction, correctedFinance, revenue, paymentMode);
 
   // Escrow drawdown — Sprint 9c. When enabled (RERA Law 8/2007), buyer
   // payments flow into a trust account; developer draws down on milestone
@@ -127,15 +241,32 @@ export function computeBtSV6(
       landCostAed: land.landCostAed,
       dldFeeAed: land.dldFeeAed,
       totalConstructionAed: construction.totalConstructionAed,
-      totalFinanceInterestAed: finance.totalInterestAed,
+      totalFinanceInterestAed: correctedFinance.totalInterestAed,
       netRevenueAed: revenue.netRevenueAed,
       constructionMonths,
       paymentMode,
       downPaymentAed: land.downPaymentAed,
       installmentPerMonthAed: land.monthlyInstallmentAed,
-      installmentMonths: paymentMode === 'installments' ? 24 : undefined,
+      // P0.2 fix: pass the user-input period (deriveLand stores it via
+      // monthlyInstallmentAed = remaining / periodMonths). We can recover
+      // periodMonths by dividing remaining by monthlyInstallment. Default
+      // to constructionMonths so installments don't outlive the build.
+      installmentMonths:
+        paymentMode === 'installments'
+          ? land.monthlyInstallmentAed > 0
+            ? Math.max(
+                1,
+                Math.round(land.remainingAed / land.monthlyInstallmentAed),
+              )
+            : constructionMonths
+          : undefined,
       loanAed: options?.loanAed,
     });
+  }
+  // Brokerage on land — paid at closing alongside land + DLD.
+  if (brokerageOnLandAed > 0) {
+    cashflows.push({ month: 0, aed: -brokerageOnLandAed });
+    cashflows.sort((a, b) => a.month - b.month);
   }
 
   const peak = peakEquity(cashflows);
@@ -152,6 +283,11 @@ export function computeBtSV6(
     cashflows,
     constructionMonths,
     escrow,
+    interestBasis,
+    drawnInterestAed,
+    v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }
 
@@ -167,6 +303,11 @@ export interface BtRResultV6 extends BtRResult {
   holdYears: number;
   terminalCapRatePct: number;
   exitValueAed: number;       // capitalised year-(N+1) net annual
+  interestBasis: 'simple-v5' | 'drawn-monthly-v6';
+  drawnInterestAed: number;
+  v5InterestAed: number;
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeBtRV6(
@@ -180,20 +321,45 @@ export function computeBtRV6(
     holdYears?: number;
     terminalCapRatePct?: number;
     loanAed?: number;
+    ratePct?: number;
+    brokerageOnLandPct?: number;
   },
 ): BtRResultV6 {
-  const v5 = computeBtR(land, construction, finance, rental, annualIncreasePct);
+  // Brokerage on land — same treatment as BtS.
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
   const holdYears = options?.holdYears ?? DEFAULT_BTR_HOLD_YEARS;
   const terminalCapRatePct =
     options?.terminalCapRatePct ?? DEFAULT_TERMINAL_CAP_RATE;
 
+  // DRAWN-MONTHLY interest correction. For BtR the loan is drawn during
+  // construction and typically refinanced to permanent at handover —
+  // construction-loan interest accrues over the drawdown only (not the
+  // hold period). hold-months for interest accrual = constructionMonths.
+  const v5InterestAed = finance.totalInterestAed;
+  const loan = options?.loanAed ?? 0;
+  const rate = options?.ratePct ?? 0;
+  const interestBasis: BtRResultV6['interestBasis'] =
+    loan > 0 && rate > 0 ? 'drawn-monthly-v6' : 'simple-v5';
+  const drawnInterestAed =
+    interestBasis === 'drawn-monthly-v6'
+      ? drawnMonthlyInterest(loan, rate, constructionMonths, constructionMonths)
+      : v5InterestAed;
+  const correctedFinance: FinanceDerived =
+    interestBasis === 'drawn-monthly-v6'
+      ? { totalInterestAed: drawnInterestAed }
+      : finance;
+  const v5 = computeBtR(land, construction, correctedFinance, rental, annualIncreasePct);
+
   const cashflows = buildBtRCashflows({
     landCostAed: land.landCostAed,
     dldFeeAed: land.dldFeeAed,
     totalConstructionAed: construction.totalConstructionAed,
-    totalFinanceInterestAed: finance.totalInterestAed,
+    totalFinanceInterestAed: correctedFinance.totalInterestAed,
     netAnnualAed: rental.netAnnualAed,
     annualIncreasePct,
     constructionMonths,
@@ -201,6 +367,10 @@ export function computeBtRV6(
     terminalCapRatePct,
     loanAed: options?.loanAed,
   });
+  if (brokerageOnLandAed > 0) {
+    cashflows.push({ month: 0, aed: -brokerageOnLandAed });
+    cashflows.sort((a, b) => a.month - b.month);
+  }
 
   const peak = peakEquity(cashflows);
   const irrPct = irr(cashflows);
@@ -224,6 +394,11 @@ export function computeBtRV6(
     holdYears,
     terminalCapRatePct,
     exitValueAed,
+    interestBasis,
+    drawnInterestAed,
+    v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }
 
@@ -239,6 +414,11 @@ export interface JvDerivedV6 extends JvDerived {
   landownerCashflows: CashflowEntry[];
   developerCashflows: CashflowEntry[];
   constructionMonths: number;
+  interestBasis: 'simple-v5' | 'drawn-monthly-v6';
+  drawnInterestAed: number;
+  v5InterestAed: number;
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeJvV6(
@@ -249,11 +429,36 @@ export function computeJvV6(
   revenue: BtSRevenueDerived,
   options?: {
     constructionMonths?: number;
+    loanAed?: number;
+    ratePct?: number;
+    brokerageOnLandPct?: number;
   },
 ): JvDerivedV6 {
-  const v5 = computeJv(jvInp, land, construction, finance, revenue);
+  // Brokerage on land (developer-side cost; landowner doesn't pay
+  // broker on their own contribution).
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
+
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
+
+  // DRAWN-MONTHLY interest correction (consistent with BtS/BtR).
+  const v5InterestAed = finance.totalInterestAed;
+  const loan = options?.loanAed ?? 0;
+  const rate = options?.ratePct ?? 0;
+  const interestBasis: JvDerivedV6['interestBasis'] =
+    loan > 0 && rate > 0 ? 'drawn-monthly-v6' : 'simple-v5';
+  const drawnInterestAed =
+    interestBasis === 'drawn-monthly-v6'
+      ? drawnMonthlyInterest(loan, rate, constructionMonths, constructionMonths)
+      : v5InterestAed;
+  const correctedFinance: FinanceDerived =
+    interestBasis === 'drawn-monthly-v6'
+      ? { totalInterestAed: drawnInterestAed }
+      : finance;
+  const v5 = computeJv(jvInp, land, construction, correctedFinance, revenue);
 
   const landownerCashflows = buildJvPartnerCashflows({
     partnerContributionAed: v5.landownerTotalContribution,
@@ -272,7 +477,7 @@ export function computeJvV6(
     landCostAed: land.landCostAed,
     dldFeeAed: land.dldFeeAed,
     totalConstructionAed: construction.totalConstructionAed,
-    totalFinanceInterestAed: finance.totalInterestAed,
+    totalFinanceInterestAed: correctedFinance.totalInterestAed,
     netRevenueAed: revenue.netRevenueAed,
     constructionMonths,
   });
@@ -292,5 +497,10 @@ export function computeJvV6(
     landownerCashflows,
     developerCashflows,
     constructionMonths,
+    interestBasis,
+    drawnInterestAed,
+    v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }

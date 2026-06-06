@@ -834,10 +834,120 @@ export default function SidePanel({
                 </Section>
               )}
 
-              {/* General notes — straight from DDA's affection plan, raw text */}
+              {/* General Notes — plain text NotesBlock restored 2026-06-09.
+                  Visual <GeneralNotes /> (parking + NOCs + design callout)
+                  was retired from this position per founder; will be
+                  redesigned in a follow-up task. */}
               {plan.notes && plan.notes.trim().length > 0 && (
                 <NotesBlock rewritten={plan.notes} original={plan.notesOriginal} />
               )}
+
+              {/* Documents — moved ABOVE the Feasibility Calculator
+                  (founder 2026-06-09). Source documents sit between
+                  General Notes and the Calculator so users see the
+                  affection plan before running numbers. DDA Bearer-auth
+                  download flow unchanged. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <button
+                  onClick={() => setDocsOpen((v) => !v)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: `1px solid ${LINE}`,
+                    color: TXT,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    transition: "background 150ms ease, border-color 150ms ease",
+                  }}
+                >
+                  <span>Documents</span>
+                  <span style={{ color: SUBTLE }}>{docsOpen ? "▾" : "▸"}</span>
+                </button>
+                {docsOpen && (
+                  <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}`, display: "flex", flexDirection: "column" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!data) return;
+                        downloadFile(
+                          `/api/parcels/${data.id}/pdf`,
+                          `${data.plotNumber}-affection-plan.pdf`,
+                        ).catch((e) => {
+                          console.error("[pdf-download]", e);
+                          alert("Could not download the PDF. Try again or contact support.");
+                        });
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        width: "100%",
+                        textAlign: "left",
+                        fontSize: 12,
+                        color: GOLD,
+                        padding: "4px 8px",
+                        background: "transparent",
+                        border: 0,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <DocIcon />
+                      <span>Affection Plan (PDF)</span>
+                    </button>
+                    {plan.plotGuidelinesUrl && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={guidelinesBusy}
+                          onClick={async () => {
+                            if (!data || guidelinesBusy) return;
+                            setGuidelinesBusy(true);
+                            try {
+                              await downloadFile(
+                                `/api/parcels/${data.id}/plot-guidelines`,
+                                `${data.plotNumber}-plot-details.pdf`,
+                              );
+                            } catch (e) {
+                              console.error("[plot-guidelines-download]", e);
+                              alert("Could not download Plot Details. Try again or contact support.");
+                            } finally {
+                              setGuidelinesBusy(false);
+                            }
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            width: "100%",
+                            textAlign: "left",
+                            fontSize: 12,
+                            color: GOLD,
+                            padding: "4px 8px",
+                            background: "transparent",
+                            border: 0,
+                            cursor: guidelinesBusy ? "wait" : "pointer",
+                            opacity: guidelinesBusy ? 0.7 : 1,
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <DocIcon />
+                          <span>{guidelinesBusy ? "Downloading…" : "Plot Details (PDF)"}</span>
+                        </button>
+                        <div style={{ padding: "0 8px" }}>
+                          <PdfProgressBar busy={guidelinesBusy} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
                   is supported when DDA data is missing. */}
@@ -907,121 +1017,9 @@ export default function SidePanel({
                 )}
               </div>
 
-              {/* Documents */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <button
-                  onClick={() => setDocsOpen((v) => !v)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    fontSize: 11,
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    background: "rgba(255, 255, 255, 0.04)",
-                    border: `1px solid ${LINE}`,
-                    color: TXT,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    transition: "background 150ms ease, border-color 150ms ease",
-                  }}
-                >
-                  <span>Documents</span>
-                  <span style={{ color: SUBTLE }}>{docsOpen ? "▾" : "▸"}</span>
-                </button>
-                {docsOpen && (
-                  <div style={{ paddingLeft: 8, borderLeft: `1px solid ${LINE}`, display: "flex", flexDirection: "column" }}>
-                    {/* Existing "Affection Plan" download — DDA's
-                        title="Download Plot Details" PDF, fetched via
-                        the /pdf proxy. ALWAYS shown when a parcel is
-                        loaded. */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!data) return;
-                        // Plain <a href="/api/..."> would 401 because the
-                        // PDF endpoint goes through getApprovedUserId.
-                        // downloadFile attaches the Bearer token via apiFetch.
-                        downloadFile(
-                          `/api/parcels/${data.id}/pdf`,
-                          `${data.plotNumber}-affection-plan.pdf`,
-                        ).catch((e) => {
-                          console.error("[pdf-download]", e);
-                          alert("Could not download the PDF. Try again or contact support.");
-                        });
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        width: "100%",
-                        textAlign: "left",
-                        fontSize: 12,
-                        color: GOLD,
-                        padding: "4px 8px",
-                        background: "transparent",
-                        border: 0,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <DocIcon />
-                      <span>Affection Plan (PDF)</span>
-                    </button>
-                    {/* New "Plot Details" button — DDA's
-                        title="Download Plot Guidelines" Salesforce PDF.
-                        Only rendered when the URL exists for THIS plot
-                        (backfilled by scripts/backfill-plot-guidelines.ts).
-                        Routed through /api/parcels/[id]/plot-guidelines so
-                        the same Bearer-token + downloadFile flow works. */}
-                    {plan.plotGuidelinesUrl && (
-                      <>
-                        <button
-                          type="button"
-                          disabled={guidelinesBusy}
-                          onClick={async () => {
-                            if (!data || guidelinesBusy) return;
-                            setGuidelinesBusy(true);
-                            try {
-                              await downloadFile(
-                                `/api/parcels/${data.id}/plot-guidelines`,
-                                `${data.plotNumber}-plot-details.pdf`,
-                              );
-                            } catch (e) {
-                              console.error("[plot-guidelines-download]", e);
-                              alert("Could not download Plot Details. Try again or contact support.");
-                            } finally {
-                              setGuidelinesBusy(false);
-                            }
-                          }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            width: "100%",
-                            textAlign: "left",
-                            fontSize: 12,
-                            color: GOLD,
-                            padding: "4px 8px",
-                            background: "transparent",
-                            border: 0,
-                            cursor: guidelinesBusy ? "wait" : "pointer",
-                            opacity: guidelinesBusy ? 0.7 : 1,
-                            fontFamily: "inherit",
-                          }}
-                        >
-                          <DocIcon />
-                          <span>{guidelinesBusy ? "Downloading…" : "Plot Details (PDF)"}</span>
-                        </button>
-                        <div style={{ padding: "0 8px" }}>
-                          <PdfProgressBar busy={guidelinesBusy} />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* General Notes + Documents were moved ABOVE the
+                  calculator (founder 2026-06-09). See blocks earlier
+                  in this Section. */}
 
               <div style={{
                 paddingTop: 6, borderTop: `1px solid ${LINE}`,

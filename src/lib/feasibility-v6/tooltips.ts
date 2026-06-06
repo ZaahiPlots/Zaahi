@@ -1,109 +1,108 @@
-// ZAAHI Feasibility v6.0 — top 30 field tooltips, EN-only.
+// ZAAHI Feasibility v6.0 — plain-language field tooltips.
 //
-// Per docs/specs/feasibility-v6/03_UX_FULLSCREEN_AND_DIFF.md §4 and Q3 in
-// docs/specs/feasibility-v6/10_FOUNDER_RATIFY_P0.md (Option C: hybrid =
-// short EN-only tooltips for top 30 fields, full institutional explanation
-// in 07_METHODOLOGY.md). AR/RU translations deferred to Phase B per Q5.
-//
-// Each tooltip ≤ 140 chars. Sources are short tags; long form lives in
-// 07_METHODOLOGY.md. Keep this file as the single map — do not inline copy.
+// Per founder direction (B2 2026-06-06): each tooltip in three short
+// sentences max — what the field is · what it means for the deal · what
+// to enter (and the formula if helpful). No jargon, no academic citations.
+// English only at v6 launch; AR/RU translations deferred per spec Q3.
 
 export const TOOLTIPS: Record<string, string> = {
   // ── Engine selector ───────────────────────────────────────────────
   engine:
-    'Specialised cost / revenue model for the asset class. Switching engines re-seeds psf defaults but preserves your manual overrides.',
+    "Picks the asset class (Residential, Office, Hotel...). Each engine seeds different per-sqft cost and price assumptions. Switching engines won't wipe values you've already typed.",
 
   // ── Area block ────────────────────────────────────────────────────
   plotArea:
-    'Plot area in sqft as registered with DLD. Source of truth: Title Deed / DDA polygon. 1 sqm = 10.7639 sqft.',
+    "Land area of the plot in square feet (sqft), as registered with DLD. Comes from the title deed. 1 sqm ≈ 10.76 sqft.",
   far:
-    'Floor Area Ratio = GFA ÷ plot area. Set by master-developer affection plan. Manual override allowed for what-if.',
+    "Floor Area Ratio — how many times the plot area you can build above ground. Set by the master developer / DDA. Formula: GFA = Plot × FAR.",
   gfa:
-    'Gross Floor Area = plot area × FAR. Total covered area regardless of use, including circulation and walls.',
+    "Gross Floor Area — total built space above ground (sqft). Auto: GFA = Plot × FAR.",
   bua:
-    'Built-Up Area = GFA × ~1.85 in Dubai (covers podiums, basements, terraces). Founder-ratified ratio 5 May 2026.',
+    "Built-Up Area — GFA plus podiums, parking, basements, terraces. In Dubai, BUA is usually ~1.85 × GFA. You build (and pay) for BUA, you sell SFA.",
   buaRatio:
-    'BUA / GFA ratio. Default 1.85 in Dubai (RICS NRM 1 + DM circular 168/2018). Range 1.50–2.20 typical.',
+    "BUA divided by GFA. Default 1.85 in Dubai; villas can be lower, hotels with big podiums higher.",
   efficiency:
-    'Saleable Floor Area / GFA. Higher = more leasable space. Residential 75–85%, office 80–88%, retail 65–75%.',
+    "Sellable share of GFA in %. The rest is cores, walls, common areas. Residential 75–85%, office 80–88%, retail 65–75%. Formula: SFA = GFA × Efficiency.",
   sfa:
-    'Saleable / leasable Floor Area = GFA × efficiency. Revenue is calculated on SFA, not GFA.',
+    "Saleable Floor Area — the part you actually sell or lease. Revenue is calculated on SFA, not BUA or GFA.",
 
   // ── Land block ────────────────────────────────────────────────────
   landCost:
-    'All-cash land acquisition price in AED. From Excel feed, Add-Plot form, or owner-edited. Never auto-calculated.',
+    "What you pay the seller for the plot (AED). Loaded from the listing or typed manually. Excludes DLD and any broker fee.",
   dldFee:
-    '4% Dubai Land Department registration fee on land transfer. Applies once at acquisition, not at unit sales.',
+    "Dubai Land Department transfer fee at 4% of the land price. Paid once at closing. Auto-computed.",
+  brokerageOnLand:
+    "Buyer-side broker commission on the land purchase, in %. Default 0 — most users transact direct with the developer. Formula: Brokerage = Land × %.",
   paymentMode:
-    'Full = pay at closing. Installments = downpayment + N tranches over period. Affects ROI on initial capital.',
+    "Full = pay land in one shot at closing. Installments = down payment + scheduled tranches. Installments delay the land outflow and free up early cash.",
   downPayment:
-    'Percent paid at closing if installments. UAE land norm 20–30%. Below 20% rare and usually requires bank involvement.',
+    "First chunk of the land price paid at closing, in %. UAE land is usually 20–30%. Below 20% is rare and may need a bank.",
   numberOfPayments:
-    'How many post-downpayment tranches. Typical 4–12 over 12–36 months. Spec defaults to 8.',
+    "How many tranches you pay after the down payment. Typical 4–12 tranches over the agreed period.",
   periodMonths:
-    'Total months over which the remaining land cost is paid. Independent of construction schedule.',
+    "Total months the remaining land balance is spread over. Separate from the construction schedule.",
 
   // ── Construction block ────────────────────────────────────────────
   constructionPsf:
-    'Pure construction cost per sqft of BUA, excluding consultancy / brand / infra. RICS NRM 1 base. Engine-seeded; override freely.',
+    "Bare construction cost per sqft of BUA (AED). Excludes consultants, brand, infra, contingency. Engine default = market benchmark; override with your contractor quote.",
   brandPsf:
-    'Brand / collaboration premium psf BUA — luxury or signature partner uplift. Zero by default, hospitality 100+.',
+    "Extra cost per sqft BUA when you partner with a luxury/operator brand (Aman, Six Senses, etc.). Zero for unbranded. Hospitality often 100+.",
   consultancyPsf:
-    'Architecture, MEP, structural, QS fees psf BUA. Industry norm 15–25 AED/sqft for residential, higher for healthcare.',
+    "Architect, structural, MEP, QS fees per sqft BUA. Industry norm ~15–25 for residential; higher for healthcare.",
   infrastructurePsf:
-    'On-plot infrastructure psf BUA (utilities, hardscape, landscape). 15–30 AED typical. Off-plot infra excluded.',
+    "On-plot infrastructure cost per sqft BUA — utilities trenches, hardscape, landscape. Typically 15–30 AED.",
   contingency:
-    'Reserve as % of base construction. RICS NRM 1 recommends 5–10% pre-tender, 3–5% post-tender. Default 5%.',
+    "Reserve buffer as % of base construction. RICS guidance: 5–10% pre-tender, 3–5% once contractor is signed.",
   totalConstruction:
-    'Sum of construction + brand + consultancy + infra, multiplied by BUA, plus contingency. Server-rounded to AED.',
+    "Sum of construction + brand + consultancy + infra (× BUA), plus contingency. Auto.",
 
   // ── Finance block ─────────────────────────────────────────────────
   financeEnabled:
-    'Toggle whether project carries debt. When off, no interest cost flows into total investment.',
+    "Turn on if the project carries a construction loan. Off = pure equity, no interest.",
   loanAed:
-    'Principal in AED. Construction loans typically 50–70% of total construction cost. UAE LTV cap by SCA / CBUAE.',
+    "Construction-loan principal (AED) — borrowed by the developer, not by the buyer. Typically 50–70% of total construction cost. The CBUAE off-plan 50% LTV cap is a retail buyer rule; it does NOT apply to this developer loan.",
   ratePct:
-    'Annual interest rate %. Q1 2026 UAE benchmark 5.4–6.2% for development loans, +risk margin per project.',
+    "Annual interest rate in %. Q2 2026 reference: 3M EIBOR ~4.8–5.0% + bank spread 1.5–3% = ~6.3–8.0% all-in.",
   financePeriodMonths:
-    'Loan tenor in months. Construction loans 24–48 months Dubai-typical, refinanced to permanent on stabilisation.',
+    "Loan tenor in months. Construction loans 24–48 months typical; refinanced to a permanent loan at handover.",
 
   // ── BtS revenue ──────────────────────────────────────────────────
   salesPsf:
-    'Sales price per sqft of SFA. Engine-seeded from CBRE / DLD recents. Off-plan engine adds ~12% over secondary.',
+    "Average sales price per sqft of SFA (AED). Engine default = current market median; off-plan typically prices ~10–15% above secondary.",
   commission:
-    'Sales commission as % of gross revenue. Dubai broker norm 2% per side; aggregator-led launches 6–10% all-in.',
+    "Brokerage / aggregator commission on the SALE, in % of gross revenue. Direct sales 2% per side; mass-market aggregator launches 6–10% all-in.",
   marketing:
-    'Marketing spend as % of gross revenue. 1–3% boutique, 4–8% mass-market launches.',
+    "Marketing budget in % of gross revenue. 1–3% boutique launches, 4–8% mass-market.",
   devServices:
-    'Developer services / management fee as % of gross revenue. Branded-residence managers charge 2–8%.',
+    "Optional developer management / brand fee in % of gross revenue. Branded-residence operators usually take 2–8%.",
   netRevenue:
-    'Gross revenue minus commission, marketing, developer services. Excludes finance and construction (those are costs).',
+    "Gross revenue minus commission, marketing, developer-services. Auto.",
   roi:
-    'Net profit ÷ total investment × 100. Strong ≥ 25%, moderate 15–25%, below < 15% per founder verdict bands.',
+    "Return on Investment = Net Profit ÷ Total Investment × 100. Quick read but ignores how long the project runs. See IRR for the time-weighted view.",
 
   // ── BtR rental ────────────────────────────────────────────────────
   monthlyRent:
-    'Monthly rent psf SFA in AED. Annual = monthly × 12. Engine-seeded from CBRE / JLL recent leasing data.',
+    "Average monthly rent per sqft of SFA (AED). Engine default = recent CBRE/JLL leasing data. Annual rent = monthly × 12.",
   occupancy:
-    'Stabilised occupancy as % of SFA. Dubai residential 88–95%, office 80–88%, hospitality 65–78%.',
+    "Stabilised occupancy of SFA in %. Dubai residential 88–95%, office 80–88%, hospitality 65–78%.",
   annualIncrease:
-    'Year-on-year rent escalation %. RERA index caps for renewals; new leases free-market. Default 3%.',
+    "Year-over-year rent escalation %. RERA caps renewals, but new leases are free-market. Default 3%.",
   operating:
-    'Operating expenses as % of gross rent. Includes service charges, FM, voids, marketing. Residential 25–35%, hotel 55–65%.',
+    "Operating expenses as % of gross rent — service charge, FM, voids, marketing. Residential 25–35%, hotel 55–65%.",
   yieldPct:
-    'Net annual rent ÷ total investment × 100. Strong ≥ 8%, moderate 5–8%, below < 5%.',
+    "Net Annual rent ÷ Total Investment × 100. First-year cap rate. 7%+ strong for Dubai resi.",
 
   // ── JV ────────────────────────────────────────────────────────────
   jvType:
-    'Equity = profit split by capital share. Profit-sharing = direct % of net profit, decoupled from capital ratio.',
+    "Equity = profit split mirrors capital contribution. Profit-sharing = a direct negotiated %, regardless of capital share.",
   landownerLandContribution:
-    'Land valuation contributed by landowner to the JV. Treated as in-kind capital at appraised value.',
+    "Value of the land brought to the JV by the landowner. Treated as their in-kind capital contribution.",
   landownerSharePct:
-    'Landowner % of net JV profit. Equity mode auto-snaps to capital ratio; profit-share mode is freely negotiated.',
+    "Landowner's slice of net JV profit. Equity mode auto-locks this to capital ratio; profit-share lets you set it manually.",
 
   // ── Diff badge ────────────────────────────────────────────────────
   diffBadge:
-    'Live deviation vs engine default. Green ≤15%, amber 15–30%, amber-bold 30–50%, red ≥50%. Click to reset to default.',
+    "How far your value sits from the engine default, in %. Green up to 15%, amber 15–30%, deeper amber 30–50%, red 50%+. Click to reset to the default.",
 };
 
 export function getTooltip(key: string): string | undefined {

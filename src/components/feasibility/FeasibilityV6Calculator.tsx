@@ -40,6 +40,20 @@ import {
 import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
 import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelInput';
 import { computeBtSV6, computeBtRV6, computeJvV6 } from '@/lib/feasibility-v6/results';
+import { btsIrrVerdict, btrIrrVerdict, jvProjectIrrVerdict } from '@/lib/feasibility-v6/verdict';
+import {
+  PER_UNIT_DEFAULTS,
+  isPerUnitEngine,
+  synthesiseBtSPsf,
+  synthesiseBtRRentPsf,
+  autoUnitCount,
+} from '@/lib/feasibility-v6/perUnitRevenue';
+import {
+  computeMixedUseBtSV6,
+  landUseMixToShares,
+  shareToEngine,
+  type MixedUseShare,
+} from '@/lib/feasibility-v6/mixedUse';
 import { generateRecommendations } from '@/lib/feasibility-v6/recommendations';
 import FieldLabel from './FieldLabel';
 import DiffBadge from './DiffBadge';
@@ -57,6 +71,7 @@ const DIM = 'rgba(245, 241, 232, 0.70)';
 const SUBTLE = 'rgba(245, 241, 232, 0.55)';
 const LINE = 'rgba(200, 169, 110, 0.15)';
 const LINE_HARD = 'rgba(200, 169, 110, 0.30)';
+const AMBER = '#E67E22';
 
 type Tab = 'bts' | 'btr' | 'jv';
 
@@ -296,6 +311,66 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Engine selector disclosure ───────────────────────────────────────
+// Hides the full selector behind one click — the current engine label
+// stays visible so the user always knows what's driving defaults, but
+// the dropdown only shows when explicitly opened. Saves ~80 px of header
+// real estate above the panels (founder scroll-reduction 2026-06-08).
+function EngineSelectorDisclosure({
+  currentLabel,
+  currentValidated,
+  children,
+}: {
+  currentLabel: string;
+  currentValidated: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${LINE}`,
+          borderRadius: 8,
+          padding: '8px 10px',
+          color: TXT,
+          fontFamily: 'inherit',
+          fontSize: 11,
+          cursor: 'pointer',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span>
+          <span style={{ color: SUBTLE, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Engine{' '}
+          </span>
+          <span style={{ color: GOLD, fontWeight: 700 }}>{currentLabel}</span>
+          {!currentValidated && (
+            <span style={{ color: SUBTLE, fontSize: 9, marginLeft: 6, fontStyle: 'italic' }}>
+              research-default
+            </span>
+          )}
+        </span>
+        <span style={{ color: SUBTLE, fontSize: 11 }}>{open ? '▾ close' : '▸ change'}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Collapsible Panel (sidepanel-mode at-a-glance hierarchy) ─────────
 // Founder fix #5: each panel header shows a primary metric inline so the
 // broker sees BUA / Land Cost / Construction total / Revenue total without
@@ -469,6 +544,52 @@ export default function FeasibilityV6Calculator({
     setLandCostAed(parcel.plotPriceAed);
   }, [parcel.plotPriceAed]);
   const [paymentMode, setPaymentMode] = useState<LandPaymentMode>('full');
+  // Brokerage on land purchase — default 0% (most users transact direct
+  // with the developer). Separate from sales-side commission.
+  const [brokerageOnLandPct, setBrokerageOnLandPct] = useState(0);
+
+  // Per-unit revenue model (hospitality / healthcare / educational /
+  // datacenter). Founder 2026-06-09 — these engines' revenue isn't
+  // psf-driven, so v5's SFA × salesPsf produces zero. We synthesise an
+  // equivalent psf from the real per-unit model so the kernel stays
+  // untouched. The default unit count is derived from BUA; the user
+  // overrides everything via the Asset Model panel.
+  const perUnitDef = PER_UNIT_DEFAULTS[engineId];
+  const usesPerUnit = isPerUnitEngine(engineId);
+  const [unitCount, setUnitCount] = useState<number>(autoUnitCount(plotAreaSqft * far * 1.85, engineId));
+  const [perUnitRev, setPerUnitRev] = useState<number>(
+    perUnitDef?.perUnitAnnualRevenueAed ?? perUnitDef?.adrAed ?? 0,
+  );
+  const [exitCapPct, setExitCapPct] = useState<number>(perUnitDef?.exitCapRatePct ?? 7.5);
+
+  // Re-seed per-unit inputs when the engine changes (preserves user
+  // overrides by snapshotting the engine id we last seeded for).
+  const lastPerUnitEngineRef = useRef<EngineId>(engineId);
+  useEffect(() => {
+    if (lastPerUnitEngineRef.current !== engineId) {
+      lastPerUnitEngineRef.current = engineId;
+      const def = PER_UNIT_DEFAULTS[engineId];
+      if (def) {
+        setUnitCount(autoUnitCount(plotAreaSqft * far * 1.85, engineId));
+        setPerUnitRev(def.perUnitAnnualRevenueAed ?? def.adrAed ?? 0);
+        setExitCapPct(def.exitCapRatePct);
+      }
+    }
+  }, [engineId, plotAreaSqft, far]);
+
+  // Mixed-use breakdown — seeded from parcel.landUseMix when multi-use.
+  const initialMixShares = useMemo(
+    () => landUseMixToShares(parcel.landUseMix),
+    [parcel.landUseMix],
+  );
+  const [mixShares, setMixShares] = useState<MixedUseShare[] | null>(initialMixShares);
+  const lastParcelMixRef = useRef(parcel.id);
+  useEffect(() => {
+    if (lastParcelMixRef.current !== parcel.id) {
+      lastParcelMixRef.current = parcel.id;
+      setMixShares(landUseMixToShares(parcel.landUseMix));
+    }
+  }, [parcel.id, parcel.landUseMix]);
   const [downPaymentPct, setDownPaymentPct] = useState(30);
   const [numberOfPayments, setNumberOfPayments] = useState(8);
   const [periodMonths, setPeriodMonths] = useState(24);
@@ -548,6 +669,7 @@ export default function FeasibilityV6Calculator({
   const dDown = useDebounced(downPaymentPct);
   const dN = useDebounced(numberOfPayments);
   const dPeriod = useDebounced(periodMonths);
+  const dBrokerage = useDebounced(brokerageOnLandPct);
   const dConst = useDebounced(constructionPsf);
   const dBrand = useDebounced(brandPsf);
   const dConsult = useDebounced(consultancyPsf);
@@ -622,25 +744,48 @@ export default function FeasibilityV6Calculator({
     [financeEnabled, dLoan, dRate, dFinPeriod],
   );
 
+  // Per-unit BtS revenue synth — for hospitality/healthcare/etc. the
+  // v5 kernel needs a psf; we back-derive it from the real per-unit
+  // model. Result also exposed to the UI for transparency.
+  const perUnitBtSResult = useMemo(() => {
+    if (!usesPerUnit || !perUnitDef) return null;
+    return synthesiseBtSPsf({
+      engineId,
+      unitCount,
+      perUnitAnnualRevenueAed: perUnitRev,
+      occupancyPct,
+      operatingPct,
+      exitCapRatePct: exitCapPct,
+      sfaSqft: area.sfa,
+    });
+  }, [usesPerUnit, perUnitDef, engineId, unitCount, perUnitRev, occupancyPct, operatingPct, exitCapPct, area.sfa]);
+
+  const effectiveSalesPsf = perUnitBtSResult
+    ? perUnitBtSResult.equivalentSalesPsfSfa
+    : dSales;
+
   const btsRevenue = useMemo(
     () =>
       deriveBtSRevenue(
         {
-          salesPricePsfSfa: dSales,
+          salesPricePsfSfa: effectiveSalesPsf,
           commissionPct: dComm,
           marketingPct: dMkt,
           devServicesPct: dDev,
         },
         area.sfa,
       ),
-    [dSales, dComm, dMkt, dDev, area.sfa],
+    [effectiveSalesPsf, dComm, dMkt, dDev, area.sfa],
   );
 
   const btsResult = useMemo(
     () =>
       computeBtSV6(area, land, construction, finance, btsRevenue, paymentMode, {
         loanAed: financeEnabled ? dLoan : 0,
+        ratePct: financeEnabled ? dRate : 0,
+        financePeriodMonths: financeEnabled ? dFinPeriod : 0,
         constructionMonths,
+        brokerageOnLandPct: dBrokerage,
         escrow: {
           enabled: escrowEnabled,
           salesAtLaunchPct,
@@ -656,6 +801,8 @@ export default function FeasibilityV6Calculator({
       paymentMode,
       financeEnabled,
       dLoan,
+      dRate,
+      dFinPeriod,
       constructionMonths,
       escrowEnabled,
       salesAtLaunchPct,
@@ -663,26 +810,45 @@ export default function FeasibilityV6Calculator({
     ],
   );
 
+  // Per-unit BtR rent synth — same idea as the BtS path but for rent.
+  // Hospitality is BtS-only so doesn't apply here; healthcare /
+  // educational / datacenter need the synth for meaningful BtR.
+  const perUnitBtRResult = useMemo(() => {
+    if (!usesPerUnit || !perUnitDef || engineId === 'hospitality') return null;
+    return synthesiseBtRRentPsf({
+      unitCount,
+      perUnitAnnualRevenueAed: perUnitRev,
+      sfaSqft: area.sfa,
+    });
+  }, [usesPerUnit, perUnitDef, engineId, unitCount, perUnitRev, area.sfa]);
+
+  const effectiveMonthlyRent = perUnitBtRResult
+    ? perUnitBtRResult.equivalentMonthlyRentPsfSfa
+    : dRent;
+
   const btrRental = useMemo(
     () =>
       deriveBtRRental(
         {
-          monthlyRentPsfSfa: dRent,
+          monthlyRentPsfSfa: effectiveMonthlyRent,
           occupancyPct: dOcc,
           annualIncreasePct: dAnn,
           operatingPct: dOp,
         },
         area.sfa,
       ),
-    [dRent, dOcc, dAnn, dOp, area.sfa],
+    [effectiveMonthlyRent, dOcc, dAnn, dOp, area.sfa],
   );
 
   const btrResult = useMemo(
     () =>
       computeBtRV6(land, construction, finance, btrRental, dAnn, {
         loanAed: financeEnabled ? dLoan : 0,
+        ratePct: financeEnabled ? dRate : 0,
+        constructionMonths,
+        brokerageOnLandPct: dBrokerage,
       }),
-    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan],
+    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan, dRate, constructionMonths, dBrokerage],
   );
 
   const developerCashAuto =
@@ -702,12 +868,50 @@ export default function FeasibilityV6Calculator({
         construction,
         finance,
         btsRevenue,
+        {
+          constructionMonths,
+          loanAed: financeEnabled ? dLoan : 0,
+          ratePct: financeEnabled ? dRate : 0,
+          brokerageOnLandPct: dBrokerage,
+        },
       ),
-    [jvType, dLoCont, dLoCash, developerCashAuto, dLoShare, land, construction, finance, btsRevenue],
+    [
+      jvType, dLoCont, dLoCash, developerCashAuto, dLoShare,
+      land, construction, finance, btsRevenue,
+      constructionMonths, financeEnabled, dLoan, dRate, dBrokerage,
+    ],
   );
 
-  const btsV = btsVerdict(btsResult.roiPct);
-  const btrV = btrVerdict(btrResult.yieldPct);
+  // Mixed-use composite — STRICTLY only when the plot's category is
+  // MIXED USE (more than one distinct land-use category in the DDA
+  // affection plan). Single-use plots with multiple sub-classifications
+  // of the same category (e.g. RESIDENTIAL · Permanent Apt +
+  // RESIDENTIAL · Townhouse) do NOT show this panel. Founder 2026-06-08.
+  const showMixedUse =
+    parcel.landUse === 'MIXED USE' &&
+    !!mixShares &&
+    mixShares.length > 1 &&
+    tab === 'bts';
+  const mixedResult = useMemo(() => {
+    if (!showMixedUse || !mixShares) return null;
+    return computeMixedUseBtSV6({
+      parentArea: area,
+      shares: mixShares,
+      commissionPct: dComm,
+      marketingPct: dMkt,
+      devServicesPct: dDev,
+    });
+  }, [showMixedUse, mixShares, area, dComm, dMkt, dDev]);
+  const mixShareSum = mixShares ? mixShares.reduce((s, x) => s + x.pct, 0) : 0;
+  const mixShareValid = !mixShares || Math.abs(mixShareSum - 100) < 0.5;
+
+  // Founder-ratified 2026-06-08: IRR is the PRIMARY verdict band
+  // (developer language); v5 ROI/yield bands stay as the secondary read.
+  const btsV = btsIrrVerdict(btsResult.irrPct);
+  const btsRoiV = btsVerdict(btsResult.roiPct);
+  const btrV = btrIrrVerdict(btrResult.irrPct);
+  const btrYieldV = btrVerdict(btrResult.yieldPct);
+  const jvIrrV = jvProjectIrrVerdict(jv.projectIrrPct);
 
   // ── PDF export — Sprint 9d branded layout
   // Six-page A4 portrait: Cover · Inputs · Results breakdown · Glossary ·
@@ -730,7 +934,6 @@ export default function FeasibilityV6Calculator({
 
     let y = 0;
     let pageNum = 0;
-    const totalPages = 6;
     const dateStr = new Date().toISOString().slice(0, 10);
 
     // Branded header band — gold #C8A96E 4mm at top of every page.
@@ -739,24 +942,19 @@ export default function FeasibilityV6Calculator({
       doc.rect(0, 0, W, 4, 'F');
     };
 
-    const footer = () => {
-      doc.setFontSize(7);
-      doc.setTextColor(...gray);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        `Generated by ZAAHI Feasibility v6.0 · ${dateStr} · zaahi.io`,
-        M,
-        H - 8,
-      );
-      doc.text(`${pageNum} / ${totalPages}`, W - M, H - 8, { align: 'right' });
-    };
-
     const newPage = () => {
       if (pageNum > 0) doc.addPage();
       pageNum += 1;
       headerBand();
-      footer();
       y = 14;
+    };
+
+    // Section gap — small vertical margin between sections on the same
+    // page (founder 2026-06-08 PDF compaction: don't force newPage
+    // between sections, let content flow). The next sectionTitle calls
+    // checkPage so if there's no room left, we break naturally.
+    const sectionGap = () => {
+      y += 8;
     };
 
     // Heading helpers — `times` is jsPDF's built-in serif (Georgia substitute).
@@ -903,17 +1101,19 @@ export default function FeasibilityV6Calculator({
     );
     y += 16;
 
-    // Verdict block — large hero number
+    // Verdict block — large hero number.
+    // 36pt ascender = ~12.7 mm above baseline; bump y advance high enough
+    // so the hero number's top doesn't crash into the label above.
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'normal');
     doc.text(modeHero.label, M, y);
-    y += 8;
+    y += 16;
     doc.setFontSize(36);
     doc.setTextColor(...(modeHero.positive ? goldDark : red));
     doc.setFont('times', 'bold');
     doc.text(modeHero.value, M, y);
-    y += 12;
+    y += 14;
 
     // Secondary metrics line
     if (tab === 'bts') {
@@ -974,12 +1174,15 @@ export default function FeasibilityV6Calculator({
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'italic');
-    doc.text(
-      'Side-by-side: your inputs vs the engine baseline. Δ% colour-coded green ≤ 15%, amber 15-30%, red ≥ 30%.',
-      M,
-      y,
+    // ASCII only — jsPDF default Helvetica/Times use WinANSI and would
+    // substitute Δ / ≤ / ≥ with garbage glyphs. UI keeps Unicode; the
+    // PDF rewrites to plain English.
+    const inputsIntro = doc.splitTextToSize(
+      'Side-by-side: your inputs vs the engine baseline. Diff % colour-coded green up to 15%, amber 15-30%, red 30% or more.',
+      W - 2 * M,
     );
-    y += 6;
+    doc.text(inputsIntro, M, y);
+    y += inputsIntro.length * 4 + 2;
 
     // Column headers
     doc.setFontSize(8);
@@ -988,7 +1191,7 @@ export default function FeasibilityV6Calculator({
     doc.text('FIELD', M, y);
     doc.text('YOUR VALUE', W / 2 + 8, y, { align: 'right' });
     doc.text('BASELINE', W - M - 22, y, { align: 'right' });
-    doc.text('Δ', W - M, y, { align: 'right' });
+    doc.text('Diff %', W - M, y, { align: 'right' });
     y += 5;
     doc.setDrawColor(...gold);
     doc.line(M, y - 2, W - M, y - 2);
@@ -1005,6 +1208,10 @@ export default function FeasibilityV6Calculator({
     inputRow('SFA', `${fmtInt(area.sfa)} sqft`, '—', null, tint); tint = !tint;
     inputRow('Land Cost', fmtAedExact(land.landCostAed), fmtAedExact(parcel.plotPriceAed), dPct(land.landCostAed, parcel.plotPriceAed), tint); tint = !tint;
     inputRow('DLD Fee (4%)', fmtAedExact(land.dldFeeAed), '—', null, tint); tint = !tint;
+    if (brokerageOnLandPct > 0) {
+      inputRow('Brokerage on land', `${brokerageOnLandPct}%`, '0%', null, tint); tint = !tint;
+      inputRow('Brokerage fee', fmtAedExact(btsResult.brokerageOnLandAed), '—', null, tint); tint = !tint;
+    }
     inputRow('Construction psf', `AED ${constructionPsf}`, `AED ${engine.constructionPsfBua}`, dPct(constructionPsf, engine.constructionPsfBua), tint); tint = !tint;
     inputRow('Brand psf', `AED ${brandPsf}`, `AED ${engine.brandPsfBua}`, dPct(brandPsf, engine.brandPsfBua), tint); tint = !tint;
     inputRow('Consultancy psf', `AED ${consultancyPsf}`, `AED ${engine.consultancyPsfBua}`, dPct(consultancyPsf, engine.consultancyPsfBua), tint); tint = !tint;
@@ -1067,6 +1274,9 @@ export default function FeasibilityV6Calculator({
       tint = false;
       tableRow('Land cost', fmtAedExact(land.landCostAed), { tint }); tint = !tint;
       tableRow('+ DLD fee (4%)', fmtAedExact(land.dldFeeAed), { tint }); tint = !tint;
+      if (btsResult.brokerageOnLandAed > 0) {
+        tableRow(`+ Brokerage on land (${brokerageOnLandPct}%)`, fmtAedExact(btsResult.brokerageOnLandAed), { tint }); tint = !tint;
+      }
       tableRow('+ Construction (incl. contingency)', fmtAedExact(construction.totalConstructionAed), { tint }); tint = !tint;
       if (financeEnabled) { tableRow('+ Finance interest', fmtAedExact(finance.totalInterestAed), { tint }); tint = !tint; }
       tableRow('= Total Investment', fmtAedExact(btsResult.totalInvestmentAed), { tint, bold: true }); tint = !tint;
@@ -1141,8 +1351,11 @@ export default function FeasibilityV6Calculator({
       tableRow('IRR (annualised)', Number.isFinite(jv.developerIrrPct) ? fmtPct(jv.developerIrrPct) : '—');
     }
 
-    // ═══ PAGE 4 — GLOSSARY ════════════════════════════════════════════
-    newPage();
+    // ═══ GLOSSARY ════════════════════════════════════════════════════
+    // No forced page break — sectionGap + checkPage let the section
+    // continue on the same page when there's room (founder 2026-06-08).
+    sectionGap();
+    checkPage(160);
     sectionTitle('Glossary');
 
     doc.setFontSize(8);
@@ -1163,8 +1376,8 @@ export default function FeasibilityV6Calculator({
       ['Yield', 'BtR-only metric. Net Annual rent / Total Investment × 100. First-year unleveraged income return.'],
       ['Payback', 'Years needed for cumulative net rent to equal the total investment.'],
       ['DLD Fee', '4% Dubai Land Department registration fee on land transfer. Applies once at acquisition.'],
-      ['Verdict bands', 'Strong (ROI ≥ 25% / yield ≥ 8%), Moderate (15-25 / 5-8), Below Target (< 15 / < 5). Founder-ratified bands for the Dubai market.'],
-      ['Diff Δ%', 'Live deviation vs the engine baseline. Green ≤ 15%, amber 15-30%, amber-bold 30-50%, red ≥ 50%.'],
+      ['Verdict bands', 'Strong (ROI 25% or more / yield 8% or more), Moderate (15-25 / 5-8), Below Target (under 15 / under 5). Founder-ratified bands for the Dubai market.'],
+      ['Diff %', 'Live deviation vs the engine baseline. Green up to 15%, amber 15-30%, amber-bold 30-50%, red 50% or more.'],
       ['Engine', 'Specialised cost / revenue model for the asset class. Validated engines (Residential, Office) carry founder-ratified defaults; Research-default engines carry sourced research midpoints with the italic disclaimer.'],
     ];
     if (escrowEnabled) {
@@ -1188,19 +1401,20 @@ export default function FeasibilityV6Calculator({
       y += Math.max(4, lines.length * 3.5) + 2;
     }
 
-    // ═══ PAGE 5 — OPTIMIZATION RECOMMENDATIONS ════════════════════════
-    newPage();
+    // ═══ OPTIMISATION RECOMMENDATIONS ════════════════════════════════
+    sectionGap();
+    checkPage(50);
     sectionTitle('Optimisation recommendations');
 
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'italic');
-    doc.text(
-      'Auto-generated savings advice based on |Δ| ≥ 15% deviations vs engine baseline. Conservative tone — flags opportunities, not prescriptions.',
-      M,
-      y,
+    const recsIntro = doc.splitTextToSize(
+      'Auto-generated savings advice based on absolute deviations of 15% or more vs the engine baseline. Conservative tone — flags opportunities, not prescriptions.',
+      W - 2 * M,
     );
-    y += 8;
+    doc.text(recsIntro, M, y);
+    y += recsIntro.length * 4 + 4;
 
     const recs = generateRecommendations({
       engine,
@@ -1254,8 +1468,9 @@ export default function FeasibilityV6Calculator({
       }
     }
 
-    // ═══ PAGE 6 — DISCLAIMER + SOURCES ════════════════════════════════
-    newPage();
+    // ═══ DISCLAIMER + SOURCES ════════════════════════════════════════
+    sectionGap();
+    checkPage(70);
     sectionTitle('Disclaimer + sources');
 
     doc.setFontSize(9);
@@ -1288,6 +1503,23 @@ export default function FeasibilityV6Calculator({
       const lines = doc.splitTextToSize(`• ${s}`, W - 2 * M - 4);
       doc.text(lines, M + 4, y);
       y += lines.length * 3.8 + 1;
+    }
+
+    // Render footers AFTER all content so the "X / N" counter reflects
+    // the actual page count (founder 2026-06-08 PDF compaction —
+    // previously hardcoded as "1 / 6" which lied about the document).
+    const totalCount = doc.getNumberOfPages();
+    for (let i = 1; i <= totalCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(...gray);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        `Generated by ZAAHI Feasibility v6.0 · ${dateStr} · zaahi.io`,
+        M,
+        H - 8,
+      );
+      doc.text(`${i} / ${totalCount}`, W - M, H - 8, { align: 'right' });
     }
 
     // ═══ Save ═════════════════════════════════════════════════════════
@@ -1514,11 +1746,21 @@ export default function FeasibilityV6Calculator({
                 · {parcel.district} · {parcel.landUse}
               </span>
             </div>
-            <div style={{ color: SUBTLE, fontSize: 11, marginBottom: 10 }}>
+            <div style={{ color: SUBTLE, fontSize: 11, marginBottom: 8 }}>
               {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · Listed{' '}
               {fmtAedExact(parcel.plotPriceAed)}
             </div>
-            <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+            {/* Engine selector hidden behind a single disclosure click in
+                sidepanel mode (founder 2026-06-08). Auto-route from
+                landUse keeps the right default; only power users open the
+                picker. The current engine label stays visible so the user
+                always knows what's driving defaults. */}
+            <EngineSelectorDisclosure
+              currentLabel={ENGINES[engineId].label}
+              currentValidated={ENGINES[engineId].validated}
+            >
+              <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+            </EngineSelectorDisclosure>
           </div>
         ) : (
           <div
@@ -1646,6 +1888,8 @@ export default function FeasibilityV6Calculator({
                       {btsResult.peakEquityAed > 0 ? fmtPct(btsResult.roePct) : '—'}
                     </span>
                   </div>
+                  {/* IRR-primary verdict (founder-ratified 2026-06-08).
+                      ROI verdict shown below as the secondary read. */}
                   <div
                     style={{
                       marginTop: 10,
@@ -1661,8 +1905,21 @@ export default function FeasibilityV6Calculator({
                       background: 'rgba(255,255,255,0.02)',
                     }}
                     role="status"
+                    title={`IRR verdict band: ${btsV.threshold}`}
                   >
-                    {btsV.label}
+                    IRR · {btsV.label}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 9,
+                      color: SUBTLE,
+                      textAlign: 'center',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    ROI · {btsRoiV.label}
                   </div>
                 </>
               )}
@@ -1728,6 +1985,7 @@ export default function FeasibilityV6Calculator({
                       {btrResult.peakEquityAed > 0 ? fmtPct(btrResult.roePct) : '—'}
                     </span>
                   </div>
+                  {/* IRR-primary verdict; Yield verdict as secondary. */}
                   <div
                     style={{
                       marginTop: 10,
@@ -1743,8 +2001,21 @@ export default function FeasibilityV6Calculator({
                       background: 'rgba(255,255,255,0.02)',
                     }}
                     role="status"
+                    title={`IRR verdict band: ${btrV.threshold}`}
                   >
-                    {btrV.label}
+                    IRR · {btrV.label}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 9,
+                      color: SUBTLE,
+                      textAlign: 'center',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Yield · {btrYieldV.label}
                   </div>
                 </>
               )}
@@ -1865,6 +2136,84 @@ export default function FeasibilityV6Calculator({
               </Row>
             </Panel>
 
+            {/* Mixed-use breakdown — Panel sits between Area and Land
+                so the share % drives downstream construction + revenue
+                via the composite engine path. Auto-rendered when the
+                DDA affection plan lists more than one sub-use. */}
+            {showMixedUse && mixShares && mixedResult && (
+              <Panel
+                title="Mix breakdown"
+                metric={`${mixShares.length} uses · Σ ${mixShareSum.toFixed(0)}%`}
+                defaultOpen
+                changed={!mixShareValid}
+              >
+                {!mixShareValid && (
+                  <div
+                    role="alert"
+                    style={{
+                      fontSize: 10,
+                      color: '#E63946',
+                      marginBottom: 6,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Share % must sum to 100. Current sum: {mixShareSum.toFixed(1)}%.
+                  </div>
+                )}
+                {mixShares.map((share, i) => {
+                  const engineId = shareToEngine(share);
+                  const slice = mixedResult.slices[i];
+                  return (
+                    <Row
+                      key={`${share.category}-${share.sub ?? ''}-${i}`}
+                      label={`${share.category}${share.sub ? ' · ' + share.sub : ''}`}
+                      stacked
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <NumberInput
+                          value={share.pct}
+                          unit="%"
+                          fullWidth
+                          onChange={(n) => {
+                            const next = mixShares.slice();
+                            next[i] = { ...next[i], pct: n };
+                            setMixShares(next);
+                          }}
+                        />
+                        <span style={{ color: SUBTLE, fontSize: 10 }}>
+                          Engine: {ENGINES[engineId].label} · GFA {fmtInt(slice.area.gfa)} sqft ·
+                          Net rev {fmtAedExact(slice.netRevenueAed)}
+                        </span>
+                      </div>
+                    </Row>
+                  );
+                })}
+                <div
+                  style={{
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: `1px solid ${LINE_HARD}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: DIM }}>Total construction (composite)</span>
+                    <span style={{ color: TXT, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtAedExact(mixedResult.totalConstructionAed)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: DIM }}>Total net revenue (composite)</span>
+                    <span style={{ color: TXT, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtAedExact(mixedResult.totalNetRevenueAed)}
+                    </span>
+                  </div>
+                </div>
+              </Panel>
+            )}
+
             <Panel
               title="Land"
               metric={`${fmtAedExact(land.landCostAed)} + DLD ${fmtAedExact(land.dldFeeAed)}`}
@@ -1876,6 +2225,24 @@ export default function FeasibilityV6Calculator({
               <Row label="DLD Fee (4%)" tooltipKey="dldFee" stacked>
                 <NumberInput value={Math.round(land.dldFeeAed)} unit="AED" readonly fullWidth />
               </Row>
+              <Row label="Brokerage on land (%)" tooltipKey="brokerageOnLand" stacked>
+                <NumberInput
+                  value={brokerageOnLandPct}
+                  unit="%"
+                  onChange={setBrokerageOnLandPct}
+                  fullWidth
+                />
+              </Row>
+              {brokerageOnLandPct > 0 && (
+                <Row label="Brokerage fee" stacked>
+                  <NumberInput
+                    value={Math.round(btsResult.brokerageOnLandAed)}
+                    unit="AED"
+                    readonly
+                    fullWidth
+                  />
+                </Row>
+              )}
               <Row label="Payment Mode" tooltipKey="paymentMode" stacked>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {(['full', 'installments'] as LandPaymentMode[]).map((m) => (
@@ -2143,7 +2510,145 @@ export default function FeasibilityV6Calculator({
               </Panel>
             )}
 
-            {tab === 'bts' && (
+            {/* Mode-gating banner — when the active tab isn't in the
+                engine's supported modes, show a clear message instead of
+                garbage numbers (founder 2026-06-09 — Stage 2 fix). */}
+            {!engine.modes.includes(tab as 'bts' | 'btr') && tab !== 'jv' && (
+              <Panel
+                title="Mode not supported"
+                metric={`${engine.label} · ${tab.toUpperCase()}`}
+                defaultOpen
+                changed
+              >
+                <div
+                  role="alert"
+                  style={{
+                    color: AMBER,
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                    padding: '8px 10px',
+                    background: 'rgba(230, 126, 34, 0.08)',
+                    border: `1px solid ${AMBER}`,
+                    borderRadius: 8,
+                  }}
+                >
+                  The <strong>{engine.label}</strong> engine doesn&apos;t support{' '}
+                  <strong>{tab === 'bts' ? 'Build to Sell' : 'Build to Rent'}</strong>{' '}
+                  — its revenue model is{' '}
+                  {engineId === 'hospitality' ? 'ADR-driven (hotel operating asset)'
+                    : engineId === 'datacenter' ? 'per-MW colocation revenue'
+                    : engineId === 'senior' ? 'rental hold only'
+                    : engineId === 'offplan' ? 'off-plan sales only'
+                    : engineId === 'landhold' ? 'speculative land appreciation (CAGR exit)'
+                    : engineId === 'infrastructure' ? 'PPP / concession DCF (not in v6)'
+                    : 'not modelled in this view'}
+                  . Switch to{' '}
+                  {engine.modes.length === 0
+                    ? 'another engine'
+                    : engine.modes.includes('bts') ? 'Build to Sell' : 'Build to Rent'}{' '}
+                  for meaningful outputs. (Investment cost is shown above; revenue / IRR
+                  on this tab are not applicable.)
+                </div>
+              </Panel>
+            )}
+
+            {/* Per-unit Asset Model — for engines whose revenue is not
+                psf-driven (hospitality, healthcare, educational,
+                datacenter). Computed values flow back into the v5
+                math kernel as a synthesised psf. */}
+            {usesPerUnit && perUnitDef && engine.modes.includes(tab as 'bts' | 'btr') && (
+              <Panel
+                title="Asset model"
+                metric={
+                  tab === 'bts' && perUnitBtSResult
+                    ? `${unitCount} ${perUnitDef.unitLabel} · sale value ${fmtAedExact(perUnitBtSResult.exitValueAed)}`
+                    : tab === 'btr' && perUnitBtRResult
+                      ? `${unitCount} ${perUnitDef.unitLabel} · gross ${fmtAedExact(perUnitBtRResult.annualGrossRevenueAed)}/yr`
+                      : 'unit-driven revenue'
+                }
+                defaultOpen
+              >
+                <div
+                  style={{
+                    color: SUBTLE,
+                    fontSize: 10,
+                    fontStyle: 'italic',
+                    marginBottom: 8,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Revenue model: {engineId === 'hospitality' ? 'ADR × keys × occupancy × 365'
+                    : engineId === 'healthcare' ? 'AED revenue per bed × bed count × occupancy'
+                    : engineId === 'educational' ? 'tuition per student × student count × occupancy'
+                    : 'AED revenue per MW × MW capacity'}
+                  . The v5 kernel sees an equivalent SFA × psf, but the
+                  numbers are driven from these per-unit inputs.
+                </div>
+                <Row label={`Number of ${perUnitDef.unitLabel}`} stacked>
+                  <NumberInput value={unitCount} unit={perUnitDef.unitLabel} onChange={setUnitCount} fullWidth />
+                </Row>
+                <Row
+                  label={engineId === 'hospitality' ? 'ADR (AED / night)' : `Annual revenue per ${perUnitDef.unitLabel.replace(/s$/, '')}`}
+                  stacked
+                >
+                  <NumberInput
+                    value={perUnitRev}
+                    unit={engineId === 'hospitality' ? 'AED' : 'AED / year'}
+                    onChange={setPerUnitRev}
+                    fullWidth
+                  />
+                </Row>
+                {tab === 'bts' && (
+                  <Row label="Exit cap rate (sale of operating asset)" stacked>
+                    <NumberInput value={exitCapPct} unit="%" onChange={setExitCapPct} fullWidth />
+                  </Row>
+                )}
+                {tab === 'bts' && perUnitBtSResult && (
+                  <div
+                    style={{
+                      color: SUBTLE,
+                      fontSize: 11,
+                      marginTop: 8,
+                      padding: '8px 10px',
+                      background: 'rgba(200,169,110,0.06)',
+                      border: `1px solid ${LINE}`,
+                      borderRadius: 6,
+                      lineHeight: 1.5,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <div>Annual gross: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.annualGrossRevenueAed)}</span></div>
+                    <div>Annual NOI: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.annualNoiAed)}</span></div>
+                    <div>Exit value: <span style={{ color: GOLD, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.exitValueAed)}</span></div>
+                    <div style={{ marginTop: 4, color: SUBTLE, fontSize: 10 }}>
+                      Equivalent SFA psf: {fmtAedExact(perUnitBtSResult.equivalentSalesPsfSfa)}
+                    </div>
+                  </div>
+                )}
+                {tab === 'btr' && perUnitBtRResult && (
+                  <div
+                    style={{
+                      color: SUBTLE,
+                      fontSize: 11,
+                      marginTop: 8,
+                      padding: '8px 10px',
+                      background: 'rgba(200,169,110,0.06)',
+                      border: `1px solid ${LINE}`,
+                      borderRadius: 6,
+                      lineHeight: 1.5,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <div>Annual gross: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtRResult.annualGrossRevenueAed)}</span></div>
+                    <div style={{ marginTop: 4, color: SUBTLE, fontSize: 10 }}>
+                      Equivalent monthly rent psf: {fmtAedExact(perUnitBtRResult.equivalentMonthlyRentPsfSfa)}
+                    </div>
+                  </div>
+                )}
+              </Panel>
+            )}
+
+            {tab === 'bts' && engine.modes.includes('bts') && !usesPerUnit && (
               <Panel
                 title="Revenue"
                 metric={fmtAedExact(btsResult.netRevenueAed)}
@@ -2168,8 +2673,27 @@ export default function FeasibilityV6Calculator({
                 </Row>
               </Panel>
             )}
+            {/* For per-unit BtS engines, still show commission/marketing
+                (they apply to the sale of the operating asset). */}
+            {tab === 'bts' && usesPerUnit && (
+              <Panel
+                title="Sales costs"
+                metric={fmtAedExact(btsResult.netRevenueAed)}
+                changed
+              >
+                <Row label="Commission" tooltipKey="commission" stacked>
+                  <NumberInput value={commissionPct} unit="%" onChange={setCommissionPct} fullWidth />
+                </Row>
+                <Row label="Marketing" tooltipKey="marketing" stacked>
+                  <NumberInput value={marketingPct} unit="%" onChange={setMarketingPct} fullWidth />
+                </Row>
+                <Row label="Dev Services" tooltipKey="devServices" stacked>
+                  <NumberInput value={devServicesPct} unit="%" onChange={setDevServicesPct} fullWidth />
+                </Row>
+              </Panel>
+            )}
 
-            {tab === 'btr' && (
+            {tab === 'btr' && engine.modes.includes('btr') && !usesPerUnit && (
               <Panel
                 title="Rental"
                 metric={fmtAedExact(btrRental.netAnnualAed)}
@@ -2665,7 +3189,7 @@ export default function FeasibilityV6Calculator({
                     background: 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  Verdict: {btsV.label}
+                  IRR · {btsV.label}
                 </div>
                 {paymentMode === 'installments' && (
                   <>
@@ -2713,7 +3237,7 @@ export default function FeasibilityV6Calculator({
                     background: 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  Verdict: {btrV.label}
+                  IRR · {btrV.label}
                 </div>
 
                 <SectionTitle>5-Year Projection</SectionTitle>
