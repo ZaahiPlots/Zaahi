@@ -924,17 +924,19 @@ export default function FeasibilityV6Calculator({
     );
     y += 16;
 
-    // Verdict block — large hero number
+    // Verdict block — large hero number.
+    // 36pt ascender = ~12.7 mm above baseline; bump y advance high enough
+    // so the hero number's top doesn't crash into the label above.
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'normal');
     doc.text(modeHero.label, M, y);
-    y += 8;
+    y += 16;
     doc.setFontSize(36);
     doc.setTextColor(...(modeHero.positive ? goldDark : red));
     doc.setFont('times', 'bold');
     doc.text(modeHero.value, M, y);
-    y += 12;
+    y += 14;
 
     // Secondary metrics line
     if (tab === 'bts') {
@@ -995,12 +997,15 @@ export default function FeasibilityV6Calculator({
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'italic');
-    doc.text(
-      'Side-by-side: your inputs vs the engine baseline. Δ% colour-coded green ≤ 15%, amber 15-30%, red ≥ 30%.',
-      M,
-      y,
+    // ASCII only — jsPDF default Helvetica/Times use WinANSI and would
+    // substitute Δ / ≤ / ≥ with garbage glyphs. UI keeps Unicode; the
+    // PDF rewrites to plain English.
+    const inputsIntro = doc.splitTextToSize(
+      'Side-by-side: your inputs vs the engine baseline. Diff % colour-coded green up to 15%, amber 15-30%, red 30% or more.',
+      W - 2 * M,
     );
-    y += 6;
+    doc.text(inputsIntro, M, y);
+    y += inputsIntro.length * 4 + 2;
 
     // Column headers
     doc.setFontSize(8);
@@ -1009,7 +1014,7 @@ export default function FeasibilityV6Calculator({
     doc.text('FIELD', M, y);
     doc.text('YOUR VALUE', W / 2 + 8, y, { align: 'right' });
     doc.text('BASELINE', W - M - 22, y, { align: 'right' });
-    doc.text('Δ', W - M, y, { align: 'right' });
+    doc.text('Diff %', W - M, y, { align: 'right' });
     y += 5;
     doc.setDrawColor(...gold);
     doc.line(M, y - 2, W - M, y - 2);
@@ -1184,8 +1189,8 @@ export default function FeasibilityV6Calculator({
       ['Yield', 'BtR-only metric. Net Annual rent / Total Investment × 100. First-year unleveraged income return.'],
       ['Payback', 'Years needed for cumulative net rent to equal the total investment.'],
       ['DLD Fee', '4% Dubai Land Department registration fee on land transfer. Applies once at acquisition.'],
-      ['Verdict bands', 'Strong (ROI ≥ 25% / yield ≥ 8%), Moderate (15-25 / 5-8), Below Target (< 15 / < 5). Founder-ratified bands for the Dubai market.'],
-      ['Diff Δ%', 'Live deviation vs the engine baseline. Green ≤ 15%, amber 15-30%, amber-bold 30-50%, red ≥ 50%.'],
+      ['Verdict bands', 'Strong (ROI 25% or more / yield 8% or more), Moderate (15-25 / 5-8), Below Target (under 15 / under 5). Founder-ratified bands for the Dubai market.'],
+      ['Diff %', 'Live deviation vs the engine baseline. Green up to 15%, amber 15-30%, amber-bold 30-50%, red 50% or more.'],
       ['Engine', 'Specialised cost / revenue model for the asset class. Validated engines (Residential, Office) carry founder-ratified defaults; Research-default engines carry sourced research midpoints with the italic disclaimer.'],
     ];
     if (escrowEnabled) {
@@ -1216,12 +1221,12 @@ export default function FeasibilityV6Calculator({
     doc.setFontSize(8);
     doc.setTextColor(...gray);
     doc.setFont('helvetica', 'italic');
-    doc.text(
-      'Auto-generated savings advice based on |Δ| ≥ 15% deviations vs engine baseline. Conservative tone — flags opportunities, not prescriptions.',
-      M,
-      y,
+    const recsIntro = doc.splitTextToSize(
+      'Auto-generated savings advice based on absolute deviations of 15% or more vs the engine baseline. Conservative tone — flags opportunities, not prescriptions.',
+      W - 2 * M,
     );
-    y += 8;
+    doc.text(recsIntro, M, y);
+    y += recsIntro.length * 4 + 4;
 
     const recs = generateRecommendations({
       engine,
