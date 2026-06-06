@@ -118,6 +118,35 @@ export function drawnMonthlyInterest(
   return (loanAed * i / 2) * (2 * H - D + 1);
 }
 
+// ── Brokerage on land purchase (v6 wrapper, 2026-06-08) ───────────────
+//
+// Real-world deals often go through a buyer-side broker who takes a
+// commission off the closing price. v5 deriveLand does NOT model this
+// (totalLandCost = landCost + DLD only). The v6 wrapper folds the broker
+// fee into totalLandCostAed BEFORE downstream math, so ROI / IRR / NPV
+// reflect the real all-in land cost. Brokerage is exposed separately so
+// the UI / PDF can print it as its own line below DLD.
+//
+//   brokerageAed = landCostAed × brokerageOnLandPct / 100
+//
+// Default 0% — most ZAAHI users transact directly with the developer
+// and pay no buyer-side broker.
+export function applyLandBrokerageV6(
+  land: LandDerived,
+  brokerageOnLandPct: number,
+): { land: LandDerived; brokerageAed: number } {
+  const pct = brokerageOnLandPct > 0 ? brokerageOnLandPct : 0;
+  const brokerageAed = land.landCostAed * (pct / 100);
+  if (brokerageAed <= 0) return { land, brokerageAed: 0 };
+  return {
+    land: {
+      ...land,
+      totalLandCostAed: land.totalLandCostAed + brokerageAed,
+    },
+    brokerageAed,
+  };
+}
+
 // ── BtS V6 ────────────────────────────────────────────────────────────
 
 export interface BtSResultV6 extends BtSResult {
@@ -132,6 +161,10 @@ export interface BtSResultV6 extends BtSResult {
   interestBasis: 'simple-v5' | 'drawn-monthly-v6';
   drawnInterestAed: number;      // recomputed per Brueggeman Ch.21
   v5InterestAed: number;         // for transparency / before-after delta
+  // Brokerage on land purchase (2026-06-08). Buyer-side broker fee
+  // folded into totalLandCostAed before downstream math. 0 when off.
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeBtSV6(
@@ -146,11 +179,18 @@ export function computeBtSV6(
     loanAed?: number;
     ratePct?: number;             // annual rate, needed for drawn-monthly recompute
     financePeriodMonths?: number; // v5 period; falls back to constructionMonths
+    brokerageOnLandPct?: number;  // buyer-side land broker fee %, default 0
     escrow?: Omit<EscrowDrawdownInputs, 'monthsToCompletion' | 'totalConstructionAed' | 'totalRevenueAed'>;
   },
 ): BtSResultV6 {
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
+
+  // Brokerage on land — paid at closing alongside land + DLD.
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
 
   // ── Override v5 interest with DRAWN-MONTHLY per Brueggeman Ch.21. ──
   // Loan drawn linearly over `constructionMonths`, held until handover.
@@ -223,6 +263,11 @@ export function computeBtSV6(
       loanAed: options?.loanAed,
     });
   }
+  // Brokerage on land — paid at closing alongside land + DLD.
+  if (brokerageOnLandAed > 0) {
+    cashflows.push({ month: 0, aed: -brokerageOnLandAed });
+    cashflows.sort((a, b) => a.month - b.month);
+  }
 
   const peak = peakEquity(cashflows);
   const irrPct = irr(cashflows);
@@ -241,6 +286,8 @@ export function computeBtSV6(
     interestBasis,
     drawnInterestAed,
     v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }
 
@@ -259,6 +306,8 @@ export interface BtRResultV6 extends BtRResult {
   interestBasis: 'simple-v5' | 'drawn-monthly-v6';
   drawnInterestAed: number;
   v5InterestAed: number;
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeBtRV6(
@@ -273,8 +322,14 @@ export function computeBtRV6(
     terminalCapRatePct?: number;
     loanAed?: number;
     ratePct?: number;
+    brokerageOnLandPct?: number;
   },
 ): BtRResultV6 {
+  // Brokerage on land — same treatment as BtS.
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
   const holdYears = options?.holdYears ?? DEFAULT_BTR_HOLD_YEARS;
@@ -312,6 +367,10 @@ export function computeBtRV6(
     terminalCapRatePct,
     loanAed: options?.loanAed,
   });
+  if (brokerageOnLandAed > 0) {
+    cashflows.push({ month: 0, aed: -brokerageOnLandAed });
+    cashflows.sort((a, b) => a.month - b.month);
+  }
 
   const peak = peakEquity(cashflows);
   const irrPct = irr(cashflows);
@@ -338,6 +397,8 @@ export function computeBtRV6(
     interestBasis,
     drawnInterestAed,
     v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }
 
@@ -356,6 +417,8 @@ export interface JvDerivedV6 extends JvDerived {
   interestBasis: 'simple-v5' | 'drawn-monthly-v6';
   drawnInterestAed: number;
   v5InterestAed: number;
+  brokerageOnLandPct: number;
+  brokerageOnLandAed: number;
 }
 
 export function computeJvV6(
@@ -368,8 +431,16 @@ export function computeJvV6(
     constructionMonths?: number;
     loanAed?: number;
     ratePct?: number;
+    brokerageOnLandPct?: number;
   },
 ): JvDerivedV6 {
+  // Brokerage on land (developer-side cost; landowner doesn't pay
+  // broker on their own contribution).
+  const brokerageOnLandPct = options?.brokerageOnLandPct ?? 0;
+  const { land: landWithBrokerage, brokerageAed: brokerageOnLandAed } =
+    applyLandBrokerageV6(land, brokerageOnLandPct);
+  land = landWithBrokerage;
+
   const constructionMonths =
     options?.constructionMonths ?? DEFAULT_CONSTRUCTION_MONTHS;
 
@@ -429,5 +500,7 @@ export function computeJvV6(
     interestBasis,
     drawnInterestAed,
     v5InterestAed,
+    brokerageOnLandPct,
+    brokerageOnLandAed,
   };
 }

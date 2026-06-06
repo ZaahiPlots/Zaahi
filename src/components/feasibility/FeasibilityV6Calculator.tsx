@@ -470,6 +470,9 @@ export default function FeasibilityV6Calculator({
     setLandCostAed(parcel.plotPriceAed);
   }, [parcel.plotPriceAed]);
   const [paymentMode, setPaymentMode] = useState<LandPaymentMode>('full');
+  // Brokerage on land purchase — default 0% (most users transact direct
+  // with the developer). Separate from sales-side commission.
+  const [brokerageOnLandPct, setBrokerageOnLandPct] = useState(0);
   const [downPaymentPct, setDownPaymentPct] = useState(30);
   const [numberOfPayments, setNumberOfPayments] = useState(8);
   const [periodMonths, setPeriodMonths] = useState(24);
@@ -549,6 +552,7 @@ export default function FeasibilityV6Calculator({
   const dDown = useDebounced(downPaymentPct);
   const dN = useDebounced(numberOfPayments);
   const dPeriod = useDebounced(periodMonths);
+  const dBrokerage = useDebounced(brokerageOnLandPct);
   const dConst = useDebounced(constructionPsf);
   const dBrand = useDebounced(brandPsf);
   const dConsult = useDebounced(consultancyPsf);
@@ -644,6 +648,7 @@ export default function FeasibilityV6Calculator({
         ratePct: financeEnabled ? dRate : 0,
         financePeriodMonths: financeEnabled ? dFinPeriod : 0,
         constructionMonths,
+        brokerageOnLandPct: dBrokerage,
         escrow: {
           enabled: escrowEnabled,
           salesAtLaunchPct,
@@ -688,8 +693,9 @@ export default function FeasibilityV6Calculator({
         loanAed: financeEnabled ? dLoan : 0,
         ratePct: financeEnabled ? dRate : 0,
         constructionMonths,
+        brokerageOnLandPct: dBrokerage,
       }),
-    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan, dRate, constructionMonths],
+    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan, dRate, constructionMonths, dBrokerage],
   );
 
   const developerCashAuto =
@@ -713,12 +719,13 @@ export default function FeasibilityV6Calculator({
           constructionMonths,
           loanAed: financeEnabled ? dLoan : 0,
           ratePct: financeEnabled ? dRate : 0,
+          brokerageOnLandPct: dBrokerage,
         },
       ),
     [
       jvType, dLoCont, dLoCash, developerCashAuto, dLoShare,
       land, construction, finance, btsRevenue,
-      constructionMonths, financeEnabled, dLoan, dRate,
+      constructionMonths, financeEnabled, dLoan, dRate, dBrokerage,
     ],
   );
 
@@ -1031,6 +1038,10 @@ export default function FeasibilityV6Calculator({
     inputRow('SFA', `${fmtInt(area.sfa)} sqft`, '—', null, tint); tint = !tint;
     inputRow('Land Cost', fmtAedExact(land.landCostAed), fmtAedExact(parcel.plotPriceAed), dPct(land.landCostAed, parcel.plotPriceAed), tint); tint = !tint;
     inputRow('DLD Fee (4%)', fmtAedExact(land.dldFeeAed), '—', null, tint); tint = !tint;
+    if (brokerageOnLandPct > 0) {
+      inputRow('Brokerage on land', `${brokerageOnLandPct}%`, '0%', null, tint); tint = !tint;
+      inputRow('Brokerage fee', fmtAedExact(btsResult.brokerageOnLandAed), '—', null, tint); tint = !tint;
+    }
     inputRow('Construction psf', `AED ${constructionPsf}`, `AED ${engine.constructionPsfBua}`, dPct(constructionPsf, engine.constructionPsfBua), tint); tint = !tint;
     inputRow('Brand psf', `AED ${brandPsf}`, `AED ${engine.brandPsfBua}`, dPct(brandPsf, engine.brandPsfBua), tint); tint = !tint;
     inputRow('Consultancy psf', `AED ${consultancyPsf}`, `AED ${engine.consultancyPsfBua}`, dPct(consultancyPsf, engine.consultancyPsfBua), tint); tint = !tint;
@@ -1093,6 +1104,9 @@ export default function FeasibilityV6Calculator({
       tint = false;
       tableRow('Land cost', fmtAedExact(land.landCostAed), { tint }); tint = !tint;
       tableRow('+ DLD fee (4%)', fmtAedExact(land.dldFeeAed), { tint }); tint = !tint;
+      if (btsResult.brokerageOnLandAed > 0) {
+        tableRow(`+ Brokerage on land (${brokerageOnLandPct}%)`, fmtAedExact(btsResult.brokerageOnLandAed), { tint }); tint = !tint;
+      }
       tableRow('+ Construction (incl. contingency)', fmtAedExact(construction.totalConstructionAed), { tint }); tint = !tint;
       if (financeEnabled) { tableRow('+ Finance interest', fmtAedExact(finance.totalInterestAed), { tint }); tint = !tint; }
       tableRow('= Total Investment', fmtAedExact(btsResult.totalInvestmentAed), { tint, bold: true }); tint = !tint;
@@ -1931,6 +1945,24 @@ export default function FeasibilityV6Calculator({
               <Row label="DLD Fee (4%)" tooltipKey="dldFee" stacked>
                 <NumberInput value={Math.round(land.dldFeeAed)} unit="AED" readonly fullWidth />
               </Row>
+              <Row label="Brokerage on land (%)" tooltipKey="brokerageOnLand" stacked>
+                <NumberInput
+                  value={brokerageOnLandPct}
+                  unit="%"
+                  onChange={setBrokerageOnLandPct}
+                  fullWidth
+                />
+              </Row>
+              {brokerageOnLandPct > 0 && (
+                <Row label="Brokerage fee" stacked>
+                  <NumberInput
+                    value={Math.round(btsResult.brokerageOnLandAed)}
+                    unit="AED"
+                    readonly
+                    fullWidth
+                  />
+                </Row>
+              )}
               <Row label="Payment Mode" tooltipKey="paymentMode" stacked>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {(['full', 'installments'] as LandPaymentMode[]).map((m) => (

@@ -839,75 +839,11 @@ export default function SidePanel({
                 <NotesBlock rewritten={plan.notes} original={plan.notesOriginal} />
               )}
 
-              {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
-                  is supported when DDA data is missing. */}
-              <div>
-                <button
-                  onClick={() => setFeasOpen((v) => !v)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    fontSize: 11,
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    border: `1px solid ${GOLD}`,
-                    background: "rgba(200,169,110,0.08)",
-                    color: GOLD,
-                    fontWeight: 700,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                  }}
-                >
-                  <span>Feasibility Calculator</span>
-                  <span>{feasOpen ? "▾" : "▸"}</span>
-                </button>
-                {feasOpen && (
-                  <div style={{ marginTop: 8 }}>
-                    {IS_FEASIBILITY_V6_ENABLED ? (
-                      <FeasibilityV6Calculator
-                        parcel={adaptSidePanelToInput(data, plan, aed ?? 0)}
-                        banner="none"
-                        mode="sidepanel"
-                        // Sprint 2-fast (2026-05-06): all 13 engines unlocked.
-                        // Founder accepted "speed > full validation" trade-off.
-                        // EngineSelector splits into VALIDATED (Residential,
-                        // Office) and RESEARCH DEFAULTS optgroups; engines in
-                        // the research group carry an italic disclaimer below
-                        // the source citation. As founder ratifies more
-                        // engines, flip their `validated:` field in
-                        // src/lib/feasibility-v6/engines.ts.
-                      />
-                    ) : (
-                      <FeasibilityCalculator
-                        plotAreaSqft={data.area}
-                        plotPriceAed={aed ?? 0}
-                        gfaSqft={plan.maxGfaSqft ?? 0}
-                        far={plan.far}
-                        landUseMix={plan.landUseMix}
-                        landUse={
-                          plan.landUseMix && plan.landUseMix.length > 1
-                            ? "MIXED_USE"
-                            : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
-                        }
-                        maxFloors={plan.maxFloors}
-                        community={plan.community}
-                        plotNumber={data.plotNumber}
-                        district={data.district}
-                        projectName={plan.projectName}
-                        masterDeveloper={plan.masterDeveloper}
-                        maxHeightCode={plan.maxHeightCode}
-                        onStartNegotiation={() => setOfferOpen(true)}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Documents */}
+              {/* Documents — moved here 2026-06-08 (founder). Affection
+                  Plan + Plot Details PDFs sit between General Notes and
+                  the Feasibility Calculator so users see the source
+                  documents BEFORE running the numbers. DDA Bearer-auth
+                  download flow unchanged. */}
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <button
                   onClick={() => setDocsOpen((v) => !v)}
@@ -1022,6 +958,77 @@ export default function SidePanel({
                   </div>
                 )}
               </div>
+
+              {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
+                  is supported when DDA data is missing. */}
+              <div>
+                <button
+                  onClick={() => setFeasOpen((v) => !v)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                    border: `1px solid ${GOLD}`,
+                    background: "rgba(200,169,110,0.08)",
+                    color: GOLD,
+                    fontWeight: 700,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  <span>Feasibility Calculator</span>
+                  <span>{feasOpen ? "▾" : "▸"}</span>
+                </button>
+                {feasOpen && (
+                  <div style={{ marginTop: 8 }}>
+                    {IS_FEASIBILITY_V6_ENABLED ? (
+                      <FeasibilityV6Calculator
+                        parcel={adaptSidePanelToInput(data, plan, aed ?? 0)}
+                        banner="none"
+                        mode="sidepanel"
+                        // Sprint 2-fast (2026-05-06): all 13 engines unlocked.
+                        // Founder accepted "speed > full validation" trade-off.
+                        // EngineSelector splits into VALIDATED (Residential,
+                        // Office) and RESEARCH DEFAULTS optgroups; engines in
+                        // the research group carry an italic disclaimer below
+                        // the source citation. As founder ratifies more
+                        // engines, flip their `validated:` field in
+                        // src/lib/feasibility-v6/engines.ts.
+                      />
+                    ) : (
+                      <FeasibilityCalculator
+                        plotAreaSqft={data.area}
+                        plotPriceAed={aed ?? 0}
+                        gfaSqft={plan.maxGfaSqft ?? 0}
+                        far={plan.far}
+                        landUseMix={plan.landUseMix}
+                        landUse={
+                          plan.landUseMix && plan.landUseMix.length > 1
+                            ? "MIXED_USE"
+                            : (plan.landUseMix?.[0]?.category ?? "RESIDENTIAL")
+                        }
+                        maxFloors={plan.maxFloors}
+                        community={plan.community}
+                        plotNumber={data.plotNumber}
+                        district={data.district}
+                        projectName={plan.projectName}
+                        masterDeveloper={plan.masterDeveloper}
+                        maxHeightCode={plan.maxHeightCode}
+                        onStartNegotiation={() => setOfferOpen(true)}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Documents block moved up to sit between General Notes
+                  and the Feasibility Calculator (founder 2026-06-08). */}
 
               <div style={{
                 paddingTop: 6, borderTop: `1px solid ${LINE}`,
