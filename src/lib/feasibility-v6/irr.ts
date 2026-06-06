@@ -146,9 +146,18 @@ export function buildBtSCashflows(inp: BtSCashflowInputs): CashflowEntry[] {
     cf.push({ month: m, aed: -monthlyConstruction });
   }
 
-  // Finance: loan inflow at month 1, repayment + interest at month N
+  // Finance: loan is drawn LINEARLY over construction (one source of
+  // truth with drawnMonthlyInterest in results.ts — the interest
+  // accrual base and the cashflow inflow timing must match). Per-month
+  // draw = loan / N. Principal + accrued interest repaid at exit.
+  // Founder fix 2026-06-06: previously a lump +loan at m1 mismatched the
+  // monthly-drawdown interest base, inflated equity in early months and
+  // overstated levered IRR.
   if (inp.loanAed && inp.loanAed > 0) {
-    cf.push({ month: 1, aed: inp.loanAed });
+    const monthlyLoanDraw = inp.loanAed / N;
+    for (let m = 1; m <= N; m++) {
+      cf.push({ month: m, aed: monthlyLoanDraw });
+    }
     cf.push({ month: N, aed: -inp.loanAed - (inp.totalFinanceInterestAed ?? 0) });
   } else if (inp.totalFinanceInterestAed && inp.totalFinanceInterestAed > 0) {
     // No loan but interest is being modeled (rare); pay at exit.
@@ -189,8 +198,13 @@ export function buildBtRCashflows(inp: BtRCashflowInputs): CashflowEntry[] {
   for (let m = 1; m <= N; m++) {
     cf.push({ month: m, aed: -monthlyConstruction });
   }
+  // Loan drawn linearly over construction (matches DRAWN-MONTHLY
+  // interest base — same single source of truth). Founder fix 2026-06-06.
   if (inp.loanAed && inp.loanAed > 0) {
-    cf.push({ month: 1, aed: inp.loanAed });
+    const monthlyLoanDraw = inp.loanAed / N;
+    for (let m = 1; m <= N; m++) {
+      cf.push({ month: m, aed: monthlyLoanDraw });
+    }
     cf.push({ month: N, aed: -inp.loanAed - (inp.totalFinanceInterestAed ?? 0) });
   }
 
@@ -238,14 +252,29 @@ export function buildJvPartnerCashflows(
 
 // ── Peak-equity helpers ───────────────────────────────────────────────
 //
-// Peak equity = max cumulative net cashflow (in absolute terms) up to,
-// but not including, the revenue inflow that flips the sign back. Used
-// to compute ROE — return ON equity, isolating leverage effect.
+// Peak equity = max cumulative net cashflow (in absolute terms). Used to
+// compute ROE — return ON equity, isolating leverage effect.
+//
+// Important: events within the same month are netted before the
+// cumulative is rolled forward. At handover (month N) construction's
+// last draw, loan principal + interest repayment, and sale revenue all
+// occur simultaneously — sequencing them inside one month would create
+// a phantom trough (e.g. the loan repayment appearing to land before
+// revenue arrives). Bucket-by-month avoids that artefact and makes the
+// reported peak match the real worst-case equity need (typically the
+// last construction month before handover).
+//
+// Founder fix 2026-06-06.
 export function peakEquity(cashflows: CashflowEntry[]): number {
+  const byMonth = new Map<number, number>();
+  for (const cf of cashflows) {
+    byMonth.set(cf.month, (byMonth.get(cf.month) ?? 0) + cf.aed);
+  }
+  const sortedMonths = Array.from(byMonth.keys()).sort((a, b) => a - b);
   let cumulative = 0;
   let peak = 0;
-  for (const cf of cashflows) {
-    cumulative += cf.aed;
+  for (const m of sortedMonths) {
+    cumulative += byMonth.get(m)!;
     if (cumulative < peak) peak = cumulative; // most negative = max equity
   }
   return Math.abs(peak);

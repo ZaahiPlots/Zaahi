@@ -40,6 +40,7 @@ import {
 import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
 import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelInput';
 import { computeBtSV6, computeBtRV6, computeJvV6 } from '@/lib/feasibility-v6/results';
+import { btsIrrVerdict, btrIrrVerdict, jvProjectIrrVerdict } from '@/lib/feasibility-v6/verdict';
 import { generateRecommendations } from '@/lib/feasibility-v6/recommendations';
 import FieldLabel from './FieldLabel';
 import DiffBadge from './DiffBadge';
@@ -640,6 +641,8 @@ export default function FeasibilityV6Calculator({
     () =>
       computeBtSV6(area, land, construction, finance, btsRevenue, paymentMode, {
         loanAed: financeEnabled ? dLoan : 0,
+        ratePct: financeEnabled ? dRate : 0,
+        financePeriodMonths: financeEnabled ? dFinPeriod : 0,
         constructionMonths,
         escrow: {
           enabled: escrowEnabled,
@@ -656,6 +659,8 @@ export default function FeasibilityV6Calculator({
       paymentMode,
       financeEnabled,
       dLoan,
+      dRate,
+      dFinPeriod,
       constructionMonths,
       escrowEnabled,
       salesAtLaunchPct,
@@ -681,8 +686,10 @@ export default function FeasibilityV6Calculator({
     () =>
       computeBtRV6(land, construction, finance, btrRental, dAnn, {
         loanAed: financeEnabled ? dLoan : 0,
+        ratePct: financeEnabled ? dRate : 0,
+        constructionMonths,
       }),
-    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan],
+    [land, construction, finance, btrRental, dAnn, financeEnabled, dLoan, dRate, constructionMonths],
   );
 
   const developerCashAuto =
@@ -702,12 +709,26 @@ export default function FeasibilityV6Calculator({
         construction,
         finance,
         btsRevenue,
+        {
+          constructionMonths,
+          loanAed: financeEnabled ? dLoan : 0,
+          ratePct: financeEnabled ? dRate : 0,
+        },
       ),
-    [jvType, dLoCont, dLoCash, developerCashAuto, dLoShare, land, construction, finance, btsRevenue],
+    [
+      jvType, dLoCont, dLoCash, developerCashAuto, dLoShare,
+      land, construction, finance, btsRevenue,
+      constructionMonths, financeEnabled, dLoan, dRate,
+    ],
   );
 
-  const btsV = btsVerdict(btsResult.roiPct);
-  const btrV = btrVerdict(btrResult.yieldPct);
+  // Founder-ratified 2026-06-08: IRR is the PRIMARY verdict band
+  // (developer language); v5 ROI/yield bands stay as the secondary read.
+  const btsV = btsIrrVerdict(btsResult.irrPct);
+  const btsRoiV = btsVerdict(btsResult.roiPct);
+  const btrV = btrIrrVerdict(btrResult.irrPct);
+  const btrYieldV = btrVerdict(btrResult.yieldPct);
+  const jvIrrV = jvProjectIrrVerdict(jv.projectIrrPct);
 
   // ── PDF export — Sprint 9d branded layout
   // Six-page A4 portrait: Cover · Inputs · Results breakdown · Glossary ·
@@ -1646,6 +1667,8 @@ export default function FeasibilityV6Calculator({
                       {btsResult.peakEquityAed > 0 ? fmtPct(btsResult.roePct) : '—'}
                     </span>
                   </div>
+                  {/* IRR-primary verdict (founder-ratified 2026-06-08).
+                      ROI verdict shown below as the secondary read. */}
                   <div
                     style={{
                       marginTop: 10,
@@ -1661,8 +1684,21 @@ export default function FeasibilityV6Calculator({
                       background: 'rgba(255,255,255,0.02)',
                     }}
                     role="status"
+                    title={`IRR verdict band: ${btsV.threshold}`}
                   >
-                    {btsV.label}
+                    IRR · {btsV.label}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 9,
+                      color: SUBTLE,
+                      textAlign: 'center',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    ROI · {btsRoiV.label}
                   </div>
                 </>
               )}
@@ -1728,6 +1764,7 @@ export default function FeasibilityV6Calculator({
                       {btrResult.peakEquityAed > 0 ? fmtPct(btrResult.roePct) : '—'}
                     </span>
                   </div>
+                  {/* IRR-primary verdict; Yield verdict as secondary. */}
                   <div
                     style={{
                       marginTop: 10,
@@ -1743,8 +1780,21 @@ export default function FeasibilityV6Calculator({
                       background: 'rgba(255,255,255,0.02)',
                     }}
                     role="status"
+                    title={`IRR verdict band: ${btrV.threshold}`}
                   >
-                    {btrV.label}
+                    IRR · {btrV.label}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 9,
+                      color: SUBTLE,
+                      textAlign: 'center',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Yield · {btrYieldV.label}
                   </div>
                 </>
               )}
@@ -2665,7 +2715,7 @@ export default function FeasibilityV6Calculator({
                     background: 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  Verdict: {btsV.label}
+                  IRR · {btsV.label}
                 </div>
                 {paymentMode === 'installments' && (
                   <>
@@ -2713,7 +2763,7 @@ export default function FeasibilityV6Calculator({
                     background: 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  Verdict: {btrV.label}
+                  IRR · {btrV.label}
                 </div>
 
                 <SectionTitle>5-Year Projection</SectionTitle>
