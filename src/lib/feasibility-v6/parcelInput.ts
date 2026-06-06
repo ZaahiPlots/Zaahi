@@ -71,13 +71,21 @@ export function adaptParcelToInput(
   const plotPriceAed =
     parcel.currentValuation != null ? Number(parcel.currentValuation) / 100 : 0;
 
-  // Land-use derivation
+  // Land-use derivation. A plot is MIXED USE only when the affection
+  // plan lists more than one DISTINCT category (founder 2026-06-08 —
+  // not just multiple sub-classifications of the same category, which
+  // was incorrectly classifying single-use plots as MIXED USE).
   const mix = (plan?.landUseMix as LandUseMixEntry[] | null) ?? [];
+  const uniqueCategories = new Set(
+    mix
+      .map((m) => (m.category ?? '').trim().toUpperCase())
+      .filter((c) => c.length > 0),
+  );
   let landUse = 'RESIDENTIAL';
-  if (mix.length > 1) {
+  if (uniqueCategories.size > 1) {
     landUse = 'MIXED USE';
-  } else if (mix.length === 1 && mix[0]?.category) {
-    landUse = mix[0].category.toUpperCase();
+  } else if (uniqueCategories.size === 1) {
+    landUse = [...uniqueCategories][0];
   }
 
   return {
@@ -136,12 +144,19 @@ export function adaptSidePanelToInput(
   const far = plan?.far ?? 2.5;
   const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
 
+  // Land-use derivation — distinct categories only (founder 2026-06-08).
+  // See adaptParcelToInput above for the reasoning.
   const mix = plan?.landUseMix ?? [];
+  const uniqueCategories = new Set(
+    mix
+      .map((m) => (m.category ?? '').trim().toUpperCase())
+      .filter((c) => c.length > 0),
+  );
   let landUse = 'RESIDENTIAL';
-  if (mix.length > 1) {
+  if (uniqueCategories.size > 1) {
     landUse = 'MIXED USE';
-  } else if (mix.length === 1 && mix[0]?.category) {
-    landUse = mix[0].category.toUpperCase();
+  } else if (uniqueCategories.size === 1) {
+    landUse = [...uniqueCategories][0];
   }
 
   return {
