@@ -24,6 +24,14 @@ export interface ParcelInput {
   gfaSqft: number;
   plotPriceAed: number;
   maxFloors: number | null;
+  // Mixed-use breakdown straight from the affection plan. Each entry has
+  // a canonical category + DDA sub-classification. When the plot is
+  // mixed-use (length > 1), the calculator surfaces a Mix Breakdown
+  // panel and routes the composite engine path.
+  landUseMix: Array<{ category: string; sub?: string; areaSqm?: number | null }>;
+  // DDA general notes (plain-language rewrite). Notes tab pulls design
+  // theme, NOC hints, etc. out of this.
+  notes: string | null;
 }
 
 interface LandUseMixEntry {
@@ -50,6 +58,7 @@ interface AffectionPlanLike {
   maxGfaSqft: number | null;
   maxFloors: number | null;
   landUseMix: unknown;
+  notes?: string | null;
 }
 
 export function adaptParcelToInput(
@@ -85,6 +94,8 @@ export function adaptParcelToInput(
     gfaSqft,
     plotPriceAed,
     maxFloors: plan?.maxFloors ?? null,
+    landUseMix: mix,
+    notes: plan?.notes ?? null,
   };
 }
 
@@ -113,6 +124,7 @@ interface SidePanelPlanLike {
   maxGfaSqft: number | null;
   maxFloors: number | null;
   landUseMix: Array<{ category: string; sub?: string; areaSqm?: number | null }> | null;
+  notes?: string | null;
 }
 
 export function adaptSidePanelToInput(
@@ -146,6 +158,8 @@ export function adaptSidePanelToInput(
     gfaSqft,
     plotPriceAed,
     maxFloors: plan?.maxFloors ?? null,
+    landUseMix: mix,
+    notes: plan?.notes ?? null,
   };
 }
 
@@ -155,17 +169,30 @@ export function adaptSidePanelToInput(
 // as more engines become available.
 import type { EngineId } from './engines';
 
+// Routing per spec 00_OVERVIEW.md §3 + founder ratification 2026-06-06:
+//   Agricultural / Farm → Engine 13 Land-Hold (manual cost override; per spec §3)
+//   Future Development  → Engine 13 Land-Hold (Rezoning Upside sub-mode per spec §3)
+//   Investment (POST-spec, added 2026-06-03) → Engine 13 Land-Hold (founder ratified)
+// HOSPITAL substring intentionally checked AFTER HEALTHCARE so "HOSPITALITY" wins
+// for hotels and "HOSPITAL" (clinic context) doesn't accidentally route there.
 export function defaultEngineFor(landUse: string): EngineId {
-  const u = landUse.toUpperCase();
+  const u = (landUse ?? '').toUpperCase().trim();
+  if (!u) return 'residential';
   if (u.includes('MIXED')) return 'mixeduse';
-  if (u.includes('OFFICE') || u.includes('COMMERCIAL')) return 'office';
-  if (u.includes('RETAIL')) return 'retail';
-  if (u.includes('HOTEL') || u.includes('HOSPITALITY')) return 'hospitality';
-  if (u.includes('INDUSTRIAL') || u.includes('WAREHOUSE') || u.includes('LOGISTIC'))
+  if (u.includes('HOTEL') || u.includes('HOSPITALITY') || u.includes('RESORT'))
+    return 'hospitality';
+  if (u.includes('OFFICE')) return 'office';
+  if (u.includes('RETAIL') || u.includes('MALL') || u.includes('SHOWROOM'))
+    return 'retail';
+  if (u.includes('INDUSTRIAL') || u.includes('WAREHOUSE') || u.includes('LOGISTIC') || u.includes('FACTORY'))
     return 'industrial';
-  if (u.includes('HEALTH') || u.includes('HOSPITAL') || u.includes('CLINIC'))
+  if (u.includes('HEALTH') || u.includes('CLINIC') || u.includes('HOSPITAL'))
     return 'healthcare';
-  if (u.includes('EDUCATION') || u.includes('SCHOOL') || u.includes('UNIVERSITY'))
+  if (u.includes('EDUCATION') || u.includes('SCHOOL') || u.includes('UNIVERSITY') || u.includes('ACADEMY') || u.includes('NURSERY'))
     return 'educational';
+  if (u.includes('COMMERCIAL')) return 'office';
+  if (u.includes('AGRICULTURAL') || u.includes('FARM')) return 'landhold';
+  if (u.includes('FUTURE')) return 'landhold';
+  if (u.includes('INVESTMENT')) return 'landhold';
   return 'residential';
 }

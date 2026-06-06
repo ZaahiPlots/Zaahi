@@ -41,6 +41,12 @@ import { ENGINES, type EngineId } from '@/lib/feasibility-v6/engines';
 import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelInput';
 import { computeBtSV6, computeBtRV6, computeJvV6 } from '@/lib/feasibility-v6/results';
 import { btsIrrVerdict, btrIrrVerdict, jvProjectIrrVerdict } from '@/lib/feasibility-v6/verdict';
+import {
+  computeMixedUseBtSV6,
+  landUseMixToShares,
+  shareToEngine,
+  type MixedUseShare,
+} from '@/lib/feasibility-v6/mixedUse';
 import { generateRecommendations } from '@/lib/feasibility-v6/recommendations';
 import FieldLabel from './FieldLabel';
 import DiffBadge from './DiffBadge';
@@ -297,6 +303,66 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Engine selector disclosure ───────────────────────────────────────
+// Hides the full selector behind one click — the current engine label
+// stays visible so the user always knows what's driving defaults, but
+// the dropdown only shows when explicitly opened. Saves ~80 px of header
+// real estate above the panels (founder scroll-reduction 2026-06-08).
+function EngineSelectorDisclosure({
+  currentLabel,
+  currentValidated,
+  children,
+}: {
+  currentLabel: string;
+  currentValidated: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${LINE}`,
+          borderRadius: 8,
+          padding: '8px 10px',
+          color: TXT,
+          fontFamily: 'inherit',
+          fontSize: 11,
+          cursor: 'pointer',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span>
+          <span style={{ color: SUBTLE, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Engine{' '}
+          </span>
+          <span style={{ color: GOLD, fontWeight: 700 }}>{currentLabel}</span>
+          {!currentValidated && (
+            <span style={{ color: SUBTLE, fontSize: 9, marginLeft: 6, fontStyle: 'italic' }}>
+              research-default
+            </span>
+          )}
+        </span>
+        <span style={{ color: SUBTLE, fontSize: 11 }}>{open ? '▾ close' : '▸ change'}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Collapsible Panel (sidepanel-mode at-a-glance hierarchy) ─────────
 // Founder fix #5: each panel header shows a primary metric inline so the
 // broker sees BUA / Land Cost / Construction total / Revenue total without
@@ -473,6 +539,20 @@ export default function FeasibilityV6Calculator({
   // Brokerage on land purchase — default 0% (most users transact direct
   // with the developer). Separate from sales-side commission.
   const [brokerageOnLandPct, setBrokerageOnLandPct] = useState(0);
+
+  // Mixed-use breakdown — seeded from parcel.landUseMix when multi-use.
+  const initialMixShares = useMemo(
+    () => landUseMixToShares(parcel.landUseMix),
+    [parcel.landUseMix],
+  );
+  const [mixShares, setMixShares] = useState<MixedUseShare[] | null>(initialMixShares);
+  const lastParcelMixRef = useRef(parcel.id);
+  useEffect(() => {
+    if (lastParcelMixRef.current !== parcel.id) {
+      lastParcelMixRef.current = parcel.id;
+      setMixShares(landUseMixToShares(parcel.landUseMix));
+    }
+  }, [parcel.id, parcel.landUseMix]);
   const [downPaymentPct, setDownPaymentPct] = useState(30);
   const [numberOfPayments, setNumberOfPayments] = useState(8);
   const [periodMonths, setPeriodMonths] = useState(24);
@@ -728,6 +808,23 @@ export default function FeasibilityV6Calculator({
       constructionMonths, financeEnabled, dLoan, dRate, dBrokerage,
     ],
   );
+
+  // Mixed-use composite — only when the plot has >1 sub-uses AND tab=bts.
+  // Composite slices BUA/SFA by share and runs the matching engine per
+  // slice; land/DLD/brokerage/finance stay on the parent.
+  const showMixedUse = !!mixShares && mixShares.length > 1 && tab === 'bts';
+  const mixedResult = useMemo(() => {
+    if (!showMixedUse || !mixShares) return null;
+    return computeMixedUseBtSV6({
+      parentArea: area,
+      shares: mixShares,
+      commissionPct: dComm,
+      marketingPct: dMkt,
+      devServicesPct: dDev,
+    });
+  }, [showMixedUse, mixShares, area, dComm, dMkt, dDev]);
+  const mixShareSum = mixShares ? mixShares.reduce((s, x) => s + x.pct, 0) : 0;
+  const mixShareValid = !mixShares || Math.abs(mixShareSum - 100) < 0.5;
 
   // Founder-ratified 2026-06-08: IRR is the PRIMARY verdict band
   // (developer language); v5 ROI/yield bands stay as the secondary read.
@@ -1554,11 +1651,21 @@ export default function FeasibilityV6Calculator({
                 · {parcel.district} · {parcel.landUse}
               </span>
             </div>
-            <div style={{ color: SUBTLE, fontSize: 11, marginBottom: 10 }}>
+            <div style={{ color: SUBTLE, fontSize: 11, marginBottom: 8 }}>
               {fmtInt(parcel.plotAreaSqft)} sqft · FAR {parcel.far.toFixed(2)} · Listed{' '}
               {fmtAedExact(parcel.plotPriceAed)}
             </div>
-            <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+            {/* Engine selector hidden behind a single disclosure click in
+                sidepanel mode (founder 2026-06-08). Auto-route from
+                landUse keeps the right default; only power users open the
+                picker. The current engine label stays visible so the user
+                always knows what's driving defaults. */}
+            <EngineSelectorDisclosure
+              currentLabel={ENGINES[engineId].label}
+              currentValidated={ENGINES[engineId].validated}
+            >
+              <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+            </EngineSelectorDisclosure>
           </div>
         ) : (
           <div
@@ -1933,6 +2040,84 @@ export default function FeasibilityV6Calculator({
                 <NumberInput value={Math.round(area.sfa)} unit="sqft" readonly fullWidth />
               </Row>
             </Panel>
+
+            {/* Mixed-use breakdown — Panel sits between Area and Land
+                so the share % drives downstream construction + revenue
+                via the composite engine path. Auto-rendered when the
+                DDA affection plan lists more than one sub-use. */}
+            {showMixedUse && mixShares && mixedResult && (
+              <Panel
+                title="Mix breakdown"
+                metric={`${mixShares.length} uses · Σ ${mixShareSum.toFixed(0)}%`}
+                defaultOpen
+                changed={!mixShareValid}
+              >
+                {!mixShareValid && (
+                  <div
+                    role="alert"
+                    style={{
+                      fontSize: 10,
+                      color: '#E63946',
+                      marginBottom: 6,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Share % must sum to 100. Current sum: {mixShareSum.toFixed(1)}%.
+                  </div>
+                )}
+                {mixShares.map((share, i) => {
+                  const engineId = shareToEngine(share);
+                  const slice = mixedResult.slices[i];
+                  return (
+                    <Row
+                      key={`${share.category}-${share.sub ?? ''}-${i}`}
+                      label={`${share.category}${share.sub ? ' · ' + share.sub : ''}`}
+                      stacked
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <NumberInput
+                          value={share.pct}
+                          unit="%"
+                          fullWidth
+                          onChange={(n) => {
+                            const next = mixShares.slice();
+                            next[i] = { ...next[i], pct: n };
+                            setMixShares(next);
+                          }}
+                        />
+                        <span style={{ color: SUBTLE, fontSize: 10 }}>
+                          Engine: {ENGINES[engineId].label} · GFA {fmtInt(slice.area.gfa)} sqft ·
+                          Net rev {fmtAedExact(slice.netRevenueAed)}
+                        </span>
+                      </div>
+                    </Row>
+                  );
+                })}
+                <div
+                  style={{
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: `1px solid ${LINE_HARD}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: DIM }}>Total construction (composite)</span>
+                    <span style={{ color: TXT, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtAedExact(mixedResult.totalConstructionAed)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: DIM }}>Total net revenue (composite)</span>
+                    <span style={{ color: TXT, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtAedExact(mixedResult.totalNetRevenueAed)}
+                    </span>
+                  </div>
+                </div>
+              </Panel>
+            )}
 
             <Panel
               title="Land"

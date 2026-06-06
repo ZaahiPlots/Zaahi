@@ -26,6 +26,8 @@ export const MOCK_PARCELS: MockParcel[] = [
     gfaSqft: 26_100,
     plotPriceAed: 18_500_000,
     maxFloors: 4,
+    landUseMix: [{ category: 'RESIDENTIAL', sub: 'VILLA', areaSqm: 2426 }],
+    notes: null,
   },
   {
     id: 'mock-002',
@@ -41,6 +43,8 @@ export const MOCK_PARCELS: MockParcel[] = [
     gfaSqft: 99_000,
     plotPriceAed: 62_000_000,
     maxFloors: 28,
+    landUseMix: [{ category: 'COMMERCIAL', sub: 'OFFICES', areaSqm: 2044 }],
+    notes: null,
   },
   {
     id: 'mock-003',
@@ -56,6 +60,12 @@ export const MOCK_PARCELS: MockParcel[] = [
     gfaSqft: 175_000,
     plotPriceAed: 130_000_000,
     maxFloors: 35,
+    landUseMix: [
+      { category: 'RESIDENTIAL', sub: 'APARTMENTS', areaSqm: 9000 },
+      { category: 'COMMERCIAL', sub: 'OFFICES', areaSqm: 4500 },
+      { category: 'COMMERCIAL', sub: 'RETAIL PODIUM', areaSqm: 2750 },
+    ],
+    notes: null,
   },
   {
     id: 'mock-004',
@@ -71,6 +81,8 @@ export const MOCK_PARCELS: MockParcel[] = [
     gfaSqft: 96_000,
     plotPriceAed: 28_000_000,
     maxFloors: 2,
+    landUseMix: [{ category: 'INDUSTRIAL', sub: 'WAREHOUSE', areaSqm: 7432 }],
+    notes: null,
   },
   {
     id: 'mock-005',
@@ -86,6 +98,8 @@ export const MOCK_PARCELS: MockParcel[] = [
     gfaSqft: 144_000,
     plotPriceAed: 95_000_000,
     maxFloors: 9,
+    landUseMix: [{ category: 'HEALTHCARE', sub: 'HOSPITAL', areaSqm: 5574 }],
+    notes: null,
   },
 ];
 

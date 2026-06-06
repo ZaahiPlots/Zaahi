@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
 import FeasibilityCalculator from "./FeasibilityCalculator";
 import FeasibilityV6Calculator from "@/components/feasibility/FeasibilityV6Calculator";
+import GeneralNotes from "@/components/feasibility/GeneralNotes";
 import { IS_FEASIBILITY_V6_ENABLED } from "@/lib/feasibility-v6/featureFlag";
 import { adaptSidePanelToInput } from "@/lib/feasibility-v6/parcelInput";
 import OfferModal from "./OfferModal";
@@ -834,9 +835,20 @@ export default function SidePanel({
                 </Section>
               )}
 
-              {/* General notes — straight from DDA's affection plan, raw text */}
+              {/* General notes — visual hybrid (parking + NOCs + design
+                  callout + toggle to raw DDA notes). Founder 2026-06-08
+                  replaces the previous raw-text NotesBlock. */}
               {plan.notes && plan.notes.trim().length > 0 && (
-                <NotesBlock rewritten={plan.notes} original={plan.notesOriginal} />
+                <Section title="General Notes">
+                  <GeneralNotes
+                    landUseMix={
+                      (plan.landUseMix as Array<{ category: string; sub?: string }>) ?? []
+                    }
+                    district={data.district}
+                    community={plan.community}
+                    notes={plan.notes}
+                  />
+                </Section>
               )}
 
               {/* Documents — moved here 2026-06-08 (founder). Affection
