@@ -222,8 +222,12 @@ export const ENGINES: Record<EngineId, EngineDefaults> = {
     contingencyPct: 10,
     salesPsfSfa: 0,
     monthlyRentPsfSfa: 0, // colocation rev/MW, not psf
-    occupancyPct: 0,
-    operatingPct: 0,
+    // Stage 2 fix 2026-06-09: DC needs non-zero occupancy + operating
+    // so the per-unit synth pipeline produces meaningful net annual.
+    // 85% MW utilization is the Khazna / Equinix UAE midpoint;
+    // operating ratio 35% covers power + maintenance + monitoring.
+    occupancyPct: 85,
+    operatingPct: 35,
     source: 'Khazna / Equinix 2025 · AED 33–41M Tier-3/MW',
     blurb: 'Tier-3 colocation. CapEx in AED/MW, not psf. Placeholder needs founder default Q7.',
     modes: ['btr'],

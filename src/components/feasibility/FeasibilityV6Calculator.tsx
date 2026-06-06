@@ -42,6 +42,13 @@ import { type ParcelInput, defaultEngineFor } from '@/lib/feasibility-v6/parcelI
 import { computeBtSV6, computeBtRV6, computeJvV6 } from '@/lib/feasibility-v6/results';
 import { btsIrrVerdict, btrIrrVerdict, jvProjectIrrVerdict } from '@/lib/feasibility-v6/verdict';
 import {
+  PER_UNIT_DEFAULTS,
+  isPerUnitEngine,
+  synthesiseBtSPsf,
+  synthesiseBtRRentPsf,
+  autoUnitCount,
+} from '@/lib/feasibility-v6/perUnitRevenue';
+import {
   computeMixedUseBtSV6,
   landUseMixToShares,
   shareToEngine,
@@ -64,6 +71,7 @@ const DIM = 'rgba(245, 241, 232, 0.70)';
 const SUBTLE = 'rgba(245, 241, 232, 0.55)';
 const LINE = 'rgba(200, 169, 110, 0.15)';
 const LINE_HARD = 'rgba(200, 169, 110, 0.30)';
+const AMBER = '#E67E22';
 
 type Tab = 'bts' | 'btr' | 'jv';
 
@@ -540,6 +548,35 @@ export default function FeasibilityV6Calculator({
   // with the developer). Separate from sales-side commission.
   const [brokerageOnLandPct, setBrokerageOnLandPct] = useState(0);
 
+  // Per-unit revenue model (hospitality / healthcare / educational /
+  // datacenter). Founder 2026-06-09 — these engines' revenue isn't
+  // psf-driven, so v5's SFA × salesPsf produces zero. We synthesise an
+  // equivalent psf from the real per-unit model so the kernel stays
+  // untouched. The default unit count is derived from BUA; the user
+  // overrides everything via the Asset Model panel.
+  const perUnitDef = PER_UNIT_DEFAULTS[engineId];
+  const usesPerUnit = isPerUnitEngine(engineId);
+  const [unitCount, setUnitCount] = useState<number>(autoUnitCount(plotAreaSqft * far * 1.85, engineId));
+  const [perUnitRev, setPerUnitRev] = useState<number>(
+    perUnitDef?.perUnitAnnualRevenueAed ?? perUnitDef?.adrAed ?? 0,
+  );
+  const [exitCapPct, setExitCapPct] = useState<number>(perUnitDef?.exitCapRatePct ?? 7.5);
+
+  // Re-seed per-unit inputs when the engine changes (preserves user
+  // overrides by snapshotting the engine id we last seeded for).
+  const lastPerUnitEngineRef = useRef<EngineId>(engineId);
+  useEffect(() => {
+    if (lastPerUnitEngineRef.current !== engineId) {
+      lastPerUnitEngineRef.current = engineId;
+      const def = PER_UNIT_DEFAULTS[engineId];
+      if (def) {
+        setUnitCount(autoUnitCount(plotAreaSqft * far * 1.85, engineId));
+        setPerUnitRev(def.perUnitAnnualRevenueAed ?? def.adrAed ?? 0);
+        setExitCapPct(def.exitCapRatePct);
+      }
+    }
+  }, [engineId, plotAreaSqft, far]);
+
   // Mixed-use breakdown — seeded from parcel.landUseMix when multi-use.
   const initialMixShares = useMemo(
     () => landUseMixToShares(parcel.landUseMix),
@@ -707,18 +744,38 @@ export default function FeasibilityV6Calculator({
     [financeEnabled, dLoan, dRate, dFinPeriod],
   );
 
+  // Per-unit BtS revenue synth — for hospitality/healthcare/etc. the
+  // v5 kernel needs a psf; we back-derive it from the real per-unit
+  // model. Result also exposed to the UI for transparency.
+  const perUnitBtSResult = useMemo(() => {
+    if (!usesPerUnit || !perUnitDef) return null;
+    return synthesiseBtSPsf({
+      engineId,
+      unitCount,
+      perUnitAnnualRevenueAed: perUnitRev,
+      occupancyPct,
+      operatingPct,
+      exitCapRatePct: exitCapPct,
+      sfaSqft: area.sfa,
+    });
+  }, [usesPerUnit, perUnitDef, engineId, unitCount, perUnitRev, occupancyPct, operatingPct, exitCapPct, area.sfa]);
+
+  const effectiveSalesPsf = perUnitBtSResult
+    ? perUnitBtSResult.equivalentSalesPsfSfa
+    : dSales;
+
   const btsRevenue = useMemo(
     () =>
       deriveBtSRevenue(
         {
-          salesPricePsfSfa: dSales,
+          salesPricePsfSfa: effectiveSalesPsf,
           commissionPct: dComm,
           marketingPct: dMkt,
           devServicesPct: dDev,
         },
         area.sfa,
       ),
-    [dSales, dComm, dMkt, dDev, area.sfa],
+    [effectiveSalesPsf, dComm, dMkt, dDev, area.sfa],
   );
 
   const btsResult = useMemo(
@@ -753,18 +810,34 @@ export default function FeasibilityV6Calculator({
     ],
   );
 
+  // Per-unit BtR rent synth — same idea as the BtS path but for rent.
+  // Hospitality is BtS-only so doesn't apply here; healthcare /
+  // educational / datacenter need the synth for meaningful BtR.
+  const perUnitBtRResult = useMemo(() => {
+    if (!usesPerUnit || !perUnitDef || engineId === 'hospitality') return null;
+    return synthesiseBtRRentPsf({
+      unitCount,
+      perUnitAnnualRevenueAed: perUnitRev,
+      sfaSqft: area.sfa,
+    });
+  }, [usesPerUnit, perUnitDef, engineId, unitCount, perUnitRev, area.sfa]);
+
+  const effectiveMonthlyRent = perUnitBtRResult
+    ? perUnitBtRResult.equivalentMonthlyRentPsfSfa
+    : dRent;
+
   const btrRental = useMemo(
     () =>
       deriveBtRRental(
         {
-          monthlyRentPsfSfa: dRent,
+          monthlyRentPsfSfa: effectiveMonthlyRent,
           occupancyPct: dOcc,
           annualIncreasePct: dAnn,
           operatingPct: dOp,
         },
         area.sfa,
       ),
-    [dRent, dOcc, dAnn, dOp, area.sfa],
+    [effectiveMonthlyRent, dOcc, dAnn, dOp, area.sfa],
   );
 
   const btrResult = useMemo(
@@ -2437,7 +2510,145 @@ export default function FeasibilityV6Calculator({
               </Panel>
             )}
 
-            {tab === 'bts' && (
+            {/* Mode-gating banner — when the active tab isn't in the
+                engine's supported modes, show a clear message instead of
+                garbage numbers (founder 2026-06-09 — Stage 2 fix). */}
+            {!engine.modes.includes(tab as 'bts' | 'btr') && tab !== 'jv' && (
+              <Panel
+                title="Mode not supported"
+                metric={`${engine.label} · ${tab.toUpperCase()}`}
+                defaultOpen
+                changed
+              >
+                <div
+                  role="alert"
+                  style={{
+                    color: AMBER,
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                    padding: '8px 10px',
+                    background: 'rgba(230, 126, 34, 0.08)',
+                    border: `1px solid ${AMBER}`,
+                    borderRadius: 8,
+                  }}
+                >
+                  The <strong>{engine.label}</strong> engine doesn&apos;t support{' '}
+                  <strong>{tab === 'bts' ? 'Build to Sell' : 'Build to Rent'}</strong>{' '}
+                  — its revenue model is{' '}
+                  {engineId === 'hospitality' ? 'ADR-driven (hotel operating asset)'
+                    : engineId === 'datacenter' ? 'per-MW colocation revenue'
+                    : engineId === 'senior' ? 'rental hold only'
+                    : engineId === 'offplan' ? 'off-plan sales only'
+                    : engineId === 'landhold' ? 'speculative land appreciation (CAGR exit)'
+                    : engineId === 'infrastructure' ? 'PPP / concession DCF (not in v6)'
+                    : 'not modelled in this view'}
+                  . Switch to{' '}
+                  {engine.modes.length === 0
+                    ? 'another engine'
+                    : engine.modes.includes('bts') ? 'Build to Sell' : 'Build to Rent'}{' '}
+                  for meaningful outputs. (Investment cost is shown above; revenue / IRR
+                  on this tab are not applicable.)
+                </div>
+              </Panel>
+            )}
+
+            {/* Per-unit Asset Model — for engines whose revenue is not
+                psf-driven (hospitality, healthcare, educational,
+                datacenter). Computed values flow back into the v5
+                math kernel as a synthesised psf. */}
+            {usesPerUnit && perUnitDef && engine.modes.includes(tab as 'bts' | 'btr') && (
+              <Panel
+                title="Asset model"
+                metric={
+                  tab === 'bts' && perUnitBtSResult
+                    ? `${unitCount} ${perUnitDef.unitLabel} · sale value ${fmtAedExact(perUnitBtSResult.exitValueAed)}`
+                    : tab === 'btr' && perUnitBtRResult
+                      ? `${unitCount} ${perUnitDef.unitLabel} · gross ${fmtAedExact(perUnitBtRResult.annualGrossRevenueAed)}/yr`
+                      : 'unit-driven revenue'
+                }
+                defaultOpen
+              >
+                <div
+                  style={{
+                    color: SUBTLE,
+                    fontSize: 10,
+                    fontStyle: 'italic',
+                    marginBottom: 8,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Revenue model: {engineId === 'hospitality' ? 'ADR × keys × occupancy × 365'
+                    : engineId === 'healthcare' ? 'AED revenue per bed × bed count × occupancy'
+                    : engineId === 'educational' ? 'tuition per student × student count × occupancy'
+                    : 'AED revenue per MW × MW capacity'}
+                  . The v5 kernel sees an equivalent SFA × psf, but the
+                  numbers are driven from these per-unit inputs.
+                </div>
+                <Row label={`Number of ${perUnitDef.unitLabel}`} stacked>
+                  <NumberInput value={unitCount} unit={perUnitDef.unitLabel} onChange={setUnitCount} fullWidth />
+                </Row>
+                <Row
+                  label={engineId === 'hospitality' ? 'ADR (AED / night)' : `Annual revenue per ${perUnitDef.unitLabel.replace(/s$/, '')}`}
+                  stacked
+                >
+                  <NumberInput
+                    value={perUnitRev}
+                    unit={engineId === 'hospitality' ? 'AED' : 'AED / year'}
+                    onChange={setPerUnitRev}
+                    fullWidth
+                  />
+                </Row>
+                {tab === 'bts' && (
+                  <Row label="Exit cap rate (sale of operating asset)" stacked>
+                    <NumberInput value={exitCapPct} unit="%" onChange={setExitCapPct} fullWidth />
+                  </Row>
+                )}
+                {tab === 'bts' && perUnitBtSResult && (
+                  <div
+                    style={{
+                      color: SUBTLE,
+                      fontSize: 11,
+                      marginTop: 8,
+                      padding: '8px 10px',
+                      background: 'rgba(200,169,110,0.06)',
+                      border: `1px solid ${LINE}`,
+                      borderRadius: 6,
+                      lineHeight: 1.5,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <div>Annual gross: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.annualGrossRevenueAed)}</span></div>
+                    <div>Annual NOI: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.annualNoiAed)}</span></div>
+                    <div>Exit value: <span style={{ color: GOLD, fontWeight: 700 }}>{fmtAedExact(perUnitBtSResult.exitValueAed)}</span></div>
+                    <div style={{ marginTop: 4, color: SUBTLE, fontSize: 10 }}>
+                      Equivalent SFA psf: {fmtAedExact(perUnitBtSResult.equivalentSalesPsfSfa)}
+                    </div>
+                  </div>
+                )}
+                {tab === 'btr' && perUnitBtRResult && (
+                  <div
+                    style={{
+                      color: SUBTLE,
+                      fontSize: 11,
+                      marginTop: 8,
+                      padding: '8px 10px',
+                      background: 'rgba(200,169,110,0.06)',
+                      border: `1px solid ${LINE}`,
+                      borderRadius: 6,
+                      lineHeight: 1.5,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <div>Annual gross: <span style={{ color: TXT, fontWeight: 700 }}>{fmtAedExact(perUnitBtRResult.annualGrossRevenueAed)}</span></div>
+                    <div style={{ marginTop: 4, color: SUBTLE, fontSize: 10 }}>
+                      Equivalent monthly rent psf: {fmtAedExact(perUnitBtRResult.equivalentMonthlyRentPsfSfa)}
+                    </div>
+                  </div>
+                )}
+              </Panel>
+            )}
+
+            {tab === 'bts' && engine.modes.includes('bts') && !usesPerUnit && (
               <Panel
                 title="Revenue"
                 metric={fmtAedExact(btsResult.netRevenueAed)}
@@ -2462,8 +2673,27 @@ export default function FeasibilityV6Calculator({
                 </Row>
               </Panel>
             )}
+            {/* For per-unit BtS engines, still show commission/marketing
+                (they apply to the sale of the operating asset). */}
+            {tab === 'bts' && usesPerUnit && (
+              <Panel
+                title="Sales costs"
+                metric={fmtAedExact(btsResult.netRevenueAed)}
+                changed
+              >
+                <Row label="Commission" tooltipKey="commission" stacked>
+                  <NumberInput value={commissionPct} unit="%" onChange={setCommissionPct} fullWidth />
+                </Row>
+                <Row label="Marketing" tooltipKey="marketing" stacked>
+                  <NumberInput value={marketingPct} unit="%" onChange={setMarketingPct} fullWidth />
+                </Row>
+                <Row label="Dev Services" tooltipKey="devServices" stacked>
+                  <NumberInput value={devServicesPct} unit="%" onChange={setDevServicesPct} fullWidth />
+                </Row>
+              </Panel>
+            )}
 
-            {tab === 'btr' && (
+            {tab === 'btr' && engine.modes.includes('btr') && !usesPerUnit && (
               <Panel
                 title="Rental"
                 metric={fmtAedExact(btrRental.netAnnualAed)}
