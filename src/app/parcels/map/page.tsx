@@ -287,10 +287,10 @@ const VAULT_CONFLICT_MARKERS_LAYER = "vault-conflict-markers";
 // Source-of-truth in CLAUDE.md "Цвета по Land Use".
 const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   RESIDENTIAL: "#2D6A4F",         // green
-  COMMERCIAL: "#1B4965",          // blue
+  COMMERCIAL: "#1B3A5C",          // navy
   MIXED_USE: "#6B4C9A",           // purple
-  HOTEL: "#9B2226",               // red
-  HOSPITALITY: "#9B2226",         // red (alias)
+  HOTEL: "#7B1E2B",               // burgundy
+  HOSPITALITY: "#7B1E2B",         // burgundy (alias)
   INDUSTRIAL: "#495057",          // gray
   WAREHOUSE: "#495057",           // gray (alias)
   EDUCATIONAL: "#0077B6",         // sky blue
@@ -5316,9 +5316,9 @@ function ParcelsMapPageInner() {
   // LANDUSE_COLORS, filter-state LAND_USE_OPTIONS, and CLAUDE.md.
   const LAND_USE_LEGEND: { color: string; name: string; desc: string }[] = [
     { color: "#2D6A4F", name: "Residential",          desc: "Жилое" },
-    { color: "#1B4965", name: "Commercial",           desc: "Коммерческое" },
+    { color: "#1B3A5C", name: "Commercial",           desc: "Коммерческое" },
     { color: "#6B4C9A", name: "Mixed Use",            desc: "Смешанное" },
-    { color: "#9B2226", name: "Hotel / Hospitality",  desc: "Отельное" },
+    { color: "#7B1E2B", name: "Hotel / Hospitality",  desc: "Отельное" },
     { color: "#495057", name: "Industrial / Warehouse", desc: "Промышленное" },
     { color: "#0077B6", name: "Educational",          desc: "Образовательное" },
     { color: "#E63946", name: "Healthcare",           desc: "Медицина" },

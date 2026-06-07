@@ -65,11 +65,11 @@ const LINE = "rgba(255, 255, 255, 0.1)";
 // map. Source-of-truth in CLAUDE.md "Цвета по Land Use".
 const LANDUSE_COLORS: Record<string, string> = {
   RESIDENTIAL:           "#2D6A4F",
-  COMMERCIAL:            "#1B4965",
+  COMMERCIAL:            "#1B3A5C",
   MIXED_USE:             "#6B4C9A",
   "MIXED USE":           "#6B4C9A",
-  HOTEL:                 "#9B2226",
-  HOSPITALITY:           "#9B2226",
+  HOTEL:                 "#7B1E2B",
+  HOSPITALITY:           "#7B1E2B",
   INDUSTRIAL:            "#495057",
   WAREHOUSE:             "#495057",
   EDUCATIONAL:           "#0077B6",

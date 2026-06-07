@@ -212,9 +212,9 @@ export const LAND_USE_OPTIONS: ReadonlyArray<{
   color: string;
 }> = [
   { key: "RESIDENTIAL", label: "Residential", color: "#FFD700" },
-  { key: "COMMERCIAL", label: "Commercial", color: "#4A90D9" },
+  { key: "COMMERCIAL", label: "Commercial", color: "#1B3A5C" },
   { key: "MIXED_USE", label: "Mixed Use", color: "#9B59B6" },
-  { key: "HOTEL", label: "Hotel", color: "#E67E22" },
+  { key: "HOTEL", label: "Hotel", color: "#7B1E2B" },
   { key: "INDUSTRIAL", label: "Industrial", color: "#708090" },
   { key: "EDUCATIONAL", label: "Educational", color: "#1ABC9C" },
   { key: "HEALTHCARE", label: "Healthcare", color: "#E74C3C" },
