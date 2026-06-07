@@ -13,7 +13,6 @@ import { Spinner } from "../Spinner";
 import {
   EMIRATE_LABELS,
   LAND_USE_LABELS,
-  VAULT_STAGE_LABELS,
   type LandUse,
   type WizardState,
 } from "./types";
@@ -150,7 +149,6 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
             {LAND_USE_LABELS[state.landUse as LandUse] ?? state.landUse}
           </Row>
         )}
-        <Row label="Stage">{VAULT_STAGE_LABELS[state.stage]}</Row>
         {askingPriceAed !== null && (
           <Row label="Asking price">{`AED ${askingPriceAed.toLocaleString()}`}</Row>
         )}

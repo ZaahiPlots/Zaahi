@@ -5,11 +5,7 @@
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §6.1.
 
 import { useState } from "react";
-import {
-  VAULT_STAGE_LABELS,
-  type VaultStage,
-  type WizardState,
-} from "./types";
+import type { WizardState } from "./types";
 
 const GOLD = "#C8A96E";
 // Unified panel bg (founder spec 2026-05-29).
@@ -29,26 +25,22 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
   const [askingPriceAed, setAskingPriceAed] = useState<string>(
     state.askingPriceFils ? String(BigInt(state.askingPriceFils) / BigInt(100)) : "",
   );
-  const [stage, setStage] = useState<VaultStage>(state.stage);
   const [followUpSource, setFollowUpSource] = useState<string>(state.followUpSource ?? "");
-  const [nextFollowUpAt, setNextFollowUpAt] = useState<string>(state.nextFollowUpAt ?? "");
 
   const [ownerName, setOwnerName] = useState<string>(state.ownerContact?.name ?? "");
   const [ownerPhone, setOwnerPhone] = useState<string>(state.ownerContact?.phone ?? "");
   const [ownerEmail, setOwnerEmail] = useState<string>(state.ownerContact?.email ?? "");
   const [ownerRole, setOwnerRole] = useState<string>(state.ownerContact?.role ?? "");
-  const [ownerNotes, setOwnerNotes] = useState<string>(state.ownerContact?.notes ?? "");
-  const [brokerNotes, setBrokerNotes] = useState<string>(state.brokerNotes ?? "");
+  const [notes, setNotes] = useState<string>(state.brokerNotes ?? "");
 
   function handleContinue() {
     const ownerContact =
-      ownerName || ownerPhone || ownerEmail || ownerRole || ownerNotes
+      ownerName || ownerPhone || ownerEmail || ownerRole
         ? {
             name: ownerName || undefined,
             phone: ownerPhone || undefined,
             email: ownerEmail || undefined,
             role: ownerRole || undefined,
-            notes: ownerNotes || undefined,
           }
         : null;
     const askingPriceFils = askingPriceAed
@@ -56,13 +48,11 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
       : null;
     onComplete({
       askingPriceFils,
-      stage,
+      stage: state.stage,
       followUpSource: followUpSource || null,
-      nextFollowUpAt: nextFollowUpAt
-        ? new Date(nextFollowUpAt).toISOString()
-        : null,
+      nextFollowUpAt: null,
       ownerContact,
-      brokerNotes: brokerNotes || null,
+      brokerNotes: notes || null,
     });
   }
 
@@ -85,21 +75,6 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
             style={inputStyle}
           />
         </Field>
-        <Field label="Stage">
-          <select
-            value={stage}
-            onChange={(e) => setStage(e.target.value as VaultStage)}
-            style={inputStyle}
-          >
-            {(Object.keys(VAULT_STAGE_LABELS) as VaultStage[])
-              .filter((s) => s !== "PROMOTED" && s !== "CLOSED")
-              .map((s) => (
-                <option key={s} value={s}>
-                  {VAULT_STAGE_LABELS[s]}
-                </option>
-              ))}
-          </select>
-        </Field>
         <Field label="Source">
           <input
             type="text"
@@ -108,14 +83,6 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
             placeholder="cold-call / referral / dda-scrape / off-plan / ..."
             style={inputStyle}
             maxLength={40}
-          />
-        </Field>
-        <Field label="Next follow-up">
-          <input
-            type="datetime-local"
-            value={nextFollowUpAt}
-            onChange={(e) => setNextFollowUpAt(e.target.value)}
-            style={inputStyle}
           />
         </Field>
       </div>
@@ -159,23 +126,13 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
           />
         </Field>
       </div>
-      <Field label="Notes on owner" style={{ marginTop: 12 }}>
-        <textarea
-          rows={2}
-          value={ownerNotes}
-          onChange={(e) => setOwnerNotes(e.target.value)}
-          maxLength={2000}
-          style={textareaStyle}
-        />
-      </Field>
-
-      <Field label="Broker notes (private to you)" style={{ marginTop: 18 }}>
+      <Field label="Notes" style={{ marginTop: 18 }}>
         <textarea
           rows={4}
-          value={brokerNotes}
-          onChange={(e) => setBrokerNotes(e.target.value)}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           maxLength={8000}
-          placeholder="Free-form notes — pricing strategy, negotiation history, ..."
+          placeholder="Free-form notes"
           style={textareaStyle}
         />
       </Field>
