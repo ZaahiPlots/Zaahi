@@ -33,11 +33,35 @@ const EMIRATES = [
   "FUJAIRAH",
 ] as const;
 
+// Owner-contact is soft metadata — the broker types whatever they
+// have, no validation block. Founder spec 2026-06-08 after mobile
+// 400 incident: the previous strict phone regex (/^\+?[0-9\s-]{7,20}$/)
+// rejected every iOS Contacts paste (parens, dots, NBSP / LTR-mark
+// from Arabic-locale contacts, ext numbers, partial 4-digit drafts).
+// Phone and email are NOT contact-book authoritative — they're notes
+// the broker uses to reach the owner. Same logic for email: iOS
+// QuickType / autocomplete sometimes appends invisible characters
+// that break RFC validation; we'd rather accept "almost-an-email"
+// than block the save.
+//
+// Empty strings collapse to undefined via the optional + transform so
+// the entry stores nothing rather than an empty key — keeps the
+// VaultEntry.ownerContact JSON small.
 const OwnerContactSchema = z
   .object({
     name: z.string().trim().max(120).optional(),
-    phone: z.string().trim().regex(/^\+?[0-9\s-]{7,20}$/).optional(),
-    email: z.string().email().optional(),
+    phone: z
+      .string()
+      .max(40)
+      .transform((v) => v.trim())
+      .transform((v) => (v.length === 0 ? undefined : v))
+      .optional(),
+    email: z
+      .string()
+      .max(254) // RFC 5321 §4.5.3.1.3
+      .transform((v) => v.trim())
+      .transform((v) => (v.length === 0 ? undefined : v))
+      .optional(),
     role: z.string().trim().max(40).optional(),
     notes: z.string().max(2000).optional(),
   })

@@ -94,12 +94,27 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
         return;
       }
       if (!r.ok) {
-        // Parse server error body for a human-friendly hint when available.
-        // Shape from /api/me/vault/entries: { error, hint? }.
+        // Parse server error body. /api/me/vault/entries returns
+        // { error: "validation_failed", issues: ZodIssue[] } on 400 — we
+        // surface the first issue's field path + message so the user (and
+        // the next person debugging a 400) sees which field was rejected
+        // instead of a generic "Submit failed". Founder fix 2026-06-08
+        // after the mobile phone-regex 400 hid the offending field.
         let serverMsg = "";
         try {
-          const body = (await r.json()) as { error?: string; hint?: string };
-          serverMsg = body.hint || body.error || "";
+          const body = (await r.json()) as {
+            error?: string;
+            hint?: string;
+            issues?: Array<{ path?: Array<string | number>; message?: string }>;
+          };
+          const firstIssue = body.issues?.[0];
+          if (firstIssue) {
+            const field = (firstIssue.path ?? []).join(".") || "(root)";
+            const reason = firstIssue.message || "invalid";
+            serverMsg = `${field}: ${reason}`;
+          } else {
+            serverMsg = body.hint || body.error || "";
+          }
         } catch { /* response not JSON */ }
         const msg = serverMsg
           ? `${serverMsg} (HTTP ${r.status})`
