@@ -6620,14 +6620,6 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max GFA"
                 value={fmtA(zaahiHover.maxGfaSqft, zaahiHover.maxGfaSqm) ?? "—"} />
             )}
-            {/* Founder spec 2026-06-08: dedicated FLOORS row below
-                Max GFA. Complements the "Max Height" row (which also
-                shows metres) — this one is the headline floor count
-                for quick reads. */}
-            <PmtilesHoverRow
-              label="Floors"
-              value={formatFloorsValue(zaahiHover.maxHeightCode, zaahiHover.maxFloors)}
-            />
             {hasFar && (
               <PmtilesHoverRow label="FAR" value={zaahiHover.far.toFixed(1)} />
             )}
@@ -6705,13 +6697,6 @@ function ParcelsMapPageInner() {
             {hasGfa && (
               <PmtilesHoverRow label="Max GFA" value={fmtA(vaultHover.maxGfaSqft, null) ?? "—"} />
             )}
-            {/* Founder spec 2026-06-08: same dedicated FLOORS row as
-                the listing card. The "VAULT" / "SHARED" badge in the
-                header already conveys vault-state — no Status row. */}
-            <PmtilesHoverRow
-              label="Floors"
-              value={formatFloorsValue(vaultHover.maxHeightCode, vaultHover.maxFloors)}
-            />
             {hasFar && (
               <PmtilesHoverRow label="FAR" value={vaultHover.far.toFixed(1)} />
             )}
@@ -6806,15 +6791,6 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max GFA"
                 value={fmtA(ddaLandHover.gfaSqft, ddaLandHover.gfaSqm) ?? "—"} />
             )}
-            {/* Founder spec 2026-06-08: dedicated FLOORS row across all
-                three card types for visual symmetry. DDA tile baseProps
-                in scripts/prepare-tiles.ts:366/457 do NOT carry floor
-                count (only `height` in metres, derived from floors at
-                build time for the 3D extrusion paint). So this row
-                shows "—" until tiles are regenerated with
-                MAX_HEIGHT_FLOORS / maxHeightCode baked into baseProps,
-                then re-deployed via scripts/update-tiles.sh. */}
-            <PmtilesHoverRow label="Floors" value={formatFloorsValue("", 0)} />
             {/* Max Height + Affection Plan rows intentionally omitted —
                 neither field is emitted by scripts/prepare-tiles.ts into
                 the PMTiles feature properties. To enable: add
@@ -6999,19 +6975,6 @@ function formatPmtilesStatus(raw: string): string {
     return raw.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()).replace(/_/g, " ");
   }
   return raw;
-}
-
-// FLOORS row value — maxHeightCode ("G+4") preferred, maxFloors
-// ("5") fallback, em-dash if neither. Founder spec 2026-06-08.
-// On DDA hover cards the inputs are empty because the PMTiles tile
-// `baseProps` (scripts/prepare-tiles.ts:366/457) don't carry floor
-// info — the row will show "—" until tiles are regenerated with
-// MAX_HEIGHT_FLOORS baked in. Listing + vault cards have real values
-// from AffectionPlan.maxHeightCode / maxFloors via /api/parcels/map.
-function formatFloorsValue(maxHeightCode: string, maxFloors: number): string {
-  if (maxHeightCode && maxHeightCode.trim()) return maxHeightCode.trim();
-  if (maxFloors > 0) return String(maxFloors);
-  return "—";
 }
 
 // "2026-03-14T..." → "14 Mar 2026". Empty / invalid → "".
