@@ -174,7 +174,7 @@ export function Step3Confirm({ state, onBack, onCreated, onCancel, onError }: Pr
           </Row>
         )}
         {state.ownerContact && (
-          <Row label="Owner contact">
+          <Row label="Contact">
             {[state.ownerContact.name, state.ownerContact.phone, state.ownerContact.role]
               .filter(Boolean)
               .join(" · ") || "(set)"}

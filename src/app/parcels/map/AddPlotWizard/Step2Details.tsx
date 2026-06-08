@@ -87,7 +87,7 @@ export function Step2Details({ state, onComplete, onBack }: Props) {
         </Field>
       </div>
 
-      <h3 style={h3Style}>Owner contact (optional)</h3>
+      <h3 style={h3Style}>Contact (optional)</h3>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 12 }}>
         <Field label="Name">
           <input
