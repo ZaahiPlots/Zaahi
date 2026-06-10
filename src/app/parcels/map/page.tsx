@@ -1441,7 +1441,12 @@ const CATEGORY_LABELS: Record<LayerCategory, string> = {
   "dda-districts": "DDA Districts",
   "landplots": "Land Plots",
   "amenities": "Amenities",
-  "vault": "My Vault",
+  // 2026-06-10 (founder backlog follow-up): the toggle inside this
+  // category is `vaultShared` — vault entries OTHER users have shared
+  // with the caller. "My Vault" read as "my own private plots" and
+  // confused users into thinking it duplicated the HeaderBar Vault
+  // lock-mode button. Renamed to match the actual semantics.
+  "vault": "Shared with me",
   "coming-soon": "Coming Soon",
 };
 
@@ -1988,6 +1993,31 @@ function ParcelsMapPageInner() {
   // live wall-clock time.
   const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
+
+  // 2026-06-10 (founder backlog follow-up): live count of vault entries
+  // OTHER users have shared with the caller. Drives the "Shared with me"
+  // category in the Layers panel — when the count is a definite zero,
+  // the whole category is hidden so the panel doesn't dangle an empty
+  // toggle. null = still loading (fetch fires once on mount); we keep
+  // the category visible with a "(…)" placeholder during that window
+  // so a slow connection doesn't flash a missing section.
+  const [sharedVaultCount, setSharedVaultCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await apiFetch("/api/vault/shared-with-me?limit=1");
+        if (!r.ok) return;
+        const data = (await r.json()) as { total?: number };
+        if (!cancelled && typeof data.total === "number") {
+          setSharedVaultCount(data.total);
+        }
+      } catch {
+        /* silent — non-critical UI count */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Vault-only map mode — when ON, only caller's VAULT_PRIVATE plots
   // render on the ZAAHI layer; when OFF, only public listings render
@@ -6482,11 +6512,24 @@ function ParcelsMapPageInner() {
                 {LAYER_CATEGORY_ORDER.map((cat) => {
                   const items = cats[cat];
                   if (!items || items.length === 0) return null;
+                  // 2026-06-10 (founder backlog): "Shared with me" auto-
+                  // hides when the caller has zero shared vault records.
+                  // The toggle behind it (vaultShared) controls a layer
+                  // that's pointless to render when no one shared anything,
+                  // so the whole category drops off the panel. While the
+                  // count is still loading (null), we keep the group up
+                  // with a "(…)" badge so a slow fetch doesn't flash an
+                  // empty slot in.
+                  if (cat === "vault" && sharedVaultCount === 0) return null;
                   const ckey = `${country}:${cat}`;
                   // Founder spec 2026-05-29: each category folds
                   // independently. Search collapses the fold state and
                   // forces every group open so matches surface.
                   const catOpen = searchActive || !!categoryOpen[ckey];
+                  const customBadge =
+                    cat === "vault"
+                      ? `(${sharedVaultCount ?? "…"})`
+                      : undefined;
                   return (
                     <LayerGroup
                       key={`${country}-${cat}`}
@@ -6498,6 +6541,7 @@ function ParcelsMapPageInner() {
                       items={items}
                       isOn={(k) => layers[k as keyof LayersState] as boolean}
                       onChange={(k, v) => setLayers((l) => ({ ...l, [k]: v }))}
+                      customBadge={customBadge}
                     />
                   );
                 })}
@@ -7182,7 +7226,7 @@ function LockBadge({ tier }: { tier: "GOLD" | "PLATINUM" }) {
 // categories inside a country don't render a per-section ▸/▾ caret —
 // the country accordion is the primary collapse control).
 function LayerGroup({
-  c, title, open, onToggle, search, items, isOn, onChange, hideCollapseCaret,
+  c, title, open, onToggle, search, items, isOn, onChange, hideCollapseCaret, customBadge,
 }: {
   c: ChromeTheme;
   title: string;
@@ -7193,6 +7237,10 @@ function LayerGroup({
   isOn: (key: string) => boolean;
   onChange: (key: string, v: boolean) => void;
   hideCollapseCaret?: boolean;
+  /** Override the default "(onCount/total)" toggle counter. Used by the
+   *  "Shared with me" vault category to show a real record-count badge
+   *  fetched from /api/vault/shared-with-me instead of toggle state. */
+  customBadge?: string;
 }) {
   const q = search.trim().toLowerCase();
   const sorted = [...items].sort((a, b) => a.label.localeCompare(b.label));
@@ -7247,7 +7295,7 @@ function LayerGroup({
           {!hideCollapseCaret && <span>{effectivelyOpen ? "▾" : "▸"}</span>}
           <span>{title}</span>
           <span style={{ color: GOLD, fontFamily: '"SF Mono", Menlo, monospace', letterSpacing: 0 }}>
-            ({onCount}/{total})
+            {customBadge ?? `(${onCount}/${total})`}
           </span>
         </button>
         <SectionCheckbox
