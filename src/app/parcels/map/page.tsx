@@ -4625,10 +4625,13 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
       // Oman PMTiles dropped 2026-05-24.
 
-      // ── City ambient on zoom > 16 ──
-      const updateCityAmbient = () => sound.setCityAmbient(map.getZoom() > 16);
-      bindGlobalMapEvent(map, "cityAmbient", "zoomend", updateCityAmbient as (e: unknown) => void);
-      updateCityAmbient();
+      // City-ambient white-noise → bandpass swap on zoom > 16 was removed
+      // 2026-06-10 (founder backlog #32): the bandpass sound rendered as
+      // industrial shum on top of music, not as the intended "city" cue.
+      // Music playlist stays running uninterrupted across all zoom levels.
+      // sound.setCityAmbient / startCity / stopCity remain in src/lib/sound.ts
+      // as dormant implementation — no remaining callers; safe to retire in
+      // a separate cleanup PR if founder confirms the channel is dead.
 
       // ── ZAAHI Plots hover + click ──
       if (map.getLayer(ZAAHI_PLOTS_FILL)) {
