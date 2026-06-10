@@ -1468,10 +1468,18 @@ const LAYER_META: Record<string, LayerMeta> = (() => {
     // Amenity overlays surfaced under the "Amenities" top-level
     // group (founder spec 2026-05-29). Data is still Dubai-only;
     // grouping is the only thing that changes.
-    evChargers: { country: "amenities", category: "amenities" },
-    metroStations: { country: "amenities", category: "amenities" },
-    tramStations: { country: "amenities", category: "amenities" },
-    marineStations: { country: "amenities", category: "amenities" },
+    // 2026-06-10 (founder backlog #4 follow-up): all 4 amenity sources
+    // are Dubai-only (DEWA EV network, Dubai Metro, Dubai Tram on the
+    // Marina line, RTA marine abras / ferries). Migrated from the
+    // pseudo-country "amenities" into Dubai so they nest under
+    // UAE — Dubai with the rest of the city's overlays. If/when Abu
+    // Dhabi-side amenity sources land, move those rows back into
+    // country="amenities" (or split per-emirate) — the LayerCountry
+    // enum still carries "amenities" for that future case.
+    evChargers: { country: "dubai", category: "amenities" },
+    metroStations: { country: "dubai", category: "amenities" },
+    tramStations: { country: "dubai", category: "amenities" },
+    marineStations: { country: "dubai", category: "amenities" },
     // ── Dubai — Private Plot Vault — Shared overlay only. ──
     // Owner-side vault rendering merged into the standard ZAAHI listing
     // layers in Phase 3 (2026-05-30). Country=dubai for UI organisation
@@ -6291,75 +6299,59 @@ function ParcelsMapPageInner() {
           </div>
         </div>
 
-        {/* GLOBAL — ZAAHI Listings are always on (loaded unconditionally
-            via loadZaahiPlots). Rendered as a static row at the top so
-            users see what's already visible on the map. */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "10px 14px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-            fontSize: 11,
-            color: "rgba(255, 255, 255, 0.9)",
-          }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: GOLD, flexShrink: 0, boxShadow: "0 0 8px rgba(200, 169, 110, 0.5)" }} />
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>ZAAHI Listings (114)</span>
-          </span>
-          <span
-            title="Always visible — core ZAAHI inventory"
-            style={{
-              fontSize: 11,
-              letterSpacing: "0.08em",
-              color: GOLD,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              fontWeight: 700,
-              textTransform: "uppercase",
-              flexShrink: 0,
-              padding: "2px 6px",
-              border: "1px solid rgba(200, 169, 110, 0.3)",
-              borderRadius: 3,
-              background: "rgba(200, 169, 110, 0.08)",
-            }}
-          >
-            Always on
-          </span>
-        </div>
+        {/* ZAAHI Listings — always loaded via loadZaahiPlots; the layer
+            cannot be toggled off, so the static "Always on" row was
+            removed from the panel on 2026-06-10 (founder backlog
+            follow-up) to reduce clutter. The layer continues to render
+            on the map unconditionally — the change is purely UI.
+            Earlier dynamic-counter commit e1d14fb was also dropped
+            during this cleanup since its only render site is now gone. */}
 
         {/* Buildings — digital-twin layer (completed + under-construction
-            real towers). Two toggles match the LayerToggle styling used by
-            the country/category sections below. Counts live so users see
-            "· 1" / "· 0" without opening devtools. */}
-        <div
-          style={{
-            padding: "8px 14px 2px",
-            fontSize: 11,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: GOLD,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontWeight: 700,
-            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-          }}
-        >
-          Buildings
-        </div>
-        <LayerToggle
-          label={`Completed · ${loadedBuildings.filter((b) => b.status === "COMPLETED").length}`}
-          checked={completedVisible}
-          onChange={setCompletedVisible}
-          color="rgba(255, 255, 255, 0.9)"
-        />
-        <LayerToggle
-          label={`Under Construction · ${loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length}`}
-          checked={underConstructionVisible}
-          onChange={setUnderConstructionVisible}
-          color="rgba(255, 255, 255, 0.9)"
-        />
+            real towers). 2026-06-10: rows with count=0 hide entirely so
+            the panel reflects only what data we actually have. New towers
+            will surface a row automatically. The section title is also
+            conditional on at least one non-empty bucket — empty section
+            header is just noise. */}
+        {(() => {
+          const completedCount = loadedBuildings.filter((b) => b.status === "COMPLETED").length;
+          const underConstructionCount = loadedBuildings.filter((b) => b.status === "UNDER_CONSTRUCTION").length;
+          if (completedCount === 0 && underConstructionCount === 0) return null;
+          return (
+            <>
+              <div
+                style={{
+                  padding: "8px 14px 2px",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: GOLD,
+                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  fontWeight: 700,
+                  borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+                }}
+              >
+                Buildings
+              </div>
+              {completedCount > 0 && (
+                <LayerToggle
+                  label={`Completed · ${completedCount}`}
+                  checked={completedVisible}
+                  onChange={setCompletedVisible}
+                  color="rgba(255, 255, 255, 0.9)"
+                />
+              )}
+              {underConstructionCount > 0 && (
+                <LayerToggle
+                  label={`Under Construction · ${underConstructionCount}`}
+                  checked={underConstructionVisible}
+                  onChange={setUnderConstructionVisible}
+                  color="rgba(255, 255, 255, 0.9)"
+                />
+              )}
+            </>
+          );
+        })()}
 
         {/* Country → category → layer hierarchy (Phase 1 RBAC scaffold).
             Labels + lock tiers come from LAYER_META; counts/on summed
