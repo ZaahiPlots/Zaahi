@@ -1,8 +1,8 @@
 "use client";
 
-// Step 1 — basic info collection (spec §6.2):
-//   email, phone (optional), nickname (live unique-check), role select,
-//   referralPath sub-form when role===REFERRAL.
+// Step 1 — basic info collection (spec §6.2 + founder backlog 2026-06-10):
+//   email, phone (required as of 2026-06-10), nickname (live unique-check),
+//   role select, referralPath sub-form when role===REFERRAL.
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -81,7 +81,9 @@ export function Step1Basics({ initial, onNext }: Step1Props) {
     e.preventDefault();
     const parsed = Step1BasicsSchema.safeParse({
       email,
-      phone: phone || undefined,
+      // Pass the trimmed value (not undefined-on-empty) so the schema's
+      // min(1, "Phone is required.") error fires for blank input.
+      phone: phone.trim(),
       nickname,
       role,
       referralPath:
@@ -141,7 +143,7 @@ export function Step1Basics({ initial, onNext }: Step1Props) {
 
       <div>
         <label style={labelStyle} htmlFor="phone">
-          Phone <span style={{ color: TEXT_DIM, fontWeight: 400 }}>(optional, recommended)</span>
+          Phone <span style={{ color: GOLD }}>*</span>
         </label>
         <input
           id="phone"
@@ -150,6 +152,8 @@ export function Step1Basics({ initial, onNext }: Step1Props) {
           onChange={(e) => setPhone(e.target.value)}
           autoComplete="tel"
           placeholder="+971 50 123 4567"
+          required
+          aria-required="true"
           style={inputStyle}
         />
         {errors.phone && <div style={errorStyle}>{errors.phone}</div>}

@@ -39,11 +39,18 @@ export const ROLE_LABELS: Record<CohortApplicantRole, string> = {
 //   - alphanumeric + `_-`
 export const NICKNAME_REGEX = /^[A-Za-z0-9_-]{2,40}$/;
 
-// Phone is optional. When provided, format is loose:
+// Phone — required from 2026-06-10 (founder backlog #30). Format is
+// loose enough to accept iOS Contacts paste — parentheses around area
+// codes, dots between groups, NBSP / LTR-marks injected by Arabic
+// locale clipboards. Same shape the vault OwnerContact accepted after
+// the 2026-06-08 mobile-400 incident; preventing a regression here
+// when we flip from optional → required.
 //   - leading +, optional
-//   - digits, spaces, hyphens
-//   - 7..20 chars total
-const PHONE_REGEX = /^\+?[0-9\s-]{7,20}$/;
+//   - digits, plus ( ) . - space, NBSP ( ), LTR/RTL marks (‎/F)
+//   - 7..32 chars total (32 covers "+971 (50) 123-4567 ext. 99" + a bit)
+const PHONE_REGEX = /^\+?[\d\s().\- ‎‏]{7,32}$/;
+const PHONE_FORMAT_MSG = "Phone format: digits with + ( ) . space - allowed.";
+const PHONE_REQUIRED_MSG = "Phone is required.";
 
 // Step 1 client schema: what /register Step 1 collects before moving on.
 export const Step1BasicsSchema = z
@@ -52,9 +59,8 @@ export const Step1BasicsSchema = z
     phone: z
       .string()
       .trim()
-      .regex(PHONE_REGEX, "Phone format: digits with optional + / spaces / hyphens.")
-      .optional()
-      .or(z.literal("")),
+      .min(1, PHONE_REQUIRED_MSG)
+      .regex(PHONE_REGEX, PHONE_FORMAT_MSG),
     nickname: z
       .string()
       .trim()
@@ -114,9 +120,8 @@ export const SubmitTextSchema = z
     phone: z
       .string()
       .trim()
-      .regex(PHONE_REGEX, "Phone format invalid.")
-      .optional()
-      .or(z.literal("")),
+      .min(1, PHONE_REQUIRED_MSG)
+      .regex(PHONE_REGEX, PHONE_FORMAT_MSG),
     nickname: z
       .string()
       .trim()
