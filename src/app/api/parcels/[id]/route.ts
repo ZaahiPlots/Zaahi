@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getApprovedUserId } from '@/lib/auth';
+import { getApprovedUserId, getAdminUserId } from '@/lib/auth';
 import { rewriteNotes } from '@/lib/notes-rewriter';
 
 function serialize<T>(value: T): T {
@@ -32,6 +32,26 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     include: { affectionPlans: { orderBy: { fetchedAt: 'desc' }, take: 1 } },
   });
   if (!parcel) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  // VAULT_PRIVATE gate (mirrors compare-plots/route.ts:125-149 and
+  // plot-details/route.ts:100). Mandatory after the 2026-06-10 listings-to-
+  // vault migration: 111 plots moved from LISTED to VAULT_PRIVATE, and
+  // anyone holding an old direct URL could still GET them by id without
+  // this check. 404 (not 403) is intentional — don't leak existence.
+  // Admins (Zhan, Dymo) bypass the gate; vault owners pass via their
+  // VaultEntry.publicParcelId link.
+  if (parcel.status === ParcelStatus.VAULT_PRIVATE) {
+    const adminId = await getAdminUserId(req);
+    if (!adminId || adminId !== userId) {
+      const entry = await prisma.vaultEntry.findFirst({
+        where: { ownerId: userId, publicParcelId: id },
+        select: { id: true },
+      });
+      if (!entry) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+    }
+  }
 
   // Apply the plain-language rewriter to every affection plan note.
   // The serialiser handles BigInts; we attach `notesOriginal` and

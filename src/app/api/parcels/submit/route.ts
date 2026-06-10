@@ -3,7 +3,7 @@ import { Prisma, ParcelStatus, UserRole, ClaimStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
-import { getApprovedUserId } from '@/lib/auth';
+import { getApprovedUserId, getAdminUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 import { claimStatusForRole } from '@/lib/plot-claim';
 import { normalizeEmirate } from '@/lib/emirate';
@@ -172,6 +172,32 @@ export async function POST(req: NextRequest) {
   // keeps creating Dubai parcels). title-case matches the rest of
   // the platform's Parcel.emirate convention.
   const emirate = normalizeEmirate(body.emirate ?? 'DUBAI');
+
+  // VAULT_PRIVATE guard. After the 2026-06-10 listings-to-vault migration,
+  // a re-submit by a non-admin/non-verified-owner for a plot that has
+  // been moved into a private vault would silently flip status back to
+  // PENDING_REVIEW via the upsert — effectively resurrecting it.
+  // Refuse early so the upsert never gets a chance.
+  const existingForGuard = await prisma.parcel.findUnique({
+    where: { emirate_district_plotNumber: { emirate, district, plotNumber } },
+    select: { id: true, status: true, ownerId: true, verifiedOwnerUserId: true },
+  });
+  if (existingForGuard && existingForGuard.status === ParcelStatus.VAULT_PRIVATE) {
+    const isOwner =
+      existingForGuard.ownerId === callerId ||
+      existingForGuard.verifiedOwnerUserId === callerId;
+    let allowed = isOwner;
+    if (!allowed) {
+      const adminId = await getAdminUserId(req);
+      allowed = !!adminId && adminId === callerId;
+    }
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'plot_in_private_vault', message: 'This plot is held privately and cannot be re-submitted as a public listing.' },
+        { status: 409 },
+      );
+    }
+  }
 
   try {
     const parcel = await prisma.parcel.upsert({
