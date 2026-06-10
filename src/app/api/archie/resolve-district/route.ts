@@ -19,6 +19,7 @@ import { ParcelStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { emirateMatchVariants } from "@/lib/emirate";
+import { lookupDistrict, type DistrictSource } from "@/lib/district-boundaries";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,32 @@ export async function GET(req: NextRequest) {
   const emirateFilter = emirateParam
     ? [{ emirate: { in: emirateMatchVariants(emirateParam) } }]
     : [];
+
+  // ── Wave 3a fix (founder spec 2026-06-10) ─────────────────────
+  // Try the boundary index FIRST — gives us the actual district / community
+  // polygon (e.g. all of Business Bay, not just the 3 ZAAHI plots inside).
+  // Falls through to the legacy parcel-bbox logic only when the index
+  // doesn't recognise the name. See src/lib/district-boundaries.ts and
+  // docs/research/archie-expansion-2026-06-10.md §A.4.
+  const preferSource: DistrictSource | undefined = emirateParam
+    ? emirateParam.toUpperCase().startsWith("ABU")
+      ? "ad-district"
+      : emirateParam.toUpperCase().startsWith("DUB")
+        ? "dubai-community"
+        : undefined
+    : undefined;
+  const boundary = lookupDistrict(name, preferSource);
+  if (boundary) {
+    return NextResponse.json({
+      name: boundary.name,
+      matchedCount: 1,
+      matchMode: "boundary" as const,
+      center: boundary.center,
+      bounds: boundary.bounds,
+      polygon: boundary.polygon,
+      source: boundary.source,
+    });
+  }
 
   // Match the caller's own VAULT_PRIVATE rows too, in case Archie is
   // helping them navigate their personal portfolio. Public statuses

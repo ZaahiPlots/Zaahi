@@ -40,7 +40,10 @@ export interface CameraMotionState {
   autoRotate: boolean;
 }
 
-/** All map actions Archie can request via OpenAI function-calling. */
+/** All map actions Archie can request via OpenAI function-calling.
+ *  Wave 3a additions: setPriceRange / setAreaRange / resetAllFilters /
+ *  flyToEmirate — needed by the new control_camera + control_filter
+ *  mega-tools. Implementation lives in src/app/parcels/map/page.tsx. */
 export interface MapControls {
   /** Camera fly to a single point. */
   flyTo(lng: number, lat: number, zoom?: number): void;
@@ -76,13 +79,17 @@ export interface MapControls {
     vaultEntryId: string | null;
   } | null>;
   /** Resolve a district name to map bounds via /api/archie/resolve-district.
-   *  Returns null when the name doesn't match any indexed district. */
-  resolveDistrict(name: string): Promise<{
+   *  Wave 3a — when the name matches the boundary index, matchMode is
+   *  "boundary" and the polygon is included so the caller can outline
+   *  it briefly. Returns null when the name doesn't match anything. */
+  resolveDistrict(name: string, emirate?: "DUBAI" | "ABU_DHABI"): Promise<{
     name: string;
     matchedCount: number;
-    matchMode: "exact" | "contains";
+    matchMode: "exact" | "contains" | "boundary";
     center: [number, number];
     bounds: [[number, number], [number, number]] | null;
+    polygon?: GeoJSON.Polygon | GeoJSON.MultiPolygon;
+    source?: string;
   } | null>;
 
   // ── Wave 2: chrome / camera / overlay controls ──
@@ -110,6 +117,20 @@ export interface MapControls {
    *  partial setLayers update + persists via the existing
    *  zaahi-map-layers localStorage path. */
   setLayer(key: ArchieLayerKey, enabled: boolean): void;
+
+  // ── Wave 3a: new control_filter + control_camera handlers ──
+  /** Apply a price-range filter (AED). Pass min=null AND max=null to
+   *  clear the constraint. Wave 3a — implemented in page.tsx via the
+   *  existing FilterPanel state. */
+  setPriceRange(min: number | null, max: number | null): void;
+  /** Apply an area-range filter (sqft). Same semantics as setPriceRange. */
+  setAreaRange(min: number | null, max: number | null): void;
+  /** Clear every filter dimension (land use, status, price, area,
+   *  districts). Equivalent to the FilterPanel "Reset all" button. */
+  resetAllFilters(): void;
+  /** Fly to an emirate-level overview (Dubai or Abu Dhabi). Used by
+   *  control_camera({action:"set_emirate"}). */
+  flyToEmirate(emirate: "DUBAI" | "ABU_DHABI"): void;
 }
 
 /** A single OpenAI tool_call entry from /api/archie. */
@@ -143,53 +164,76 @@ export type ArchieReply =
     }
   | { error: string; reply?: undefined; tool_calls?: undefined };
 
-/** Human-friendly label for the "Archie is …" pending hint. */
+/** Human-friendly label for the "Archie is …" pending hint. Wave 3a — 12
+ *  hybrid tool names. */
 export function toolHumanLabel(name: string, argsJson: string): string {
   try {
     const a = JSON.parse(argsJson) as Record<string, unknown>;
     switch (name) {
+      // ── Standalone 8 ──
       case "fly_to_district":
         return `flying to ${String(a.district ?? "the district")}…`;
       case "open_plot":
         return `opening plot ${String(a.plotNumber ?? "")}…`;
-      case "highlight_plot":
-        return `highlighting plot…`;
-      case "filter_by_land_use":
-        return `filtering to ${String(a.landUse ?? "land use")}…`;
-      case "filter_by_status":
-        return `filtering to ${String(a.status ?? "status")}…`;
-      case "toggle_vault_only":
-        return a.enabled === true ? `entering vault view…` : `exiting vault view…`;
-      // ── Wave 1 analytics tools ──
       case "search_plots":
         return "searching plots…";
       case "get_plot_details":
         return `reading plot ${String(a.plotNumber ?? "")}…`;
       case "compare_plots":
         return "comparing plots…";
-      // ── Wave 2 chrome / camera / overlay tools ──
       case "change_basemap":
         return `switching basemap to ${String(a.theme ?? "")}…`;
       case "toggle_layer":
         return `${a.enabled === true ? "showing" : "hiding"} ${String(a.layer ?? "layer")}…`;
-      case "set_view_mode":
-        return `switching to ${String(a.mode ?? "")}…`;
-      case "zoom_map":
-        return `zooming ${String(a.direction ?? "")}…`;
-      case "toggle_drone":
-        return a.enabled === true ? `enabling drone mode…` : `exiting drone mode…`;
-      case "toggle_sun_slider":
-        return a.enabled === true ? `showing sun-time slider…` : `hiding sun slider…`;
-      case "toggle_auto_rotate":
-        return a.enabled === true ? `starting auto-rotate…` : `stopping auto-rotate…`;
-      case "toggle_legend":
-        return a.visible === true ? `opening legend…` : `closing legend…`;
+      case "submit_feedback":
+        return "sending feedback…";
+      // ── Mega 4 ──
+      case "control_camera":
+        return cameraLabel(String(a.action ?? ""), a);
+      case "control_filter":
+        return filterLabel(String(a.action ?? ""), a);
+      case "control_chrome":
+        return chromeLabel(String(a.action ?? ""), a.enabled === true);
+      case "parcel_action":
+        return `acting on parcel (${String(a.action ?? "")})…`;
       default:
         return `working on ${name}…`;
     }
   } catch {
     return `working on ${name}…`;
   }
+}
+
+function cameraLabel(action: string, a: Record<string, unknown>): string {
+  switch (action) {
+    case "zoom_in": return "zooming in…";
+    case "zoom_out": return "zooming out…";
+    case "set_view_mode": return `switching to ${String(a.mode ?? "")}…`;
+    case "set_emirate": return `flying to ${String(a.emirate ?? "emirate")}…`;
+    case "reset_view": return "resetting view…";
+    case "highlight_plot": return "highlighting plot…";
+    case "toggle_vault_only": return a.enabled === true ? "entering vault view…" : "exiting vault view…";
+    default: return `camera (${action})…`;
+  }
+}
+
+function filterLabel(action: string, a: Record<string, unknown>): string {
+  switch (action) {
+    case "by_land_use": return a.category ? `filtering to ${String(a.category)}…` : "clearing land-use filter…";
+    case "by_status": return a.status ? `filtering to ${String(a.status)}…` : "clearing status filter…";
+    case "price_range": return "applying price filter…";
+    case "area_range": return "applying area filter…";
+    case "reset_all": return "clearing all filters…";
+    default: return `filter (${action})…`;
+  }
+}
+
+function chromeLabel(action: string, enabled: boolean): string {
+  const verb = enabled ? "enabling" : "disabling";
+  const niceAction = action === "auto_rotate" ? "auto-rotate"
+    : action === "sun_slider" ? "sun-time slider"
+    : action;
+  return `${verb} ${niceAction}…`;
 }
 
 // Shared apiFetch import path — the analytics tools call the
@@ -213,29 +257,35 @@ export async function executeArchieTool(
   }
 
   switch (call.name) {
+    // ── 1. fly_to_district ─────────────────────────────────────
     case "fly_to_district": {
       const district = String(args.district ?? "").trim();
       if (!district) return { error: "missing_district" };
-      const resolved = await controls.resolveDistrict(district);
+      const emirate =
+        args.emirate === "DUBAI" || args.emirate === "ABU_DHABI"
+          ? (args.emirate as "DUBAI" | "ABU_DHABI")
+          : undefined;
+      const resolved = await controls.resolveDistrict(district, emirate);
       if (!resolved) {
         return {
           error: "not_found",
-          message: `Couldn't find district "${district}". Try a more specific name.`,
+          message: `Couldn't find district "${district}". Try a more specific name (e.g. "Business Bay", "Yas Island").`,
         };
       }
       if (resolved.bounds) {
         controls.fitBounds(resolved.bounds);
       } else {
-        const zoom = typeof args.zoom === "number" ? args.zoom : 14;
-        controls.flyTo(resolved.center[0], resolved.center[1], zoom);
+        controls.flyTo(resolved.center[0], resolved.center[1], 14);
       }
       return {
         ok: true,
         name: resolved.name,
         matchedCount: resolved.matchedCount,
         matchMode: resolved.matchMode,
+        source: resolved.source,
       };
     }
+    // ── 2. open_plot ───────────────────────────────────────────
     case "open_plot": {
       const plotNumber = String(args.plotNumber ?? "").trim();
       if (!/^\d{5,10}$/.test(plotNumber)) {
@@ -248,10 +298,6 @@ export async function executeArchieTool(
           message: `Plot ${plotNumber} isn't in our index.`,
         };
       }
-      // Mirrors the ZAAHI_PLOTS_FILL click handler in
-      // src/app/parcels/map/page.tsx: caller's own VAULT_PRIVATE rows
-      // open the broker-side VaultSidePanelAdapter; everything else
-      // opens the public SidePanel.
       if (found.isVault && found.vaultEntryId) {
         controls.openVaultEntry(found.vaultEntryId);
       } else {
@@ -269,97 +315,41 @@ export async function executeArchieTool(
         isVault: found.isVault,
       };
     }
-    case "highlight_plot": {
-      const plotId = String(args.plotId ?? "").trim();
-      if (!plotId) return { error: "missing_plot_id" };
-      controls.highlightParcel(plotId);
-      return { ok: true };
-    }
-    case "filter_by_land_use": {
-      const landUse = args.landUse == null ? null : String(args.landUse).trim();
-      controls.filterByLandUse(landUse && landUse.length > 0 ? landUse : null);
-      return { ok: true, landUse };
-    }
-    case "filter_by_status": {
-      const status = args.status == null ? null : String(args.status).trim();
-      controls.filterByStatus(status && status.length > 0 ? status : null);
-      return { ok: true, status };
-    }
-    case "toggle_vault_only": {
-      const enabled = args.enabled === true;
-      controls.setVaultOnly(enabled);
-      return { ok: true, enabled };
-    }
-    // ── Wave 1 analytics tools (founder spec 2026-06-01) ─────────
-    // Read-only — these never touch the camera or filters. They
-    // fetch the relevant /api/archie/* endpoint, parse JSON, and
-    // return the payload (or error envelope) verbatim back to the
-    // LLM as the role:"tool" content.
+    // ── 3-5. analytics standalone (search / details / compare) ─
     case "search_plots": {
-      // Forward the args object — the API silently drops anything it
-      // doesn't recognise + clamps limit. The LLM might pass extra
-      // junk; we don't pre-validate to keep this layer thin.
       const r = await apiFetch("/api/archie/search-plots", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(args),
       });
       if (!r.ok) {
-        return {
-          error: "search_failed",
-          status: r.status,
-          message: `Search returned ${r.status}.`,
-        };
+        return { error: "search_failed", status: r.status, message: `Search returned ${r.status}.` };
       }
       return await r.json();
     }
     case "get_plot_details": {
       const plotNumber = String(args.plotNumber ?? "").trim();
-      if (!/^\d{5,10}$/.test(plotNumber)) {
-        return { error: "bad_plot_number" };
-      }
+      if (!/^\d{5,10}$/.test(plotNumber)) return { error: "bad_plot_number" };
       const r = await apiFetch(`/api/archie/plot-details/${plotNumber}`);
       if (r.status === 404) {
-        return {
-          error: "not_found",
-          message: `Plot ${plotNumber} isn't in our catalogue (or is privately held by another user).`,
-        };
+        return { error: "not_found", message: `Plot ${plotNumber} isn't in our catalogue (or is privately held by another user).` };
       }
-      if (!r.ok) {
-        return {
-          error: "details_failed",
-          status: r.status,
-          message: `Details lookup returned ${r.status}.`,
-        };
-      }
+      if (!r.ok) return { error: "details_failed", status: r.status, message: `Details lookup returned ${r.status}.` };
       return await r.json();
     }
     case "compare_plots": {
-      // Pass through plotNumbers — the API validates length + format
-      // server-side and returns missing[] for anything it skipped.
       const r = await apiFetch("/api/archie/compare-plots", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(args),
       });
       if (!r.ok) {
-        const errBody = await r.json().catch(() => ({}));
-        return {
-          error: "compare_failed",
-          status: r.status,
-          message:
-            typeof errBody?.message === "string"
-              ? errBody.message
-              : `Compare returned ${r.status}.`,
-        };
+        const errBody = (await r.json().catch(() => ({}))) as { message?: string };
+        return { error: "compare_failed", status: r.status, message: typeof errBody?.message === "string" ? errBody.message : `Compare returned ${r.status}.` };
       }
       return await r.json();
     }
-    // ── Wave 2 chrome / camera / overlay tools (founder spec 2026-06-01) ──
-    // Fire-and-forget — invoke the corresponding MapControls method and
-    // echo {ok, …} so the LLM can confirm the action in its reply.
-    // Mutex semantics for drone ⇄ auto-rotate live inside MapControls
-    // itself (page.tsx); the tools just relay the post-mutex state.
+    // ── 6. change_basemap ──────────────────────────────────────
     case "change_basemap": {
       const theme = String(args.theme ?? "").toLowerCase();
       if (theme !== "light" && theme !== "dark" && theme !== "satellite") {
@@ -368,6 +358,7 @@ export async function executeArchieTool(
       controls.setBaseMap(theme);
       return { ok: true, theme };
     }
+    // ── 7. toggle_layer ────────────────────────────────────────
     case "toggle_layer": {
       const layer = String(args.layer ?? "");
       const enabled = args.enabled === true;
@@ -378,54 +369,139 @@ export async function executeArchieTool(
         "adCommunities", "adDistricts", "vaultShared",
       ];
       if (!ALLOWED.includes(layer as ArchieLayerKey)) {
-        return {
-          error: "bad_layer",
-          message: `Unknown layer "${layer}". Pick one of: ${ALLOWED.join(", ")}.`,
-        };
+        return { error: "bad_layer", message: `Unknown layer "${layer}". Pick one of: ${ALLOWED.join(", ")}.` };
       }
       controls.setLayer(layer as ArchieLayerKey, enabled);
       return { ok: true, layer, enabled };
     }
-    case "set_view_mode": {
-      const mode = String(args.mode ?? "").toUpperCase();
-      if (mode !== "2D" && mode !== "3D") {
-        return { error: "bad_mode", message: "mode must be 2D|3D" };
+    // ── 8. submit_feedback (STUB — Wave 3b) ────────────────────
+    case "submit_feedback": {
+      // Wave 3a stub. The schema accepts the args so the LLM can
+      // categorise + draft the text, but we don't yet send to
+      // Telegram — that lands in Wave 3b. Return a structured "not
+      // yet wired" envelope so the LLM tells the user honestly.
+      const category = String(args.category ?? "OTHER");
+      const text = String(args.text ?? "").slice(0, 200);
+      console.log(`[archie] submit_feedback stub category=${category} preview="${text}…"`);
+      return {
+        ok: false,
+        stub: true,
+        message: "Thanks — feedback channel is being wired up in Wave 3b. I've noted the category and text but haven't actually delivered it yet.",
+      };
+    }
+    // ── 9. control_camera (mega) ───────────────────────────────
+    case "control_camera": {
+      const action = String(args.action ?? "");
+      switch (action) {
+        case "zoom_in":
+          controls.zoomMap("in");
+          return { ok: true, action };
+        case "zoom_out":
+          controls.zoomMap("out");
+          return { ok: true, action };
+        case "set_view_mode": {
+          const mode = String(args.mode ?? "").toUpperCase();
+          if (mode !== "2D" && mode !== "3D") return { error: "bad_mode", message: "mode must be 2D|3D" };
+          controls.setViewMode(mode);
+          return { ok: true, action, mode };
+        }
+        case "set_emirate": {
+          const emirate = args.emirate === "ABU_DHABI" ? "ABU_DHABI" : args.emirate === "DUBAI" ? "DUBAI" : null;
+          if (!emirate) return { error: "bad_emirate", message: "emirate must be DUBAI|ABU_DHABI" };
+          controls.flyToEmirate(emirate);
+          return { ok: true, action, emirate };
+        }
+        case "reset_view": {
+          controls.resetAllFilters();
+          controls.flyToEmirate("DUBAI");
+          return {
+            ok: true,
+            action,
+            cleared: ["filters", "camera"],
+            message: "Cleared every filter and flew to Dubai overview.",
+          };
+        }
+        case "highlight_plot": {
+          const plotId = String(args.plotId ?? "").trim();
+          if (!plotId) return { error: "missing_plot_id" };
+          controls.highlightParcel(plotId);
+          return { ok: true, action };
+        }
+        case "toggle_vault_only": {
+          const enabled = args.enabled === true;
+          controls.setVaultOnly(enabled);
+          return { ok: true, action, enabled };
+        }
+        default:
+          return { error: "bad_camera_action", message: `Unknown camera action "${action}".` };
       }
-      controls.setViewMode(mode);
-      return { ok: true, mode };
     }
-    case "zoom_map": {
-      const direction = String(args.direction ?? "").toLowerCase();
-      if (direction !== "in" && direction !== "out") {
-        return { error: "bad_direction", message: "direction must be in|out" };
+    // ── 10. control_filter (mega) ──────────────────────────────
+    case "control_filter": {
+      const action = String(args.action ?? "");
+      switch (action) {
+        case "by_land_use": {
+          const category = args.category == null ? null : String(args.category).trim() || null;
+          controls.filterByLandUse(category);
+          return { ok: true, action, category };
+        }
+        case "by_status": {
+          const status = args.status == null ? null : String(args.status).trim() || null;
+          controls.filterByStatus(status);
+          return { ok: true, action, status };
+        }
+        case "price_range": {
+          const min = typeof args.min === "number" ? args.min : null;
+          const max = typeof args.max === "number" ? args.max : null;
+          controls.setPriceRange(min, max);
+          return { ok: true, action, min, max };
+        }
+        case "area_range": {
+          const min = typeof args.min === "number" ? args.min : null;
+          const max = typeof args.max === "number" ? args.max : null;
+          controls.setAreaRange(min, max);
+          return { ok: true, action, min, max };
+        }
+        case "reset_all": {
+          controls.resetAllFilters();
+          return { ok: true, action };
+        }
+        default:
+          return { error: "bad_filter_action", message: `Unknown filter action "${action}".` };
       }
-      controls.zoomMap(direction);
-      return { ok: true, direction };
     }
-    case "toggle_drone": {
-      // MapControls handles mutex with auto-rotate internally and
-      // returns the resolved camera-motion state (drone, autoRotate).
-      // The tool echoes both so the LLM phrases the result honestly
-      // even when enabling drone also flipped auto-rotate off.
+    // ── 11. control_chrome (mega) ──────────────────────────────
+    case "control_chrome": {
+      const action = String(args.action ?? "");
       const enabled = args.enabled === true;
-      const state = controls.setDroneMode(enabled);
-      return { ok: true, ...state };
+      switch (action) {
+        case "drone": {
+          const state = controls.setDroneMode(enabled);
+          return { ok: true, action, ...state };
+        }
+        case "auto_rotate": {
+          const state = controls.setAutoRotate(enabled);
+          return { ok: true, action, ...state };
+        }
+        case "sun_slider":
+          controls.setSunSlider(enabled);
+          return { ok: true, action, enabled };
+        case "legend":
+          controls.setLegendOpen(enabled);
+          return { ok: true, action, enabled };
+        default:
+          return { error: "bad_chrome_action", message: `Unknown chrome action "${action}".` };
+      }
     }
-    case "toggle_sun_slider": {
-      const enabled = args.enabled === true;
-      controls.setSunSlider(enabled);
-      return { ok: true, enabled };
-    }
-    case "toggle_auto_rotate": {
-      // Same mutex pattern as toggle_drone — see comment above.
-      const enabled = args.enabled === true;
-      const state = controls.setAutoRotate(enabled);
-      return { ok: true, ...state };
-    }
-    case "toggle_legend": {
-      const visible = args.visible === true;
-      controls.setLegendOpen(visible);
-      return { ok: true, visible };
+    // ── 12. parcel_action (STUB — Wave 3c) ─────────────────────
+    case "parcel_action": {
+      const action = String(args.action ?? "");
+      return {
+        ok: false,
+        stub: true,
+        action,
+        message: `parcel_action "${action}" lands in Wave 3c — for now you can describe the action to the user but don't claim it happened.`,
+      };
     }
     default:
       return { error: "unknown_tool", name: call.name };

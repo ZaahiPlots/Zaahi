@@ -5496,6 +5496,45 @@ function ParcelsMapPageInner() {
       // ZAAHI listing layer's filters.
       setLayers((s) => ({ ...s, [key]: enabled }));
     },
+    // ── Wave 3a additions (founder spec 2026-06-10) ──
+    // Driven by the new control_filter + control_camera mega-tools in
+    // src/lib/archie-tools.ts. Reuse the same setFilterState pattern as
+    // the Wave 2 filterByLandUse / filterByStatus handlers above; no
+    // sound effect on filter setters (matches FilterPanel debounce
+    // behaviour — passive state update, not a punctual switch).
+    setPriceRange: (min, max) => {
+      setFilterState((s) => ({
+        ...s,
+        priceRange: min == null && max == null
+          ? null
+          : { min: min ?? 0, max: max ?? Number.POSITIVE_INFINITY },
+      }));
+    },
+    setAreaRange: (min, max) => {
+      setFilterState((s) => ({
+        ...s,
+        areaRange: min == null && max == null
+          ? null
+          : { min: min ?? 0, max: max ?? Number.POSITIVE_INFINITY },
+      }));
+    },
+    resetAllFilters: () => {
+      // Same reset path the FilterPanel "Reset all" button uses
+      // (page.tsx:6125). Single source of truth for "clear everything".
+      setFilterState(EMPTY_FILTER_STATE);
+    },
+    flyToEmirate: (emirate) => {
+      // Overview camera presets per CLAUDE.md DEPLOYMENT region. Zoom 9.5
+      // frames each emirate's footprint without cropping the coast.
+      const m = mapRef.current;
+      if (!m) return;
+      const EMIRATE_CENTERS = {
+        DUBAI:     { lng: 55.27, lat: 25.20, zoom: 9.5 },
+        ABU_DHABI: { lng: 54.37, lat: 24.45, zoom: 9.5 },
+      } as const;
+      const c = EMIRATE_CENTERS[emirate];
+      m.flyTo({ center: [c.lng, c.lat], zoom: c.zoom, duration: 1500, essential: true });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 

@@ -70,32 +70,41 @@ PLATFORM:
 - Map shows communities, DDA districts (Dubai), AD municipalities + districts + communities (Abu Dhabi), master plans, plots for sale with 3D buildings and feasibility calculator
 - Dataset coverage: Dubai is dense (DDA 99K parcels + curated listings); Abu Dhabi is layered as 362K plots via DMT PMTiles and a smaller seeded set of listings (Saadiyat, Yas Island, Al Reem, Al Ain, Shams). Other UAE emirates are coming-soon placeholders.
 
-MAP CONTROL — you have SIX tools that drive the map directly:
-- fly_to_district  — camera to a Dubai district / community (Arjan, Dubai Hills, Business Bay, …)
-- open_plot        — search a plot by its plot number and open its detail panel
-- highlight_plot   — pulse the gold halo around a plot without opening the panel
-- filter_by_land_use — show only buildings of one category (RESIDENTIAL, COMMERCIAL, MIXED_USE, HOTEL, INDUSTRIAL, EDUCATIONAL, HEALTHCARE, AGRICULTURAL, FUTURE_DEVELOPMENT)
-- filter_by_status — show only parcels of a given status (LISTED, VERIFIED, IN_DEAL, SOLD, VAULT_PRIVATE)
-- toggle_vault_only — flip the lock that scopes the map to the caller's private vault plots
+YOUR TOOLS (HYBRID 12 tools — Wave 3a 2026-06-10):
 
-CHROME / CAMERA / OVERLAY — you have EIGHT more tools that change the map's chrome (Wave 2):
-- change_basemap   — light | dark | satellite raster
-- toggle_layer     — show / hide one of the 16 whitelisted overlays (communities, roads, metro, metroStations, tramStations, marineStations, evChargers, plotLabels, districtNames, ddaLandPlots, adLandPlots, ddaProjects, ddaFreeZones, adCommunities, adDistricts, vaultShared)
-- set_view_mode    — flip the camera between flat 2D and 45° pitch 3D
-- zoom_map         — one step "in" or "out"
-- toggle_drone     — enter / exit drone-fly mode (WASD + right-click rotate). Mutex with auto-rotate — enabling drone disables auto-rotate.
-- toggle_sun_slider — show / hide the sun-time overlay
-- toggle_auto_rotate — start / stop auto-rotate camera. Mutex with drone.
-- toggle_legend    — open / close the legend panel
+NAMED STANDALONE (8 — distinct intents, each is its own tool):
+- fly_to_district — camera to a district / community boundary (Dubai + Abu Dhabi).
+- open_plot — search a plot by plot number and open its detail panel.
+- search_plots — find plots matching filters (district, land use, status, price/area/floor ranges, JV). Use when the user asks to FIND / LIST / SHOW ME options.
+- get_plot_details — exact data on one plot by plotNumber.
+- compare_plots — 2-5 plots side-by-side.
+- change_basemap — light | dark | satellite raster.
+- toggle_layer — show / hide one of the 16 whitelisted overlays (communities, roads, metro, metroStations, tramStations, marineStations, evChargers, plotLabels, districtNames, ddaLandPlots, adLandPlots, ddaProjects, ddaFreeZones, adCommunities, adDistricts, vaultShared).
+- submit_feedback — send a feedback note to the ZAAHI team (bug / idea / complaint / praise / question). NOT YET FULLY WIRED — Wave 3b. Will accept calls and stub-respond for now.
 
-The mutex between drone and auto-rotate is enforced by the map — you don't have to deactivate the other one yourself. The tool result echoes both flags so you can describe what happened ("I enabled drone, which also turned off auto-rotate").
+MEGA-TOOLS (4 — group similar actions behind one schema; pick the action with the "action" argument):
 
-ANALYTICS — you have THREE more tools that READ data (no side effects on the map):
-- search_plots      — find plots matching filters (district, land use, status, price range, area range, floor range, openToJV, sort). Use when the user asks to FIND / LIST / SHOW ME options.
-- get_plot_details  — exact data on one plot by plotNumber (price, plot area, max GFA, FAR, floors, height, plan dates, land use). Use when the user asks "what's the price/GFA/FAR/height of plot N" or "tell me about N".
-- compare_plots     — fetch 2-5 plots side-by-side. Use when the user asks "compare X and Y" or "which is bigger/cheaper".
+- control_camera({ action, ... }) — camera + view controls. Actions:
+  • "zoom_in" / "zoom_out" — one zoom step in either direction
+  • "set_view_mode" — args: { mode: "2D" | "3D" }
+  • "set_emirate" — args: { emirate: "DUBAI" | "ABU_DHABI" } — overview-level fly to emirate center
+  • "reset_view" — clear all filters AND fly back to Dubai overview
+  • "highlight_plot" — args: { plotId: string } — gold halo, no panel open
+  • "toggle_vault_only" — args: { enabled: boolean } — flip the lock to your private vault plots
 
-Analytics tools DO NOT move the camera. If the user wants the camera to follow ("show me Arjan and find me residential there"), call fly_to_district first, then search_plots — two tools in sequence.
+- control_filter({ action, ... }) — filter dimensions on the plot/building layers. Actions:
+  • "by_land_use" — args: { category?: "RESIDENTIAL" | "COMMERCIAL" | "MIXED_USE" | "HOTEL" | "INDUSTRIAL" | "EDUCATIONAL" | "HEALTHCARE" | "AGRICULTURAL" | "FUTURE_DEVELOPMENT" } — pass nothing / null to clear
+  • "by_status" — args: { status?: "LISTED" | "VERIFIED" | "IN_DEAL" | "SOLD" | "VAULT_PRIVATE" }
+  • "price_range" — args: { min?: number, max?: number } — AED. Pass {} to clear.
+  • "area_range" — args: { min?: number, max?: number } — sqft. Pass {} to clear.
+  • "reset_all" — clears every filter dimension
+
+- control_chrome({ action, enabled }) — chrome toggles. Actions: "drone" | "auto_rotate" | "sun_slider" | "legend". Arg: enabled (boolean).
+  Mutex: drone ⇄ auto_rotate. The tool result echoes the resolved pair.
+
+- parcel_action({ action, ... }) — stub for Wave 3c parcel-level actions (favorite, check_dld, open_feasibility). NOT YET WIRED — Wave 3c. Will stub-respond for now.
+
+When the user asks for the camera to follow a search ("show Arjan and find me residential there"): call fly_to_district first, then search_plots — two tools in sequence. The analytics tools (search_plots / get_plot_details / compare_plots) DO NOT move the camera.
 
 DISTRICT NAMES — always pass English Latin to tools (Wave 2 transliteration spec 2026-06-01; AD entries added Sprint AD-2):
 - The DB stores district names in English uppercase (ARJAN, BUSINESS BAY, DUBAI HILLS, JUMEIRAH VILLAGE CIRCLE, MAJAN, SAADIYAT, YAS ISLAND, AL REEM, …). The matcher is case-insensitive, but the alphabet must be Latin — Cyrillic / Arabic / any non-Latin script will NOT match.
@@ -165,31 +174,73 @@ RULES:
 - When asked about other UAE emirates (Sharjah, Ajman, RAK, UAQ, Fujairah): coverage is coming soon on ZAAHI; you can answer general UAE questions but flag that ZAAHI's data for these emirates is limited`;
 
 // ── Tool schema ───────────────────────────────────────────────
-// Seventeen tools — 6 navigation + 8 chrome/camera/overlay (Wave 2
-// 2026-06-01) + 3 analytics (Wave 1 2026-06-01).
-// Names are snake_case (OpenAI convention),
-// arguments are typed JSON Schema. The client maps each name to a
-// concrete handler that touches mapRef / React state setters.
+// Wave 3a HYBRID 12 tools (2026-06-10, founder spec
+// docs/research/archie-top25-2026-06-10.md §Architecture C):
+//   • 8 standalone — distinct intents, each is its own tool
+//   • 4 mega-tools — control_camera / control_filter / control_chrome
+//     / parcel_action, each takes an `action` enum + per-action args
+//
+// The mega-tools cover ~15 actions that were previously individual
+// tools. Schema-block shrinks from ~3.2K to ~1.5K tokens per turn,
+// which keeps gpt-5-nano well below the empirical confusion threshold.
+//
+// Backward note: tool NAMES have changed. The dispatch in
+// src/lib/archie-tools.ts matches the new names; old names are no
+// longer reachable. Submit_feedback + parcel_action are stubbed in
+// Wave 3a (founder ratified) — they accept calls and return a
+// {ok:false, message:"coming in Wave 3b/3c"} so the LLM can degrade
+// gracefully without crashing the conversation.
+
+const LAND_USE_VALUES = [
+  "RESIDENTIAL",
+  "COMMERCIAL",
+  "MIXED_USE",
+  "HOTEL",
+  "INDUSTRIAL",
+  "EDUCATIONAL",
+  "HEALTHCARE",
+  "AGRICULTURAL",
+  "FUTURE_DEVELOPMENT",
+] as const;
+
+const PARCEL_STATUS_VALUES = [
+  "LISTED",
+  "VERIFIED",
+  "IN_DEAL",
+  "SOLD",
+  "VAULT_PRIVATE",
+] as const;
+
+const LAYER_KEYS = [
+  "communities", "roads", "metro", "metroStations",
+  "tramStations", "marineStations", "evChargers",
+  "plotLabels", "districtNames", "ddaLandPlots",
+  "adLandPlots", "ddaProjects", "ddaFreeZones",
+  "adCommunities", "adDistricts", "vaultShared",
+] as const;
+
 const TOOLS = [
+  // ── 1. fly_to_district (standalone — Wave 3a fix landed the boundary
+  //      index in src/lib/district-boundaries.ts so "show Business Bay"
+  //      zooms to the actual community polygon, not the parcel bbox).
   {
     type: "function" as const,
     function: {
       name: "fly_to_district",
       description:
-        "Move the map camera to a district or community by name. Covers Dubai (Arjan, Dubai Hills, Business Bay, …) and Abu Dhabi (Saadiyat, Yas Island, Al Reem, Al Ain, …). Use when the user asks to 'go to', 'show', 'fly to', or 'look at' an area.",
+        "Move the map camera to a district / community boundary (Dubai or Abu Dhabi). Wave 3a uses the curated boundary index — \"Business Bay\" zooms to the whole Business Bay polygon, not just the 3 ZAAHI plots inside. Use when the user asks to 'go to', 'show', 'fly to', or 'look at' an area.",
       parameters: {
         type: "object",
         properties: {
           district: {
             type: "string",
             description:
-              "District / community name. English Latin only — transliterate Russian / Arabic before calling. Examples: 'Arjan', 'Business Bay', 'Saadiyat', 'Yas Island', 'Al Reem'.",
+              "District / community name. English Latin only — transliterate Russian / Arabic before calling. Examples: 'Arjan', 'Business Bay', 'Saadiyat', 'Yas Island', 'Al Reem', 'Al Ain'.",
           },
-          zoom: {
-            type: "number",
-            description: "Optional camera zoom level. Defaults to 14 (district scale).",
-            minimum: 10,
-            maximum: 18,
+          emirate: {
+            type: "string",
+            enum: ["DUBAI", "ABU_DHABI"],
+            description: "Optional emirate hint when the district name is ambiguous (e.g. 'Marina' exists in both emirates).",
           },
         },
         required: ["district"],
@@ -197,6 +248,7 @@ const TOOLS = [
       },
     },
   },
+  // ── 2. open_plot (standalone — heavy side-effect: opens detail panel).
   {
     type: "function" as const,
     function: {
@@ -217,98 +269,7 @@ const TOOLS = [
       },
     },
   },
-  {
-    type: "function" as const,
-    function: {
-      name: "highlight_plot",
-      description:
-        "Apply the gold halo to a plot by its internal id without opening the side panel. Useful when the user is comparing plots and you want to draw attention without committing.",
-      parameters: {
-        type: "object",
-        properties: {
-          plotId: {
-            type: "string",
-            description: "Parcel UUID returned by a previous tool call.",
-          },
-        },
-        required: ["plotId"],
-        additionalProperties: false,
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "filter_by_land_use",
-      description:
-        "Hide every 3D building except the ones with the chosen land use category. Use when the user asks to 'show only residential', 'filter to commercial', etc.",
-      parameters: {
-        type: "object",
-        properties: {
-          landUse: {
-            type: "string",
-            description: "One of the 9 canonical land-use categories.",
-            enum: [
-              "RESIDENTIAL",
-              "COMMERCIAL",
-              "MIXED_USE",
-              "HOTEL",
-              "INDUSTRIAL",
-              "EDUCATIONAL",
-              "HEALTHCARE",
-              "AGRICULTURAL",
-              "FUTURE_DEVELOPMENT",
-            ],
-          },
-        },
-        required: ["landUse"],
-        additionalProperties: false,
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "filter_by_status",
-      description:
-        "Hide every parcel except the ones in the chosen status. Use when the user asks for 'verified plots', 'in deal', 'sold', or private vault scope.",
-      parameters: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            description: "Parcel status enum value.",
-            enum: ["LISTED", "VERIFIED", "IN_DEAL", "SOLD", "VAULT_PRIVATE"],
-          },
-        },
-        required: ["status"],
-        additionalProperties: false,
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "toggle_vault_only",
-      description:
-        "Flip the lock that scopes the map to the caller's private vault plots. Pass true to enter vault-only mode, false to return to the public listing view.",
-      parameters: {
-        type: "object",
-        properties: {
-          enabled: {
-            type: "boolean",
-            description: "true → enter vault-only mode, false → exit.",
-          },
-        },
-        required: ["enabled"],
-        additionalProperties: false,
-      },
-    },
-  },
-  // ── Analytics tools (Wave 1, founder spec 2026-06-01) ─────────
-  // Read-only — these never touch the camera or filters. Their job
-  // is to feed the LLM data so it can answer "find me X", "what's
-  // the price of N", "compare X and Y".
+  // ── 3. search_plots (standalone — analytics).
   {
     type: "function" as const,
     function: {
@@ -321,17 +282,7 @@ const TOOLS = [
           district: { type: "string", description: "Partial case-insensitive district name (e.g. 'arjan', 'business bay')." },
           landUse: {
             type: "string",
-            enum: [
-              "RESIDENTIAL",
-              "COMMERCIAL",
-              "MIXED_USE",
-              "HOTEL",
-              "INDUSTRIAL",
-              "EDUCATIONAL",
-              "HEALTHCARE",
-              "AGRICULTURAL",
-              "FUTURE_DEVELOPMENT",
-            ],
+            enum: LAND_USE_VALUES as unknown as string[],
             description: "One of the 9 canonical land-use categories.",
           },
           status: {
@@ -354,6 +305,7 @@ const TOOLS = [
       },
     },
   },
+  // ── 4. get_plot_details (standalone — analytics).
   {
     type: "function" as const,
     function: {
@@ -374,6 +326,7 @@ const TOOLS = [
       },
     },
   },
+  // ── 5. compare_plots (standalone — analytics).
   {
     type: "function" as const,
     function: {
@@ -385,10 +338,7 @@ const TOOLS = [
         properties: {
           plotNumbers: {
             type: "array",
-            items: {
-              type: "string",
-              pattern: "^\\d{5,10}$",
-            },
+            items: { type: "string", pattern: "^\\d{5,10}$" },
             minItems: 2,
             maxItems: 5,
             description: "Between 2 and 5 plot numbers, each 5-10 digits.",
@@ -399,24 +349,19 @@ const TOOLS = [
       },
     },
   },
-  // ── Wave 2 chrome / camera / overlay tools (founder spec 2026-06-01) ──
-  // Fire-and-forget. Each maps 1:1 to a rail button on the main map.
-  // Mutex for drone ⇄ auto-rotate is enforced by MapControls inside
-  // page.tsx; the tool result echoes the resolved pair so the LLM can
-  // describe what actually changed.
+  // ── 6. change_basemap (standalone — short distinct enum).
   {
     type: "function" as const,
     function: {
       name: "change_basemap",
       description:
-        "Switch the basemap raster between Cartocdn Light, Cartocdn Dark, or ArcGIS Satellite. Use when the user says 'switch to dark mode', 'show satellite', 'go light', etc.",
+        "Switch the basemap raster between Cartocdn Light, Cartocdn Dark, or ArcGIS Satellite.",
       parameters: {
         type: "object",
         properties: {
           theme: {
             type: "string",
             enum: ["light", "dark", "satellite"],
-            description: "Basemap to load.",
           },
         },
         required: ["theme"],
@@ -424,148 +369,162 @@ const TOOLS = [
       },
     },
   },
+  // ── 7. toggle_layer (standalone — wide enum, distinct intent).
   {
     type: "function" as const,
     function: {
       name: "toggle_layer",
       description:
-        "Show or hide one of the 16 whitelisted map overlays. Use when the user asks to enable/disable a specific layer ('show the metro', 'hide EV chargers', 'turn on plot numbers'). Master-plan polygons live elsewhere and are not in this whitelist.",
+        "Show or hide one of the 16 whitelisted map overlays. Master-plan polygons live elsewhere and are not in this whitelist.",
       parameters: {
         type: "object",
         properties: {
           layer: {
             type: "string",
-            enum: [
-              "communities", "roads", "metro", "metroStations",
-              "tramStations", "marineStations", "evChargers",
-              "plotLabels", "districtNames", "ddaLandPlots",
-              "adLandPlots", "ddaProjects", "ddaFreeZones",
-              "adCommunities", "adDistricts", "vaultShared",
-            ],
-            description: "Whitelisted layer key.",
+            enum: LAYER_KEYS as unknown as string[],
           },
-          enabled: {
-            type: "boolean",
-            description: "true → show the layer, false → hide it.",
-          },
+          enabled: { type: "boolean" },
         },
         required: ["layer", "enabled"],
         additionalProperties: false,
       },
     },
   },
+  // ── 8. submit_feedback (standalone — STUB in Wave 3a; full wiring in Wave 3b).
   {
     type: "function" as const,
     function: {
-      name: "set_view_mode",
+      name: "submit_feedback",
       description:
-        "Flip the camera between flat 2D and 45° pitch 3D. Use when the user says 'switch to 2D', 'show 3D', 'flatten the map', etc.",
+        "Send a feedback note about the platform to the ZAAHI team (founders Zhan + Dymo). Categorise from intent: BUG (something doesn't work), IDEA (feature suggestion), COMPLAINT (unhappy with existing behaviour), PRAISE (it works well), QUESTION (is there a way to X), OTHER. Call this when the user types feedback unprompted ('the map is broken', 'add dark mode') or when they explicitly agree to your offer. NOTE: Wave 3a stub — currently acknowledges the call and tells the user the channel will be live shortly. Do not pretend it was delivered.",
       parameters: {
         type: "object",
         properties: {
-          mode: {
+          category: {
             type: "string",
-            enum: ["2D", "3D"],
-            description: "Target view mode.",
+            enum: ["BUG", "IDEA", "COMPLAINT", "PRAISE", "QUESTION", "OTHER"],
           },
-        },
-        required: ["mode"],
-        additionalProperties: false,
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "zoom_map",
-      description:
-        "Zoom the map one step in either direction. Use for 'zoom in', 'zoom out', 'closer', 'farther'. For precise zoom to a district use fly_to_district with the zoom parameter instead.",
-      parameters: {
-        type: "object",
-        properties: {
-          direction: {
+          text: {
             type: "string",
-            enum: ["in", "out"],
-            description: "in → closer, out → farther.",
+            maxLength: 2000,
+            description: "The user's feedback in their own words. Quote verbatim — don't paraphrase.",
+          },
+          context: {
+            type: "string",
+            maxLength: 1000,
+            description: "Optional one-sentence summary of what the user was doing when the feedback came up.",
           },
         },
-        required: ["direction"],
+        required: ["category", "text"],
         additionalProperties: false,
       },
     },
   },
+  // ── 9. control_camera (mega — view-control actions).
   {
     type: "function" as const,
     function: {
-      name: "toggle_drone",
+      name: "control_camera",
       description:
-        "Enter or exit drone-fly mode (WASD + right-click pointer-lock rotation). Mutually exclusive with auto-rotate — enabling drone automatically disables auto-rotate. Returns { ok, drone, autoRotate } so you can describe both effects.",
+        "Camera + view controls. Pick the `action`: 'zoom_in' / 'zoom_out' (no args), 'set_view_mode' (args.mode = '2D' | '3D'), 'set_emirate' (args.emirate = 'DUBAI' | 'ABU_DHABI' — flies to emirate overview), 'reset_view' (clear filters AND fly to Dubai overview), 'highlight_plot' (args.plotId), 'toggle_vault_only' (args.enabled).",
       parameters: {
         type: "object",
         properties: {
-          enabled: {
-            type: "boolean",
-            description: "true → enter drone mode, false → exit.",
+          action: {
+            type: "string",
+            enum: [
+              "zoom_in",
+              "zoom_out",
+              "set_view_mode",
+              "set_emirate",
+              "reset_view",
+              "highlight_plot",
+              "toggle_vault_only",
+            ],
           },
+          mode: { type: "string", enum: ["2D", "3D"], description: "For set_view_mode." },
+          emirate: { type: "string", enum: ["DUBAI", "ABU_DHABI"], description: "For set_emirate." },
+          plotId: { type: "string", description: "For highlight_plot — parcel UUID from a previous tool result." },
+          enabled: { type: "boolean", description: "For toggle_vault_only." },
         },
-        required: ["enabled"],
+        required: ["action"],
         additionalProperties: false,
       },
     },
   },
+  // ── 10. control_filter (mega — filter dimensions).
   {
     type: "function" as const,
     function: {
-      name: "toggle_sun_slider",
+      name: "control_filter",
       description:
-        "Show or hide the sun-time slider overlay (controls 3D shadow direction). Use when the user mentions 'sun', 'shadows', 'time of day' on the map.",
+        "Filter dimensions on the plot / building layers. Pick the `action`: 'by_land_use' (args.category from the 9 categories, omit to clear), 'by_status' (args.status, omit to clear), 'price_range' (args.min / args.max in AED — pass both undefined to clear), 'area_range' (args.min / args.max in sqft), 'reset_all' (clears every filter).",
       parameters: {
         type: "object",
         properties: {
-          enabled: {
-            type: "boolean",
-            description: "true → show slider, false → hide.",
+          action: {
+            type: "string",
+            enum: ["by_land_use", "by_status", "price_range", "area_range", "reset_all"],
           },
+          category: {
+            type: "string",
+            enum: LAND_USE_VALUES as unknown as string[],
+            description: "For by_land_use. Omit to clear the land-use filter.",
+          },
+          status: {
+            type: "string",
+            enum: PARCEL_STATUS_VALUES as unknown as string[],
+            description: "For by_status. Omit to clear the status filter.",
+          },
+          min: { type: "number", description: "Lower bound for price_range (AED) or area_range (sqft)." },
+          max: { type: "number", description: "Upper bound for price_range (AED) or area_range (sqft)." },
         },
-        required: ["enabled"],
+        required: ["action"],
         additionalProperties: false,
       },
     },
   },
+  // ── 11. control_chrome (mega — chrome toggles with drone⇄auto-rotate mutex).
   {
     type: "function" as const,
     function: {
-      name: "toggle_auto_rotate",
+      name: "control_chrome",
       description:
-        "Start or stop auto-rotate camera. Mutually exclusive with drone — enabling auto-rotate automatically disables drone. Returns { ok, drone, autoRotate } so you can describe both effects.",
+        "Chrome toggles. `action` is one of 'drone' / 'auto_rotate' / 'sun_slider' / 'legend'. `enabled` is the target state. drone ⇄ auto_rotate are mutually exclusive — enabling one disables the other. The tool result echoes the resolved camera-motion pair so you can describe both effects ('I enabled drone, which also turned off auto-rotate').",
       parameters: {
         type: "object",
         properties: {
-          enabled: {
-            type: "boolean",
-            description: "true → start auto-rotate, false → stop.",
+          action: {
+            type: "string",
+            enum: ["drone", "auto_rotate", "sun_slider", "legend"],
           },
+          enabled: { type: "boolean" },
         },
-        required: ["enabled"],
+        required: ["action", "enabled"],
         additionalProperties: false,
       },
     },
   },
+  // ── 12. parcel_action (mega — STUB in Wave 3a; favorite_parcel /
+  //        check_dld / open_feasibility wired in Wave 3c).
   {
     type: "function" as const,
     function: {
-      name: "toggle_legend",
+      name: "parcel_action",
       description:
-        "Open or close the Legend panel. Use when the user asks 'show legend', 'what do these colours mean', 'open legend', 'close legend'.",
+        "Per-parcel actions. Wave 3c will wire 'favorite' (add to user favourites), 'check_dld' (open the DLD inquiry page in a new tab), and 'open_feasibility' (open the feasibility calculator for the selected parcel). NOTE: Wave 3a stub — currently acknowledges the call but does not act. Do not pretend the action happened.",
       parameters: {
         type: "object",
         properties: {
-          visible: {
-            type: "boolean",
-            description: "true → open legend, false → close.",
+          action: {
+            type: "string",
+            enum: ["favorite", "check_dld", "open_feasibility"],
           },
+          parcelId: { type: "string" },
+          plotNumber: { type: "string", pattern: "^\\d{5,10}$" },
+          enabled: { type: "boolean", description: "For favorite — true to add, false to remove." },
         },
-        required: ["visible"],
+        required: ["action"],
         additionalProperties: false,
       },
     },
