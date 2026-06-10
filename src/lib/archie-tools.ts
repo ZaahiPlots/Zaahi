@@ -374,20 +374,42 @@ export async function executeArchieTool(
       controls.setLayer(layer as ArchieLayerKey, enabled);
       return { ok: true, layer, enabled };
     }
-    // ── 8. submit_feedback (STUB — Wave 3b) ────────────────────
+    // ── 8. submit_feedback ─────────────────────────────────────
     case "submit_feedback": {
-      // Wave 3a stub. The schema accepts the args so the LLM can
-      // categorise + draft the text, but we don't yet send to
-      // Telegram — that lands in Wave 3b. Return a structured "not
-      // yet wired" envelope so the LLM tells the user honestly.
-      const category = String(args.category ?? "OTHER");
-      const text = String(args.text ?? "").slice(0, 200);
-      console.log(`[archie] submit_feedback stub category=${category} preview="${text}…"`);
-      return {
-        ok: false,
-        stub: true,
-        message: "Thanks — feedback channel is being wired up in Wave 3b. I've noted the category and text but haven't actually delivered it yet.",
-      };
+      // Wave 3b — live. Fans out to founder Telegram via
+      // /api/archie/feedback (which delegates to sendTelegramToAdmins).
+      // Server enforces rate-limit (3/hour) + 24h dedup.
+      //
+      // Defensive guards against LLM-driven abuse: empty / very-short
+      // text is rejected client-side too so we don't burn a server
+      // round-trip on a hallucinated empty submit.
+      const category = String(args.category ?? "");
+      const text = String(args.text ?? "").trim();
+      const context = typeof args.context === "string" ? args.context.trim() : undefined;
+      if (!["BUG", "IDEA", "COMPLAINT"].includes(category)) {
+        return { error: "bad_category", message: "category must be one of BUG|IDEA|COMPLAINT" };
+      }
+      if (text.length < 3) {
+        return { error: "empty_text", message: "Feedback text is empty — quote the user's exact words." };
+      }
+      const r = await apiFetch("/api/archie/feedback", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ category, text, context }),
+      });
+      if (r.status === 429) {
+        const body = (await r.json().catch(() => ({}))) as { message?: string };
+        return {
+          ok: false,
+          rateLimited: true,
+          message: typeof body.message === "string" ? body.message : "Rate-limited — try again later.",
+        };
+      }
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        return { error: "feedback_failed", status: r.status, code: body.error };
+      }
+      return await r.json();
     }
     // ── 9. control_camera (mega) ───────────────────────────────
     case "control_camera": {

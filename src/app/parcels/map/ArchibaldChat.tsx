@@ -103,6 +103,16 @@ export default function ArchibaldChat({
   const areaUnit = useAreaUnit();
   const currency = useCurrency();
 
+  // Wave 3b session-state (founder spec 2026-06-10). Counts executed
+  // tool calls so the server-side SYSTEM_PROMPT can decide whether to
+  // proactively offer feedback at a natural pause. feedbackOffered
+  // latches true the first time submit_feedback fires (or as soon as
+  // we detect an offer-prompt in an assistant turn — done via the
+  // tool name match below). Refs (not state) so updates inside the
+  // dispatch loop don't trigger re-renders of the bubble list.
+  const toolCallsInSessionRef = useRef(0);
+  const feedbackOfferedRef = useRef(false);
+
   // Draggable launcher. null = use CSS defaults (bottom-right with
   // safe-area). Set from localStorage on mount and updated on drag.
   const [launcherPos, setLauncherPos] = useState<{ x: number; y: number } | null>(null);
@@ -199,6 +209,10 @@ export default function ArchibaldChat({
           body: JSON.stringify({
             history: wireHistory.slice(-30),
             preferences: { currency, areaUnit },
+            sessionState: {
+              toolCallsInSession: toolCallsInSessionRef.current,
+              feedbackOfferedThisSession: feedbackOfferedRef.current,
+            },
           }),
         });
         const data = (await r.json()) as ArchieReply;
@@ -241,6 +255,13 @@ export default function ArchibaldChat({
                   content: `⚠️ Tool \`${tc.name}\` failed: ${msg}`,
                 },
               ]);
+            }
+            // Wave 3b — count tool calls + latch the feedback-offered
+            // flag once submit_feedback fires. The proactive-offer
+            // prompt in SYSTEM_PROMPT reads these via sessionState.
+            toolCallsInSessionRef.current += 1;
+            if (tc.name === "submit_feedback") {
+              feedbackOfferedRef.current = true;
             }
             wireHistory.push({
               role: "tool",

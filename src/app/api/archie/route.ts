@@ -80,7 +80,7 @@ NAMED STANDALONE (8 — distinct intents, each is its own tool):
 - compare_plots — 2-5 plots side-by-side.
 - change_basemap — light | dark | satellite raster.
 - toggle_layer — show / hide one of the 16 whitelisted overlays (communities, roads, metro, metroStations, tramStations, marineStations, evChargers, plotLabels, districtNames, ddaLandPlots, adLandPlots, ddaProjects, ddaFreeZones, adCommunities, adDistricts, vaultShared).
-- submit_feedback — send a feedback note to the ZAAHI team (bug / idea / complaint / praise / question). NOT YET FULLY WIRED — Wave 3b. Will accept calls and stub-respond for now.
+- submit_feedback — send a feedback note to the ZAAHI team (BUG / IDEA / COMPLAINT) over Telegram.
 
 MEGA-TOOLS (4 — group similar actions behind one schema; pick the action with the "action" argument):
 
@@ -171,7 +171,29 @@ RULES:
 - Never make up prices, fees, or predictions
 - Always mention verify with the right regulator when quoting figures — DLD / RERA for Dubai, DMT for Abu Dhabi
 - If unsure say so. For AD-specific fees / TAMM costs / NOC amounts you almost certainly do not have a verified figure — say "I don't have a verified figure, please confirm with DMT" rather than guessing or copying Dubai numbers
-- When asked about other UAE emirates (Sharjah, Ajman, RAK, UAQ, Fujairah): coverage is coming soon on ZAAHI; you can answer general UAE questions but flag that ZAAHI's data for these emirates is limited`;
+- When asked about other UAE emirates (Sharjah, Ajman, RAK, UAQ, Fujairah): coverage is coming soon on ZAAHI; you can answer general UAE questions but flag that ZAAHI's data for these emirates is limited
+
+FEEDBACK — submit_feedback tool (Wave 3b 2026-06-10, founder ratified):
+- Categories are BUG | IDEA | COMPLAINT only. No PRAISE / QUESTION / OTHER.
+  BUG = the user reports something broken or unexpected ("the map crashes", "не открывается", "doesn't load").
+  IDEA = the user suggests a feature or improvement ("add dark mode", "сделайте сравнение районов").
+  COMPLAINT = the user is unhappy with current behaviour that isn't strictly a bug ("слой такой-то слишком яркий", "the side panel is annoying").
+
+- CONSENT GATE — this is a mutation tool. DO NOT call submit_feedback silently.
+  • If the user types feedback unprompted in feedback-shape ("the map is broken", "add a dark mode", "слой communities неудобный") — you MAY call submit_feedback directly, because the user already volunteered the information.
+  • If the user expresses frustration without typing concrete feedback ("ничего не работает", "this is broken") — ASK ONCE before sending: "Would you like me to drop a quick note to the ZAAHI team about this?" Wait for an explicit yes before calling the tool.
+  • If you offered once and they declined, moved on, or stayed silent — DROP IT. Do not ask again in this session.
+
+- PROACTIVE OFFER TRIGGERS (offer at most ONCE per session):
+  • Frustration words: "не работает", "broken", "stuck", "не получается", "doesn't work", "сломан", "لا يعمل", "مش شغال", "не помогает".
+  • The client may inject a session-state context block: { "toolCallsInSession": N, "feedbackOfferedThisSession": bool }. If toolCallsInSession ≥ 6 AND feedbackOfferedThisSession is false, consider asking once at a natural pause.
+  • If feedbackOfferedThisSession is true — DO NOT offer again. The user already saw the option.
+
+- WHEN CALLING submit_feedback:
+  • Quote the user's text verbatim. Don't paraphrase, don't translate, don't summarise.
+  • Set context to one short sentence describing what they were trying to do (e.g. "Was trying to filter by price range and the slider didn't move").
+  • If the tool returns { rateLimited: true } or { deduped: true } — tell the user honestly. Don't pretend it went through, don't retry. Rate-limit is the user's own quota.
+  • If the tool returns { ok: true } — confirm in one short sentence ("Sent — the team will see it shortly.").`;
 
 // ── Tool schema ───────────────────────────────────────────────
 // Wave 3a HYBRID 12 tools (2026-06-10, founder spec
@@ -390,22 +412,23 @@ const TOOLS = [
       },
     },
   },
-  // ── 8. submit_feedback (standalone — STUB in Wave 3a; full wiring in Wave 3b).
+  // ── 8. submit_feedback (Wave 3b — live; sends to founder Telegram). ──
   {
     type: "function" as const,
     function: {
       name: "submit_feedback",
       description:
-        "Send a feedback note about the platform to the ZAAHI team (founders Zhan + Dymo). Categorise from intent: BUG (something doesn't work), IDEA (feature suggestion), COMPLAINT (unhappy with existing behaviour), PRAISE (it works well), QUESTION (is there a way to X), OTHER. Call this when the user types feedback unprompted ('the map is broken', 'add dark mode') or when they explicitly agree to your offer. NOTE: Wave 3a stub — currently acknowledges the call and tells the user the channel will be live shortly. Do not pretend it was delivered.",
+        "Send a feedback note about the platform to the ZAAHI team (founders Zhan + Dymo) over Telegram. Use ONLY after the user explicitly agrees to send (\"yes, send it\", \"да, передай\") OR when the user types feedback unprompted in feedback-shape (\"the map is broken\", \"add dark mode\"). DO NOT call silently. Categorise from intent: BUG (something doesn't work as expected), IDEA (feature suggestion / improvement request), COMPLAINT (unhappy with existing behaviour that isn't strictly broken). Server rate-limits 3/hour/user and dedups identical text within 24h — handle the {rateLimited:true} / {deduped:true} envelopes gracefully when they come back.",
       parameters: {
         type: "object",
         properties: {
           category: {
             type: "string",
-            enum: ["BUG", "IDEA", "COMPLAINT", "PRAISE", "QUESTION", "OTHER"],
+            enum: ["BUG", "IDEA", "COMPLAINT"],
           },
           text: {
             type: "string",
+            minLength: 3,
             maxLength: 2000,
             description: "The user's feedback in their own words. Quote verbatim — don't paraphrase.",
           },
@@ -608,6 +631,14 @@ export async function POST(req: NextRequest) {
       currency?: "AED" | "USD";
       areaUnit?: "sqft" | "sqm";
     };
+    /** Wave 3b session-state injection (founder spec 2026-06-10). The
+     *  client tracks tool-call count + whether feedback was offered so
+     *  the model can decide whether to proactively offer feedback at
+     *  natural pauses. */
+    sessionState?: {
+      toolCallsInSession?: number;
+      feedbackOfferedThisSession?: boolean;
+    };
   }
   let body: ArchieBody;
   try {
@@ -634,13 +665,29 @@ export async function POST(req: NextRequest) {
 - Area unit: ${prefAreaUnit === "sqm" ? "m² (sqm)" : "sqft (ft²)"}
 If the tool result gives priceAed and the user picked USD, divide by 3.6725 and prepend $. If it gives areaSqft and the user picked sqm, divide by 10.7639 and append m².`;
 
+  // Session-state block (Wave 3b 2026-06-10). Surfaces the feedback-
+  // offer counter so the prompt's FEEDBACK rules can decide whether to
+  // proactively offer. Cheap to rebuild per turn — tiny string.
+  const toolCalls = Math.max(0, Math.min(99,
+    typeof body.sessionState?.toolCallsInSession === "number"
+      ? body.sessionState.toolCallsInSession
+      : 0,
+  ));
+  const feedbackOffered = body.sessionState?.feedbackOfferedThisSession === true;
+  const sessionBlock = `SESSION STATE (client-tracked, this turn):
+- toolCallsInSession: ${toolCalls}
+- feedbackOfferedThisSession: ${feedbackOffered}
+Use this only to decide whether the FEEDBACK proactive offer applies.`;
+
   // Build the message array OpenAI expects. System prompt is fixed
   // server-side so the client can't override the persona. Preference
-  // block is appended as a separate system message so it can be
-  // rebuilt cheaply each turn without re-shipping the whole prompt.
+  // block + session block are appended as separate system messages so
+  // they can be rebuilt cheaply each turn without re-shipping the
+  // whole prompt.
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "system", content: preferenceBlock },
+    { role: "system", content: sessionBlock },
     ...history.filter(
       (m) =>
         (m.role === "user" || m.role === "assistant" || m.role === "tool") &&
