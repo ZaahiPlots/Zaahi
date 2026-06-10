@@ -347,3 +347,125 @@ export function warmDistrictIndex(): { ad: number; adCommunity: number; dubai: n
   }
   return { ad, adCommunity, dubai, total: idx.all.length };
 }
+
+// ── Reverse lookup: which district contains a point? ──────────────
+// Used by /api/archie/reverse-district (Wave 3c proactive Archie). The
+// hot path is a coarse AABB pre-filter over all 2.5K boundaries (cheap
+// O(N) numeric comparisons) followed by a precise point-in-polygon test
+// only on the small candidate set that survives. Returns the SMALLEST
+// (most specific) polygon when multiple match — so a point inside both
+// "Business Bay" (DDA project, large) and a contained AD community
+// returns the project, not the wider envelope, when the project is more
+// specific.
+
+function pointInRing(lng: number, lat: number, ring: GeoJSON.Position[]): boolean {
+  // Standard crossing-number / ray-casting test. The ring is closed
+  // (first === last) per GeoJSON spec but we don't assume — wrap.
+  let inside = false;
+  const n = ring.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const a = ring[i];
+    const b = ring[j];
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length < 2 || b.length < 2) continue;
+    const xi = a[0];
+    const yi = a[1];
+    const xj = b[0];
+    const yj = b[1];
+    const intersect =
+      ((yi > lat) !== (yj > lat)) &&
+      (lng < ((xj - xi) * (lat - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInGeometry(
+  lng: number,
+  lat: number,
+  geom: GeoJSON.Polygon | GeoJSON.MultiPolygon,
+): boolean {
+  if (geom.type === "Polygon") {
+    // First ring is the outer; subsequent rings are holes. MVP for
+    // ZAAHI data — most rows are single-ring polygons; we still respect
+    // holes for correctness.
+    const rings = geom.coordinates;
+    if (rings.length === 0) return false;
+    if (!pointInRing(lng, lat, rings[0])) return false;
+    for (let r = 1; r < rings.length; r++) {
+      if (pointInRing(lng, lat, rings[r])) return false; // inside a hole
+    }
+    return true;
+  }
+  // MultiPolygon — true if inside any sub-polygon.
+  for (const poly of geom.coordinates) {
+    if (poly.length === 0) continue;
+    if (!pointInRing(lng, lat, poly[0])) continue;
+    let inHole = false;
+    for (let r = 1; r < poly.length; r++) {
+      if (pointInRing(lng, lat, poly[r])) {
+        inHole = true;
+        break;
+      }
+    }
+    if (!inHole) return true;
+  }
+  return false;
+}
+
+function bboxArea(b: [[number, number], [number, number]]): number {
+  return (b[1][0] - b[0][0]) * (b[1][1] - b[0][1]);
+}
+
+// Heuristic: AD's sub-community grid uses short alphanumeric codes
+// ("SDN1", "YN6", "RS6") that mean nothing to users. When a code-named
+// polygon is the smallest hit but a slightly larger "human-named"
+// polygon also contains the same point, prefer the human one — the
+// proactive Archie nudge text reads better as "looking at YAS ISLAND"
+// than "looking at YN6".
+function looksLikeCode(name: string): boolean {
+  return /^[A-Z]{1,4}\d+$/.test(name.trim());
+}
+
+/**
+ * Find the boundary polygon that contains (lng, lat). Returns the
+ * smallest (most specific) hit, preferring human-named polygons over
+ * short alphanumeric AD sub-community codes (SDN1/YN6/etc). Null when
+ * no boundary matches.
+ *
+ * Performance: O(N) bbox pre-filter (one numeric compare per side ×
+ * 2,513 rows) typically narrows to ≤5 candidates for a single UAE
+ * point, then full point-in-polygon on those. Cold-call total stays
+ * under ~10 ms on a modern CPU.
+ */
+export function findDistrictAtPoint(
+  lng: number,
+  lat: number,
+): DistrictBoundary | null {
+  const idx = build();
+  // Pre-filter: bbox containment is cheap; surviving candidates are
+  // few (typically 0-5 for a UAE coordinate).
+  const candidates: DistrictBoundary[] = [];
+  for (const e of idx.all) {
+    const [[minLng, minLat], [maxLng, maxLat]] = e.bounds;
+    if (lng < minLng || lng > maxLng || lat < minLat || lat > maxLat) continue;
+    candidates.push(e);
+  }
+  if (candidates.length === 0) return null;
+  // Sort by bbox area ascending so the first containing polygon we
+  // find is also the smallest (most specific). Collect every hit so
+  // we can apply the "prefer named over code" rule across them.
+  candidates.sort((a, b) => bboxArea(a.bounds) - bboxArea(b.bounds));
+  const hits: DistrictBoundary[] = [];
+  for (const c of candidates) {
+    if (pointInGeometry(lng, lat, c.polygon)) hits.push(c);
+  }
+  if (hits.length === 0) return null;
+  // First hit is the smallest. If it's a code, see whether any of the
+  // next-smallest hits have a human name and return that instead.
+  const smallest = hits[0];
+  if (!looksLikeCode(smallest.name)) return smallest;
+  for (let i = 1; i < hits.length; i++) {
+    if (!looksLikeCode(hits[i].name)) return hits[i];
+  }
+  return smallest;
+}

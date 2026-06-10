@@ -340,6 +340,73 @@ class SoundManager {
   whoosh() {
     this.noiseSweep({ durationMs: 200, fromFreq: 200, toFreq: 600, gain: 0.22 });
   }
+
+  /**
+   * Cat purr — proactive Archie nudge cue (Wave 3c 2026-06-10).
+   *
+   * Web Audio synth, no MP3 asset. Layered through master so the sound
+   * toggle button + master gain bus apply automatically.
+   *
+   *   Carrier:  60 Hz sine (low chesty register)
+   *   Tremolo:  30 Hz amplitude modulation (real-cat purr cadence)
+   *   Bandpass: 120 Hz Q=0.6 to thin the bottom and shape "purr" tone
+   *   Gain:     0.05 (≈ −15 dB below MUSIC_TARGET, well below CITY_TARGET)
+   *   Duration: ~800 ms with 100 ms attack + 100 ms release
+   *
+   * NOT looped — short, then silent. Founder spec: "КОРОТКИЙ при появлении,
+   * ЕЛЕ СЛЫШНО".
+   *
+   * @TODO audio rework: if MUSIC_TARGET or the master gain bus changes
+   * during the upcoming audio cleanup (city-ambient → sea noise refactor),
+   * re-calibrate the 0.05 gain to keep the purr ~6 dB below music level.
+   * The purr sits on a separate path from setCityAmbient so the bandpass-
+   * noise channel can be refactored without touching this method.
+   */
+  archiePurr() {
+    if (!this.enabled) return;
+    const ctx = this.ensureCtx();
+    if (!ctx || !this.master) return;
+    const t0 = ctx.currentTime;
+    const DUR = 0.8;
+    const PEAK = 0.05;
+
+    // Carrier
+    const carrier = ctx.createOscillator();
+    carrier.type = "sine";
+    carrier.frequency.value = 60;
+
+    // Tremolo LFO — amplitude modulation
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 30;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = PEAK * 0.6; // depth — keeps signal above zero
+    lfo.connect(lfoGain);
+
+    // Modulated amplitude — base + LFO swing
+    const baseGain = ctx.createGain();
+    baseGain.gain.value = 0;
+    lfoGain.connect(baseGain.gain);
+
+    // Tone shaping
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 120;
+    bp.Q.value = 0.6;
+
+    carrier.connect(baseGain).connect(bp).connect(this.master);
+
+    // Envelope: 100 ms attack, 600 ms sustain at PEAK, 100 ms release.
+    baseGain.gain.setValueAtTime(0, t0);
+    baseGain.gain.linearRampToValueAtTime(PEAK, t0 + 0.1);
+    baseGain.gain.setValueAtTime(PEAK, t0 + DUR - 0.1);
+    baseGain.gain.linearRampToValueAtTime(0, t0 + DUR);
+
+    carrier.start(t0);
+    lfo.start(t0);
+    carrier.stop(t0 + DUR + 0.02);
+    lfo.stop(t0 + DUR + 0.02);
+  }
 }
 
 export const sound = new SoundManager();

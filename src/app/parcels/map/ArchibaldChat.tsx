@@ -30,6 +30,12 @@ import {
   toolHumanLabel,
   executeArchieTool,
 } from "@/lib/archie-tools";
+import {
+  type ProactiveNudge,
+  type AcceptAction,
+  nudgeAcceptLabel,
+  nudgeDismissLabel,
+} from "@/lib/use-proactive-archie";
 
 const GOLD = "#C8A96E";
 const TXT = "#FFFFFF";
@@ -72,6 +78,42 @@ const GREETING: UiMsg = {
 // open) without letting a runaway prompt burn tokens forever.
 const MAX_TOOL_TURNS = 8;
 
+// Wave 3c — turn the engine's AcceptAction into a programmatic user
+// message. The LLM dispatch loop already knows how to handle natural
+// language ("Show me listings in Business Bay" → fly_to_district +
+// search_plots), so we keep the accept handler thin and locale-aware.
+function composeAcceptMessage(action: AcceptAction): string {
+  const tag =
+    typeof navigator !== "undefined"
+      ? (navigator.language || "en").toLowerCase()
+      : "en";
+  const loc: "en" | "ru" | "ar" = tag.startsWith("ru")
+    ? "ru"
+    : tag.startsWith("ar")
+      ? "ar"
+      : "en";
+  switch (action.kind) {
+    case "open_district":
+      return loc === "ru"
+        ? `Покажи листинги в ${action.district}`
+        : loc === "ar"
+          ? `أعرض لي القوائم في ${action.district}`
+          : `Show me listings in ${action.district}`;
+    case "compare_parcels":
+      return loc === "ru"
+        ? "Сравни участки, которые я только что открыл"
+        : loc === "ar"
+          ? "قارن القطع التي فتحتها للتو"
+          : "Compare the plots I just opened";
+    case "ask_relax_filters":
+      return loc === "ru"
+        ? "Помоги ослабить фильтры — сейчас пусто"
+        : loc === "ar"
+          ? "ساعدني في تخفيف الفلاتر — لا توجد نتائج"
+          : "Help me relax my filters — nothing matches";
+  }
+}
+
 function clampPos(x: number, y: number): { x: number; y: number } {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -84,9 +126,22 @@ function clampPos(x: number, y: number): { x: number; y: number } {
 export default function ArchibaldChat({
   hidden = false,
   mapControls,
+  nudge = null,
+  onAcceptNudge,
+  onDismissNudge,
 }: {
   hidden?: boolean;
   mapControls: MapControls;
+  /** Active proactive nudge surfaced by useProactiveArchie. Null when
+   *  no nudge is queued. Owned by the engine — ArchibaldChat only
+   *  renders the badge + nudge bubble UI and reports user choice. */
+  nudge?: ProactiveNudge | null;
+  /** User clicked [Yes, show me]. Engine clears nudge + returns the
+   *  AcceptAction so we can compose the right LLM follow-up. */
+  onAcceptNudge?: () => AcceptAction | null;
+  /** User clicked [Not now] or 8s auto-dismiss timer fired. Engine
+   *  clears the nudge and records a 24h per-type dismiss memory. */
+  onDismissNudge?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<UiMsg[]>([GREETING]);
@@ -180,10 +235,12 @@ export default function ArchibaldChat({
     };
   }, [isMobile]);
 
-  async function send() {
-    const text = input.trim();
+  async function send(overrideText?: string) {
+    const text = (overrideText ?? input).trim();
     if (!text || thinking) return;
-    setInput("");
+    // Only clear the input when the user typed; programmatic sends
+    // (e.g. accept-nudge follow-up) leave any half-typed text alone.
+    if (overrideText == null) setInput("");
 
     // Build the wire-format history (last 30 turns of useful state,
     // not counting the static greeting bubble). The new user turn
@@ -362,7 +419,29 @@ export default function ArchibaldChat({
       justDraggedRef.current = false;
       return;
     }
+    // Wave 3c: if a nudge is queued and we're opening the chat, the
+    // nudge bubble auto-renders below the message scroll (driven by
+    // the `nudge` prop). No extra logic needed here — just toggle.
     setOpen((v) => !v);
+  }
+
+  // Wave 3c accept-action dispatcher. Takes the AcceptAction the
+  // engine returned and turns it into a programmatic user message so
+  // the existing LLM dispatch loop drives the actual tool calls
+  // (fly_to_district + search_plots, etc.). Localised against the
+  // browser locale via the same helpers the nudge text uses.
+  async function handleNudgeAccept() {
+    if (!onAcceptNudge) return;
+    const action = onAcceptNudge();
+    if (!action) return;
+    // Make sure chat is open so the user sees the follow-up reply.
+    setOpen(true);
+    const text = composeAcceptMessage(action);
+    void send(text);
+  }
+
+  function handleNudgeDismiss() {
+    if (onDismissNudge) onDismissNudge();
   }
 
   const launcherMode: AvatarMode = thinking ? "thinking" : open ? "open" : "idle";
@@ -402,6 +481,28 @@ export default function ArchibaldChat({
 
   return (
     <>
+      {/* Caption pill (Wave 3c) — only when chat is closed and a nudge
+          is queued. Sits to the LEFT of the launcher (desktop) and is
+          hidden on mobile to avoid covering the map. */}
+      {!open && nudge && !isMobile && (
+        <div
+          className="archibald-nudge-caption"
+          role="status"
+          style={
+            useCustomPos && launcherPos
+              ? {
+                  // Pin to the launcher position the user dragged to.
+                  top: launcherPos.y + 6,
+                  right: "auto",
+                  left: launcherPos.x - 200,
+                }
+              : undefined
+          }
+        >
+          {nudge.caption}
+        </div>
+      )}
+
       {/* Launcher button */}
       <button
         ref={launcherRef}
@@ -410,12 +511,17 @@ export default function ArchibaldChat({
         onPointerMove={onLauncherPointerMove}
         onPointerUp={onLauncherPointerUp}
         onPointerCancel={onLauncherPointerCancel}
-        title="Archie — AI assistant"
-        aria-label="Open Archie assistant"
+        title={nudge ? nudge.caption : "Archie — AI assistant"}
+        aria-label={nudge ? nudge.caption : "Open Archie assistant"}
         className="archibald-launcher"
         style={launcherStyle}
       >
-        {!open && <span className="archibald-pulse" aria-hidden />}
+        {!open && !nudge && <span className="archibald-pulse" aria-hidden />}
+        {!open && nudge && (
+          <span className="archibald-nudge-badge" aria-hidden>
+            1
+          </span>
+        )}
         <CatAvatar mode={launcherMode} size={32} />
       </button>
 
@@ -496,6 +602,31 @@ export default function ArchibaldChat({
                 </span>
               </div>
             )}
+            {/* Wave 3c — proactive nudge bubble. Lives below the scroll
+                feed but inside the chat window. Not pushed into the
+                wire history; LLM never sees this template. */}
+            {nudge && (
+              <div className="archibald-nudge-bubble" role="dialog" aria-label="Archie suggestion">
+                <div className="archibald-nudge-text">{nudge.text}</div>
+                <div className="archibald-nudge-actions">
+                  <button
+                    type="button"
+                    className="archibald-nudge-accept"
+                    onClick={() => void handleNudgeAccept()}
+                    disabled={thinking}
+                  >
+                    {nudgeAcceptLabel()}
+                  </button>
+                  <button
+                    type="button"
+                    className="archibald-nudge-dismiss"
+                    onClick={handleNudgeDismiss}
+                  >
+                    {nudgeDismissLabel()}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input */}
@@ -514,7 +645,7 @@ export default function ArchibaldChat({
               className="archibald-input"
             />
             <button
-              onClick={send}
+              onClick={() => void send()}
               disabled={thinking || !input.trim()}
               className="archibald-send"
             >
@@ -596,6 +727,112 @@ export default function ArchibaldChat({
           0% { transform: scale(0.95); opacity: 0.85; }
           80% { transform: scale(1.45); opacity: 0; }
           100% { transform: scale(1.45); opacity: 0; }
+        }
+
+        /* ── Wave 3c — proactive nudge badge + caption + bubble ── */
+        .archibald-nudge-badge {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: ${GOLD};
+          color: rgba(0, 0, 0, 0.85);
+          font-size: 11px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(0, 0, 0, 0.4);
+          animation: archiBadgePop 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
+          pointer-events: none;
+          z-index: 1;
+        }
+        @keyframes archiBadgePop {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .archibald-nudge-caption {
+          position: absolute;
+          bottom: ${16 + LAUNCHER_SIZE - 36}px;
+          right: ${16 + LAUNCHER_SIZE + 12}px;
+          max-width: 220px;
+          padding: 8px 12px;
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 999px;
+          color: ${TXT};
+          font-size: 12px;
+          line-height: 1.3;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+          opacity: 0;
+          animation: archiCaptionFade 320ms ease-out 150ms forwards;
+          pointer-events: none;
+          z-index: 27;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        @keyframes archiCaptionFade {
+          from { opacity: 0; transform: translateX(8px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .archibald-nudge-bubble {
+          align-self: stretch;
+          margin: 6px 12px 4px;
+          padding: 10px 12px;
+          background: rgba(200, 169, 110, 0.10);
+          border: 1px solid rgba(200, 169, 110, 0.35);
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          animation: archiSlideUp 0.25s ease-out;
+        }
+        .archibald-nudge-text {
+          font-size: 13px;
+          color: ${TXT};
+          line-height: 1.4;
+        }
+        .archibald-nudge-actions {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .archibald-nudge-accept,
+        .archibald-nudge-dismiss {
+          font-size: 12px;
+          padding: 6px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }
+        .archibald-nudge-accept {
+          background: rgba(200, 169, 110, 0.25);
+          border: 1px solid ${GOLD};
+          color: ${GOLD};
+        }
+        .archibald-nudge-accept:hover:not(:disabled) {
+          background: rgba(200, 169, 110, 0.4);
+          transform: translateY(-1px);
+        }
+        .archibald-nudge-accept:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .archibald-nudge-dismiss {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          color: rgba(255, 255, 255, 0.78);
+        }
+        .archibald-nudge-dismiss:hover {
+          background: rgba(255, 255, 255, 0.1);
         }
 
         .archibald-window {

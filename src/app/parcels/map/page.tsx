@@ -32,6 +32,7 @@ import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
 import type { BuildingDTO } from "./buildings/types";
 import { sound } from "@/lib/sound";
+import { useProactiveArchie } from "@/lib/use-proactive-archie";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
@@ -5538,6 +5539,19 @@ function ParcelsMapPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
+  // ── Wave 3c proactive Archie (founder spec 2026-06-10) ──
+  // Watches camera dwell, parcel-open count, and filter-empty state.
+  // Surfaces a badge "1" + caption pill on the launcher when one of 3
+  // triggers fires; all anti-spam logic (2/session cap, 60s cooldown,
+  // 24h per-type dismiss memory, single active nudge) lives in the
+  // hook. The page only forwards state and renders the nudge UI.
+  const { nudge, acceptNudge, dismissNudge } = useProactiveArchie({
+    mapRef,
+    selectedParcelId,
+    visibleCount,
+    filterState,
+  });
+
   return (
     <div
       data-map-page=""
@@ -6861,7 +6875,13 @@ function ParcelsMapPageInner() {
         />
       )}
 
-      <ArchibaldChat hidden={!!selectedParcelId} mapControls={mapControls} />
+      <ArchibaldChat
+        hidden={!!selectedParcelId}
+        mapControls={mapControls}
+        nudge={nudge}
+        onAcceptNudge={acceptNudge}
+        onDismissNudge={dismissNudge}
+      />
       <SidePanel
         parcelId={selectedParcelId}
         mapRef={mapRef}
