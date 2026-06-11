@@ -52,6 +52,11 @@ import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate"
 import { installKeyboardNav, type KeyboardNavController } from "@/lib/keyboard-nav";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
+  computeSetbackM,
+  insetRingByMeters,
+  emitSignatureTiers as emitListingTiers,
+} from "@/lib/signature/geometry";
+import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
   effectiveValues,
@@ -3067,101 +3072,13 @@ function ParcelsMapPageInner() {
   //  doesn't have it. Idempotent on map.getSource — safe to call after
   //  a basemap swap.
   // ─────────────────────────────────────────────────────────────────────
-  // ── ZAAHI Signature 3D — setback helpers ───────────────────────────
-  // Spec lives in CLAUDE.md "Правила 3D моделей (ZAAHI Signature)".
-  // The DB still stores the raw DDA setbacks per plan; these helpers
-  // pick a single representative metres-value to inset the polygon by.
-
-  /** Land-use defaults when DDA has no per-plot setback data. */
-  function defaultSetbackM(landUse: string | null, sub: string | null): number {
-    if (!landUse) return 5;
-    switch (landUse) {
-      case "RESIDENTIAL":
-        // Villas / townhouses: 3m all around. Apartments: 5m road
-        // + 3m sides → ~4m representative for a uniform inset.
-        if (sub && /villa|townhouse|town\s*house/i.test(sub)) return 3;
-        return 4;
-      case "COMMERCIAL":
-      case "OFFICE":
-      case "RETAIL":
-        return 0; // commercial fills the plot edge to edge
-      case "HOTEL":
-      case "HOSPITALITY":
-        return 3;
-      case "INDUSTRIAL":
-      case "WAREHOUSE":
-        return 4;
-      case "FUTURE_DEVELOPMENT":
-      case "FUTURE DEVELOPMENT":
-        // Follow the INDUSTRIAL pattern: 4 m inset. Visually produces
-        // one near-plot-sized block, same treatment founder ratified
-        // 2026-04-23 for FUTURE_DEVELOPMENT plots.
-        return 4;
-      case "EDUCATIONAL":
-      case "EDUCATION":
-      case "HEALTHCARE":
-        return 5;
-      case "AGRICULTURAL":
-      case "AGRICULTURE":
-        return 10;
-      case "MIXED_USE":
-        return 4;
-      default:
-        return 5;
-    }
-  }
-
-  /**
-   * Pick the metres value to use for inset. Prefer DDA's affection-plan
-   * setbacks (most specific), fall back to land-use defaults, and bypass
-   * inset entirely for very small plots.
-   */
-  function computeSetbackM(
-    plotSqft: number,
-    landUse: string | null,
-    setbacks: Array<{ side: number; building: number | null; podium: number | null }> | null,
-    sub: string | null,
-  ): number {
-    // Tiny plots — building fills the boundary, no setback.
-    if (plotSqft > 0 && plotSqft < 5000) return 0;
-
-    if (setbacks && setbacks.length > 0) {
-      const vals = setbacks
-        .map((s) => s.building ?? s.podium ?? 0)
-        .filter((v) => v > 0);
-      if (vals.length > 0) {
-        return vals.reduce((a, b) => a + b, 0) / vals.length;
-      }
-    }
-    return defaultSetbackM(landUse, sub);
-  }
-
-  /**
-   * Inset a polygon ring uniformly toward its centroid by `setbackM`
-   * metres. Caps the resulting scale at 0.5 so very deep setbacks on
-   * small plots still produce a visible building. setbackM <= 0 returns
-   * the ring unchanged (used for the small-plot bypass + commercial).
-   */
-  function insetRingByMeters(ring: number[][], setbackM: number): number[][] {
-    if (setbackM <= 0) return ring;
-    const lngs = ring.map((p) => p[0]);
-    const lats = ring.map((p) => p[1]);
-    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const dLng =
-      (Math.max(...lngs) - Math.min(...lngs)) *
-      111000 *
-      Math.cos((midLat * Math.PI) / 180);
-    const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
-    const halfWidth = Math.min(dLng, dLat) / 2;
-    if (halfWidth <= 0) return ring;
-    const scale = Math.max(0.5, 1 - setbackM / halfWidth);
-    const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-    const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-    return ring.map(([lng, lat]) => [
-      cLng + (lng - cLng) * scale,
-      cLat + (lat - cLat) * scale,
-    ]);
-  }
+  // ZAAHI Signature 3D — setback helpers + ring transforms + tier
+  // composer now live in src/lib/signature/geometry.ts (Stage 1 of
+  // feat/signature-realistic, 2026-06-11). Imported at the top of
+  // this file. The vault renderer at loadVaultShared still uses the
+  // independent emitSignatureTiers from @/lib/zaahi-3d-tiers — kept
+  // separate intentionally for the duration of the Signature-realistic
+  // migration (see SIG-FINAL: revisit unification when shipping).
 
   // Phase 3 vault unification (2026-05-30): function is now idempotent —
   // safe to call after a vault add to refresh the source. On first call
@@ -3356,37 +3273,35 @@ function ParcelsMapPageInner() {
 
         // ── ZAAHI Signature stepped 3D ──
         // Each building is 1, 2, or 3 features depending on height:
-        //   floors ≤ 4   → podium only (full footprint, full height)
-        //   floors 5-10  → podium (0–14 m) + body (14–top, 70% footprint)
-        //   floors > 10  → podium + body (14–top-7) + crown (top-7→top, 50%)
+        //   forceFlat OR floors ≤ 4 → podium only (full footprint, full height)
+        //   floors 5-10             → podium (0–14 m) + body (14–top, 70%)
+        //   floors > 10             → podium + body (14–top-7) + crown (top-7→top, 50%)
         // All features go into the SAME source and SAME fill-extrusion
         // layer below — no kind filters, no separate layers. Stepped
         // look comes from the ring being scaled toward its centroid.
-        const FLOOR_H = 3.5;
-        const PODIUM_TOP = 14; // 4 floors
-        const CROWN_H = 7;     // top 2 floors
-        const floors = Math.max(1, Math.round(totalH / FLOOR_H));
-
-        // Centroid scale of a ring (uniform inset toward its centroid).
-        const scaleRingFromCentroid = (ring: number[][], scale: number): number[][] => {
-          const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-          const cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-          return ring.map(([lng, lat]) => [
-            cx + (lng - cx) * scale,
-            cy + (lat - cy) * scale,
-          ]);
-        };
-
-        const pushTier = (ring: number[][], baseM: number, topM: number) => {
+        //
+        // Math + tier shape live in src/lib/signature/geometry.ts
+        // (Stage 1 of feat/signature-realistic, 2026-06-11). This call
+        // returns the same Tier[] the inline branch used to emit.
+        //
+        // AffectionPlan.buildingStyle === "FLAT" → single block of full
+        // footprint at full height. FUTURE_DEVELOPMENT → same flat-block
+        // render (founder 2026-04-23). Default/null/"SIGNATURE" → tiered.
+        const forceFlat =
+          it.plan?.buildingStyle === "FLAT" ||
+          landUse === "FUTURE_DEVELOPMENT" ||
+          landUse === "FUTURE DEVELOPMENT";
+        const tiers = emitListingTiers(footprintRing, totalH, { forceFlat });
+        for (const t of tiers) {
           buildingFeatures.push({
             type: "Feature",
-            geometry: { type: "Polygon", coordinates: [ring] },
+            geometry: { type: "Polygon", coordinates: [t.ring] },
             properties: {
               parcelId: it.id,
               landUse,
               color: buildingHex,
-              height: topM,
-              base: baseM,
+              height: t.topM,
+              base: t.baseM,
               // Phase 3 vault-only mode filter scopes ZAAHI_BUILDINGS_3D
               // by isVault === true. Tier features must carry the prop
               // or the filter excludes every building when the mode
@@ -3399,36 +3314,6 @@ function ParcelsMapPageInner() {
               status: it.status,
             },
           });
-        };
-
-        // ── Data-driven style selection ──
-        // AffectionPlan.buildingStyle === "FLAT" → single block of full
-        // footprint at full height (correct for most commercial office
-        // buildings where there is no visual podium/tower distinction).
-        // FUTURE_DEVELOPMENT → same flat-block render (founder 2026-04-23:
-        // match the INDUSTRIAL pattern regardless of floor count · no
-        // podium/body/crown taper for pre-master-plan land).
-        // Default/null/"SIGNATURE" → ZAAHI tiered model below.
-        // Per-plot opt-in keeps the renderer free of hardcoded plot-number
-        // overrides (per CLAUDE.md rule).
-        const forceFlat =
-          it.plan?.buildingStyle === "FLAT" ||
-          landUse === "FUTURE_DEVELOPMENT" ||
-          landUse === "FUTURE DEVELOPMENT";
-        if (forceFlat) {
-          pushTier(footprintRing, 0, totalH);
-        } else if (floors <= 4) {
-          // Podium only — short building, no taper.
-          pushTier(footprintRing, 0, totalH);
-        } else if (floors <= 10) {
-          // Podium + body. No crown — body extends to the very top.
-          pushTier(footprintRing, 0, PODIUM_TOP);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH);
-        } else {
-          // Full ZAAHI Signature — podium + body + crown.
-          pushTier(footprintRing, 0, PODIUM_TOP);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.5), totalH - CROWN_H, totalH);
         }
       }
 
