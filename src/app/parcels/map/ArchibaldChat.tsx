@@ -41,7 +41,7 @@ const GOLD = "#C8A96E";
 const TXT = "#FFFFFF";
 
 // Drag / persistence. Mirrors the other map-page localStorage keys
-// (zaahi-drone-mode, zaahi-vault-only-mode).
+// (zaahi-vault-only-mode, zaahi-autorotate, etc.).
 const LAUNCHER_POS_KEY = "zaahi-archie-launcher-pos";
 const DRAG_THRESHOLD_PX = 8;
 const LAUNCHER_SIZE = 52; // desktop. Mobile sized via CSS, drag disabled.

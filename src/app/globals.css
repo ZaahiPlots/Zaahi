@@ -121,19 +121,6 @@ body:has([data-map-page]) {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Drone mode — hide the native cursor on the map so DroneHUD's green
- * crosshair (rendered at the mouse position) becomes the sole reticle
- * (founder spec 2026-06-03 v3 — cursor IS the crosshair).
- * !important is necessary because MapLibre toggles cursor: grab/grabbing
- * on its canvas via inline style during drag operations; the data-attr
- * + descendant selectors override both states. UI chrome (HeaderBar,
- * FilterPanel) keep the native cursor because their elements live
- * outside the maplibregl-canvas-container subtree. */
-[data-map-page][data-drone-mode="on"] .maplibregl-canvas-container,
-[data-map-page][data-drone-mode="on"] .maplibregl-canvas {
-  cursor: none !important;
-}
-
 /* Reusable utility classes — opt-in, don't replace inline styles unless
  * the callsite is already using className. */
 .zaahi-glass {

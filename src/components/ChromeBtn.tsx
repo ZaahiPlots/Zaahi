@@ -4,7 +4,7 @@
  * ChromeBtn — the unified ZAAHI glass button.
  *
  * Extracted from src/app/parcels/map/page.tsx (the original
- * 5×5 map button stack — zoom, compass, 3D, basemap, drone,
+ * 5×5 map button stack — zoom, compass, 3D, basemap, auto-rotate,
  * layers, legend, etc.) so dashboard / sidepanel / modals can
  * share the same affordance with one import.
  *

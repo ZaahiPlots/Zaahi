@@ -3,9 +3,8 @@
 // `installAutoRotate(map)` wires a passive rAF loop + interaction listeners
 // once, but rotation is gated by an internal `enabled` flag that the caller
 // flips via the returned controller. The map page renders a toggle button
-// on the chrome (under the drone-mode button) and calls `enable()` /
-// `disable()` when the user clicks it. Mutually exclusive with drone mode
-// (caller enforces).
+// on the chrome (slot 5 on the left rail) and calls `enable()` /
+// `disable()` when the user clicks it.
 //
 // Behaviour when enabled:
 //   - rotates camera CLOCKWISE (bearing decreases) at 6 °/sec

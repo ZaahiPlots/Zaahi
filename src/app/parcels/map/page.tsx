@@ -24,7 +24,6 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 // MiniMap dock unmounted 2026-06-01 (founder spec). The component
 // file is kept in place for the future panel-control overview;
 // no current consumer.
-import DroneHUD from "./DroneHUD";
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import TermsAcceptModal from "./TermsAcceptModal";
@@ -47,7 +46,6 @@ import {
   type UnifiedStatus,
 } from "@/lib/filter-state";
 import FilterPanel from "./FilterPanel";
-import { installDroneControls, type DroneController } from "@/lib/drone-controls";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
@@ -1947,27 +1945,6 @@ function ParcelsMapPageInner() {
     const t = window.setTimeout(() => setToast(null), 4000);
     return () => window.clearTimeout(t);
   }, [toast]);
-  // Drone mode — toggleable via on-map button. Persists across reloads
-  // via localStorage "zaahi-drone-mode". Default OFF on first visit.
-  const [droneEnabled, setDroneEnabled] = useState(false);
-  const [showDroneHint, setShowDroneHint] = useState(false);
-  const droneCtrlRef = useRef<DroneController | null>(null);
-  // Touch-device gate (2026-06-03) — drone-controls is a no-op on
-  // touch, so the toggle button is hidden too. Reads pointer:coarse +
-  // ontouchstart once on mount, no resize listener (device class
-  // doesn't change mid-session for the platforms we ship to).
-  const [droneAvailable, setDroneAvailable] = useState(true);
-  // Cursor coords driven by drone-controls' onCursorMove callback.
-  // Used to position DroneHUD's crosshair at the mouse (founder spec
-  // 2026-06-03 v3 — cursor = crosshair). Initialised at viewport
-  // centre so the first paint after enable() has something to draw.
-  const [droneCursor, setDroneCursor] = useState<{ x: number; y: number }>(
-    () => ({
-      x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
-      y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
-    }),
-  );
-
   // Sun-time override — null means "use real wall-clock time" so the
   // shadow direction tracks live; a Date overrides it to the slider's
   // chosen hour-of-today. Passed straight into useSunLight which calls
@@ -2223,8 +2200,7 @@ function ParcelsMapPageInner() {
 
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
-  // key yet), respects saved choice on subsequent visits. Mutually
-  // exclusive with drone mode (each toggle disables the other).
+  // key yet), respects saved choice on subsequent visits.
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [showAutoRotateHint, setShowAutoRotateHint] = useState(false);
   const autoRotateCtrlRef = useRef<AutoRotateController | null>(null);
@@ -2234,10 +2210,10 @@ function ParcelsMapPageInner() {
   const [portalOpen, setPortalOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   // MiniMap dock removed 2026-06-01 (founder spec) — `miniOpen`
-  // state is gone. The dock's two unique controls (Drone mode and
-  // Sun-time slider) now live on the left + right rails as slot 6.
-  // All 7 layer toggles that used to live on the dock top + left
-  // rails remain in the Layers panel (LAYER_GROUPS).
+  // state is gone. The Sun-time slider that used to live on the dock
+  // now lives on the right rail (slot 6). All 7 layer toggles that
+  // used to live on the dock top + left rails remain in the Layers
+  // panel (LAYER_GROUPS).
   const legendRef = useRef<HTMLDivElement>(null);
   // Legend trigger lives on the right rail (slot 1). The
   // click-outside handler at L4182 skips clicks on this ref.
@@ -4947,31 +4923,6 @@ function ParcelsMapPageInner() {
     // useEffect below; cleanup removes it so HMR doesn't accumulate
     // WebGL contexts.
 
-    // Toggleable WASD drone navigation (desktop only). Controller stays
-    // installed for the map's lifetime; a separate effect drives
-    // enable/disable based on `droneEnabled` state. Default is OFF so
-    // WASD / mouse do NOT hijack the page until the user opts in.
-    //   onExit       → Escape exits drone mode (founder spec 2026-06-03).
-    //   onCursorMove → relay viewport pixel coordinates so DroneHUD's
-    //                  crosshair can render at the cursor (v3 spec
-    //                  2026-06-03: cursor IS the crosshair).
-    const droneCtrl = installDroneControls(map, {
-      onExit: () => setDroneEnabled(false),
-      onCursorMove: (x, y) => setDroneCursor({ x, y }),
-    });
-    droneCtrlRef.current = droneCtrl;
-    setDroneAvailable(droneCtrl.isAvailable());
-
-    // Restore saved preference (default OFF on first visit).
-    try {
-      if (typeof window !== "undefined" &&
-          localStorage.getItem("zaahi-drone-mode") === "1") {
-        setDroneEnabled(true);
-      }
-    } catch {
-      /* localStorage may be blocked — stay OFF */
-    }
-
     // Auto-rotate controller — install once, drive enable/disable from
     // `autoRotateEnabled` state. HYBRID first-visit default: if no
     // localStorage key exists yet, treat as first-ever visit → start ON.
@@ -4990,8 +4941,6 @@ function ParcelsMapPageInner() {
     }
 
     return () => {
-      droneCtrl.destroy();
-      droneCtrlRef.current = null;
       autoRotateCtrl.destroy();
       autoRotateCtrlRef.current = null;
       // Detach deck.gl overlay before MapLibre.remove() so its WebGL
@@ -5096,30 +5045,6 @@ function ParcelsMapPageInner() {
   }, [glbActive, overlayReady, heroOverrides, devModeHero]);
 
 
-
-  // Drive the drone controller from React state. Persists choice and
-  // flashes the on-enable toast. Keeps WASD behaviour strictly opt-in.
-  useEffect(() => {
-    const ctrl = droneCtrlRef.current;
-    if (!ctrl) return;
-    if (droneEnabled) {
-      ctrl.enable();
-      setShowDroneHint(true);
-      const t = window.setTimeout(() => setShowDroneHint(false), 3500);
-      try { localStorage.setItem("zaahi-drone-mode", "1"); } catch { /* ignore */ }
-      return () => window.clearTimeout(t);
-    }
-    ctrl.disable();
-    setShowDroneHint(false);
-    try { localStorage.setItem("zaahi-drone-mode", "0"); } catch { /* ignore */ }
-  }, [droneEnabled]);
-
-  // (Crosshair "fire" — Space-tap / map-click that auto-flew the camera
-  // to screen-center — was removed 2026-06-03. It conflicted with the
-  // Space=ascend binding and with parcel selection. Drone mode is now
-  // pure free-flight: Space ascends, click opens the parcel under the
-  // crosshair, no extra camera dispatch. The DroneHUD's Crosshair
-  // remains as a fixed aim reticle but never pulses.)
 
   // Drive the auto-rotate controller from React state. Persists choice,
   // gently tilts to 3D if the user is in flat view (rotation would
@@ -5479,10 +5404,9 @@ function ParcelsMapPageInner() {
     },
     // ── Wave 2 chrome / camera / overlay controls (founder spec 2026-06-01) ──
     // Each method shadows the rail-button handler so the LLM tools
-    // produce the exact same on-screen effect as a manual click. mutex
-    // for drone ⇄ auto-rotate lives here (single source of truth)
-    // and the return value echoes the post-mutex state so the chat
-    // can describe what actually changed.
+    // produce the exact same on-screen effect as a manual click. The
+    // return value echoes the post-call state so the chat can describe
+    // what actually changed.
     setBaseMap: (theme) => {
       setBaseMap(theme);
     },
@@ -5499,32 +5423,14 @@ function ParcelsMapPageInner() {
       if (direction === "in") m.zoomIn();
       else m.zoomOut();
     },
-    setDroneMode: (enabled) => {
-      // Mirrors the rail Drone button (line ~5519): enabling drone
-      // also clears auto-rotate. Return the resolved pair so the
-      // tool result can echo "{drone:true, autoRotate:false}" even
-      // when the user only asked for drone.
-      sound.whoosh();
-      setDroneEnabled(enabled);
-      if (enabled) setAutoRotateEnabled(false);
-      return {
-        drone: enabled,
-        autoRotate: enabled ? false : autoRotateEnabled,
-      };
-    },
     setSunSlider: (enabled) => {
       sound.whoosh();
       setSunSliderActive(enabled);
     },
     setAutoRotate: (enabled) => {
-      // Mirror of setDroneMode — enabling auto-rotate clears drone.
       sound.whoosh();
       setAutoRotateEnabled(enabled);
-      if (enabled) setDroneEnabled(false);
-      return {
-        drone: enabled ? false : droneEnabled,
-        autoRotate: enabled,
-      };
+      return { autoRotate: enabled };
     },
     setLegendOpen: (open) => {
       setLegendOpen(open);
@@ -5577,7 +5483,6 @@ function ParcelsMapPageInner() {
       const c = EMIRATE_CENTERS[emirate];
       m.flyTo({ center: [c.lng, c.lat], zoom: c.zoom, duration: 1500, essential: true });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
   // ── Wave 3c proactive Archie (founder spec 2026-06-10) ──
@@ -5596,7 +5501,6 @@ function ParcelsMapPageInner() {
   return (
     <div
       data-map-page=""
-      data-drone-mode={droneEnabled ? "on" : undefined}
       style={{
         // `fixed` instead of `absolute` so the map stays pinned to the
         // visual viewport on mobile — iOS Safari's URL bar show/hide and
@@ -5622,46 +5526,6 @@ function ParcelsMapPageInner() {
           on the slider also resets to real time (in addition to the
           dedicated button). */}
       {sunSliderActive && <SunTimeSlider onChange={setSunTimeOverride} />}
-
-      {/* Military-UAV HUD — visible only while drone mode is active.
-          z-index 50, pointer-events none (no click interception). All
-          chrome (crosshair, horizon, compass tape, coords, ALT/VS/SPD/
-          HDG/PCH rails, corner brackets, status, time, zoom) reads
-          live from mapRef. Founder spec 2026-05-23. */}
-      {droneEnabled && (
-        <DroneHUD
-          mainMapRef={mapRef}
-          firing={false}
-          mouseX={droneCursor.x}
-          mouseY={droneCursor.y}
-        />
-      )}
-
-      {/* Drone-mode on-enable toast — shown each time the user turns drone mode ON */}
-      {showDroneHint && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(10,22,40,0.7)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.9)",
-            borderRadius: 12,
-            padding: "8px 16px",
-            fontSize: 13,
-            letterSpacing: "0.02em",
-            zIndex: 40,
-            pointerEvents: "none",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-          }}
-        >
-          Drone mode activated — mouse aims the crosshair, WASD flies, Esc exits
-        </div>
-      )}
 
       {showAutoRotateHint && (
         <div
@@ -6058,17 +5922,13 @@ function ParcelsMapPageInner() {
             <circle cx="6" cy="18" r="1.6" />
           </svg>
         </ChromeBtn>
-        {/* 5. Auto-rotate — mutex with drone mode. */}
+        {/* 5. Auto-rotate. */}
         <ChromeBtn
           title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
           active={autoRotateEnabled}
           onClick={() => {
             sound.whoosh();
-            setAutoRotateEnabled((v) => {
-              const next = !v;
-              if (next) setDroneEnabled(false);
-              return next;
-            });
+            setAutoRotateEnabled((v) => !v);
           }}
         >
           {/* Circular arrow — auto-rotate indicator. */}
@@ -6077,45 +5937,13 @@ function ParcelsMapPageInner() {
             <polyline points="21 4 21 9 16 9" />
           </svg>
         </ChromeBtn>
-        {/* 6. Drone mode — promoted from the removed MiniMap dock to
-            the left rail (founder spec 2026-06-01). Sits directly
-            under Auto-rotate because they are mutually exclusive:
-            enabling one disables the other (state mutex below).
-            Hidden on touch devices (2026-06-03) since drone-controls
-            is a no-op there — keeps the rail clean on mobile. */}
-        {droneAvailable && (
-        <ChromeBtn
-          title={droneEnabled ? "Disable drone mode (Esc)" : "Drone mode — cursor aims, WASD flies (Esc to exit)"}
-          active={droneEnabled}
-          onClick={() => {
-            sound.whoosh();
-            setDroneEnabled((v) => {
-              const next = !v;
-              // Same mutex as the auto-rotate handler above.
-              if (next) setAutoRotateEnabled(false);
-              return next;
-            });
-          }}
-        >
-          {/* Minimal quadcopter silhouette — same glyph that lived
-              in the mini-dock so existing users recognise it. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="2" />
-            <line x1="12" y1="10" x2="12" y2="5" />
-            <line x1="12" y1="14" x2="12" y2="19" />
-            <line x1="10" y1="12" x2="5" y2="12" />
-            <line x1="14" y1="12" x2="19" y2="12" />
-            <circle cx="5" cy="12" r="2" />
-            <circle cx="19" cy="12" r="2" />
-            <circle cx="12" cy="5" r="2" />
-            <circle cx="12" cy="19" r="2" />
-          </svg>
-        </ChromeBtn>
-        )}
         {/* Filters button moved to the HeaderBar (founder spec
-            2026-06-03). The left rail now ends at 6 (Drone). The
-            Parcels portal toggle had previously moved to the bottom-
-            centre ParcelsNav pill (founder spec 2026-05-29). */}
+            2026-06-03). The left rail now ends at 5 (Auto-rotate)
+            after the drone-mode button was removed 2026-06-11
+            (FPS-drone postmortem: режимы дрона убраны вообще,
+            клавиатурная навигация добавлена к обычной карте).
+            The Parcels portal toggle had previously moved to the
+            bottom-centre ParcelsNav pill (founder spec 2026-05-29). */}
       </div>
 
       {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──

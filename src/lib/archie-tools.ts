@@ -32,11 +32,9 @@ export type ArchieLayerKey =
   | "adDistricts"
   | "vaultShared";
 
-/** Pair of mutually-exclusive camera-motion flags. Used as the return
- *  shape of setDroneMode + setAutoRotate so the tool can echo the live
- *  state after the mutex resolves. */
+/** Camera-motion flag. Used as the return shape of setAutoRotate so
+ *  the tool can echo the live state after the call. */
 export interface CameraMotionState {
-  drone: boolean;
   autoRotate: boolean;
 }
 
@@ -102,13 +100,9 @@ export interface MapControls {
   /** One zoom step in either direction — same as the +/− rail
    *  buttons. */
   zoomMap(direction: "in" | "out"): void;
-  /** Toggle drone-fly mode (WASD + right-click pointer-lock). Mutex
-   *  with auto-rotate: enabling drone disables auto-rotate (and vice
-   *  versa). Returns the resolved state so the tool can echo it. */
-  setDroneMode(enabled: boolean): CameraMotionState;
   /** Toggle the sun-time slider overlay. */
   setSunSlider(enabled: boolean): void;
-  /** Toggle auto-rotate camera. Mutex partner of setDroneMode. */
+  /** Toggle auto-rotate camera. */
   setAutoRotate(enabled: boolean): CameraMotionState;
   /** Open / close the Legend panel (mirrors the rail Legend button). */
   setLegendOpen(open: boolean): void;
@@ -497,10 +491,6 @@ export async function executeArchieTool(
       const action = String(args.action ?? "");
       const enabled = args.enabled === true;
       switch (action) {
-        case "drone": {
-          const state = controls.setDroneMode(enabled);
-          return { ok: true, action, ...state };
-        }
         case "auto_rotate": {
           const state = controls.setAutoRotate(enabled);
           return { ok: true, action, ...state };

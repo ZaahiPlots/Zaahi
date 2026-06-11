@@ -99,8 +99,7 @@ MEGA-TOOLS (4 — group similar actions behind one schema; pick the action with 
   • "area_range" — args: { min?: number, max?: number } — sqft. Pass {} to clear.
   • "reset_all" — clears every filter dimension
 
-- control_chrome({ action, enabled }) — chrome toggles. Actions: "drone" | "auto_rotate" | "sun_slider" | "legend". Arg: enabled (boolean).
-  Mutex: drone ⇄ auto_rotate. The tool result echoes the resolved pair.
+- control_chrome({ action, enabled }) — chrome toggles. Actions: "auto_rotate" | "sun_slider" | "legend". Arg: enabled (boolean).
 
 - parcel_action({ action, ... }) — stub for Wave 3c parcel-level actions (favorite, check_dld, open_feasibility). NOT YET WIRED — Wave 3c. Will stub-respond for now.
 
@@ -507,19 +506,19 @@ const TOOLS = [
       },
     },
   },
-  // ── 11. control_chrome (mega — chrome toggles with drone⇄auto-rotate mutex).
+  // ── 11. control_chrome (mega — chrome toggles).
   {
     type: "function" as const,
     function: {
       name: "control_chrome",
       description:
-        "Chrome toggles. `action` is one of 'drone' / 'auto_rotate' / 'sun_slider' / 'legend'. `enabled` is the target state. drone ⇄ auto_rotate are mutually exclusive — enabling one disables the other. The tool result echoes the resolved camera-motion pair so you can describe both effects ('I enabled drone, which also turned off auto-rotate').",
+        "Chrome toggles. `action` is one of 'auto_rotate' / 'sun_slider' / 'legend'. `enabled` is the target state. The tool result echoes the post-call state.",
       parameters: {
         type: "object",
         properties: {
           action: {
             type: "string",
-            enum: ["drone", "auto_rotate", "sun_slider", "legend"],
+            enum: ["auto_rotate", "sun_slider", "legend"],
           },
           enabled: { type: "boolean" },
         },
@@ -596,11 +595,12 @@ interface OpenAIResponse {
 // Word-list is deliberately conservative — only verbs that imply a
 // map action, in all three platform languages.
 // Wave 2 (2026-06-01) extends the EN regex with chrome verbs
-// (zoom / basemap / layer / 2D / 3D / drone / legend / etc) so the
+// (zoom / basemap / layer / 2D / 3D / legend / etc) so the
 // model is forced into tool_choice="required" when the user clearly
-// asks for a chrome change, not just a navigation.
+// asks for a chrome change, not just a navigation. Drone verbs
+// dropped 2026-06-11 (FPS-drone postmortem — режимы дрона убраны).
 const NAV_INTENT_RE =
-  /\b(show|go to|open|close|filter|fly|find|navigate|highlight|take me to|zoom|zoom in|zoom out|filter by|only|switch to|hide|enable|disable|turn on|turn off|2d|3d|satellite|dark mode|light mode|drone|auto.?rotate|sun slider|legend|layer|basemap)\b|покажи|откро[йи]|найди|лети|фильтр|перейди|выдели|показать|только|закрой|спрячь|включи|выключи|приблизь|отдали|2д|3д|спутник|тёмный|светлый|дрон|вращ|солнце|легенд|слой|карт|أرني|افتح|اعرض|انتقل|فلتر|ابحث|أغلق|أخفي|قرّب|أبعد|طبقة|أساس/iu;
+  /\b(show|go to|open|close|filter|fly|find|navigate|highlight|take me to|zoom|zoom in|zoom out|filter by|only|switch to|hide|enable|disable|turn on|turn off|2d|3d|satellite|dark mode|light mode|auto.?rotate|sun slider|legend|layer|basemap)\b|покажи|откро[йи]|найди|лети|фильтр|перейди|выдели|показать|только|закрой|спрячь|включи|выключи|приблизь|отдали|2д|3д|спутник|тёмный|светлый|вращ|солнце|легенд|слой|карт|أرني|افتح|اعرض|انتقل|فلتر|ابحث|أغلق|أخفي|قرّب|أبعد|طبقة|أساس/iu;
 
 function detectToolChoice(history: ChatMessage[]): "auto" | "required" {
   for (let i = history.length - 1; i >= 0; i--) {
