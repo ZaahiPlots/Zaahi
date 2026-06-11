@@ -26,6 +26,8 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 // no current consumer.
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
+import MapZoomReadout from "./MapZoomReadout";
+import MapCompassIcon from "./MapCompassIcon";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
@@ -1899,8 +1901,14 @@ function ParcelsMapPageInner() {
   }, [baseMapBusy]);
   const [is3D, setIs3D] = useState(true);
   const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
-  const [zoom, setZoom] = useState(12);
-  const [bearing, setBearing] = useState(0);
+  // zoom / bearing React-state mirrors removed 2026-06-11 (perf fix
+  // on feat/keyboard-nav). MapLibre's "zoom"/"rotate" events fire
+  // ~60 Hz under keyboard nav and the setState chain was forcing a
+  // full MapPage re-render every frame. The two surviving consumers
+  // (coord-overlay zoom readout, compass-icon rotation) now live in
+  // MapZoomReadout + MapCompassIcon, each with its own rAF loop +
+  // direct DOM mutation. See git log for grep confirming no other
+  // consumers existed.
   // "+" on the map opens a chooser (Listing vs Vault), then routes to the
   // selected flow. Per founder direction: Cancel/×/Esc/backdrop inside
   // either inner flow returns to the chooser; the chooser's own ×/Esc/
@@ -4371,8 +4379,10 @@ function ParcelsMapPageInner() {
     // at construction (see keyboard:false above). keyboard-nav.ts
     // installs window-level listeners that drive the camera instead.
     map.on("mousemove", (e) => setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat }));
-    map.on("zoom", () => setZoom(map.getZoom()));
-    map.on("rotate", () => setBearing(map.getBearing()));
+    // map.on("zoom" / "rotate") → setState mirrors removed 2026-06-11
+    // (perf fix on feat/keyboard-nav). See the matching comment above
+    // the deleted useState declarations. MapZoomReadout + MapCompassIcon
+    // own their own rAF loops and read mapRef live.
 
     // Debounced save on every camera change. moveend fires for pan/zoom/
     // rotate/pitch combined so a single listener catches all of them.
@@ -5864,7 +5874,7 @@ function ParcelsMapPageInner() {
           pointerEvents: "none",
         }}
       >
-        {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z{zoom.toFixed(2)}
+        {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z<MapZoomReadout mapRef={mapRef} />
       </div>
 
       {/* ── LEFT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
@@ -6011,9 +6021,7 @@ function ParcelsMapPageInner() {
           title="Reset bearing"
           onClick={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45, duration: 500 })}
         >
-          <span style={{ display: "inline-block", transform: `rotate(${-bearing}deg)`, transition: "transform 250ms ease", fontSize: 14 }}>
-            ⊕
-          </span>
+          <MapCompassIcon mapRef={mapRef} />
         </ChromeBtn>
         {/* 5. 2D/3D toggle */}
         <ChromeBtn
