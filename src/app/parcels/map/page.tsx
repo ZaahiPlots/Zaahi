@@ -57,6 +57,11 @@ import {
   emitSignatureTiers as emitListingTiers,
 } from "@/lib/signature/geometry";
 import {
+  installZaahiThreeLayer,
+  type ZaahiThreeLayerController,
+  type ZaahiBuildingInput,
+} from "@/lib/signature/three-layer";
+import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
   effectiveValues,
@@ -2221,6 +2226,23 @@ function ParcelsMapPageInner() {
   // Keyboard nav controller — always-on once installed in map-init.
   // Destroyed alongside the map. No external state needed.
   const kbdNavCtrlRef = useRef<KeyboardNavController | null>(null);
+  // ── Stage 2 of feat/signature-realistic (2026-06-11) ──
+  // ?render=three turns on the experimental Three.js CustomLayer for
+  // ZAAHI buildings. Read once on mount (URL flag won't toggle mid-
+  // session). When true: fill-extrusion paints at opacity 0 (literal
+  // number — CLAUDE.md compliant), Three.js scene draws the meshes
+  // instead. Click/hover still land on fill-extrusion (visibility
+  // stays "visible") — SIG-5 will mirror selection on the Three.js
+  // side. When false: prod path, three-layer never installed.
+  const useThreeRender = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return new URLSearchParams(window.location.search).get("render") === "three";
+    } catch {
+      return false;
+    }
+  }, []);
+  const threeLayerCtrlRef = useRef<ZaahiThreeLayerController | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
   // Parcels portal — left rail list view of /api/parcels/map. Mutex
   // with the Layers panel because both anchor at left:60, top:64.
@@ -3156,6 +3178,11 @@ function ParcelsMapPageInner() {
 
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
+      // Stage 2 of feat/signature-realistic — also collect per-parcel
+      // Tier[] for the Three.js CustomLayer when ?render=three is on.
+      // Populated unconditionally so we don't fork the loop body; the
+      // ref consumer below decides whether to feed the layer or drop it.
+      const threeInputs: ZaahiBuildingInput[] = [];
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
@@ -3315,6 +3342,17 @@ function ParcelsMapPageInner() {
             },
           });
         }
+        // Stage 2 of feat/signature-realistic: parallel feed for the
+        // Three.js CustomLayer. Same Tier[] data, just shaped as a
+        // single per-parcel record so the layer can keep parcelId for
+        // future picking (SIG-5).
+        threeInputs.push({
+          parcelId: it.id,
+          tiers,
+          colorHex: buildingHex,
+          isVault: it.isVault,
+          status: it.status,
+        });
       }
 
       console.log(
@@ -3450,9 +3488,32 @@ function ParcelsMapPageInner() {
               // stand out against the PMTiles background layers which
               // stay at 0.35. Single literal — data expressions are
               // not supported on fill-extrusion-opacity.
+              // Stage 2 of feat/signature-realistic: in ?render=three
+              // mode this gets re-painted to literal 0 below so the
+              // Three.js scene is the only visible building. Layer
+              // visibility stays "visible" so queryRenderedFeatures
+              // continues to land click/hover on the right parcel.
               "fill-extrusion-opacity": 1,
             },
           });
+        }
+      }
+
+      // ── Stage 2 of feat/signature-realistic ──
+      // ?render=three: hand the same Tier[] data to the Three.js
+      // CustomLayer + zero out fill-extrusion opacity (literal number,
+      // CLAUDE.md compliant). Idempotent: layer is installed on the
+      // first call; subsequent calls just refresh setBuildings.
+      if (useThreeRender) {
+        if (!threeLayerCtrlRef.current) {
+          console.log("[ZAAHI]", "installing Three.js custom layer", "(buildings:", threeInputs.length, ")");
+          threeLayerCtrlRef.current = installZaahiThreeLayer(map);
+        }
+        threeLayerCtrlRef.current.setBuildings(threeInputs);
+        if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+          // Literal number — must NOT be a data expression
+          // (CLAUDE.md fill-extrusion-opacity rule).
+          map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", 0);
         }
       }
 
@@ -4858,6 +4919,13 @@ function ParcelsMapPageInner() {
       autoRotateCtrlRef.current = null;
       kbdNavCtrl.destroy();
       kbdNavCtrlRef.current = null;
+      // Three.js layer is installed lazily from loadZaahiPlots when
+      // ?render=three is on. Destroy here so HMR/teardown releases
+      // its WebGL meshes + the wrapper renderer cleanly.
+      if (threeLayerCtrlRef.current) {
+        threeLayerCtrlRef.current.destroy();
+        threeLayerCtrlRef.current = null;
+      }
       // Detach deck.gl overlay before MapLibre.remove() so its WebGL
       // resources release cleanly. Best-effort — ignore if MapLibre
       // already torn down the map.
