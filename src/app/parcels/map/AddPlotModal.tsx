@@ -180,6 +180,9 @@ export default function AddPlotModal({
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add a plot"
       style={{
         position: "absolute",
         inset: 0,

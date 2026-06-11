@@ -47,6 +47,7 @@ import {
 } from "@/lib/filter-state";
 import FilterPanel from "./FilterPanel";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
+import { installKeyboardNav, type KeyboardNavController } from "@/lib/keyboard-nav";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
   HERO_BUILDINGS,
@@ -2204,6 +2205,9 @@ function ParcelsMapPageInner() {
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [showAutoRotateHint, setShowAutoRotateHint] = useState(false);
   const autoRotateCtrlRef = useRef<AutoRotateController | null>(null);
+  // Keyboard nav controller — always-on once installed in map-init.
+  // Destroyed alongside the map. No external state needed.
+  const kbdNavCtrlRef = useRef<KeyboardNavController | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
   // Parcels portal — left rail list view of /api/parcels/map. Mutex
   // with the Layers panel because both anchor at left:60, top:64.
@@ -4350,6 +4354,11 @@ function ParcelsMapPageInner() {
       dragRotate: true,
       pitchWithRotate: true,
       touchPitch: true,
+      // 2026-06-11 (Phase 2 feat/keyboard-nav): disable MapLibre's
+      // built-in keyboard handler so arrow keys / +/- / shift+drag
+      // pan don't conflict with the new src/lib/keyboard-nav.ts
+      // controller. Mouse/touch interactions stay default.
+      keyboard: false,
       // Required so `map.getCanvas().toDataURL()` returns a non-blank image
       // — used by the Site Plan PDF generator. WebGL otherwise clears the
       // drawing buffer after each frame. MapLibre v5 moved this flag into
@@ -4358,7 +4367,9 @@ function ParcelsMapPageInner() {
     });
     map.dragRotate.enable();
     map.touchZoomRotate.enableRotation();
-    map.keyboard.enable();
+    // map.keyboard.enable() removed 2026-06-11 — handler disabled
+    // at construction (see keyboard:false above). keyboard-nav.ts
+    // installs window-level listeners that drive the camera instead.
     map.on("mousemove", (e) => setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat }));
     map.on("zoom", () => setZoom(map.getZoom()));
     map.on("rotate", () => setBearing(map.getBearing()));
@@ -4940,9 +4951,18 @@ function ParcelsMapPageInner() {
       /* localStorage may be blocked — stay OFF */
     }
 
+    // Keyboard nav — WASD/QE/Space-C/RF/Shift running alongside the
+    // normal mouse handlers. No modes, no UI toggle. Always-on.
+    // Replaces the drone-mode controller deleted 2026-06-11
+    // (postmortem: docs/research/drone-fps-postmortem-2026-06-11.md).
+    const kbdNavCtrl = installKeyboardNav(map);
+    kbdNavCtrlRef.current = kbdNavCtrl;
+
     return () => {
       autoRotateCtrl.destroy();
       autoRotateCtrlRef.current = null;
+      kbdNavCtrl.destroy();
+      kbdNavCtrlRef.current = null;
       // Detach deck.gl overlay before MapLibre.remove() so its WebGL
       // resources release cleanly. Best-effort — ignore if MapLibre
       // already torn down the map.
@@ -5089,7 +5109,8 @@ function ParcelsMapPageInner() {
     map.once("styledata", async () => {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
-      map.keyboard.enable();
+      // map.keyboard intentionally stays disabled — see map init for
+      // the keyboard:false rationale (Phase 2 feat/keyboard-nav).
 
       // ── PMTiles re-attach FIRST ──
       // Critical: if any await further down throws (amenity icons,

@@ -87,6 +87,9 @@ export default function OfferModal({ parcelId, askingPriceAed, onClose }: Props)
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Make an offer"
       style={{
         position: "fixed",
         inset: 0,

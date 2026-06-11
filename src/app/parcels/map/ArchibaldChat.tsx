@@ -527,7 +527,11 @@ export default function ArchibaldChat({
 
       {/* Chat window */}
       {open && (
-        <div className="archibald-window" style={windowStyle}>
+        <div
+          className="archibald-window"
+          style={windowStyle}
+          data-archie-chat-open="true"
+        >
           {/* Mobile drag handle — hidden on desktop */}
           <div className="archibald-mobile-handle" aria-hidden>
             <div />
