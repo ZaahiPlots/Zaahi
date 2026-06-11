@@ -3345,11 +3345,13 @@ function ParcelsMapPageInner() {
         // Stage 2 of feat/signature-realistic: parallel feed for the
         // Three.js CustomLayer. Same Tier[] data, just shaped as a
         // single per-parcel record so the layer can keep parcelId for
-        // future picking (SIG-5).
+        // future picking (SIG-5). landUse added in Stage 3 to drive
+        // the procedural facade shader dispatch.
         threeInputs.push({
           parcelId: it.id,
           tiers,
           colorHex: buildingHex,
+          landUse,
           isVault: it.isVault,
           status: it.status,
         });
