@@ -24,7 +24,10 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 // MiniMap dock unmounted 2026-06-01 (founder spec). The component
 // file is kept in place for the future panel-control overview;
 // no current consumer.
-import DroneHUD from "./DroneHUD";
+import DroneHUD, { type StatusFilterId } from "./DroneHUD";
+import DroneCrosshairTooltip from "./DroneCrosshairTooltip";
+import DroneIntelCard from "./DroneIntelCard";
+import DroneBookmarksPanel from "./DroneBookmarksPanel";
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import TermsAcceptModal from "./TermsAcceptModal";
@@ -47,7 +50,18 @@ import {
   type UnifiedStatus,
 } from "@/lib/filter-state";
 import FilterPanel from "./FilterPanel";
-import { installDroneControls, type DroneController } from "@/lib/drone-controls";
+import {
+  installDroneFps,
+  type DroneFpsController,
+} from "@/lib/drone/free-camera-fps";
+import { saveBookmark, autoName, type DroneBookmark } from "@/lib/drone/bookmarks";
+import {
+  KEY_BINDINGS,
+  BOOKMARK_FLY_MS,
+  OVERVIEW_FLY_MS,
+  OVERVIEW_PADDING_PCT,
+  OVERVIEW_PITCH_RANGE_DEG,
+} from "@/lib/drone/constants";
 import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
@@ -1951,22 +1965,42 @@ function ParcelsMapPageInner() {
   // via localStorage "zaahi-drone-mode". Default OFF on first visit.
   const [droneEnabled, setDroneEnabled] = useState(false);
   const [showDroneHint, setShowDroneHint] = useState(false);
-  const droneCtrlRef = useRef<DroneController | null>(null);
-  // Touch-device gate (2026-06-03) — drone-controls is a no-op on
-  // touch, so the toggle button is hidden too. Reads pointer:coarse +
-  // ontouchstart once on mount, no resize listener (device class
-  // doesn't change mid-session for the platforms we ship to).
+  const droneCtrlRef = useRef<DroneFpsController | null>(null);
+  // Touch-device gate — installDroneFps returns a no-op shell on touch,
+  // so the toggle button is hidden too. Reads pointer:coarse +
+  // ontouchstart once on mount.
   const [droneAvailable, setDroneAvailable] = useState(true);
-  // Cursor coords driven by drone-controls' onCursorMove callback.
-  // Used to position DroneHUD's crosshair at the mouse (founder spec
-  // 2026-06-03 v3 — cursor = crosshair). Initialised at viewport
-  // centre so the first paint after enable() has something to draw.
-  const [droneCursor, setDroneCursor] = useState<{ x: number; y: number }>(
-    () => ({
-      x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
-      y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
-    }),
-  );
+  // FPS pose snapshot driven by installDroneFps.onCenterChange.
+  // Replaces the prior cursor-coordinate state (2026-06-10 — FPS drone
+  // is pointer-locked, no cursor tracking).
+  const [dronePose, setDronePose] = useState<{
+    lng: number; lat: number; altM: number;
+    bearing: number; pitch: number; speedMps: number;
+  }>({ lng: 55.27, lat: 25.2, altM: 250, bearing: 0, pitch: 0, speedMps: 0 });
+  const [droneOverSelectable, setDroneOverSelectable] = useState(false);
+  const [droneFilter, setDroneFilter] = useState<StatusFilterId | null>(null);
+  const [intelCommunity, setIntelCommunity] = useState<{
+    name: string;
+    polygon: GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
+    bounds: [[number, number], [number, number]] | null;
+  } | null>(null);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [bookmarksRefresh, setBookmarksRefresh] = useState(0);
+  // Snapshot original PMTiles filters on drone enter so key-0 reset +
+  // drone exit can restore them verbatim (founder spec 2026-06-10 —
+  // don't clobber the panel's filter state with setFilter(layer, null)).
+  const droneFilterSnapshotRef = useRef<Map<string, FilterSpecification | null | undefined>>(new Map());
+  // Pointer-lock state mirror — drives HUD locked/paused affordances.
+  const [pointerLocked, setPointerLocked] = useState(false);
+  // Plot selection cycle (founder spec 2026-06-10): when the user
+  // selects a plot mid-flight we release pointer lock + freeze the
+  // controller but KEEP droneEnabled=true so the next map-click can
+  // re-acquire lock and resume from the same camera position. The ref
+  // mirrors the state so the controller's onExit closure (captured at
+  // install time) can suppress its default cascade.
+  const [plotSelectionActive, setPlotSelectionActive] = useState(false);
+  const plotSelectionActiveRef = useRef(false);
+  useEffect(() => { plotSelectionActiveRef.current = plotSelectionActive; }, [plotSelectionActive]);
 
   // Sun-time override — null means "use real wall-clock time" so the
   // shadow direction tracks live; a Date overrides it to the slider's
@@ -4947,17 +4981,30 @@ function ParcelsMapPageInner() {
     // useEffect below; cleanup removes it so HMR doesn't accumulate
     // WebGL contexts.
 
-    // Toggleable WASD drone navigation (desktop only). Controller stays
-    // installed for the map's lifetime; a separate effect drives
-    // enable/disable based on `droneEnabled` state. Default is OFF so
-    // WASD / mouse do NOT hijack the page until the user opts in.
-    //   onExit       → Escape exits drone mode (founder spec 2026-06-03).
-    //   onCursorMove → relay viewport pixel coordinates so DroneHUD's
-    //                  crosshair can render at the cursor (v3 spec
-    //                  2026-06-03: cursor IS the crosshair).
-    const droneCtrl = installDroneControls(map, {
-      onExit: () => setDroneEnabled(false),
-      onCursorMove: (x, y) => setDroneCursor({ x, y }),
+    // FPS drone navigation (desktop only) — installDroneFps replaces the
+    // earlier cursor-tracking variant on 2026-06-10 (founder ratified):
+    // pointer-lock + WASD + Shift-sprint, mouse-look. Controller stays
+    // installed for the map's lifetime; a separate effect calls
+    // controller.enable() inside the toggle button's click handler
+    // (pointer-lock requires a user gesture).
+    //   onExit → user pressed Esc / lost pointer lock: cascade to
+    //            droneEnabled=false and reset the status filter (founder
+    //            spec — filters do not survive a session).
+    //   onCenterChange → live pose into React state for the HUD + Intel
+    //            card.
+    const droneCtrl = installDroneFps(map, {
+      onExit: () => {
+        // Suppress full drone exit when the lock was released by the
+        // plot-selection cycle (user clicked a plot mid-flight). In
+        // that path we stay in drone mode and wait for a fresh user
+        // click on the canvas to re-acquire lock.
+        if (plotSelectionActiveRef.current) return;
+        setDroneEnabled(false);
+        setDroneFilter(null);
+        setBookmarksOpen(false);
+        setPlotSelectionActive(false);
+      },
+      onCenterChange: (s) => setDronePose(s),
     });
     droneCtrlRef.current = droneCtrl;
     setDroneAvailable(droneCtrl.isAvailable());
@@ -5097,13 +5144,16 @@ function ParcelsMapPageInner() {
 
 
 
-  // Drive the drone controller from React state. Persists choice and
-  // flashes the on-enable toast. Keeps WASD behaviour strictly opt-in.
+  // Drive the drone controller from React state. NOTE: ctrl.enable()
+  // calls requestPointerLock() which Chrome only grants inside a
+  // synchronous user-gesture handler. The toggle button's onClick is
+  // the source of truth for entering pointer lock — this effect ONLY
+  // handles the exit path + persistence + hint. (Founder spec
+  // 2026-06-10 — FPS drone, pointer-lock).
   useEffect(() => {
     const ctrl = droneCtrlRef.current;
     if (!ctrl) return;
     if (droneEnabled) {
-      ctrl.enable();
       setShowDroneHint(true);
       const t = window.setTimeout(() => setShowDroneHint(false), 3500);
       try { localStorage.setItem("zaahi-drone-mode", "1"); } catch { /* ignore */ }
@@ -5113,6 +5163,203 @@ function ParcelsMapPageInner() {
     setShowDroneHint(false);
     try { localStorage.setItem("zaahi-drone-mode", "0"); } catch { /* ignore */ }
   }, [droneEnabled]);
+
+  // ── Status filter snapshot + apply (DDA/AD FILL layers only) ────
+  // Status filters operate on the raw DDA/AD vocabulary from Phase A —
+  // not the ZAAHI Parcel.status enum (different taxonomy). MVP = show
+  // only matching plots via setFilter on the 3 FILL layers. Originals
+  // are snapshotted on drone-enter and restored on key-0 / drone-exit
+  // so the FilterPanel's pre-existing filter state survives the trip.
+  const DRONE_FILTER_LAYER_IDS = useMemo(
+    () => ["dda-land-tiles-fill", "ad-adm-tiles-fill", "ad-other-tiles-fill"] as const,
+    [],
+  );
+  const STATUS_RAW_VALUES = useMemo<Record<StatusFilterId, string[]>>(() => ({
+    completed:         ["Completed", "Constructed"],
+    underConstruction: ["Under Construction"],
+    preConstruction:   ["Pre-Construction", "Only Boundary Wall"],
+    suspended:         ["Suspended"], // AD has no equivalent — DDA-only
+    empty:             ["Empty", "Not Constructed"],
+  }), []);
+
+  // Snapshot original filters on drone enter; restore on drone exit.
+  useEffect(() => {
+    if (!droneEnabled) return;
+    const m = mapRef.current;
+    if (!m) return;
+    const snap = droneFilterSnapshotRef.current;
+    snap.clear();
+    for (const lid of DRONE_FILTER_LAYER_IDS) {
+      if (m.getLayer(lid)) {
+        try {
+          // MapLibre's getFilter returns `void | FilterSpecification`
+          // (the void path is internal & shouldn't happen for a layer
+          // that's mounted); coerce so we can stash undefined safely.
+          const f = m.getFilter(lid) as FilterSpecification | undefined;
+          snap.set(lid, f);
+        } catch { /* ignore */ }
+      }
+    }
+    return () => {
+      const m2 = mapRef.current;
+      if (!m2) { snap.clear(); return; }
+      for (const [lid, original] of snap) {
+        if (m2.getLayer(lid)) {
+          try { m2.setFilter(lid, (original ?? null) as FilterSpecification | null); }
+          catch { /* ignore */ }
+        }
+      }
+      snap.clear();
+    };
+  }, [droneEnabled, DRONE_FILTER_LAYER_IDS]);
+
+  // Apply status filter to FILL layers when set; restore originals on null.
+  useEffect(() => {
+    if (!droneEnabled) return;
+    const m = mapRef.current;
+    if (!m) return;
+    const snap = droneFilterSnapshotRef.current;
+    if (droneFilter == null) {
+      for (const [lid, original] of snap) {
+        if (m.getLayer(lid)) {
+          try { m.setFilter(lid, (original ?? null) as FilterSpecification | null); }
+          catch { /* ignore */ }
+        }
+      }
+      return;
+    }
+    const allowed = STATUS_RAW_VALUES[droneFilter];
+    const expr: unknown = ["in", ["get", "status"], ["literal", allowed]];
+    for (const lid of DRONE_FILTER_LAYER_IDS) {
+      if (m.getLayer(lid)) {
+        try { m.setFilter(lid, expr as FilterSpecification); }
+        catch { /* ignore */ }
+      }
+    }
+  }, [droneEnabled, droneFilter, DRONE_FILTER_LAYER_IDS, STATUS_RAW_VALUES]);
+
+  // ── R-key overview: fit camera to current Intel community bounds. ──
+  const flyOverview = useCallback((): void => {
+    const m = mapRef.current;
+    const ctrl = droneCtrlRef.current;
+    if (!m || !ctrl) return;
+    const b = intelCommunity?.bounds;
+    if (!b) return;
+    ctrl.freeze();
+    m.fitBounds(b, {
+      padding: Math.round(m.getCanvas().clientWidth * OVERVIEW_PADDING_PCT),
+      pitch: OVERVIEW_PITCH_RANGE_DEG[0],
+      bearing: m.getBearing(),
+      duration: OVERVIEW_FLY_MS,
+      essential: true,
+    });
+    window.setTimeout(() => ctrl.unfreeze(), OVERVIEW_FLY_MS + 50);
+  }, [intelCommunity]);
+
+  // ── Pointer-lock mirror state for HUD affordances ──
+  useEffect(() => {
+    const onChange = () => setPointerLocked(!!document.pointerLockElement);
+    document.addEventListener("pointerlockchange", onChange);
+    onChange();
+    return () => document.removeEventListener("pointerlockchange", onChange);
+  }, []);
+
+  // ── Plot selection cycle (founder spec 2026-06-10) ──
+  // While pointer-lock is engaged, the locked cursor sits at the centre
+  // of the viewport — a `click` event would report stale lock-position
+  // coords, not the crosshair location. So we suppress MapLibre's
+  // default click path and run queryRenderedFeatures at viewport centre
+  // (where the crosshair is). On a ZAAHI hit: open the SidePanel,
+  // freeze the controller (WASD/mouse-look off), and release pointer
+  // lock so the user can interact with the panel. Re-lock is gated to
+  // a fresh user click on the canvas (Chrome refuses programmatic
+  // requestPointerLock within ~1.5s of an Esc release; even otherwise
+  // founder spec says re-lock is always a user gesture).
+  useEffect(() => {
+    if (!droneEnabled) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const canvas = map.getCanvas();
+
+    const onCanvasClick = (e: MouseEvent) => {
+      if (!document.pointerLockElement) return; // not locked → fall through to normal map click
+      // We're in pointer-lock + drone. The actual screen point of
+      // interest is the crosshair, not the event coordinates.
+      e.preventDefault();
+      e.stopPropagation();
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const present = [ZAAHI_PLOTS_FILL].filter((lid) => !!map.getLayer(lid));
+      if (present.length === 0) return;
+      const features = map.queryRenderedFeatures([w / 2, h / 2], { layers: present });
+      if (features.length === 0) return;
+      const f = features[0];
+      const props = (f.properties ?? {}) as { parcelId?: string; id?: string };
+      const parcelId =
+        (typeof props.parcelId === "string" && props.parcelId) ||
+        (typeof props.id === "string" && props.id) ||
+        (typeof f.id === "string" ? f.id : null);
+      if (!parcelId) return;
+      setSelectedParcelId(parcelId);
+      setPlotSelectionActive(true);
+      droneCtrlRef.current?.freeze();
+      try { document.exitPointerLock(); } catch { /* ignore */ }
+    };
+    // Capture phase so we beat MapLibre's bubble-phase click handlers.
+    canvas.addEventListener("click", onCanvasClick, true);
+    return () => canvas.removeEventListener("click", onCanvasClick, true);
+  }, [droneEnabled]);
+
+  // ── Re-lock after plot-select panel closes ──
+  // When selectedParcelId returns to null while plotSelectionActive is
+  // still set, the user dismissed the panel. The drone is paused
+  // (lock released, controller frozen). We arm a one-shot click
+  // listener that re-acquires the lock on the next user click on the
+  // canvas. NOTE: founder rule — never programmatic; must be a user
+  // gesture (`enable()` calls requestPointerLock under the hood).
+  useEffect(() => {
+    if (!droneEnabled || !plotSelectionActive) return;
+    if (selectedParcelId != null) return; // panel still open — wait
+    const map = mapRef.current;
+    if (!map) return;
+    const canvas = map.getCanvas();
+    const onClickToRelock = () => {
+      setPlotSelectionActive(false);
+      droneCtrlRef.current?.unfreeze();
+      droneCtrlRef.current?.enable();
+    };
+    canvas.addEventListener("click", onClickToRelock, { once: true });
+    return () => canvas.removeEventListener("click", onClickToRelock);
+  }, [droneEnabled, plotSelectionActive, selectedParcelId]);
+
+  // ── Drone global keys: 1-5 status filter, 0 reset, B bookmark, R overview ──
+  useEffect(() => {
+    if (!droneEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae?.tagName === "INPUT" || ae?.tagName === "TEXTAREA" || ae?.isContentEditable) return;
+      switch (e.code) {
+        case KEY_BINDINGS.filter1: setDroneFilter("completed"); break;
+        case KEY_BINDINGS.filter2: setDroneFilter("underConstruction"); break;
+        case KEY_BINDINGS.filter3: setDroneFilter("preConstruction"); break;
+        case KEY_BINDINGS.filter4: setDroneFilter("suspended"); break;
+        case KEY_BINDINGS.filter5: setDroneFilter("empty"); break;
+        case KEY_BINDINGS.filterReset: setDroneFilter(null); break;
+        case KEY_BINDINGS.bookmarkSave: {
+          saveBookmark({
+            name: autoName(intelCommunity?.name ?? null),
+            lng: dronePose.lng, lat: dronePose.lat, altM: dronePose.altM,
+            bearing: dronePose.bearing, pitch: dronePose.pitch,
+          });
+          setBookmarksRefresh((n) => n + 1);
+          break;
+        }
+        case KEY_BINDINGS.overview: { flyOverview(); break; }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [droneEnabled, dronePose, intelCommunity, flyOverview]);
 
   // (Crosshair "fire" — Space-tap / map-click that auto-flew the camera
   // to screen-center — was removed 2026-06-03. It conflicted with the
@@ -5630,10 +5877,63 @@ function ParcelsMapPageInner() {
           live from mapRef. Founder spec 2026-05-23. */}
       {droneEnabled && (
         <DroneHUD
-          mainMapRef={mapRef}
-          firing={false}
-          mouseX={droneCursor.x}
-          mouseY={droneCursor.y}
+          visible={droneEnabled}
+          isPointerLocked={pointerLocked}
+          pausedHint={droneEnabled && !pointerLocked && !bookmarksOpen && selectedParcelId == null}
+          bearing={dronePose.bearing}
+          altitudeM={dronePose.altM}
+          speedMps={dronePose.speedMps}
+          overSelectable={droneOverSelectable}
+          activeFilter={droneFilter}
+          onOverviewClick={flyOverview}
+        />
+      )}
+      {droneEnabled && (
+        <DroneCrosshairTooltip
+          visible={droneEnabled}
+          mapRef={mapRef}
+          layerIds={[ZAAHI_PLOTS_FILL, "dda-land-tiles-fill", "ad-adm-tiles-fill", "ad-other-tiles-fill"]}
+          onSelectableChange={setDroneOverSelectable}
+        />
+      )}
+      {droneEnabled && (
+        <DroneIntelCard
+          visible={droneEnabled && !bookmarksOpen}
+          centre={{ lng: dronePose.lng, lat: dronePose.lat }}
+          onCommunityChange={setIntelCommunity}
+        />
+      )}
+      {droneEnabled && (
+        <DroneBookmarksPanel
+          open={bookmarksOpen}
+          onClose={() => setBookmarksOpen(false)}
+          refreshSignal={bookmarksRefresh}
+          onSelect={(b: DroneBookmark) => {
+            const m = mapRef.current;
+            const ctrl = droneCtrlRef.current;
+            if (!m || !ctrl) return;
+            ctrl.freeze();
+            // Animate centre + bearing only — pitch is restored 1:1 via
+            // ctrl.setCamera after the fly completes. The bookmark's
+            // pitch is in our FPS convention (signed -85..+85); MapLibre
+            // flyTo only accepts non-negative pitch, so omitting it
+            // preserves whatever the camera was just looking at during
+            // the animation and avoids info loss at restoration time.
+            m.flyTo({
+              center: [b.lng, b.lat],
+              bearing: b.bearing,
+              duration: BOOKMARK_FLY_MS,
+              essential: true,
+            });
+            window.setTimeout(() => {
+              ctrl.setCamera({
+                lng: b.lng, lat: b.lat, altM: b.altM,
+                bearing: b.bearing, pitch: b.pitch,
+              });
+              ctrl.unfreeze();
+              setBookmarksOpen(false);
+            }, BOOKMARK_FLY_MS + 50);
+          }}
         />
       )}
 
@@ -6089,10 +6389,16 @@ function ParcelsMapPageInner() {
           active={droneEnabled}
           onClick={() => {
             sound.whoosh();
+            const ctrl = droneCtrlRef.current;
             setDroneEnabled((v) => {
               const next = !v;
-              // Same mutex as the auto-rotate handler above.
+              // Mutex with auto-rotate (founder spec — single camera-motion mode at a time).
               if (next) setAutoRotateEnabled(false);
+              // Pointer-lock REQUIRES a user gesture. We call enable() from
+              // inside this click handler (the gesture). The drone-effect
+              // doesn't call enable() — it would lose the gesture context.
+              if (next && ctrl) ctrl.enable();
+              else if (!next && ctrl) ctrl.disable();
               return next;
             });
           }}
