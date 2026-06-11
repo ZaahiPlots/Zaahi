@@ -67,25 +67,38 @@ const KEY_BINDINGS = {
 const TUNING = {
   // Base pan speed in metres per second at zoom 12. Scales up with
   // zoom — "выше zoom = быстрее" (founder spec 2026-06-11).
-  basePanMps: 90,
-  // Per-zoom-level multiplier above the baseline. e.g. 0.18 → at
-  // zoom 12 → 1.0x, at zoom 16 → 1.72x, at zoom 18 → 2.08x.
-  zoomSpeedGain: 0.18,
+  // 2026-06-11 retune after founder smoke: 90 → 350 (city flight
+  // should feel brisk, not crawling).
+  basePanMps: 350,
+  // Per-zoom-level multiplier above the baseline.
+  // 0.18 → 0.35 so streets actually whoosh at z16-18 instead of crawl.
+  //   z=12 → 1.00x  ( 350 m/s)
+  //   z=14 → 1.70x  ( 595 m/s)
+  //   z=16 → 2.40x  ( 840 m/s)
+  //   z=18 → 3.10x  (1085 m/s)
+  // Sprint stacks on top (×3) so z=18 Shift+W ≈ 3250 m/s — proper
+  // drone-low feel.
+  zoomSpeedGain: 0.35,
   zoomSpeedBaseline: 12,
   // Sprint multiplier when Shift is held alongside any movement.
   sprintMultiplier: 3.0,
 
   // Bearing rotation rate, degrees per second (Q / E).
-  bearingDegPerSec: 90,
+  // 90 → 120 so 360° is ≈3 s (was 4 s) — snappier yaw.
+  bearingDegPerSec: 120,
   // Pitch rate, degrees per second (R / F). MapLibre's maxPitch
   // is read live from the map so we never push past it.
-  pitchDegPerSec: 45,
+  // 45 → 60 so 0→70° is ≈1.2 s (was 1.6 s).
+  pitchDegPerSec: 60,
   // Zoom rate, zoom-levels per second (Space / C).
-  zoomPerSec: 1.5,
+  // 1.5 → 2.5 so Space takes you out 5 zoom-steps in 2 s (was 3.3 s).
+  zoomPerSec: 2.5,
 
   // Velocity lerp rate. 0 = no smoothing (instant snap), 1 = no
-  // movement. 0.18 gives a perceptible ramp-up of ~120-180 ms.
-  velocityLerp: 0.18,
+  // movement. 0.18 → 0.35 — faster response to press/release. At
+  // 60 fps this is ~64% closing per 100 ms (≈99% in ~250 ms), still
+  // smooth but no perceptible lag before the camera starts moving.
+  velocityLerp: 0.35,
 
   // dt clamp — single-frame integration step never exceeds this.
   // Protects against tab-stalls where dt would otherwise spike.
