@@ -278,6 +278,77 @@ P5 — NICE TO HAVE: не берёшь без явного решения
   `src/app/page.tsx` или `src/app/parcels/map/page.tsx`
   (memory `feedback_page_tsx_review_before_edit`).
 
+## SESSION HANDOFF — ратифицирован 2026-06-12
+
+Защита от потери контекста между сессиями. Заводится один файл на дату
+`docs/research/handoff-YYYY-MM-DD.md`. Перезаписывается ВНУТРИ дня;
+**не** пишем по handoff-файлу на каждый коммит.
+
+### Когда писать
+
+- Контекст-окно использовано **> 85 %** (близко к авто-компакту), ИЛИ
+- В конце рабочего блока (founder уходит / завершается длинная задача / 
+  перед намеренным завершением сессии).
+
+Записывать ДО компакта / закрытия — иначе при следующей сессии теряется
+ситуационная осведомлённость, особенно про живые поллеры, открытые
+гипотезы и незакоммиченные файлы.
+
+### Что в файле
+
+```
+# Session handoff — YYYY-MM-DD
+
+## Git state
+- Branch: feat/...
+- HEAD: <sha> "<one-line commit subject>"
+- origin/<branch>: <sha> (pushed at HH:MM)
+- main: <sha> (prod tip)
+
+## Done in session
+- ...
+
+## In progress now
+- ...
+
+## Next step
+- ...
+
+## Open decisions (waiting on founder)
+- ...
+
+## Live processes
+- Pollers: <task-id> watching <deploy-url> | stopped
+- Dev servers: none / PID + kill cmd
+- Transient tooling: nvm Node 22 in $HOME (only inside specific shells)
+
+## Known bugs + hypotheses
+- <bug>: ruled out [...]; current hypothesis [...]; experiment to run [...]
+- Standalone test artifacts: <path>
+
+## Uncommitted files
+- <path> — what it is, whether to commit / discard / move
+```
+
+### Чтение в новой сессии
+
+Новая сессия (cold start) — ПЕРВЫМ действием:
+1. `ls -t docs/research/handoff-*.md | head -1` → самый свежий handoff
+2. Read его (полностью — не cherry-pick секции)
+3. Read CLAUDE.md (или довериться preloaded знанию о нём)
+4. Read актуальный memory/MEMORY.md (auto-loaded)
+5. Только потом — приступать к новой задаче
+
+Без шага (1) теряются: какие поллеры висят, какие гипотезы по багу
+уже исключены, какие файлы лежат вне git (например, scratch HTML
+тесты), какие env / infra изменения ждут verify.
+
+### Коммит
+
+Коммитить handoff на **текущую рабочую ветку**, не на main. Это
+docs-only коммит — push можно за раз с другими docs-коммитами или
+сразу (per АВТОНОМИЯ v2 — feature-branch push автономен).
+
 ## Если застрял (>30 минут без прогресса)
 
 1. Разбей задачу на части по 2 часа максимум
