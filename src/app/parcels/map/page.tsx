@@ -3548,25 +3548,34 @@ function ParcelsMapPageInner() {
       // CLAUDE.md compliant). Idempotent: layer is installed on the
       // first call; subsequent calls just refresh setBuildings.
       if (useThreeRender) {
-        if (!threeLayerCtrlRef.current) {
-          console.log("[ZAAHI]", "installing Three.js custom layer", "(buildings:", threeInputs.length, ")");
-          threeLayerCtrlRef.current = installZaahiThreeLayer(map);
-        }
-        threeLayerCtrlRef.current.setBuildings(threeInputs);
-        // Stage 5 — sync the LOD state on install. The zoom handler
-        // in the map-init useEffect maintains it from here onward.
-        // Stage 5 also mirrors the current selection (it's normal for
-        // a user to click → swap basemap → expect the highlight to
-        // survive). Filter visibility is re-derived by the
-        // [filterState, vaultOnlyMode] effect via rAF defer.
-        if (threeLayerCtrlRef.current) {
-          threeLayerCtrlRef.current.setSelected(selectedParcelId);
-        }
-        if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
-          // Literal number — must NOT be a data expression
-          // (CLAUDE.md fill-extrusion-opacity rule). The LOD handler
-          // installed in map-init will keep this in sync with zoom.
-          map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", 0);
+        // 2026-06-12 — wrapped in try/catch so a Three.js install error
+        // surfaces in the console instead of being swallowed by the
+        // outer `[zaahi-plots] load failed` catch. Founder bug report
+        // on preview zaahi-cucsaeit2: no Three.js console logs appeared
+        // at all → silent fail somewhere in this block.
+        try {
+          if (!threeLayerCtrlRef.current) {
+            console.log("[ZAAHI]", "installing Three.js custom layer", "(buildings:", threeInputs.length, ")");
+            threeLayerCtrlRef.current = installZaahiThreeLayer(map);
+          }
+          threeLayerCtrlRef.current.setBuildings(threeInputs);
+          // Stage 5 — mirror the current selection (a basemap swap
+          // re-install should not lose the user's highlight). Filter
+          // visibility is re-derived by the [filterState, vaultOnlyMode]
+          // effect via rAF defer.
+          if (threeLayerCtrlRef.current) {
+            threeLayerCtrlRef.current.setSelected(selectedParcelId);
+          }
+          if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+            // Literal number — must NOT be a data expression
+            // (CLAUDE.md fill-extrusion-opacity rule). The LOD handler
+            // installed in map-init will keep this in sync with zoom.
+            map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", 0);
+          }
+        } catch (err) {
+          console.error("[ZAAHI] Three.js install/refresh failed:", err);
+          // Leave fill-extrusion at opacity 1 so prod render is the
+          // visible building, not blank.
         }
       }
 

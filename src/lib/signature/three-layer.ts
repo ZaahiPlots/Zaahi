@@ -548,47 +548,51 @@ export function installZaahiThreeLayer(
   // ── Public mutator ──
 
   function setBuildings(buildings: ZaahiBuildingInput[]): void {
-    disposeGroup();
-    const matCounts = { shader: 0, lambert: 0 };
-    const landUseSeen = new Set<string>();
-    // Diagnostic: max absolute vertex magnitude — confirms the
-    // precision fix keeps vertex coords in the small-range band.
-    let maxVertexAbs = 0;
-    for (const b of buildings) {
-      landUseSeen.add(b.landUse ?? "(null)");
-      // 2026-06-12 Stage 5 fix — per-building origin in project-meters.
-      // All tiers of one building share the same origin so their
-      // rings stack cleanly without per-tier delta.
-      const origin = ringCentroidProjectMeters(b.tiers[0]?.ring ?? []);
-      for (const tier of b.tiers) {
-        const mesh = buildTierMesh(tier, b.colorHex, b.landUse, origin.x, origin.y);
-        mesh.userData.parcelId = b.parcelId;
-        mesh.userData.isVault = b.isVault;
-        mesh.userData.status = b.status;
-        buildingsGroup.add(mesh);
-        if (mesh.material instanceof THREE.ShaderMaterial) matCounts.shader++;
-        else matCounts.lambert++;
-        // Inspect first vertex of geometry to confirm small-range coords.
-        const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute("position");
-        if (pos && pos.itemSize >= 3) {
-          for (let i = 0; i < pos.count; i++) {
-            const ax = Math.abs(pos.getX(i));
-            const ay = Math.abs(pos.getY(i));
-            if (ax > maxVertexAbs) maxVertexAbs = ax;
-            if (ay > maxVertexAbs) maxVertexAbs = ay;
+    try {
+      disposeGroup();
+      const matCounts = { shader: 0, lambert: 0 };
+      const landUseSeen = new Set<string>();
+      // Sample 1 vertex of the first mesh — same precision signal at
+      // 1/inf the iterations. The per-vertex full scan in the prior
+      // commit (923fe7f) read pos.getX/Y across ~15k entries which
+      // appears correlated with the WebGL context-loss reports on
+      // preview zaahi-cucsaeit2. Drop the full scan.
+      let firstMeshSampleAbs: number | null = null;
+      for (const b of buildings) {
+        landUseSeen.add(b.landUse ?? "(null)");
+        // Per-building origin in project-meters (Stage 5 precision fix).
+        // All tiers of one building share the same origin so their
+        // rings stack cleanly without per-tier delta.
+        const origin = ringCentroidProjectMeters(b.tiers[0]?.ring ?? []);
+        for (const tier of b.tiers) {
+          const mesh = buildTierMesh(tier, b.colorHex, b.landUse, origin.x, origin.y);
+          mesh.userData.parcelId = b.parcelId;
+          mesh.userData.isVault = b.isVault;
+          mesh.userData.status = b.status;
+          buildingsGroup.add(mesh);
+          if (mesh.material instanceof THREE.ShaderMaterial) matCounts.shader++;
+          else matCounts.lambert++;
+          if (firstMeshSampleAbs === null) {
+            const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute("position");
+            if (pos && pos.count > 0) {
+              firstMeshSampleAbs = Math.max(Math.abs(pos.getX(0)), Math.abs(pos.getY(0)));
+            }
           }
         }
       }
+      console.log(
+        "[ZAAHI three-layer] setBuildings:",
+        buildings.length, "buildings,",
+        matCounts.shader + matCounts.lambert, "meshes (shader=" + matCounts.shader,
+        "lambert=" + matCounts.lambert + ")",
+        "landUse:", [...landUseSeen].sort(),
+        "firstMeshSampleAbs(m)=" + (firstMeshSampleAbs?.toFixed(2) ?? "n/a"),
+      );
+      map.triggerRepaint();
+    } catch (err) {
+      console.error("[ZAAHI three-layer] setBuildings FAILED:", err);
+      throw err;
     }
-    console.log(
-      "[ZAAHI three-layer] setBuildings:",
-      buildings.length, "buildings,",
-      matCounts.shader + matCounts.lambert, "meshes (shader=" + matCounts.shader,
-      "lambert=" + matCounts.lambert + ")",
-      "landUse:", [...landUseSeen].sort(),
-      "maxVertexAbs(m)=" + maxVertexAbs.toFixed(1),
-    );
-    map.triggerRepaint();
   }
 
   // ── Stage 5 parity API ──
@@ -653,26 +657,30 @@ export function installZaahiThreeLayer(
     renderingMode: "3d",
 
     onAdd(_map, gl) {
-      renderer = new THREE.WebGLRenderer({
-        canvas: map.getCanvas(),
-        context: gl as WebGLRenderingContext,
-        antialias: true,
-      });
-      // CRITICAL: don't clear the framebuffer between draws — we share
-      // it with MapLibre's basemap. autoClear=true wipes the basemap.
-      renderer.autoClear = false;
-      // 2026-06-12 STAGE 5 flat-grey bug investigation: Three.js r150+
-      // defaults outputColorSpace='srgb' + auto sRGB encoding pass. On
-      // a shared MapLibre framebuffer the auto-encoding washes colours.
-      // Force linear-srgb output so my shader's vec3 colours (already
-      // computed as linear in [0..1]) pass through unchanged.
-      renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-      console.log(
-        "[ZAAHI three-layer] renderer init:",
-        "outputColorSpace=" + renderer.outputColorSpace,
-        "capabilities=" + (renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL1"),
-        "ColorManagement.enabled=" + THREE.ColorManagement.enabled,
-      );
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas: map.getCanvas(),
+          context: gl as WebGLRenderingContext,
+          antialias: true,
+        });
+        // CRITICAL: don't clear the framebuffer between draws — we share
+        // it with MapLibre's basemap. autoClear=true wipes the basemap.
+        renderer.autoClear = false;
+        // Force linear-srgb output so my shader's vec3 colours pass
+        // through unchanged (Three.js r150+ defaults to srgb encoding).
+        renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+        console.log(
+          "[ZAAHI three-layer] renderer init:",
+          "outputColorSpace=" + renderer.outputColorSpace,
+          "capabilities=" + (renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL1"),
+          "ColorManagement.enabled=" + THREE.ColorManagement.enabled,
+        );
+      } catch (err) {
+        console.error("[ZAAHI three-layer] onAdd FAILED:", err);
+        // Re-throw so MapLibre knows the layer didn't initialise; it
+        // will skip render calls for this layer.
+        throw err;
+      }
     },
 
     render(_gl, matrix) {
@@ -722,6 +730,42 @@ export function installZaahiThreeLayer(
 
   map.addLayer(customLayer);
 
+  // ── WebGL context-loss / restored — 2026-06-12 ──
+  // MapLibre's canvas can lose its WebGL context (GPU reset, tab
+  // hibernate, driver crash). When that happens browsers print
+  // "WebGL context was lost" + fire a webglcontextlost event on the
+  // canvas. Three.js's renderer is bound to that GL context — once
+  // lost, all our meshes are GPU-unbacked. On restored, MapLibre
+  // re-initialises its style but our CustomLayer's onAdd does NOT
+  // re-fire automatically. Re-add the layer ourselves so the next
+  // setBuildings call repopulates the scene.
+  const canvas = map.getCanvas();
+  const onContextLost = (ev: Event) => {
+    console.error("[ZAAHI three-layer] webglcontextlost — Three.js layer halted until restored");
+    ev.preventDefault(); // let the browser dispatch contextrestored
+  };
+  const onContextRestored = () => {
+    console.log("[ZAAHI three-layer] webglcontextrestored — reinstalling custom layer");
+    try {
+      if (map.getLayer(LAYER_ID)) {
+        try { map.removeLayer(LAYER_ID); } catch { /* ignore */ }
+      }
+      // Tear down the dead renderer so onAdd re-creates a fresh one
+      // against the new GL context. setBuildings will run again from
+      // the next loadZaahiPlots / vault-refresh.
+      if (renderer) {
+        try { renderer.dispose(); } catch { /* ignore */ }
+        renderer = null;
+      }
+      disposeGroup();
+      map.addLayer(customLayer);
+    } catch (err) {
+      console.error("[ZAAHI three-layer] reinstall after contextrestored FAILED:", err);
+    }
+  };
+  canvas.addEventListener("webglcontextlost", onContextLost, false);
+  canvas.addEventListener("webglcontextrestored", onContextRestored, false);
+
   return {
     setBuildings,
     setSelected,
@@ -729,6 +773,10 @@ export function installZaahiThreeLayer(
     setEnabled,
     layerId: LAYER_ID,
     destroy(): void {
+      try {
+        canvas.removeEventListener("webglcontextlost", onContextLost);
+        canvas.removeEventListener("webglcontextrestored", onContextRestored);
+      } catch { /* canvas may already be gone */ }
       if (map.getLayer(LAYER_ID)) {
         try {
           map.removeLayer(LAYER_ID);
