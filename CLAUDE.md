@@ -222,19 +222,61 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - Не ломает существующее (прогнаны затронутые сценарии)
 - Можно использовать сегодня (задеплоено или готово к деплою)
 
-## Когда спрашивать founder (и ТОЛЬКО тогда)
+## АВТОНОМИЯ v2 — ратифицирована 2026-06-12
 
-1. Архитектурная развилка с разными долгосрочными последствиями
-2. Бизнес-логика неоднозначна
-3. Два варианта с разным revenue impact
+Заменяет правило от 2026-05-23 ("когда спрашивать founder").
 
-Формат вопроса:
+### САМ, БЕЗ СТОПОВ
+
+- **CLI / infra:** Vercel env vars (add / pull / scope), R2 CORS (wrangler через
+  транзиентный Node 22 в `$HOME/.nvm`), установка тулинга в `$HOME` без sudo
+  (nvm, npx-пакеты). После КАЖДОЙ операции — обязательный self-verify
+  (re-read state, не доверять success-message; для env — `vercel env ls` +
+  pull-grep без вывода значений).
+- **Фиксы и перезапуски** preview / staging деплоев (`vercel redeploy`,
+  empty-commit + push для rebuild, etc.).
+- **Multi-stage задачи** без межэтапных стопов — стоп ставится только
+  там, где нужен глаз founder или его бизнес/вкусовое решение.
+- **Push feature-веток на `origin`** для preview / Vercel — НЕ `main`.
+
+### СТОП ТОЛЬКО НА 5 (без исключений)
+
+1. **Merge / push в `main`** — всегда founder.
+2. **Запись в prod DB / миграции схемы** — `prisma migrate deploy`,
+   `prisma db push`, прямые INSERT/UPDATE/DELETE/ALTER против prod DIRECT_URL.
+3. **УДАЛЕНИЕ shared-ресурсов** — env-переменных любого multi-scope,
+   R2 бакетов / объектов, веток на `origin`, prod-таблиц.
+   *Урок 2026-06-12:* `vercel env rm NAME preview --yes` снёс entry с
+   targets `Production, Preview` целиком — Production потерял переменную.
+   Любой `rm` / `delete` shared-ресурса = СТОП + явный approve.
+4. **Траты денег** — новые подписки, апгрейд лимитов платных сервисов,
+   API-запросы с pay-per-use характером (Meshy, OpenAI batch и т.п.)
+   сверх существующего бюджета.
+5. **Визуальные / вкусовые и бизнес-решения** — всегда founder
+   (палитра, типографика, копирайт, ratecards, фичеры в roadmap).
+
+Формат вопроса (когда стоп всё-таки нужен):
+```
 ПРОБЛЕМА: одна строка
 ВАРИАНТ A: описание, плюсы, минусы
 ВАРИАНТ B: описание, плюсы, минусы
 МОЯ РЕКОМЕНДАЦИЯ: A или B, почему
+```
 
-Всё остальное — реши сам.
+### Прежние инварианты остаются
+
+- Canonical / schema files (`prisma/schema.prisma`, `data/`, CLAUDE.md)
+  — не трогать без явного approve.
+- Auth flow (`src/app/page.tsx`, `<AuthGuard>`, `getApprovedUserId`) —
+  не модифицировать без approve (см. SECURITY RULES ниже).
+- `fill-extrusion-opacity` — литеральное число; data expressions запрещены.
+- Никаких credentials / tokens / passwords в чат / транскрипт
+  (см. memory `feedback_no_credential_commands`). Для значений из
+  env: pull во временный файл с `chmod 600`, экстракция через
+  shell-переменную, удаление файла, в чат только результат-флаг.
+- Plan + diff + invariant table ПЕРЕД любой правкой
+  `src/app/page.tsx` или `src/app/parcels/map/page.tsx`
+  (memory `feedback_page_tsx_review_before_edit`).
 
 ## Если застрял (>30 минут без прогресса)
 
