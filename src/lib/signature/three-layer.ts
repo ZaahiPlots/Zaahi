@@ -74,6 +74,18 @@ export interface ZaahiThreeLayerController {
   /** Replace the rendered building set. Called after each
    *  loadZaahiPlots refresh (initial load, vault add, etc.). */
   setBuildings(buildings: ZaahiBuildingInput[]): void;
+  /** Emphasize one parcel — all OTHER meshes desaturate toward grey
+   *  (mirrors the fill-extrusion-color case expression in page.tsx
+   *  applySelectionPaint). Pass null to clear. */
+  setSelected(parcelId: string | null): void;
+  /** Mirror MapLibre filter parity. Predicate is called per-parcelId;
+   *  meshes whose parcel returns false get `mesh.visible = false`.
+   *  Use to compose status / land-use / vault filters. */
+  setVisibility(predicate: (parcelId: string) => boolean): void;
+  /** Global on/off for the whole Three.js group — drives the LOD
+   *  switch (zoom<15 or touch device). When disabled, all meshes are
+   *  hidden and the caller restores fill-extrusion-opacity to 1. */
+  setEnabled(enabled: boolean): void;
   /** Remove the custom layer + dispose Three.js resources. */
   destroy(): void;
   /** Layer id (for caller's records). */
@@ -96,56 +108,92 @@ interface FacadeProfile {
 }
 
 const FACADE_PROFILES: Record<string, FacadeProfile> = {
+  // ── Stage 3 (residential / commercial / industrial) ──
+
   // Warm beige stone with dark windows + prominent balcony band per
-  // floor. Stage 3.
+  // floor.
   RESIDENTIAL: {
-    base: 0xc8a56a,
-    window: 0x1a1422,
-    sill: 0x8a6840,
-    accent: 0xe0bc85,
+    base: 0xc8a56a, window: 0x1a1422, sill: 0x8a6840, accent: 0xe0bc85,
     kindCode: 0,
   },
   // Navy panel with blue-glass curtain wall + dark spandrel between
-  // floors. Stage 3.
+  // floors.
   COMMERCIAL: {
-    base: 0x1a2740,
-    window: 0x47a0e0,
-    sill: 0x0e1828,
-    accent: 0x2a4470,
+    base: 0x1a2740, window: 0x47a0e0, sill: 0x0e1828, accent: 0x2a4470,
     kindCode: 1,
   },
-  // Stage 3 — share commercial styling for OFFICE / RETAIL until a
-  // separate spec lands (CLAUDE.md defaultSetbackM groups them).
+  // CLAUDE.md groups office/retail with commercial.
   OFFICE: {
-    base: 0x1a2740,
-    window: 0x47a0e0,
-    sill: 0x0e1828,
-    accent: 0x2a4470,
+    base: 0x1a2740, window: 0x47a0e0, sill: 0x0e1828, accent: 0x2a4470,
     kindCode: 1,
   },
   RETAIL: {
-    base: 0x1a2740,
-    window: 0x47a0e0,
-    sill: 0x0e1828,
-    accent: 0x2a4470,
+    base: 0x1a2740, window: 0x47a0e0, sill: 0x0e1828, accent: 0x2a4470,
     kindCode: 1,
   },
-  // Slate grey corrugated metal ribs + sparse small windows in the
-  // upper third only. Stage 3.
+  // Slate grey corrugated metal + sparse upper-third windows.
   INDUSTRIAL: {
-    base: 0x4a5560,
-    window: 0x12181e,
-    sill: 0x2a3038,
-    accent: 0x708090,
+    base: 0x4a5560, window: 0x12181e, sill: 0x2a3038, accent: 0x708090,
     kindCode: 4,
   },
-  // CLAUDE.md groups industrial with warehouse — share the profile.
   WAREHOUSE: {
-    base: 0x4a5560,
-    window: 0x12181e,
-    sill: 0x2a3038,
-    accent: 0x708090,
+    base: 0x4a5560, window: 0x12181e, sill: 0x2a3038, accent: 0x708090,
     kindCode: 4,
+  },
+
+  // ── Stage 4 (mixed-use / hotel / educational / healthcare /
+  //              agricultural / investment) ──
+
+  // Mixed-use: purple base with shader branch that switches to
+  // commercial pattern below podium top, residential pattern above.
+  MIXED_USE: {
+    base: 0x6a4870, window: 0x2a1830, sill: 0x402a48, accent: 0x9b59b6,
+    kindCode: 2,
+  },
+  // Hotel: warm orange-brown stone, wide ribbon windows + accent
+  // balcony band every floor.
+  HOTEL: {
+    base: 0xa0532c, window: 0x2a1810, sill: 0x6a3a1c, accent: 0xe67e22,
+    kindCode: 3,
+  },
+  HOSPITALITY: {
+    base: 0xa0532c, window: 0x2a1810, sill: 0x6a3a1c, accent: 0xe67e22,
+    kindCode: 3,
+  },
+  // Agricultural: industrial-shape silhouette (barn-like corrugated
+  // metal at 60 cm pitch), olive-green tint. Reuses kindCode 4 (the
+  // industrial shader branch) — same pattern, recoloured base.
+  AGRICULTURAL: {
+    base: 0x5b6845, window: 0x1a201a, sill: 0x3a3f2a, accent: 0x6b8e23,
+    kindCode: 4,
+  },
+  AGRICULTURE: {
+    base: 0x5b6845, window: 0x1a201a, sill: 0x3a3f2a, accent: 0x6b8e23,
+    kindCode: 4,
+  },
+  // Educational: warm brick-toned base, large classroom-style windows
+  // tiled in wide columns. Own kindCode 5 — separate shader branch.
+  EDUCATIONAL: {
+    base: 0xa84d40, window: 0x281612, sill: 0x6a3024, accent: 0x1abc9c,
+    kindCode: 5,
+  },
+  EDUCATION: {
+    base: 0xa84d40, window: 0x281612, sill: 0x6a3024, accent: 0x1abc9c,
+    kindCode: 5,
+  },
+  // Healthcare: pale off-white base, narrow vertical strip windows
+  // arranged in tight columns. Clean / sterile feel. Own kindCode 6.
+  HEALTHCARE: {
+    base: 0xd8d4c8, window: 0x2a4555, sill: 0x9a948a, accent: 0xe74c3c,
+    kindCode: 6,
+  },
+  // Investment: shares the curtain-wall commercial silhouette
+  // (kindCode 1) but with the brand teal palette to match the
+  // off-plan / pre-construction visual register set in CLAUDE.md
+  // (Investment color #14B8A6 added 2026-06-03).
+  INVESTMENT: {
+    base: 0x0d3a44, window: 0x14b8a6, sill: 0x062228, accent: 0x14b8a6,
+    kindCode: 1,
   },
 };
 
@@ -175,6 +223,10 @@ const FACADE_FS = /* glsl */ `
   uniform float uFloorH;
   uniform float uPodiumTop;
   uniform float uKind;
+  // Stage 5 — selection desaturation. 0 = normal, 1 = full grey wash.
+  // Mirrors the case-expression-driven grey #7a7a7a tint used by
+  // page.tsx's applySelectionPaint on the MapLibre fill-extrusion.
+  uniform float uDesaturate;
 
   // Windows tiled in (colW × uFloorH) cells.
   float windowMask(float colCoord, float rowCoord, float colW, float winW) {
@@ -220,17 +272,24 @@ const FACADE_FS = /* glsl */ `
 
     vec3 col = uBase;
 
-    // Per-category column pitch + window width.
+    // Per-category column pitch + window width. Defaults are the
+    // "Stage 4 mid-cat" pitch — commercial / hotel / mixed-use all
+    // happily render at 3.2 m before per-cat overrides.
     float colW = 3.2;
     float winW = 2.4;
-    if (uKind > 0.5 && uKind < 1.5) { colW = 2.8; winW = 2.3; } // commercial — curtain wall
-    if (uKind > 3.5)                { colW = 6.0; winW = 1.0; } // industrial — sparse small
+    if (uKind > 0.5 && uKind < 1.5) { colW = 2.8; winW = 2.3; } // commercial / investment — curtain wall
+    if (uKind > 1.5 && uKind < 2.5) { colW = 3.4; winW = 2.5; } // mixed-use — mid pitch
+    if (uKind > 2.5 && uKind < 3.5) { colW = 4.0; winW = 3.4; } // hotel — wide ribbon
+    if (uKind > 3.5 && uKind < 4.5) { colW = 6.0; winW = 1.0; } // industrial / agricultural
+    if (uKind > 4.5 && uKind < 5.5) { colW = 5.0; winW = 3.5; } // educational — large classroom
+    if (uKind > 5.5 && uKind < 6.5) { colW = 1.6; winW = 0.7; } // healthcare — narrow strips
     if (uKind < 0.5)                { colW = 4.0; winW = 2.0; } // residential — wider
 
     float win = windowMask(colCoord, rowCoord, colW, winW);
 
-    // Industrial: corrugated metal + sparse upper windows only.
-    if (uKind > 3.5) {
+    // Industrial / agricultural: corrugated metal + sparse upper
+    // windows only.
+    if (uKind > 3.5 && uKind < 4.5) {
       float corr = corrugation(colCoord);
       col = mix(uBase * 0.65, uBase * 1.05, corr);
       if (rowCoord < 4.0) win = 0.0;
@@ -242,19 +301,72 @@ const FACADE_FS = /* glsl */ `
       col = mix(col, uSill, bal * 0.7);
     }
 
-    // Commercial: dark spandrel between floors (top + bottom 5 %).
+    // Commercial / investment: dark spandrel between floors
+    // (top + bottom 5 %).
     if (uKind > 0.5 && uKind < 1.5) {
       float fy = fract(rowCoord / uFloorH);
       float spandrel = step(0.85, fy) + step(fy, 0.05);
       col = mix(col, uSill, spandrel * 0.6);
     }
 
-    // Window glass tint over the wall colour.
+    // Mixed-use: lower floors below podium top render as commercial
+    // (smaller windows + spandrel), upper floors as residential
+    // (wider windows + balcony band). Founder-ratified transition
+    // at uPodiumTop — same boundary as the geometry tier split.
+    if (uKind > 1.5 && uKind < 2.5) {
+      if (rowCoord < uPodiumTop) {
+        // Lower: commercial pattern at slightly larger pitch so the
+        // visual transition reads cleanly.
+        win = windowMask(colCoord, rowCoord, 3.0, 2.4);
+        float fy = fract(rowCoord / uFloorH);
+        float spandrel = step(0.85, fy) + step(fy, 0.05);
+        col = mix(col, uSill, spandrel * 0.5);
+      } else {
+        // Upper: residential with balcony band.
+        win = windowMask(colCoord, rowCoord, 4.0, 2.0);
+        float bal = balconyBand(rowCoord);
+        col = mix(col, uSill, bal * 0.55);
+      }
+    }
+
+    // Hotel: ribbon balcony band on the lower 20 % of every floor,
+    // accent-coloured (warm orange) so the building reads as
+    // hospitality-grade.
+    if (uKind > 2.5 && uKind < 3.5) {
+      float fy = fract(rowCoord / uFloorH);
+      float ribbon = step(0.0, fy) * step(fy, 0.20);
+      col = mix(col, uAccent, ribbon * 0.4);
+    }
+
+    // Educational: subtle horizontal banding every 2 floors so the
+    // building reads as stacked classroom blocks. Sill-coloured band
+    // at 5 % thick.
+    if (uKind > 4.5 && uKind < 5.5) {
+      // Two-floor cycle.
+      float blockY = fract(rowCoord / (uFloorH * 2.0));
+      float band = step(0.95, blockY) + step(blockY, 0.05);
+      col = mix(col, uSill, band * 0.45);
+    }
+
+    // Healthcare: tight vertical mullion ribs between each window
+    // column — strengthens the "narrow strip" look at street zoom.
+    if (uKind > 5.5 && uKind < 6.5) {
+      float fx = fract(colCoord / 1.6);
+      // Mullion at the column edge (5 % of cell width on each side).
+      float mullion = step(0.95, fx) + step(fx, 0.05);
+      col = mix(col, uSill, mullion * 0.5);
+    }
+
+    // Window glass tint over the wall colour. Done LAST so per-cat
+    // shape modifiers above don't get cancelled by the glass blend.
     col = mix(col, uWindow, win);
 
     // East-facing faces get a faint sun lift — fakes morning daylight
     // direction. Keeps consistency with the scratch prototype's look.
     col *= 0.85 + 0.15 * smoothstep(-0.5, 0.5, vNormalLocal.x);
+
+    // Stage 5 — selection desaturation blend toward grey #7a7a7a.
+    col = mix(col, vec3(0.478), uDesaturate);
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -335,14 +447,16 @@ export function installZaahiThreeLayer(
     return mesh;
   }
 
-  /** Stage 2 fallback for land-uses without a procedural shader yet. */
+  /** Stage 2 fallback for land-uses without a procedural shader yet.
+   *  Stage 5 stashes the original color on `userData` so setSelected
+   *  can desaturate / restore by mutating material.color in-place. */
   function makeFallbackMaterial(colorHex: string): THREE.Material {
-    return new THREE.MeshLambertMaterial({
+    const mat = new THREE.MeshLambertMaterial({
       color: new THREE.Color(colorHex),
-      // Flat shading gives the "panelled" look of fill-extrusion; without
-      // it, very thin facets read as smooth.
       flatShading: true,
     });
+    mat.userData.originalColorHex = colorHex;
+    return mat;
   }
 
   // ── Stage 3 (2026-06-11) — procedural facade shaders. ──
@@ -364,18 +478,17 @@ export function installZaahiThreeLayer(
     if (!profile) return null;
     return new THREE.ShaderMaterial({
       uniforms: {
-        uBase:      { value: new THREE.Color(profile.base) },
-        uWindow:    { value: new THREE.Color(profile.window) },
-        uSill:      { value: new THREE.Color(profile.sill) },
-        uAccent:    { value: new THREE.Color(profile.accent) },
-        uFloorH:    { value: FLOOR_H },
-        uPodiumTop: { value: PODIUM_TOP },
-        uKind:      { value: profile.kindCode },
+        uBase:       { value: new THREE.Color(profile.base) },
+        uWindow:     { value: new THREE.Color(profile.window) },
+        uSill:       { value: new THREE.Color(profile.sill) },
+        uAccent:     { value: new THREE.Color(profile.accent) },
+        uFloorH:     { value: FLOOR_H },
+        uPodiumTop:  { value: PODIUM_TOP },
+        uKind:       { value: profile.kindCode },
+        uDesaturate: { value: 0.0 },
       },
       vertexShader: FACADE_VS,
       fragmentShader: FACADE_FS,
-      // Front faces only — ExtrudeGeometry winds outward so back faces
-      // are interior. Skipping them halves the fragment shader load.
       side: THREE.FrontSide,
     });
   }
@@ -403,13 +516,65 @@ export function installZaahiThreeLayer(
     for (const b of buildings) {
       for (const tier of b.tiers) {
         const mesh = buildTierMesh(tier, b.colorHex, b.landUse);
-        // Stash parcelId for future picking (Stage 5 parity work).
         mesh.userData.parcelId = b.parcelId;
         mesh.userData.isVault = b.isVault;
         mesh.userData.status = b.status;
         buildingsGroup.add(mesh);
       }
     }
+    map.triggerRepaint();
+  }
+
+  // ── Stage 5 parity API ──
+
+  // Grey #7a7a7a as a normalised THREE.Color, used as the desaturation
+  // target for Lambert-material fallbacks. Matches the literal hex
+  // page.tsx applySelectionPaint pushes onto the MapLibre fill-extrusion
+  // for the non-selected case branch.
+  const GREY = new THREE.Color(0x7a7a7a);
+
+  function applyDesaturationToMesh(mesh: THREE.Mesh, desaturated: boolean): void {
+    const mat = mesh.material as THREE.Material | THREE.Material[];
+    if (Array.isArray(mat)) return; // not in our path
+    if (mat instanceof THREE.ShaderMaterial) {
+      const u = mat.uniforms.uDesaturate;
+      if (u) u.value = desaturated ? 1.0 : 0.0;
+    } else if (mat instanceof THREE.MeshLambertMaterial) {
+      const orig = mat.userData.originalColorHex as string | undefined;
+      if (desaturated) {
+        mat.color.copy(GREY);
+      } else if (orig !== undefined) {
+        mat.color.set(orig);
+      }
+    }
+  }
+
+  function setSelected(parcelId: string | null): void {
+    buildingsGroup.traverse((obj) => {
+      const m = obj as THREE.Mesh;
+      if (!m.isMesh) return;
+      const ownParcelId = m.userData.parcelId as string | undefined;
+      if (parcelId === null) {
+        applyDesaturationToMesh(m, false);
+      } else {
+        applyDesaturationToMesh(m, ownParcelId !== parcelId);
+      }
+    });
+    map.triggerRepaint();
+  }
+
+  function setVisibility(predicate: (parcelId: string) => boolean): void {
+    buildingsGroup.traverse((obj) => {
+      const m = obj as THREE.Mesh;
+      if (!m.isMesh) return;
+      const pid = m.userData.parcelId as string | undefined;
+      m.visible = pid ? predicate(pid) : true;
+    });
+    map.triggerRepaint();
+  }
+
+  function setEnabled(enabled: boolean): void {
+    buildingsGroup.visible = enabled;
     map.triggerRepaint();
   }
 
@@ -480,6 +645,9 @@ export function installZaahiThreeLayer(
 
   return {
     setBuildings,
+    setSelected,
+    setVisibility,
+    setEnabled,
     layerId: LAYER_ID,
     destroy(): void {
       if (map.getLayer(LAYER_ID)) {

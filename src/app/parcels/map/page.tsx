@@ -1647,6 +1647,25 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // ── feat/signature-realistic (2026-06-11/12) ──
+  // ?render=three turns on the Three.js CustomLayer for ZAAHI buildings.
+  // Read once on mount (URL flag won't toggle mid-session). When true:
+  // fill-extrusion paints at opacity 0 (literal number per CLAUDE.md),
+  // Three.js scene draws the meshes instead. Click/hover continue to
+  // hit fill-extrusion (visibility stays "visible") so queryRendered-
+  // Features still routes to the right parcel. Stage 5 mirrors
+  // selection / filter / vault visibility onto the Three.js side.
+  // When false: prod path, three-layer never installed. Declarations
+  // live early so all consumer effects can reach them in the same scope.
+  const useThreeRender = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return new URLSearchParams(window.location.search).get("render") === "three";
+    } catch {
+      return false;
+    }
+  }, []);
+  const threeLayerCtrlRef = useRef<ZaahiThreeLayerController | null>(null);
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
@@ -1742,6 +1761,16 @@ function ParcelsMapPageInner() {
     if (!selectedParcelId) return;
     void apiFetch(`/api/parcels/${selectedParcelId}/view`, { method: "POST" }).catch(() => { /* silent */ });
   }, [selectedParcelId]);
+
+  // Stage 5 of feat/signature-realistic (2026-06-12) — mirror
+  // selection state onto the Three.js layer. Other meshes desaturate
+  // toward grey #7a7a7a; the selected mesh keeps its full hex. Mirrors
+  // exactly the case-expression that page.tsx applySelectionPaint
+  // applies to the MapLibre fill-extrusion (page.tsx:422-432).
+  useEffect(() => {
+    if (!useThreeRender) return;
+    threeLayerCtrlRef.current?.setSelected(selectedParcelId);
+  }, [selectedParcelId, useThreeRender]);
 
   // Defer-close timer so the user can move the cursor from the polygon
   // onto the (now clickable) hover card without it disappearing first.
@@ -2217,6 +2246,32 @@ function ParcelsMapPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState]);
 
+  // Stage 5 of feat/signature-realistic (2026-06-12) — mirror filter
+  // visibility onto the Three.js layer. Defers via rAF so MapLibre's
+  // setFilter calls in reapplyMapFilters have already propagated to
+  // the query path by the time we read it. queryRenderedFeatures
+  // returns features whose paint resolves to non-zero — but paint-
+  // opacity 0 is NOT excluded (filter is); so we can use the invisible
+  // fill-extrusion as a source-of-truth for "what should be visible".
+  useEffect(() => {
+    if (!useThreeRender) return;
+    const m = mapRef.current;
+    if (!m) return;
+    const raf = requestAnimationFrame(() => {
+      const ctrl = threeLayerCtrlRef.current;
+      if (!ctrl) return;
+      if (!m.getLayer(ZAAHI_BUILDINGS_3D)) return;
+      const visible = m.queryRenderedFeatures({ layers: [ZAAHI_BUILDINGS_3D] });
+      const visibleParcelIds = new Set<string>();
+      for (const f of visible) {
+        const pid = (f.properties as { parcelId?: string } | null)?.parcelId;
+        if (pid) visibleParcelIds.add(pid);
+      }
+      ctrl.setVisibility((pid) => visibleParcelIds.has(pid));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [filterState, vaultOnlyMode, useThreeRender]);
+
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
   // key yet), respects saved choice on subsequent visits.
@@ -2226,23 +2281,9 @@ function ParcelsMapPageInner() {
   // Keyboard nav controller — always-on once installed in map-init.
   // Destroyed alongside the map. No external state needed.
   const kbdNavCtrlRef = useRef<KeyboardNavController | null>(null);
-  // ── Stage 2 of feat/signature-realistic (2026-06-11) ──
-  // ?render=three turns on the experimental Three.js CustomLayer for
-  // ZAAHI buildings. Read once on mount (URL flag won't toggle mid-
-  // session). When true: fill-extrusion paints at opacity 0 (literal
-  // number — CLAUDE.md compliant), Three.js scene draws the meshes
-  // instead. Click/hover still land on fill-extrusion (visibility
-  // stays "visible") — SIG-5 will mirror selection on the Three.js
-  // side. When false: prod path, three-layer never installed.
-  const useThreeRender = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return new URLSearchParams(window.location.search).get("render") === "three";
-    } catch {
-      return false;
-    }
-  }, []);
-  const threeLayerCtrlRef = useRef<ZaahiThreeLayerController | null>(null);
+  // Stage 2/5 of feat/signature-realistic — see the canonical
+  // declaration block above the selection-mirror useEffect (moved
+  // earlier so all consumers can reach it).
   const [layersOpen, setLayersOpen] = useState(false);
   // Parcels portal — left rail list view of /api/parcels/map. Mutex
   // with the Layers panel because both anchor at left:60, top:64.
@@ -3512,9 +3553,19 @@ function ParcelsMapPageInner() {
           threeLayerCtrlRef.current = installZaahiThreeLayer(map);
         }
         threeLayerCtrlRef.current.setBuildings(threeInputs);
+        // Stage 5 — sync the LOD state on install. The zoom handler
+        // in the map-init useEffect maintains it from here onward.
+        // Stage 5 also mirrors the current selection (it's normal for
+        // a user to click → swap basemap → expect the highlight to
+        // survive). Filter visibility is re-derived by the
+        // [filterState, vaultOnlyMode] effect via rAF defer.
+        if (threeLayerCtrlRef.current) {
+          threeLayerCtrlRef.current.setSelected(selectedParcelId);
+        }
         if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
           // Literal number — must NOT be a data expression
-          // (CLAUDE.md fill-extrusion-opacity rule).
+          // (CLAUDE.md fill-extrusion-opacity rule). The LOD handler
+          // installed in map-init will keep this in sync with zoom.
           map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", 0);
         }
       }
@@ -4916,11 +4967,42 @@ function ParcelsMapPageInner() {
     const kbdNavCtrl = installKeyboardNav(map);
     kbdNavCtrlRef.current = kbdNavCtrl;
 
+    // Stage 5 of feat/signature-realistic (2026-06-12) — LOD handler.
+    // Three.js renders the curated 132 buildings at zoom>=15 on desktop;
+    // below 15 (overview) or on touch (mobile-coarse pointer) we fall
+    // back to MapLibre fill-extrusion. Cheaper, sharp at all zooms,
+    // touch-friendly. Handler is always installed; gated on
+    // useThreeRender inside the body so prod path stays untouched.
+    const isTouchDevice = (() => {
+      if (typeof window === "undefined") return false;
+      try {
+        if (window.matchMedia?.("(pointer: coarse)").matches) return true;
+      } catch { /* ignore */ }
+      if ("ontouchstart" in window) return true;
+      const mt = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints;
+      return typeof mt === "number" && mt > 0;
+    })();
+    const lodHandler = () => {
+      if (!useThreeRender) return;
+      const ctrl = threeLayerCtrlRef.current;
+      const z = map.getZoom();
+      const lodActive = z >= 15 && !isTouchDevice;
+      if (ctrl) ctrl.setEnabled(lodActive);
+      if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+        try {
+          // Literal number — CLAUDE.md fill-extrusion-opacity rule.
+          map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", lodActive ? 0 : 1);
+        } catch { /* layer torn down mid-handler */ }
+      }
+    };
+    map.on("zoom", lodHandler);
+
     return () => {
       autoRotateCtrl.destroy();
       autoRotateCtrlRef.current = null;
       kbdNavCtrl.destroy();
       kbdNavCtrlRef.current = null;
+      map.off("zoom", lodHandler);
       // Three.js layer is installed lazily from loadZaahiPlots when
       // ?render=three is on. Destroy here so HMR/teardown releases
       // its WebGL meshes + the wrapper renderer cleanly.
@@ -5070,6 +5152,18 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    // Stage 5 of feat/signature-realistic (2026-06-12) — basemap-swap
+    // flicker fix. MapLibre setStyle clears all non-style layers
+    // INCLUDING our Three.js CustomLayer. Without nulling the ref,
+    // the next loadZaahiPlots call would skip re-install (the
+    // `if (!threeLayerCtrlRef.current)` guard sees a stale handle).
+    // Result: silent loss of Three.js render after a basemap switch.
+    if (threeLayerCtrlRef.current) {
+      // The custom layer instance is owned by MapLibre's style now
+      // gone — no need to call destroy() (it'd try to removeLayer
+      // on a non-existent layer). Just drop the reference.
+      threeLayerCtrlRef.current = null;
+    }
     map.setStyle(STYLES[baseMap]);
     map.once("styledata", async () => {
       map.dragRotate.enable();
