@@ -3547,12 +3547,35 @@ function ParcelsMapPageInner() {
       // CustomLayer + zero out fill-extrusion opacity (literal number,
       // CLAUDE.md compliant). Idempotent: layer is installed on the
       // first call; subsequent calls just refresh setBuildings.
-      if (useThreeRender) {
-        // 2026-06-12 — wrapped in try/catch so a Three.js install error
-        // surfaces in the console instead of being swallowed by the
-        // outer `[zaahi-plots] load failed` catch. Founder bug report
-        // on preview zaahi-cucsaeit2: no Three.js console logs appeared
-        // at all → silent fail somewhere in this block.
+      //
+      // 2026-06-12 silent-fail investigation (preview zaahi-htioll2us):
+      // founder reports `addLayer: ...` log appears but `installing
+      // Three.js custom layer` does NOT. No throw caught by outer
+      // [zaahi-plots] load failed catch, no error in the new try/catch
+      // wrappers either. Only remaining explanation: useThreeRender is
+      // false on this loadZaahiPlots closure. Could be SSR/hydration
+      // race on the useMemo([]) reading window.location.search before
+      // the URL is fully populated. Live-read the URL right here as a
+      // safety net so the install fires regardless, and log both values
+      // so we can see if the memoized one ever disagrees with reality.
+      let liveRenderThree = false;
+      try {
+        liveRenderThree =
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("render") === "three";
+      } catch { /* ignore */ }
+      const installShouldRun = useThreeRender || liveRenderThree;
+      console.log(
+        "[ZAAHI] pre-install gate:",
+        "useThreeRender(memo)=" + useThreeRender,
+        "liveRenderThree=" + liveRenderThree,
+        "willInstall=" + installShouldRun,
+        "threeLayerCtrlRef.current=" + !!threeLayerCtrlRef.current,
+      );
+      if (installShouldRun) {
+        // try/catch wraps the whole install path so any error surfaces
+        // in console instead of being swallowed by the outer
+        // [zaahi-plots] load failed catch.
         try {
           if (!threeLayerCtrlRef.current) {
             console.log("[ZAAHI]", "installing Three.js custom layer", "(buildings:", threeInputs.length, ")");
