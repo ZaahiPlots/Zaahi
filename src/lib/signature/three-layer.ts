@@ -410,27 +410,57 @@ export function installZaahiThreeLayer(
 
   // ── Geometry helpers ──
 
-  /** Convert one ring of [lng, lat] pairs into local-meter
-   *  [x, y] pairs centred at ORIGIN_LNG_LAT. */
-  function ringToLocalMeters(ring: number[][]): { x: number; y: number }[] {
+  /** Convert one ring of [lng, lat] pairs into project-meter [x, y]
+   *  pairs centred at ORIGIN_LNG_LAT. Returned values can be large
+   *  (kilometres) — pre-Stage-5 we used these directly as vertex
+   *  positions, which overflowed float32 precision inside the shader's
+   *  fract() tile arithmetic and washed every facade toward grey. The
+   *  bug-fix below subtracts a per-mesh origin BEFORE these meters
+   *  become vertex coords so the shader sees small values. */
+  function ringToProjectMeters(ring: number[][]): { x: number; y: number }[] {
     return ring.map(([lng, lat]) => ({
       x: (lng - ORIGIN_LNG) * M_PER_DEG_LNG,
       y: (lat - ORIGIN_LAT) * M_PER_DEG_LAT,
     }));
   }
 
+  /** Centroid of a ring expressed in project-meters. Anchor used as
+   *  per-mesh origin so vertex coords stay small inside the GPU
+   *  precision band. CPU computes the subtraction in double precision
+   *  (JS numbers are float64) before handing float32 to the shader. */
+  function ringCentroidProjectMeters(ring: number[][]): { x: number; y: number } {
+    if (ring.length === 0) return { x: 0, y: 0 };
+    let sx = 0, sy = 0;
+    for (const [lng, lat] of ring) {
+      sx += (lng - ORIGIN_LNG) * M_PER_DEG_LNG;
+      sy += (lat - ORIGIN_LAT) * M_PER_DEG_LAT;
+    }
+    return { x: sx / ring.length, y: sy / ring.length };
+  }
+
   /** Build a Three.js Mesh for one Tier. Material picked by landUse:
    *  Stage 3 categories (residential / commercial / industrial) get a
    *  procedural ShaderMaterial; everything else falls back to the
-   *  Stage 2 Lambert flat-colour material. */
+   *  Stage 2 Lambert flat-colour material.
+   *
+   *  2026-06-12 Stage 5 precision-overflow fix:
+   *   - Vertex coords are subtracted from `meshOriginXm`/`meshOriginYm`
+   *     so they stay in the ±50 m band → shader fract() math is exact.
+   *   - mesh.position is set to the same origin (in project-meters) so
+   *     Three.js's modelViewMatrix puts the mesh back at the correct
+   *     world location. The modelMatrix already in camera.projection-
+   *     Matrix converts meters→Mercator at the project anchor.
+   */
   function buildTierMesh(
     tier: Tier,
     colorHex: string,
     landUse: string | null,
+    meshOriginXm: number,
+    meshOriginYm: number,
   ): THREE.Mesh {
-    const pts = ringToLocalMeters(tier.ring);
+    const pts = ringToProjectMeters(tier.ring);
     const shape = new THREE.Shape(
-      pts.map((p) => new THREE.Vector2(p.x, p.y)),
+      pts.map((p) => new THREE.Vector2(p.x - meshOriginXm, p.y - meshOriginYm)),
     );
     const depth = Math.max(0, tier.topM - tier.baseM);
     const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -444,6 +474,12 @@ export function installZaahiThreeLayer(
 
     const material = makeFacadeMaterial(landUse) ?? makeFallbackMaterial(colorHex);
     const mesh = new THREE.Mesh(geometry, material);
+    // Per-mesh origin in project-meters. Three.js's modelViewMatrix
+    // applies this BEFORE the project→Mercator matrix already baked
+    // into camera.projectionMatrix, so absolute world placement is
+    // unchanged. Only the `position` attribute the shader receives
+    // shrinks to the ±50 m band.
+    mesh.position.set(meshOriginXm, meshOriginYm, 0);
     return mesh;
   }
 
@@ -513,21 +549,35 @@ export function installZaahiThreeLayer(
 
   function setBuildings(buildings: ZaahiBuildingInput[]): void {
     disposeGroup();
-    // Diagnostic: which landUse values arrive and which material path
-    // each tier takes. Logged once per setBuildings call so we can spot
-    // category-shader gaps from the preview console.
     const matCounts = { shader: 0, lambert: 0 };
     const landUseSeen = new Set<string>();
+    // Diagnostic: max absolute vertex magnitude — confirms the
+    // precision fix keeps vertex coords in the small-range band.
+    let maxVertexAbs = 0;
     for (const b of buildings) {
       landUseSeen.add(b.landUse ?? "(null)");
+      // 2026-06-12 Stage 5 fix — per-building origin in project-meters.
+      // All tiers of one building share the same origin so their
+      // rings stack cleanly without per-tier delta.
+      const origin = ringCentroidProjectMeters(b.tiers[0]?.ring ?? []);
       for (const tier of b.tiers) {
-        const mesh = buildTierMesh(tier, b.colorHex, b.landUse);
+        const mesh = buildTierMesh(tier, b.colorHex, b.landUse, origin.x, origin.y);
         mesh.userData.parcelId = b.parcelId;
         mesh.userData.isVault = b.isVault;
         mesh.userData.status = b.status;
         buildingsGroup.add(mesh);
         if (mesh.material instanceof THREE.ShaderMaterial) matCounts.shader++;
         else matCounts.lambert++;
+        // Inspect first vertex of geometry to confirm small-range coords.
+        const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute("position");
+        if (pos && pos.itemSize >= 3) {
+          for (let i = 0; i < pos.count; i++) {
+            const ax = Math.abs(pos.getX(i));
+            const ay = Math.abs(pos.getY(i));
+            if (ax > maxVertexAbs) maxVertexAbs = ax;
+            if (ay > maxVertexAbs) maxVertexAbs = ay;
+          }
+        }
       }
     }
     console.log(
@@ -536,6 +586,7 @@ export function installZaahiThreeLayer(
       matCounts.shader + matCounts.lambert, "meshes (shader=" + matCounts.shader,
       "lambert=" + matCounts.lambert + ")",
       "landUse:", [...landUseSeen].sort(),
+      "maxVertexAbs(m)=" + maxVertexAbs.toFixed(1),
     );
     map.triggerRepaint();
   }
