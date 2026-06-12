@@ -513,15 +513,30 @@ export function installZaahiThreeLayer(
 
   function setBuildings(buildings: ZaahiBuildingInput[]): void {
     disposeGroup();
+    // Diagnostic: which landUse values arrive and which material path
+    // each tier takes. Logged once per setBuildings call so we can spot
+    // category-shader gaps from the preview console.
+    const matCounts = { shader: 0, lambert: 0 };
+    const landUseSeen = new Set<string>();
     for (const b of buildings) {
+      landUseSeen.add(b.landUse ?? "(null)");
       for (const tier of b.tiers) {
         const mesh = buildTierMesh(tier, b.colorHex, b.landUse);
         mesh.userData.parcelId = b.parcelId;
         mesh.userData.isVault = b.isVault;
         mesh.userData.status = b.status;
         buildingsGroup.add(mesh);
+        if (mesh.material instanceof THREE.ShaderMaterial) matCounts.shader++;
+        else matCounts.lambert++;
       }
     }
+    console.log(
+      "[ZAAHI three-layer] setBuildings:",
+      buildings.length, "buildings,",
+      matCounts.shader + matCounts.lambert, "meshes (shader=" + matCounts.shader,
+      "lambert=" + matCounts.lambert + ")",
+      "landUse:", [...landUseSeen].sort(),
+    );
     map.triggerRepaint();
   }
 
@@ -550,6 +565,7 @@ export function installZaahiThreeLayer(
   }
 
   function setSelected(parcelId: string | null): void {
+    console.log("[ZAAHI three-layer] setSelected:", parcelId);
     buildingsGroup.traverse((obj) => {
       const m = obj as THREE.Mesh;
       if (!m.isMesh) return;
