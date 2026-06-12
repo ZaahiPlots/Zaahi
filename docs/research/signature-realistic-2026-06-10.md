@@ -327,13 +327,39 @@ The matrix math reads correct on paper (negative Y scale because MapLibre's Merc
 - `/home/zaahi/scratch/signature-realistic/index.html` — original Phase A prototype with 5 plot footprints + per-category shaders. Still useful as the visual target for any future restart.
 - `/home/zaahi/scratch/signature-realistic/footprints.json` — 5 real plot rings used by the prototype and the parity script (parity script reads it via absolute path).
 
-### Quick re-entry guide for the next session
+### Quick re-entry guide for the next session — PROTOCOL
 
-1. `git checkout feat/signature-realistic` (tip is `0e22008` "docs(handoff): update — 8da7e63 …" or whatever's later).
-2. Read this section + the corresponding `docs/research/handoff-YYYY-MM-DD.md` (the protocol from CLAUDE.md "SESSION HANDOFF").
+Founder directive 2026-06-12 (post-STOP): **rebuild from scratch first; if the cube still doesn't appear, walk the §10 hypotheses in numbered order. Do NOT invent new hypotheses until these 6 are exhausted.**
+
+1. `git checkout feat/signature-realistic` (tip is the latest docs-only commit; check `git log --oneline | head -5`).
+2. Read this §10 in full + the corresponding `docs/research/handoff-YYYY-MM-DD.md` (per CLAUDE.md "SESSION HANDOFF").
 3. Start the python server in scratch:
    ```bash
    cd /home/zaahi/scratch/signature-realistic
    python3 -m http.server 8088 --bind 127.0.0.1 > /tmp/scratch-http.log 2>&1 &
    ```
-4. First experiment: swap `ShaderMaterial` → `RawShaderMaterial` in the standalone. If the red cube starts rendering, the bug is in Three.js's auto-uniform injection vs my custom-projection-matrix path.
+
+#### STEP 0 — build the official MapLibre Three.js CustomLayer example from scratch
+
+Direct copy of MapLibre's own minimal example (`add-3d-model-with-threejs` on maplibre.org, or the equivalent contemporary MapLibre + Three.js demo). **One mesh, single solid colour, no shader, no per-mesh origin, no LOD, no selection. In a NEW file** (not the existing `maplibre-customlayer-test.html` — start clean).
+
+This is the disciplined "does the absolute minimal MapLibre + Three.js custom-layer pipeline render ANYTHING in this stack?" check. If the official example renders → the breakage is in our deltas (per-mesh origin, ShaderMaterial, etc.). If the official example doesn't render → the breakage is in the platform underneath (Vercel preview env, the maplibre-gl version pin, the cached three module, the OSM raster tile server, etc.). Either result narrows the bisect window dramatically.
+
+#### If STEP 0 cube DOES NOT appear
+
+Stop the local bisect path; debug whatever's preventing even the official example from rendering before doing anything else.
+
+#### If STEP 0 cube DOES appear
+
+Re-introduce our deltas one at a time and bisect against the hypotheses below **in this numbered order**. Do not skip ahead. Do not invent new hypotheses until all 6 are tested and either confirmed-fixed or ruled-out.
+
+#### §10 hypothesis bisect order (cheapest test first)
+
+1. **`renderer.resetState()` ordering** — the current call may be wiping state Three.js needed to set up the program. Try `renderer.state.reset()` (the lower-level alternative). Or remove the call to see if MapLibre's leftover state happens to work. One line. Cheapest possible test.
+2. **`ShaderMaterial` → `RawShaderMaterial`** — bypasses Three.js's auto-uniform injection entirely (`projectionMatrix`, `modelViewMatrix`, `position`, `normal` must be declared explicitly). Cleanest test of where the matrix path breaks.
+3. **Matrix multiplication order / convention** — re-derive the camera transform: try `camera.projectionMatrix = modelMatrix * mapLibreMatrix` (swapped vs the current `mapLibreMatrix * modelMatrix`); or move `modelMatrix` out of the projection multiplication entirely and apply it via `scene.matrix` / `buildingsGroup.matrix` so Three.js sees it as part of the model transform.
+4. **`renderer.outputColorSpace` pinning** — `LinearSRGBColorSpace` was added during the flat-grey investigation and never reverted. May have side effects on how Three.js handles the sRGB framebuffer attachment that MapLibre owns. Try removing the explicit pin (let Three.js default).
+5. **`camera.matrixWorldInverse` staleness** — I never call `camera.updateMatrixWorld()`. Three.js may lazily update it and the lazy path may have a side effect on the overridden `projectionMatrix`. Call it explicitly each frame.
+6. **`scene.up = (0,0,1)` ↔ camera default `up = (0,1,0)` mismatch** — irrelevant for raw projection-matrix override in theory, but some Three.js internal might use `camera.up` for backface culling direction. Set `camera.up.set(0,0,1)` to match the scene.
+
+Each hypothesis tested in the standalone (where iteration is seconds, not deploy-minutes). When one hypothesis fixes the standalone, port the fix to `src/lib/signature/three-layer.ts` and only then redeploy.
