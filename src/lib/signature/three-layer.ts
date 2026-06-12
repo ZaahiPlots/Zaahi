@@ -610,6 +610,18 @@ export function installZaahiThreeLayer(
       // CRITICAL: don't clear the framebuffer between draws — we share
       // it with MapLibre's basemap. autoClear=true wipes the basemap.
       renderer.autoClear = false;
+      // 2026-06-12 STAGE 5 flat-grey bug investigation: Three.js r150+
+      // defaults outputColorSpace='srgb' + auto sRGB encoding pass. On
+      // a shared MapLibre framebuffer the auto-encoding washes colours.
+      // Force linear-srgb output so my shader's vec3 colours (already
+      // computed as linear in [0..1]) pass through unchanged.
+      renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+      console.log(
+        "[ZAAHI three-layer] renderer init:",
+        "outputColorSpace=" + renderer.outputColorSpace,
+        "capabilities=" + (renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL1"),
+        "ColorManagement.enabled=" + THREE.ColorManagement.enabled,
+      );
     },
 
     render(_gl, matrix) {
