@@ -24,6 +24,7 @@
 //   • Saved presets, URL share, "dim others" toggle — Wave 5 polish
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sound } from "@/lib/sound";
 import {
   EMPTY_FILTER_STATE,
   LAND_USE_OPTIONS,
@@ -491,6 +492,8 @@ export default function FilterPanel({
   const activeCount = useMemo(() => countActiveFilters(draft), [draft]);
 
   const handleReset = () => {
+    // Subtle bright blip on reset (founder backlog #33, 2026-06-12).
+    sound.uiClick();
     setDraft(EMPTY_FILTER_STATE);
     if (commitTimerRef.current !== null) {
       window.clearTimeout(commitTimerRef.current);

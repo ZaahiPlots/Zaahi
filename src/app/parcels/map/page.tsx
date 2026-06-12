@@ -254,6 +254,11 @@ const ZAAHI_PLOTS_FILL = "zaahi-plots-fill";
 const ZAAHI_PLOTS_LINE = "zaahi-plots-line";
 const ZAAHI_PLOTS_GLOW = "zaahi-plots-glow";       // wide blurred gold halo
 const ZAAHI_PLOTS_GLOW_CRISP = "zaahi-plots-glow-crisp"; // crisp pulsing gold outline
+// Hover-only outline (founder backlog #9, 2026-06-12). Lights up in brand
+// gold #C8A96E when the cursor enters a polygon and clears on leave. No
+// card opens on hover — the full SidePanel still opens on click. Distinct
+// from the SELECTION glow above (which uses #FFD700 and pulses).
+const ZAAHI_PLOTS_HOVER_LINE = "zaahi-plots-hover-line";
 const ZAAHI_BUILDINGS_SRC = "zaahi-plots-buildings";
 const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 
@@ -3526,6 +3531,18 @@ function ParcelsMapPageInner() {
             paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
           });
         }
+        // Hover outline — brand gold (#C8A96E), thinner than selection
+        // glow, no blur. Founder backlog #9 (2026-06-12). Filter is keyed
+        // by feature id and flipped on mousemove via setHoveredFeatureKey.
+        if (!map.getLayer(ZAAHI_PLOTS_HOVER_LINE)) {
+          map.addLayer({
+            id: ZAAHI_PLOTS_HOVER_LINE,
+            type: "line",
+            source: ZAAHI_PLOTS_SRC,
+            filter: ["==", ["id"], "__none__"],
+            paint: { "line-color": "#C8A96E", "line-width": 3, "line-opacity": 1 },
+          });
+        }
       }
 
       // ── 3D BUILDING EXTRUSION — single layer, single source ──
@@ -4098,6 +4115,16 @@ function ParcelsMapPageInner() {
       paint: {
         "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
     }});
+    // Hover outline — brand gold (#C8A96E). Founder backlog #9
+    // (2026-06-12). Keyed by plotNumber via setFilter on mousemove of
+    // the same layer's fill — no card on hover, just the contour glow.
+    // PMTiles features don't have a stable numeric id across tile boundaries,
+    // so we filter on `plotNumber` (string property) instead of feature.id.
+    map.addLayer({ id: `${fillId}-hover`, type: "line", source: srcId, "source-layer": "plots", minzoom: 12,
+      filter: ["==", ["get", "plotNumber"], "__none__"],
+      paint: {
+        "line-color": "#C8A96E", "line-width": 3, "line-opacity": 1,
+    }});
     // 3D extrusion — only tier features (podium/body/crown).
     // maxzoom: 24 is MapLibre's default cap but is set explicitly here
     // to document that we want the layer rendered all the way down,
@@ -4152,13 +4179,17 @@ function ParcelsMapPageInner() {
       const pr = f.properties as Record<string, unknown>;
       const areaSqm = (pr.areaSqm as number) ?? 0;
       // DDA tiles carry AREA_SQFT directly; AD tiles only have
-      // CALCULATEDAREA (in sqm) — derive sqft via 10.7639.
-      const areaSqft = (pr.areaSqft as number) || Math.round(areaSqm * 10.7639);
+      // CALCULATEDAREA (in sqm) — derive sqft via 10.7639. The derived
+      // value is converted (not source-given) so it stays an exact float;
+      // formatting layer adds thousands separator without rounding
+      // (founder backlog #7, area-unit.ts formatSourcePrecise).
+      const areaSqft = (pr.areaSqft as number) || areaSqm * 10.7639;
       const gfaSqm = (pr.gfaSqm as number) ?? 0;
-      const gfaSqft = gfaSqm > 0 ? Math.round(gfaSqm * 10.7639) : 0;
+      const gfaSqft = gfaSqm > 0 ? gfaSqm * 10.7639 : 0;
+      const pmtilesPlotNumber = (pr.plotNumber as string) ?? "";
       setDdaLandHover({
         x: e.point.x, y: e.point.y,
-        plotNumber: (pr.plotNumber as string) ?? "",
+        plotNumber: pmtilesPlotNumber,
         mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
         areaSqm, areaSqft, gfaSqm, gfaSqft,
         status: (pr.status as string) ?? "",
@@ -4166,6 +4197,14 @@ function ParcelsMapPageInner() {
         municipality: (pr.municipality as string) ?? "",
         district: (pr.district as string) ?? "",
       });
+      // Hover outline on this PMTiles fill layer (founder backlog #9).
+      // Each PMTiles fill has a sibling `${fillId}-hover` line layer
+      // wired to filter by plotNumber. Keyed by plotNumber because
+      // PMTiles features don't share a stable numeric id.
+      const hoverLineId = `${fillId}-hover`;
+      if (map.getLayer(hoverLineId)) {
+        map.setFilter(hoverLineId, ["==", ["get", "plotNumber"], pmtilesPlotNumber]);
+      }
       // Kill the shared boundary native popup too (see ZAAHI handler).
       popupRef.current?.remove();
     });
@@ -4175,6 +4214,11 @@ function ParcelsMapPageInner() {
     // cancellable by the popup's onMouseEnter.
     bindLayerEvent(map, "mouseleave", fillId, () => {
       map.getCanvas().style.cursor = "";
+      // Clear PMTiles hover outline immediately on leave (backlog #9).
+      const hoverLineId = `${fillId}-hover`;
+      if (map.getLayer(hoverLineId)) {
+        map.setFilter(hoverLineId, ["==", ["get", "plotNumber"], "__none__"]);
+      }
       if (hoverCloseTimerRef.current != null) {
         window.clearTimeout(hoverCloseTimerRef.current);
       }
@@ -4641,6 +4685,12 @@ function ParcelsMapPageInner() {
         };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
+        // Hover outline clears on vault-shared leave (backlog #9). Shared
+        // vault rides its own source so the ZAAHI_PLOTS_HOVER_LINE filter
+        // never matches; this is a no-op safety belt.
+        if (map.getLayer(ZAAHI_PLOTS_HOVER_LINE)) {
+          map.setFilter(ZAAHI_PLOTS_HOVER_LINE, ["==", ["id"], "__none__"]);
+        }
         if (hoverCloseTimerRef.current != null) {
           window.clearTimeout(hoverCloseTimerRef.current);
         }
@@ -4733,6 +4783,13 @@ function ParcelsMapPageInner() {
             far: p.far ?? 0,
             planDateIso: p.planDateIso ?? "",
           });
+          // Hover outline — light up the polygon's gold contour. Founder
+          // backlog #9 (2026-06-12): no card on hover, just the glow.
+          // Selection (click → SidePanel open) keeps its own pulsing glow
+          // via ZAAHI_PLOTS_GLOW / ZAAHI_PLOTS_GLOW_CRISP layers below.
+          if (p.id && map.getLayer(ZAAHI_PLOTS_HOVER_LINE)) {
+            map.setFilter(ZAAHI_PLOTS_HOVER_LINE, ["==", ["id"], p.id]);
+          }
           // ZAAHI listings take priority — drop any PMTiles / shared-vault
           // popup that fired for the same cursor frame so only one card
           // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
@@ -4746,9 +4803,12 @@ function ParcelsMapPageInner() {
         });
         bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
-          // Defer close ~220 ms so the cursor can transit onto the now
-          // clickable card without it vanishing. Card's onMouseEnter
-          // cancels the timer; onMouseLeave closes immediately.
+          // Hover outline clears immediately on leave (backlog #9).
+          if (map.getLayer(ZAAHI_PLOTS_HOVER_LINE)) {
+            map.setFilter(ZAAHI_PLOTS_HOVER_LINE, ["==", ["id"], "__none__"]);
+          }
+          // Defer state close ~220 ms — the click-flyTo logic reads from
+          // hover state, and a brief mouseleave shouldn't kill it.
           if (hoverCloseTimerRef.current != null) {
             window.clearTimeout(hoverCloseTimerRef.current);
           }
@@ -5602,6 +5662,7 @@ function ParcelsMapPageInner() {
         filterPanelOpen={filterPanelOpen}
         activeFilterCount={activeFilterCount}
         onToggleFilterPanel={() => setFilterPanelOpen((o) => !o)}
+        mapRef={mapRef}
       />
       {addFlow === "chooser" && (
         <AddPlotChooser
@@ -5904,6 +5965,7 @@ function ParcelsMapPageInner() {
             title="Layers"
             active={layersOpen}
             onClick={() => {
+              sound.uiTap();
               setLayersOpen((o) => !o);
               setPortalOpen(false);
             }}
@@ -6000,7 +6062,10 @@ function ParcelsMapPageInner() {
           <ChromeBtn
             title="Legend"
             active={legendOpen}
-            onClick={() => setLegendOpen((o) => !o)}
+            onClick={() => {
+              sound.uiTap();
+              setLegendOpen((o) => !o);
+            }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="8" y1="6" x2="21" y2="6" />
@@ -6013,9 +6078,9 @@ function ParcelsMapPageInner() {
           </ChromeBtn>
         </span>
         {/* 2. Zoom in */}
-        <ChromeBtn title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
+        <ChromeBtn title="Zoom in" onClick={() => { sound.uiTap(); mapRef.current?.zoomIn(); }}>+</ChromeBtn>
         {/* 3. Zoom out */}
-        <ChromeBtn title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
+        <ChromeBtn title="Zoom out" onClick={() => { sound.uiTap(); mapRef.current?.zoomOut(); }}>−</ChromeBtn>
         {/* 4. Reset bearing — compass icon rotates with current bearing. */}
         <ChromeBtn
           title="Reset bearing"
@@ -6032,7 +6097,9 @@ function ParcelsMapPageInner() {
             if (!map) return;
             const next = !is3D;
             setIs3D(next);
-            sound.whoosh();
+            // 2D/3D toggle gets the brighter uiClick — toggling perspective
+            // is a "primary" action vs the zoom/layers neutral chrome.
+            sound.uiClick();
             map.easeTo({ pitch: next ? 45 : 0, duration: 400 });
           }}
         >
@@ -6478,278 +6545,13 @@ function ParcelsMapPageInner() {
           opacity: 1;
         }
       `}</style>
-      {!selectedParcelId && !selectedVaultEntry && zaahiHover && (() => {
-        const title = zaahiHover.projectName || zaahiHover.plotNumber;
-        const authority =
-          zaahiHover.emirate === "Dubai" ? "DDA"
-          : zaahiHover.emirate === "Abu Dhabi" ? "ADDED"
-          : "";
-        const hasPlotArea = zaahiHover.plotAreaSqft > 0 || zaahiHover.plotAreaSqm > 0;
-        const hasGfa = zaahiHover.maxGfaSqft > 0 || zaahiHover.maxGfaSqm > 0;
-        const hasFar = zaahiHover.far > 0;
-        const hasHeight = !!zaahiHover.maxHeightCode || zaahiHover.maxFloors > 0 || zaahiHover.maxHeightMeters > 0;
-        const heightParts: string[] = [];
-        if (zaahiHover.maxHeightCode) heightParts.push(zaahiHover.maxHeightCode);
-        if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
-        if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
-        const planDate = formatPlanDate(zaahiHover.planDateIso);
-        // Physical status (Under Construction / Completed / etc.) is not
-        // stored on Parcel or AffectionPlan today — only Parcel.status
-        // (ParcelStatus enum) which is the marketplace listing state, and
-        // Building.status (separate table, not joined here). Row omitted
-        // until schema gains a physical-status field or Parcel↔Building FK.
-        const handleOpenParcel = () => {
-          const map = mapRef.current;
-          if (!map || !zaahiHover.id) return;
-          map.flyTo({
-            center: [zaahiHover.lng, zaahiHover.lat],
-            zoom: 16, pitch: 45, duration: 2000, essential: true,
-          });
-          // Mirror HeaderBar Find handshake (page.tsx ~6155) — open the
-          // right SidePanel after the camera lands, not during flight.
-          window.setTimeout(() => {
-            setSelectedParcelId(zaahiHover.id);
-          }, 2000);
-          setZaahiHover(null);
-        };
-        return (
-          <Panel
-            radius={RADIUS_CARD}
-            noShadow
-            style={{
-              position: "absolute",
-              left: zaahiHover.x + 14,
-              top: zaahiHover.y + 14,
-              width: 260,
-              // Gold left-border accent kept — distinguishes ZAAHI
-              // listings from PMTiles (blue) and vault (gold variant).
-              borderLeft: `3px solid ${GOLD}`,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-              padding: "10px 12px",
-              fontSize: 11,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              lineHeight: 1.45,
-              pointerEvents: "auto",
-              cursor: "pointer",
-              zIndex: 30,
-            }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => setZaahiHover(null)}
-            onClick={handleOpenParcel}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {title}
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                {authority && (
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                  }}>{authority}</span>
-                )}
-                {!!zaahiHover.plotNumber && /^\d{5,10}$/.test(zaahiHover.plotNumber) && (
-                  <VaultAddButton
-                    plotNumber={zaahiHover.plotNumber}
-                    onClick={() => openVaultWizardWith(zaahiHover.plotNumber)}
-                  />
-                )}
-              </span>
-            </div>
-            {hasPlotArea && (
-              <PmtilesHoverRow label="Plot Area"
-                value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />
-            )}
-            {hasGfa && (
-              <PmtilesHoverRow label="Max GFA"
-                value={fmtA(zaahiHover.maxGfaSqft, zaahiHover.maxGfaSqm) ?? "—"} />
-            )}
-            {hasFar && (
-              <PmtilesHoverRow label="FAR" value={zaahiHover.far.toFixed(1)} />
-            )}
-            {hasHeight && (
-              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
-            )}
-            {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
-            )}
-            {/* Add-to-Vault button moved to the header row (top-right
-                "+" icon) as part of the founder spec 2026-05-31. The
-                openVaultWizardWith helper handles auth-redirect, popup
-                close, and plot pre-fill. */}
-          </Panel>
-        );
-      })()}
-      {!selectedParcelId && !selectedVaultEntry && vaultHover && (() => {
-        const title = vaultHover.projectName || vaultHover.plotNumber;
-        const hasPlotArea = vaultHover.plotAreaSqft > 0 || vaultHover.area > 0;
-        const hasGfa = vaultHover.maxGfaSqft > 0;
-        const hasFar = vaultHover.far > 0;
-        const hasHeight = !!vaultHover.maxHeightCode || vaultHover.maxFloors > 0 || vaultHover.maxHeightMeters > 0;
-        const heightParts: string[] = [];
-        if (vaultHover.maxHeightCode) heightParts.push(vaultHover.maxHeightCode);
-        if (vaultHover.maxFloors > 0) heightParts.push(`${vaultHover.maxFloors} floors`);
-        if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
-        const planDate = formatPlanDate(vaultHover.planDateIso);
-        const handleOpen = () => {
-          if (vaultHover.id) setSelectedVaultEntry({ id: vaultHover.id, mode: vaultHover.mode });
-          setVaultHover(null);
-        };
-        return (
-          <Panel
-            radius={RADIUS_CARD}
-            noShadow
-            style={{
-              position: "absolute",
-              left: vaultHover.x + 14,
-              top: vaultHover.y + 14,
-              width: 260,
-              borderLeft: `3px solid ${GOLD}`,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-              padding: "10px 12px",
-              fontSize: 11,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              lineHeight: 1.45,
-              pointerEvents: "auto",
-              cursor: "pointer",
-              zIndex: 30,
-            }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => setVaultHover(null)}
-            onClick={handleOpen}
-          >
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
-                {title}
-              </span>
-              <span style={{
-                fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                letterSpacing: "0.06em", textTransform: "uppercase",
-              }}>
-                {vaultHover.mode === "share" ? "SHARED" : "VAULT"}
-              </span>
-            </div>
-            {hasPlotArea && (
-              <PmtilesHoverRow label="Plot Area"
-                value={fmtA(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area, null) ?? "—"} />
-            )}
-            {hasGfa && (
-              <PmtilesHoverRow label="Max GFA" value={fmtA(vaultHover.maxGfaSqft, null) ?? "—"} />
-            )}
-            {hasFar && (
-              <PmtilesHoverRow label="FAR" value={vaultHover.far.toFixed(1)} />
-            )}
-            {hasHeight && (
-              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
-            )}
-            {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
-            )}
-            <PmtilesHoverRow
-              label="Asking Price"
-              value={fmtPShort(vaultHover.askingAed) ?? "—"}
-            />
-          </Panel>
-        );
-      })()}
-      {!selectedParcelId && !selectedVaultEntry && ddaLandHover && (() => {
-        const m = ddaLandHover.municipality;
-        const authority =
-          ddaLandHover.source === "dda" ? "DDA"
-          : ddaLandHover.source === "ad" && m === "ADM" ? "ADM"
-          : ddaLandHover.source === "ad" && m === "AAM" ? "AAM"
-          : ddaLandHover.source === "ad" ? "AD"
-          : "";
-        const status = formatPmtilesStatus(ddaLandHover.status);
-        const canAdd = /^\d{5,10}$/.test(ddaLandHover.plotNumber);
-        return (
-          <Panel
-            radius={RADIUS_CARD}
-            noShadow
-            style={{
-              position: "absolute",
-              left: ddaLandHover.x + 14,
-              top: ddaLandHover.y + 14,
-              width: 250,
-              // PMTiles plots use a blue left-border accent — visually
-              // distinct from the gold-borderLeft ZAAHI listing card.
-              borderLeft: "3px solid #4A90D9",
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-              padding: "10px 12px",
-              fontSize: 11,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              lineHeight: 1.45,
-              // Interactive: the "+" button needs to receive clicks
-              // and the popup needs to survive a brief mouseleave.
-              pointerEvents: "auto",
-              zIndex: 30,
-            }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-              }
-              hoverCloseTimerRef.current = window.setTimeout(() => {
-                setDdaLandHover(null);
-                hoverCloseTimerRef.current = null;
-              }, 220);
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: "#4A90D9", fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {ddaLandHover.plotNumber || "—"}
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-              {authority && (
-                <span style={{
-                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                  letterSpacing: "0.06em", textTransform: "uppercase",
-                }}>{authority}</span>
-              )}
-              {canAdd && (
-                <VaultAddButton
-                  plotNumber={ddaLandHover.plotNumber}
-                  onClick={() => openVaultWizardWith(ddaLandHover.plotNumber)}
-                />
-              )}
-              </span>
-            </div>
-            {ddaLandHover.mainLandUse && (
-              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
-                {ddaLandHover.mainLandUse}
-              </div>
-            )}
-            <PmtilesHoverRow label="Plot Area"
-              value={fmtA(ddaLandHover.areaSqft, ddaLandHover.areaSqm) ?? "—"} />
-            {ddaLandHover.gfaSqm > 0 && (
-              <PmtilesHoverRow label="Max GFA"
-                value={fmtA(ddaLandHover.gfaSqft, ddaLandHover.gfaSqm) ?? "—"} />
-            )}
-            {/* Max Height + Affection Plan rows intentionally omitted —
-                neither field is emitted by scripts/prepare-tiles.ts into
-                the PMTiles feature properties. To enable: add
-                MAX_HEIGHT_FLOORS + MAX_HEIGHT_METERS (read internally
-                already) and AFFECTION_PLAN_DATE to baseProps, then
-                rebuild via scripts/update-tiles.sh. */}
-            {status && <PmtilesHoverRow label="Status" value={status} />}
-          </Panel>
-        );
-      })()}
+      {/* Hover popup cards (zaahiHover / vaultHover / ddaLandHover) were
+          removed 2026-06-12 per founder backlog #9. On hover we now light
+          up only the polygon's brand-gold contour (ZAAHI_PLOTS_HOVER_LINE
+          + each PMTiles `${fillId}-hover` line layer) — no card opens.
+          The full SidePanel still opens on click.
+          The hover state vars are kept alive so the existing click-flyTo
+          handshake on hover.id continues to work; only the JSX is gone. */}
       {/* The music / sound toggle moved into the HeaderBar (next to
           Profile) per founder spec 2026-04-12. The old floating
           button at top:56 right:16 is gone. */}
@@ -7385,6 +7187,7 @@ function HeaderBar({
   filterPanelOpen,
   activeFilterCount,
   onToggleFilterPanel,
+  mapRef,
 }: {
   c: ChromeTheme;
   isDark: boolean;
@@ -7396,6 +7199,9 @@ function HeaderBar({
   filterPanelOpen: boolean;
   activeFilterCount: number;
   onToggleFilterPanel: () => void;
+  /** Used by doFind to fall through to PMTiles querySourceFeatures when
+   *  the plot isn't among ZAAHI's 132 listings. Founder backlog #13. */
+  mapRef: React.MutableRefObject<MLMap | null>;
 }) {
   const [find, setFind] = useState("");
   const [findOpen, setFindOpen] = useState(false);
@@ -7439,24 +7245,68 @@ function HeaderBar({
     if (!plotNumber) return;
     setFindError(null);
     setFindBusy(true);
+    // Subtle Netflix-style click on submit (founder backlog #33).
+    sound.uiClick();
     try {
+      // Strategy 1 — ZAAHI listings (curated 132 parcels). Existing
+      // /api/parcels/map returns geometry + id, so we can both fly and
+      // open the SidePanel.
       const r = await apiFetch("/api/parcels/map");
       const data = (await r.json()) as {
         items: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
       };
       const hit = data.items.find((it) => it.plotNumber === plotNumber);
-      if (!hit?.geometry) {
-        setFindError("Plot not found");
-      } else {
+      if (hit?.geometry) {
         const ring = hit.geometry.coordinates[0];
         const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
         const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
         onFly(lng, lat);
-        // Wait for the 2s flyTo animation to land before popping the side panel.
         setTimeout(() => onSelectParcel(hit.id), 2000);
         setFind("");
         setFindOpen(false);
+        return;
       }
+      // Strategy 2 — PMTiles vector features in the current viewport.
+      // Founder backlog #13 (2026-06-12): search ANY plot, not just our
+      // listings. querySourceFeatures only sees plots whose tiles are
+      // currently loaded — covered explicitly in the "viewport limit"
+      // error copy below + commit message. Vault layer not searched
+      // because vault plot numbers are private to the owner.
+      const m = mapRef.current;
+      if (m) {
+        const PMTILES_SOURCES = ["dda-land-tiles", "ad-adm-tiles", "ad-other-tiles"];
+        let pmtilesHit: GeoJSON.Feature | null = null;
+        for (const src of PMTILES_SOURCES) {
+          if (!m.getSource(src)) continue;
+          try {
+            const feats = m.querySourceFeatures(src, {
+              sourceLayer: "plots",
+              filter: ["==", ["get", "plotNumber"], plotNumber],
+            }) as unknown as GeoJSON.Feature[];
+            if (feats.length > 0) {
+              pmtilesHit = feats[0];
+              break;
+            }
+          } catch {
+            /* querySourceFeatures throws if tiles haven't loaded — skip */
+          }
+        }
+        if (pmtilesHit?.geometry && pmtilesHit.geometry.type === "Polygon") {
+          const ring = (pmtilesHit.geometry as GeoJSON.Polygon).coordinates[0];
+          if (ring.length > 0) {
+            const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+            const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+            onFly(lng, lat);
+            // PMTiles plots have no DB row → no SidePanel to open. The fly
+            // brings the user to it; the gold hover-outline takes over
+            // once the cursor enters the polygon.
+            setFind("");
+            setFindOpen(false);
+            return;
+          }
+        }
+      }
+      setFindError("Plot not found in viewport — pan/zoom to area");
     } catch {
       setFindError("Network error");
     } finally {

@@ -2100,7 +2100,7 @@ export default function FeasibilityV6Calculator({
                 <NumberInput value={far} readonly fullWidth />
               </Row>
               <Row label="GFA" tooltipKey="gfa" stacked>
-                <NumberInput value={Math.round(area.gfa)} unit="sqft" readonly fullWidth />
+                <NumberInput value={area.gfa} unit="sqft" readonly fullWidth />
               </Row>
               <Row
                 label="BUA"
@@ -2132,7 +2132,7 @@ export default function FeasibilityV6Calculator({
                 <NumberInput value={efficiencyPct} unit="%" onChange={setEfficiencyPct} fullWidth />
               </Row>
               <Row label="SFA" tooltipKey="sfa" stacked>
-                <NumberInput value={Math.round(area.sfa)} unit="sqft" readonly fullWidth />
+                <NumberInput value={area.sfa} unit="sqft" readonly fullWidth />
               </Row>
             </Panel>
 
@@ -2901,7 +2901,7 @@ export default function FeasibilityV6Calculator({
               <NumberInput value={far} readonly />
             </Row>
             <Row label="GFA" tooltipKey="gfa">
-              <NumberInput value={Math.round(area.gfa)} unit="sqft" readonly />
+              <NumberInput value={area.gfa} unit="sqft" readonly />
             </Row>
             <Row
               label="BUA"
@@ -2927,7 +2927,7 @@ export default function FeasibilityV6Calculator({
               <NumberInput value={efficiencyPct} unit="%" onChange={setEfficiencyPct} />
             </Row>
             <Row label="SFA" tooltipKey="sfa">
-              <NumberInput value={Math.round(area.sfa)} unit="sqft" readonly />
+              <NumberInput value={area.sfa} unit="sqft" readonly />
             </Row>
 
             <SectionTitle>Land</SectionTitle>

@@ -176,8 +176,16 @@ function drawPolygonPreview(geom: GeoJSON.Polygon | null | undefined): string | 
 // ── Formatting ──────────────────────────────────────────────────────
 
 function fmtInt(n: number | null | undefined): string {
+  // Founder backlog #7 (2026-06-12): areas render 1:1 with source. Whole
+  // numbers stay whole, decimals pass through (max 2 dp), all grouped.
   if (n == null || !Number.isFinite(n)) return '—';
-  return Math.round(n).toLocaleString('en-US');
+  if (n === 0) return '0';
+  const abs = Math.abs(n);
+  const isInt = Math.abs(abs - Math.round(abs)) < 1e-9;
+  if (isInt) return Math.round(n).toLocaleString('en-US');
+  const parts = n.toFixed(2).split('.');
+  const intPart = Number(parts[0]).toLocaleString('en-US');
+  return `${intPart}.${parts[1]}`;
 }
 function fmtAedBig(aed: number | null): string {
   if (aed == null) return '—';

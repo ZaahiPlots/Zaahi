@@ -459,9 +459,27 @@ export function fmtPct(n: number): string {
   return `${n.toFixed(1)}%`;
 }
 
+/**
+ * Format a numeric quantity for display. Renamed-in-place from a strict
+ * integer formatter (founder backlog #7, 2026-06-12): areas now flow
+ * through 1:1 with source — whole numbers stay whole, decimals pass
+ * through, both grouped by thousands.
+ *
+ * Behaviour:
+ *   • Integer input → "47,250"
+ *   • Decimal input → "47,250.83" (max 2 dp, matches the rest of the UI)
+ *   • Falsy / non-finite → "—"
+ */
 export function fmtInt(n: number): string {
   if (!isFinite(n)) return "—";
-  return Math.round(n).toLocaleString("en-US");
+  if (n === 0) return "0";
+  const abs = Math.abs(n);
+  const isInt = Math.abs(abs - Math.round(abs)) < 1e-9;
+  if (isInt) return Math.round(n).toLocaleString("en-US");
+  // Up to 2 decimals, grouped — mirrors fmtInputNumber.
+  const parts = n.toFixed(2).split(".");
+  const intPart = Number(parts[0]).toLocaleString("en-US");
+  return `${intPart}.${parts[1]}`;
 }
 
 export function parseNumberInput(s: string): number {
