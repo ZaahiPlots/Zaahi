@@ -62,6 +62,11 @@ import {
 // prod unchanged. The flag is read LIVE from window.location.search inside
 // loadZaahiPlots (+ localStorage fallback seeded at mount) — never via a
 // memo/SSR value, per the Signature §10 stale-flag lesson.
+// LOD: the residential Three.js massing only renders at/above this zoom. Below
+// it the archetype is hidden and residential falls back to the normal
+// fill-extrusion (no double-render, no far-zoom perspective overhang).
+const ARCHETYPE_MIN_ZOOM = 14;
+
 // VARIANT A (2026-06-13): on a Vercel PREVIEW deployment the SSO auth redirect
 // strips `?archetypes=1` before React mounts, so the query never survives. So on
 // preview hosts the archetype massing defaults ON (no flag needed) for review.
@@ -3692,21 +3697,30 @@ function ParcelsMapPageInner() {
           const ctrl = installArchetypeLayer(map);
           archetypeCtrlRef.current = ctrl;
           (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes = ctrl;
+          // LOD: show the Three.js massing only at zoom >= ARCHETYPE_MIN_ZOOM
+          // and exclude residential from the fill-extrusion only then (else
+          // residential renders normally as fill-extrusion). No double-render.
+          const applyArchetypeLod = () => {
+            const show = archetypeActiveRef.current && map.getZoom() >= ARCHETYPE_MIN_ZOOM;
+            archetypeCtrlRef.current?.setEnabled(show);
+            if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+              const base = buildZaahiFilter();
+              map.setFilter(
+                ZAAHI_BUILDINGS_3D,
+                show
+                  ? (["all", base, ["!=", ["get", "landUse"], "RESIDENTIAL"]] as FilterSpecification)
+                  : base,
+              );
+            }
+          };
+          map.on("zoom", applyArchetypeLod);
+          (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod = applyArchetypeLod;
         }
         archetypeCtrlRef.current.setBuildings(archetypeInputs);
-        archetypeCtrlRef.current.setEnabled(true);
-        // Exclude ONLY residential from the fill-extrusion (it now renders via
-        // the Three.js layer) so it doesn't double-render; non-residential
-        // buildings stay on fill-extrusion exactly as before. ZAAHI_PLOTS_FILL
-        // / _LINE (click / hover / search hit-targets) are NOT touched, so
-        // residential plots remain fully interactive.
-        if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
-          map.setFilter(ZAAHI_BUILDINGS_3D, [
-            "all",
-            buildZaahiFilter(),
-            ["!=", ["get", "landUse"], "RESIDENTIAL"],
-          ] as FilterSpecification);
-        }
+        // Apply LOD now (sets enabled + residential exclusion per current zoom).
+        // ZAAHI_PLOTS_FILL / _LINE (click / hover / search) are never touched —
+        // residential stays fully interactive at every zoom.
+        (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod?.();
       }
 
       // ── Vault conflict markers (Phase 3 migration) ──
@@ -3857,10 +3871,15 @@ function ParcelsMapPageInner() {
     const expr = buildZaahiFilter();
     for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
       if (map.getLayer(lid)) {
-        // When the residential archetype layer is active, residential is
-        // rendered by the Three.js layer and must stay excluded from the 3D
-        // fill-extrusion (else double-render). Plot fill/line keep all types.
-        if (lid === ZAAHI_BUILDINGS_3D && archetypeActiveRef.current) {
+        // Exclude residential from the 3D fill-extrusion ONLY while the
+        // archetype massing is actually showing (active AND zoom >= min) —
+        // otherwise residential renders normally as fill-extrusion (LOD).
+        // Plot fill/line keep all types for click/hover/search.
+        if (
+          lid === ZAAHI_BUILDINGS_3D &&
+          archetypeActiveRef.current &&
+          map.getZoom() >= ARCHETYPE_MIN_ZOOM
+        ) {
           map.setFilter(lid, ["all", expr, ["!=", ["get", "landUse"], "RESIDENTIAL"]] as FilterSpecification);
         } else {
           map.setFilter(lid, expr);

@@ -73,6 +73,37 @@ function scaleRing(ring: number[][], f: number): number[][] {
   return ring.map(([x, y]) => [cx + (x - cx) * f, cy + (y - cy) * f]);
 }
 
+// ── Footprint containment (founder 2026-06-13: nothing crosses the plot) ──
+// Center-scaling is fine for convex footprints but a concave/irregular footprint
+// can push a centroid-scaled vertex outside the polygon. clampToFootprint binds
+// any stray vertex back onto the footprint boundary, so the result is always
+// ⊆ footprint regardless of shape. No-op for convex plots.
+function pointInRing(p: number[], r: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if (((yi > p[1]) !== (yj > p[1])) && (p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function nearestOnBoundary(p: number[], r: number[][]): number[] {
+  let best = r[0], bd = Infinity;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const a = r[j], b = r[i];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l2 = dx * dx + dy * dy || 1;
+    let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const q = [a[0] + t * dx, a[1] + t * dy];
+    const d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return best;
+}
+function clampToFootprint(ring: number[][], foot: number[][]): number[][] {
+  return ring.map((v) => (pointInRing(v, foot) ? v : nearestOnBoundary(v, foot)));
+}
+
 const FLOOR_H = 3.5;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -83,20 +114,21 @@ const FLOOR_H = 3.5;
 export function buildResidential(foot: number[][], obb: Obb, H: number): BuildResult {
   const solids: Solid[] = [];
   const bodyTop = H * 0.88;
-  // Body inset from the footprint so balcony ledges have room to read while the
-  // whole massing stays inside the plot.
-  solids.push({ t: "prism", ring: scaleRing(foot, 0.92), base: 0, top: bodyTop });
-  // Balcony bands — thin slabs INSET just inside the footprint (0.98), so they
-  // protrude past the inset body yet keep a clear gap to the plot boundary.
+  // Every ring is centroid-scaled THEN clamped to the footprint, so it is
+  // strictly inside the plot polygon even for concave/irregular footprints.
+  const bodyRing = clampToFootprint(scaleRing(foot, 0.92), foot);
+  solids.push({ t: "prism", ring: bodyRing, base: 0, top: bodyTop });
+  // Balcony bands — inset just inside the footprint (0.98); protrude past the
+  // inset body but never past the plot boundary.
   const bands = clamp(Math.round(bodyTop / 9), 3, 8);
-  const bandRing = scaleRing(foot, 0.98);
+  const bandRing = clampToFootprint(scaleRing(foot, 0.98), foot);
   for (let i = 1; i <= bands; i++) {
     const y = (bodyTop / (bands + 1)) * i;
     solids.push({ t: "prism", ring: bandRing, base: y - 0.5, top: y + 0.5 });
   }
   // Terraced setback top (two steps) — well inside.
-  solids.push({ t: "prism", ring: scaleRing(foot, 0.64), base: bodyTop, top: bodyTop + (H - bodyTop) * 0.6 });
-  solids.push({ t: "prism", ring: scaleRing(foot, 0.4), base: bodyTop + (H - bodyTop) * 0.6, top: H });
+  solids.push({ t: "prism", ring: clampToFootprint(scaleRing(foot, 0.64), foot), base: bodyTop, top: bodyTop + (H - bodyTop) * 0.6 });
+  solids.push({ t: "prism", ring: clampToFootprint(scaleRing(foot, 0.4), foot), base: bodyTop + (H - bodyTop) * 0.6, top: H });
   return { solids, floorLines: true };
 }
 
