@@ -59,15 +59,9 @@ import {
 
 // research/landuse-archetypes — `?archetypes=1` renders ZAAHI listings as
 // per-land-use morphology massing via a Three.js CustomLayer. Default off →
-// prod unchanged. Read once at module load (mirrors the buildingRotation flag).
-function archetypesFlagOn(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return new URLSearchParams(window.location.search).get("archetypes") === "1";
-  } catch {
-    return false;
-  }
-}
+// prod unchanged. The flag is read LIVE from window.location.search inside
+// loadZaahiPlots (+ localStorage fallback seeded at mount) — never via a
+// memo/SSR value, per the Signature §10 stale-flag lesson.
 // Zoom at/above which the rich Three.js massing replaces fill-extrusion (LOD).
 const ARCHETYPE_MIN_ZOOM = 15;
 import {
@@ -1663,6 +1657,18 @@ function ParcelsMapPageInner() {
   // ?archetypes=1 — Three.js morphology CustomLayer controller (lazily
   // installed inside loadZaahiPlots). Null when the flag is off.
   const archetypeCtrlRef = useRef<ArchetypeLayerController | null>(null);
+  // Seed the archetypes flag at mount, when window.location.search is freshest
+  // (before any auth/SSO redirect can strip the query, and before
+  // loadZaahiPlots reads it). Persisted to localStorage so the flag survives
+  // the redirect dance. `?archetypes=0` turns it off again.
+  useEffect(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get("archetypes");
+      if (v === "1") window.localStorage.setItem("zaahi-archetypes", "1");
+      else if (v === "0") window.localStorage.removeItem("zaahi-archetypes");
+      console.log("[ZAAHI archetypes] mount seed: search=", JSON.stringify(window.location.search), "· stored=", window.localStorage.getItem("zaahi-archetypes"));
+    } catch { /* ignore */ }
+  }, []);
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
@@ -3620,13 +3626,32 @@ function ParcelsMapPageInner() {
       // ARCHETYPE_MIN_ZOOM the rich massing replaces the fill-extrusion;
       // below it we fall back to fill-extrusion for performance. Default-off
       // flag → none of this runs in prod.
-      if (archetypesFlagOn()) {
-        console.log(
-          "[ZAAHI archetypes] ?archetypes=1 ON · inputs:", archetypeInputs.length,
-          "· zoom:", map.getZoom().toFixed(1),
-          "· min-zoom for massing:", ARCHETYPE_MIN_ZOOM,
-          "(below min → fill-extrusion shows by LOD design)",
-        );
+      // Flag read LIVE from the URL at call time (Signature §10 lesson: never
+      // via memo/SSR). localStorage fallback survives any auth/SSO redirect that
+      // strips the query before loadZaahiPlots runs (also seeded at mount, see
+      // the archetypes-flag useEffect). `?archetypes=0` clears it.
+      let arSearch = "";
+      let arFlag = false;
+      try {
+        arSearch = typeof window !== "undefined" && window.location ? window.location.search : "";
+        const v = new URLSearchParams(arSearch).get("archetypes");
+        if (v === "1") {
+          arFlag = true;
+          try { window.localStorage.setItem("zaahi-archetypes", "1"); } catch { /* ignore */ }
+        } else if (v === "0") {
+          try { window.localStorage.removeItem("zaahi-archetypes"); } catch { /* ignore */ }
+        } else {
+          try { arFlag = window.localStorage.getItem("zaahi-archetypes") === "1"; } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+      // ALWAYS log (before the gate) so flag activation is observable.
+      console.log(
+        "[ZAAHI archetypes] flag check: search=", JSON.stringify(arSearch),
+        "· result=", arFlag, "· zoom=", map.getZoom().toFixed(1),
+        "· min-zoom=", ARCHETYPE_MIN_ZOOM,
+      );
+      if (arFlag) {
+        console.log("[ZAAHI archetypes] ON · inputs:", archetypeInputs.length);
         if (!archetypeCtrlRef.current) {
           const ctrl = installArchetypeLayer(map);
           archetypeCtrlRef.current = ctrl;
