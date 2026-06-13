@@ -62,9 +62,6 @@ import {
 // prod unchanged. The flag is read LIVE from window.location.search inside
 // loadZaahiPlots (+ localStorage fallback seeded at mount) — never via a
 // memo/SSR value, per the Signature §10 stale-flag lesson.
-// Zoom at/above which the rich Three.js massing replaces fill-extrusion (LOD).
-const ARCHETYPE_MIN_ZOOM = 14;
-
 // VARIANT A (2026-06-13): on a Vercel PREVIEW deployment the SSO auth redirect
 // strips `?archetypes=1` before React mounts, so the query never survives. So on
 // preview hosts the archetype massing defaults ON (no flag needed) for review.
@@ -1672,6 +1669,9 @@ function ParcelsMapPageInner() {
   // ?archetypes=1 — Three.js morphology CustomLayer controller (lazily
   // installed inside loadZaahiPlots). Null when the flag is off.
   const archetypeCtrlRef = useRef<ArchetypeLayerController | null>(null);
+  // True while the residential archetype layer is active (preview/flag). Used
+  // so reapplyMapFilters keeps residential excluded from the fill-extrusion.
+  const archetypeActiveRef = useRef<boolean>(false);
   // Seed the archetypes flag at mount, when window.location.search is freshest
   // (before any auth/SSO redirect can strip the query, and before
   // loadZaahiPlots reads it). Persisted to localStorage so the flag survives
@@ -3405,17 +3405,21 @@ function ParcelsMapPageInner() {
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
 
-        // Archetype massing input (consumed by the Three.js CustomLayer when
-        // ?archetypes=1). Same footprint ring + height the fill-extrusion uses.
-        archetypeInputs.push({
-          parcelId: it.id,
-          footprint: footprintRing,
-          landUse,
-          colorHex: buildingHex,
-          totalH,
-          isVault: it.isVault,
-          status: it.status,
-        });
+        // Archetype massing input — RESIDENTIAL ONLY (founder 2026-06-13).
+        // All other land-uses are intentionally NOT added → they stay on the
+        // existing fill-extrusion path unchanged. Same footprint ring + height
+        // the fill-extrusion would use.
+        if (landUse === "RESIDENTIAL") {
+          archetypeInputs.push({
+            parcelId: it.id,
+            footprint: footprintRing,
+            landUse,
+            colorHex: buildingHex,
+            totalH,
+            isVault: it.isVault,
+            status: it.status,
+          });
+        }
 
         // ── ZAAHI Signature stepped 3D ──
         // Each building is 1, 2, or 3 features depending on height:
@@ -3635,12 +3639,12 @@ function ParcelsMapPageInner() {
       }
 
       // ── Archetype morphology layer (?archetypes=1) ──────────────────
-      // Render the curated listings as per-land-use building morphology via
-      // a Three.js CustomLayer (reuses the proven BuildingGlbLayer / signature
-      // three-layer matrix + framebuffer pattern). LOD: above
-      // ARCHETYPE_MIN_ZOOM the rich massing replaces the fill-extrusion;
-      // below it we fall back to fill-extrusion for performance. Default-off
-      // flag → none of this runs in prod.
+      // RESIDENTIAL ONLY (founder 2026-06-13): residential listings/vault plots
+      // render as Three.js morphology massing (reuses the proven BuildingGlbLayer
+      // / signature three-layer matrix + framebuffer pattern); residential is
+      // excluded from the fill-extrusion so it doesn't double-render. Every
+      // other land-use stays on the existing fill-extrusion, untouched.
+      // Default-off in prod (hostname allow-list).
       // Flag read LIVE from the URL at call time (Signature §10 lesson: never
       // via memo/SSR). localStorage fallback survives any auth/SSO redirect that
       // strips the query before loadZaahiPlots runs (also seeded at mount, see
@@ -3675,26 +3679,34 @@ function ParcelsMapPageInner() {
         "[ZAAHI archetypes] flag check: search=", JSON.stringify(arSearch),
         "· result=", arFlag, "· via=", arVia,
         "· host=", (typeof window !== "undefined" ? window.location.hostname : ""),
-        "· zoom=", map.getZoom().toFixed(1), "· min-zoom=", ARCHETYPE_MIN_ZOOM,
+        "· zoom=", map.getZoom().toFixed(1),
       );
+      archetypeActiveRef.current = arFlag;
       if (arFlag) {
-        console.log("[ZAAHI archetypes] ON · inputs:", archetypeInputs.length);
+        // Founder 2026-06-13: ONLY landUse=RESIDENTIAL renders as archetype
+        // morphology. archetypeInputs is already filtered to residential
+        // upstream; every other land-use keeps the existing fill-extrusion,
+        // untouched.
+        console.log("[ZAAHI archetypes] ON (RESIDENTIAL only) · residential inputs:", archetypeInputs.length);
         if (!archetypeCtrlRef.current) {
           const ctrl = installArchetypeLayer(map);
           archetypeCtrlRef.current = ctrl;
           (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes = ctrl;
-          const applyArchetypeLod = () => {
-            const on = map.getZoom() >= ARCHETYPE_MIN_ZOOM;
-            archetypeCtrlRef.current?.setEnabled(on);
-            if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
-              map.setLayoutProperty(ZAAHI_BUILDINGS_3D, "visibility", on ? "none" : "visible");
-            }
-          };
-          map.on("zoom", applyArchetypeLod);
-          (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod = applyArchetypeLod;
         }
         archetypeCtrlRef.current.setBuildings(archetypeInputs);
-        (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod?.();
+        archetypeCtrlRef.current.setEnabled(true);
+        // Exclude ONLY residential from the fill-extrusion (it now renders via
+        // the Three.js layer) so it doesn't double-render; non-residential
+        // buildings stay on fill-extrusion exactly as before. ZAAHI_PLOTS_FILL
+        // / _LINE (click / hover / search hit-targets) are NOT touched, so
+        // residential plots remain fully interactive.
+        if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+          map.setFilter(ZAAHI_BUILDINGS_3D, [
+            "all",
+            buildZaahiFilter(),
+            ["!=", ["get", "landUse"], "RESIDENTIAL"],
+          ] as FilterSpecification);
+        }
       }
 
       // ── Vault conflict markers (Phase 3 migration) ──
@@ -3845,7 +3857,14 @@ function ParcelsMapPageInner() {
     const expr = buildZaahiFilter();
     for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
       if (map.getLayer(lid)) {
-        map.setFilter(lid, expr);
+        // When the residential archetype layer is active, residential is
+        // rendered by the Three.js layer and must stay excluded from the 3D
+        // fill-extrusion (else double-render). Plot fill/line keep all types.
+        if (lid === ZAAHI_BUILDINGS_3D && archetypeActiveRef.current) {
+          map.setFilter(lid, ["all", expr, ["!=", ["get", "landUse"], "RESIDENTIAL"]] as FilterSpecification);
+        } else {
+          map.setFilter(lid, expr);
+        }
       }
     }
     // Archetype layer filter parity (?archetypes=1): reuse the SAME filter
