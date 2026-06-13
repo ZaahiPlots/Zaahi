@@ -3790,6 +3790,20 @@ function ParcelsMapPageInner() {
         map.setFilter(lid, expr);
       }
     }
+    // Archetype layer filter parity (?archetypes=1): reuse the SAME filter
+    // expression via querySourceFeatures (no JS reimplementation) to get the
+    // passing parcelIds, then drive the CustomLayer mesh visibility.
+    const ac = archetypeCtrlRef.current;
+    if (ac && map.getSource(ZAAHI_PLOTS_SRC)) {
+      try {
+        const passing = new Set<string>();
+        for (const feat of map.querySourceFeatures(ZAAHI_PLOTS_SRC, { filter: expr })) {
+          const id = (feat.properties as { id?: string } | null)?.id;
+          if (id) passing.add(id);
+        }
+        ac.setVisibility((pid) => passing.has(pid));
+      } catch { /* querySourceFeatures can throw mid-style-swap — ignore */ }
+    }
     // Wave 1: propagate Archie landUse/status filters to PMTiles too.
     // applyZaahiExclusionToTileLayers now composes everything (tier base
     // + ZAAHI exclusion + Archie filters) via buildPmtilesFilter, so

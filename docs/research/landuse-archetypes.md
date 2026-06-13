@@ -83,10 +83,11 @@ Two more HOTEL hits sit just outside DLRC-proper and look unrelated: `6430106`
 (lat 25.105, north — Liwan side) and `64811085` (a 2.5M-sqft multi-use recreational
 facility that merely *includes* a hotel use, Falconcity-type). Excluding those → **8**.
 
-**Q for founder:** is the "12" from a newer DDA cut / a wider boundary / counting
-hotel+hotel-apartment+serviced separately? I can re-sweep an exact polygon if you give
-the DLRC boundary, or pull DDA GIS live. For now the confirmed DLRC hotel cluster = the
-8 plots above.
+**RESOLVED 2026-06-13 (round 3): the answer is 8, not 12.** Confirmed against the real
+DLRC project boundary (372 plots in `data/layers/dda/dlrc.geojson`) AND a live
+authoritative DDA GIS query (`PROJECT_NAME='DUBAI LAND RESIDENCE COMPLEX'` + land use
+HOTEL/HOSPITALITY) — both return exactly the 8 `6489xxx` plots above. The two earlier
+bbox outliers (6430106, 64811085) are NOT in the DLRC project. No 12 in DDA data.
 
 ---
 

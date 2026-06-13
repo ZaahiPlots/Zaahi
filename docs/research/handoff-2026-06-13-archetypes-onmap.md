@@ -1,7 +1,36 @@
 # Handoff — Archetypes on the map via Three.js CustomLayer (2026-06-13)
 
-Branch `research/landuse-archetypes` (pushed to origin, tip `094435b`).
+Branch `research/landuse-archetypes` (pushed to origin).
 **STOP gates honoured:** not merged to main; tiles/canonical files/auth/prod DB untouched.
+
+## ROUND 3 UPDATE (env fix + DLRC + filter parity)
+
+- **Preview env FIXED.** Added the missing branch-Preview env vars (DIRECT_URL,
+  DATABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL) by copying
+  Production values via `vercel env pull` → `vercel env add … preview
+  research/landuse-archetypes` (NO `env rm` — 06-12 lesson). TILES_BASE_URL is `""`
+  in prod (relative tiles) so not needed. Preview now builds **Ready**:
+  `https://zaahi-nbwrcw4lg-zaahiplots-projects.vercel.app` (latest = newest push).
+- **DLRC = 8, definitive.** Not 12. Confirmed two ways: (1) cross-ref of the hotel
+  candidates against the real 372-plot DLRC project set in
+  `data/layers/dda/dlrc.geojson`; (2) live authoritative DDA GIS query
+  `PROJECT_NAME='DUBAI LAND RESIDENCE COMPLEX' AND land use HOTEL/HOSPITALITY` → 8
+  plots: 6489099, 6489024, 6489023, 6489017, 6489008, 6489009, 6489015, 6489014.
+- **Filter parity DONE.** `reapplyMapFilters` now drives the archetype layer via
+  `querySourceFeatures(ZAAHI_PLOTS_SRC, {filter: buildZaahiFilter()})` → passing
+  parcelIds → `setVisibility`. Reuses the exact filter expression (no reimpl).
+- **Screenshots on the real basemap — STILL not auto-captured (handed to founder).**
+  Two walls neither bypassable within constraints: (a) the preview URL is behind
+  **Vercel deployment protection (SSO 401)** — needs a bypass secret I don't have, and
+  disabling protection weakens all previews; (b) the app `/parcels/map` is behind
+  `AuthGuard` needing an APPROVED **prod** Supabase user — creating one is a prod auth
+  write (Autonomy v2 STOP), and `create-test-user.sh` only targets *staging*
+  (`pdoxeieilnquhwtnsdug`), and pointing local at staging means editing `.env.local`
+  (forbidden). → **Founder action:** open
+  `https://zaahi-nbwrcw4lg-zaahiplots-projects.vercel.app/parcels/map?archetypes=1`
+  (you're already Vercel-SSO'd + app-approved), **zoom ≥ 15** on any listing cluster
+  (e.g. Majan / Dubai Studio City / Al Reem AD), and the per-land-use morphology
+  renders. Live-MapLibre proof shots already in `archetype-shots-v2/map-repro-*.png`.
 
 ## What shipped this session
 
