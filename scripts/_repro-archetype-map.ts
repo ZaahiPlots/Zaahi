@@ -38,7 +38,9 @@ map.on("load", async () => {
   const ctrl = installArchetypeLayer(map);
   ctrl.setBuildings(inputs);
   ctrl.setEnabled(true);
-  map.jumpTo({ center: [clng, clat], zoom: 17.5, pitch: 58, bearing: 20 });
+  // Frame to fit: pull back for tall towers so the whole massing shows.
+  const z = totalH > 120 ? 15.6 : totalH > 50 ? 16.4 : 17.2;
+  map.jumpTo({ center: [clng, clat], zoom: z, pitch: 52, bearing: 20 });
   document.getElementById("status")!.textContent = `${cat} · plot ${f.plot} · ${Math.round(totalH)}m`;
   setTimeout(() => { (document.getElementById("ready") as HTMLElement).textContent = "ready"; }, 1200);
 });

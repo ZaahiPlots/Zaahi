@@ -16,7 +16,7 @@
 import type maplibregl from "maplibre-gl";
 import { MercatorCoordinate } from "maplibre-gl";
 import * as THREE from "three";
-import { buildArchetype, obbOf, type Solid } from "./geometry";
+import { buildArchetype, obbOf, FLOOR_H, type Solid } from "./geometry";
 
 const ORIGIN_LNG = 55.27;
 const ORIGIN_LAT = 25.20;
@@ -50,9 +50,12 @@ const GREY = new THREE.Color(0x7a7a7a);
 export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerController {
   const scene = new THREE.Scene();
   scene.up = new THREE.Vector3(0, 0, 1);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x223040, 0.9));
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-  const key = new THREE.DirectionalLight(0xffffff, 0.7);
+  // Bright, even lighting so the canonical land-use colour reads on every face
+  // (the near-black bug was outputColorSpace + double-side alpha, fixed below;
+  // generous ambient + emissive keep shadowed faces in-hue too).
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x35506b, 1.15));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.6);
   key.position.set(0.5, -0.6, 1.2);
   scene.add(key);
 
@@ -114,10 +117,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     return g;
   }
 
-  function makeMaterial(colorHex: string): THREE.MeshStandardMaterial {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(colorHex), transparent: true, opacity: 0.62,
-      roughness: 0.6, metalness: 0, side: THREE.DoubleSide, depthWrite: false,
+  function makeMaterial(colorHex: string): THREE.MeshLambertMaterial {
+    // Lambert (not PBR) so the flat canonical hue reads predictably; emissive
+    // lifts shadowed faces so they stay in-hue (never black). FrontSide avoids
+    // the back-face-through-front-face alpha doubling that darkened solids.
+    const c = new THREE.Color(colorHex);
+    const mat = new THREE.MeshLambertMaterial({
+      color: c,
+      emissive: c.clone().multiplyScalar(0.45),
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.FrontSide,
+      depthWrite: false,
     });
     mat.userData.originalColorHex = colorHex;
     return mat;
@@ -150,11 +161,16 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         const obb = obbOf(footLocal);
         const { solids } = buildArchetype(b.landUse ?? "", footLocal, obb, Math.max(3, b.totalH));
         const mat = makeMaterial(b.colorHex);
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
+        // Track the tallest PRISM body so floor bands wrap the main volume.
+        let tallRing: number[][] | null = null;
+        let tallBase = 0, tallTop = 0;
         for (const s of solids) {
           let geo: THREE.BufferGeometry;
-          if (s.t === "prism") geo = prismGeom(s.ring, s.base, s.top);
-          else if (s.t === "gable") geo = gableGeom(s);
+          if (s.t === "prism") {
+            geo = prismGeom(s.ring, s.base, s.top);
+            if (s.top - s.base > tallTop - tallBase) { tallRing = s.ring; tallBase = s.base; tallTop = s.top; }
+          } else if (s.t === "gable") geo = gableGeom(s);
           else geo = sawtoothGeom(s);
           const mesh = new THREE.Mesh(geo, mat);
           mesh.position.set(ox, oy, 0);
@@ -171,6 +187,26 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           group.add(eg);
           meshes++;
         }
+        // Floor bands — light horizontal ribs every floor on the main body,
+        // for ALL land-use types (founder: gives volume + parity with the
+        // approved residential read). Geometry untouched — these are line
+        // overlays. Skip very short bodies (e.g. future-dev flat pad).
+        if (tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
+          const bandMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+          const ring3 = (h: number) =>
+            new THREE.BufferGeometry().setFromPoints(
+              (tallRing as number[][]).map(([x, y]) => new THREE.Vector3(x, y, h)),
+            );
+          const nFloors = Math.min(60, Math.floor((tallTop - tallBase) / FLOOR_H));
+          for (let i = 1; i < nFloors; i++) {
+            const band = new THREE.LineLoop(ring3(tallBase + i * FLOOR_H), bandMat);
+            band.position.set(ox, oy, 0);
+            band.frustumCulled = false;
+            band.userData.parcelId = b.parcelId;
+            band.userData.isEdge = true; // excluded from selection desaturation
+            group.add(band);
+          }
+        }
       }
       console.log("[ZAAHI archetypes] setBuildings:", buildings.length, "buildings,", meshes, "solids");
       map.triggerRepaint();
@@ -183,14 +219,15 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   function setSelected(parcelId: string | null): void {
     group.traverse((obj) => {
       const m = obj as THREE.Mesh;
-      const mat = (m as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      const mat = (m as THREE.Mesh).material as THREE.MeshLambertMaterial | undefined;
       if (!mat || !mat.isMaterial || m.userData.isEdge) return;
       const own = m.userData.parcelId as string | undefined;
       const orig = mat.userData.originalColorHex as string | undefined;
       if (parcelId === null || own === parcelId) {
-        if (orig) mat.color.set(orig);
+        if (orig) { mat.color.set(orig); mat.emissive.set(orig).multiplyScalar(0.45); }
       } else {
         mat.color.copy(GREY);
+        mat.emissive.copy(GREY).multiplyScalar(0.3);
       }
     });
     map.triggerRepaint();
@@ -219,7 +256,10 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           canvas: map.getCanvas(), context: gl as WebGLRenderingContext, antialias: true,
         });
         renderer.autoClear = false;
-        renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+        // sRGB output (default) so lit Lambert colours render at correct
+        // brightness. LinearSRGB (used by the shader layer) rendered the
+        // canonical hues near-black — that was the founder's "почти ЧЁРНЫМИ" bug.
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
       } catch (err) {
         console.error("[ZAAHI archetypes] onAdd FAILED:", err);
         throw err;
