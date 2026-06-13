@@ -63,7 +63,22 @@ import {
 // loadZaahiPlots (+ localStorage fallback seeded at mount) — never via a
 // memo/SSR value, per the Signature §10 stale-flag lesson.
 // Zoom at/above which the rich Three.js massing replaces fill-extrusion (LOD).
-const ARCHETYPE_MIN_ZOOM = 15;
+const ARCHETYPE_MIN_ZOOM = 14;
+
+// VARIANT A (2026-06-13): on a Vercel PREVIEW deployment the SSO auth redirect
+// strips `?archetypes=1` before React mounts, so the query never survives. So on
+// preview hosts the archetype massing defaults ON (no flag needed) for review.
+// PROD stays hard-OFF: the allow-list matches ONLY the auto-generated preview
+// hostnames `*-zaahiplots-projects.vercel.app` — never the prod aliases
+// zaahi.io / www.zaahi.io / zaahi.vercel.app. `?archetypes=0` / the Layers
+// toggle (Variant B) override via localStorage.
+function isArchetypePreviewHost(): boolean {
+  try {
+    return window.location.hostname.endsWith("-zaahiplots-projects.vercel.app");
+  } catch {
+    return false;
+  }
+}
 import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
@@ -3630,25 +3645,37 @@ function ParcelsMapPageInner() {
       // via memo/SSR). localStorage fallback survives any auth/SSO redirect that
       // strips the query before loadZaahiPlots runs (also seeded at mount, see
       // the archetypes-flag useEffect). `?archetypes=0` clears it.
+      // Resolve precedence: explicit ?archetypes=1/0 → localStorage toggle
+      // (Variant B) → preview-host default ON (Variant A) → prod OFF. The query
+      // can't be relied on (SSO strips it) so it's only the top override.
       let arSearch = "";
       let arFlag = false;
+      let arVia = "";
       try {
         arSearch = typeof window !== "undefined" && window.location ? window.location.search : "";
         const v = new URLSearchParams(arSearch).get("archetypes");
+        let stored: string | null = null;
+        try { stored = window.localStorage.getItem("zaahi-archetypes"); } catch { /* ignore */ }
         if (v === "1") {
-          arFlag = true;
+          arFlag = true; arVia = "query-on";
           try { window.localStorage.setItem("zaahi-archetypes", "1"); } catch { /* ignore */ }
         } else if (v === "0") {
-          try { window.localStorage.removeItem("zaahi-archetypes"); } catch { /* ignore */ }
+          arFlag = false; arVia = "query-off";
+          try { window.localStorage.setItem("zaahi-archetypes", "0"); } catch { /* ignore */ }
+        } else if (stored === "1") {
+          arFlag = true; arVia = "localStorage-on";
+        } else if (stored === "0") {
+          arFlag = false; arVia = "localStorage-off";
         } else {
-          try { arFlag = window.localStorage.getItem("zaahi-archetypes") === "1"; } catch { /* ignore */ }
+          arFlag = isArchetypePreviewHost(); arVia = arFlag ? "preview-default-ON" : "prod-default-OFF";
         }
       } catch { /* ignore */ }
       // ALWAYS log (before the gate) so flag activation is observable.
       console.log(
         "[ZAAHI archetypes] flag check: search=", JSON.stringify(arSearch),
-        "· result=", arFlag, "· zoom=", map.getZoom().toFixed(1),
-        "· min-zoom=", ARCHETYPE_MIN_ZOOM,
+        "· result=", arFlag, "· via=", arVia,
+        "· host=", (typeof window !== "undefined" ? window.location.hostname : ""),
+        "· zoom=", map.getZoom().toFixed(1), "· min-zoom=", ARCHETYPE_MIN_ZOOM,
       );
       if (arFlag) {
         console.log("[ZAAHI archetypes] ON · inputs:", archetypeInputs.length);
