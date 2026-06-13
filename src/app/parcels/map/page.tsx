@@ -52,6 +52,25 @@ import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate"
 import { installKeyboardNav, type KeyboardNavController } from "@/lib/keyboard-nav";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
+  installArchetypeLayer,
+  type ArchetypeBuildingInput,
+  type ArchetypeLayerController,
+} from "@/lib/archetypes/archetype-layer";
+
+// research/landuse-archetypes — `?archetypes=1` renders ZAAHI listings as
+// per-land-use morphology massing via a Three.js CustomLayer. Default off →
+// prod unchanged. Read once at module load (mirrors the buildingRotation flag).
+function archetypesFlagOn(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get("archetypes") === "1";
+  } catch {
+    return false;
+  }
+}
+// Zoom at/above which the rich Three.js massing replaces fill-extrusion (LOD).
+const ARCHETYPE_MIN_ZOOM = 15;
+import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
   effectiveValues,
@@ -420,6 +439,10 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
       map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-color", ["get", "color"]);
     }
   }
+  // Archetype CustomLayer selection parity (?archetypes=1) — desaturate
+  // non-selected morphologies. Controller is stashed on the map handle.
+  const ac = (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes;
+  ac?.setSelected(selectedId);
 }
 
 /**
@@ -1637,6 +1660,9 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // ?archetypes=1 — Three.js morphology CustomLayer controller (lazily
+  // installed inside loadZaahiPlots). Null when the flag is off.
+  const archetypeCtrlRef = useRef<ArchetypeLayerController | null>(null);
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
@@ -3239,6 +3265,10 @@ function ParcelsMapPageInner() {
 
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
+      // ?archetypes=1 — per-land-use morphology massing fed to the Three.js
+      // CustomLayer at the end of this function. Accumulated alongside the
+      // fill-extrusion features; empty + ignored when the flag is off.
+      const archetypeInputs: ArchetypeBuildingInput[] = [];
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
@@ -3353,6 +3383,18 @@ function ParcelsMapPageInner() {
         }
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
+
+        // Archetype massing input (consumed by the Three.js CustomLayer when
+        // ?archetypes=1). Same footprint ring + height the fill-extrusion uses.
+        archetypeInputs.push({
+          parcelId: it.id,
+          footprint: footprintRing,
+          landUse,
+          colorHex: buildingHex,
+          totalH,
+          isVault: it.isVault,
+          status: it.status,
+        });
 
         // ── ZAAHI Signature stepped 3D ──
         // Each building is 1, 2, or 3 features depending on height:
@@ -3569,6 +3611,32 @@ function ParcelsMapPageInner() {
             },
           });
         }
+      }
+
+      // ── Archetype morphology layer (?archetypes=1) ──────────────────
+      // Render the curated listings as per-land-use building morphology via
+      // a Three.js CustomLayer (reuses the proven BuildingGlbLayer / signature
+      // three-layer matrix + framebuffer pattern). LOD: above
+      // ARCHETYPE_MIN_ZOOM the rich massing replaces the fill-extrusion;
+      // below it we fall back to fill-extrusion for performance. Default-off
+      // flag → none of this runs in prod.
+      if (archetypesFlagOn()) {
+        if (!archetypeCtrlRef.current) {
+          const ctrl = installArchetypeLayer(map);
+          archetypeCtrlRef.current = ctrl;
+          (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes = ctrl;
+          const applyArchetypeLod = () => {
+            const on = map.getZoom() >= ARCHETYPE_MIN_ZOOM;
+            archetypeCtrlRef.current?.setEnabled(on);
+            if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+              map.setLayoutProperty(ZAAHI_BUILDINGS_3D, "visibility", on ? "none" : "visible");
+            }
+          };
+          map.on("zoom", applyArchetypeLod);
+          (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod = applyArchetypeLod;
+        }
+        archetypeCtrlRef.current.setBuildings(archetypeInputs);
+        (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod?.();
       }
 
       // ── Vault conflict markers (Phase 3 migration) ──
