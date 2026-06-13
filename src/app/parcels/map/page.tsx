@@ -3621,6 +3621,12 @@ function ParcelsMapPageInner() {
       // below it we fall back to fill-extrusion for performance. Default-off
       // flag → none of this runs in prod.
       if (archetypesFlagOn()) {
+        console.log(
+          "[ZAAHI archetypes] ?archetypes=1 ON · inputs:", archetypeInputs.length,
+          "· zoom:", map.getZoom().toFixed(1),
+          "· min-zoom for massing:", ARCHETYPE_MIN_ZOOM,
+          "(below min → fill-extrusion shows by LOD design)",
+        );
         if (!archetypeCtrlRef.current) {
           const ctrl = installArchetypeLayer(map);
           archetypeCtrlRef.current = ctrl;
