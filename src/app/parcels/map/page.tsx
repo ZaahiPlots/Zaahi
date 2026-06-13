@@ -52,6 +52,16 @@ import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate"
 import { installKeyboardNav, type KeyboardNavController } from "@/lib/keyboard-nav";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
+  computeSetbackM,
+  insetRingByMeters,
+  emitSignatureTiers as emitListingTiers,
+} from "@/lib/signature/geometry";
+import {
+  installZaahiThreeLayer,
+  type ZaahiThreeLayerController,
+  type ZaahiBuildingInput,
+} from "@/lib/signature/three-layer";
+import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
   effectiveValues,
@@ -1637,6 +1647,25 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // ── feat/signature-realistic (2026-06-11/12) ──
+  // ?render=three turns on the Three.js CustomLayer for ZAAHI buildings.
+  // Read once on mount (URL flag won't toggle mid-session). When true:
+  // fill-extrusion paints at opacity 0 (literal number per CLAUDE.md),
+  // Three.js scene draws the meshes instead. Click/hover continue to
+  // hit fill-extrusion (visibility stays "visible") so queryRendered-
+  // Features still routes to the right parcel. Stage 5 mirrors
+  // selection / filter / vault visibility onto the Three.js side.
+  // When false: prod path, three-layer never installed. Declarations
+  // live early so all consumer effects can reach them in the same scope.
+  const useThreeRender = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return new URLSearchParams(window.location.search).get("render") === "three";
+    } catch {
+      return false;
+    }
+  }, []);
+  const threeLayerCtrlRef = useRef<ZaahiThreeLayerController | null>(null);
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
@@ -1732,6 +1761,16 @@ function ParcelsMapPageInner() {
     if (!selectedParcelId) return;
     void apiFetch(`/api/parcels/${selectedParcelId}/view`, { method: "POST" }).catch(() => { /* silent */ });
   }, [selectedParcelId]);
+
+  // Stage 5 of feat/signature-realistic (2026-06-12) — mirror
+  // selection state onto the Three.js layer. Other meshes desaturate
+  // toward grey #7a7a7a; the selected mesh keeps its full hex. Mirrors
+  // exactly the case-expression that page.tsx applySelectionPaint
+  // applies to the MapLibre fill-extrusion (page.tsx:422-432).
+  useEffect(() => {
+    if (!useThreeRender) return;
+    threeLayerCtrlRef.current?.setSelected(selectedParcelId);
+  }, [selectedParcelId, useThreeRender]);
 
   // Defer-close timer so the user can move the cursor from the polygon
   // onto the (now clickable) hover card without it disappearing first.
@@ -2207,6 +2246,32 @@ function ParcelsMapPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState]);
 
+  // Stage 5 of feat/signature-realistic (2026-06-12) — mirror filter
+  // visibility onto the Three.js layer. Defers via rAF so MapLibre's
+  // setFilter calls in reapplyMapFilters have already propagated to
+  // the query path by the time we read it. queryRenderedFeatures
+  // returns features whose paint resolves to non-zero — but paint-
+  // opacity 0 is NOT excluded (filter is); so we can use the invisible
+  // fill-extrusion as a source-of-truth for "what should be visible".
+  useEffect(() => {
+    if (!useThreeRender) return;
+    const m = mapRef.current;
+    if (!m) return;
+    const raf = requestAnimationFrame(() => {
+      const ctrl = threeLayerCtrlRef.current;
+      if (!ctrl) return;
+      if (!m.getLayer(ZAAHI_BUILDINGS_3D)) return;
+      const visible = m.queryRenderedFeatures({ layers: [ZAAHI_BUILDINGS_3D] });
+      const visibleParcelIds = new Set<string>();
+      for (const f of visible) {
+        const pid = (f.properties as { parcelId?: string } | null)?.parcelId;
+        if (pid) visibleParcelIds.add(pid);
+      }
+      ctrl.setVisibility((pid) => visibleParcelIds.has(pid));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [filterState, vaultOnlyMode, useThreeRender]);
+
   // Auto-rotate camera — slow showcase rotation when the user is idle.
   // HYBRID first-visit default: ON for first-ever visit (no localStorage
   // key yet), respects saved choice on subsequent visits.
@@ -2216,6 +2281,9 @@ function ParcelsMapPageInner() {
   // Keyboard nav controller — always-on once installed in map-init.
   // Destroyed alongside the map. No external state needed.
   const kbdNavCtrlRef = useRef<KeyboardNavController | null>(null);
+  // Stage 2/5 of feat/signature-realistic — see the canonical
+  // declaration block above the selection-mirror useEffect (moved
+  // earlier so all consumers can reach it).
   const [layersOpen, setLayersOpen] = useState(false);
   // Parcels portal — left rail list view of /api/parcels/map. Mutex
   // with the Layers panel because both anchor at left:60, top:64.
@@ -3067,101 +3135,13 @@ function ParcelsMapPageInner() {
   //  doesn't have it. Idempotent on map.getSource — safe to call after
   //  a basemap swap.
   // ─────────────────────────────────────────────────────────────────────
-  // ── ZAAHI Signature 3D — setback helpers ───────────────────────────
-  // Spec lives in CLAUDE.md "Правила 3D моделей (ZAAHI Signature)".
-  // The DB still stores the raw DDA setbacks per plan; these helpers
-  // pick a single representative metres-value to inset the polygon by.
-
-  /** Land-use defaults when DDA has no per-plot setback data. */
-  function defaultSetbackM(landUse: string | null, sub: string | null): number {
-    if (!landUse) return 5;
-    switch (landUse) {
-      case "RESIDENTIAL":
-        // Villas / townhouses: 3m all around. Apartments: 5m road
-        // + 3m sides → ~4m representative for a uniform inset.
-        if (sub && /villa|townhouse|town\s*house/i.test(sub)) return 3;
-        return 4;
-      case "COMMERCIAL":
-      case "OFFICE":
-      case "RETAIL":
-        return 0; // commercial fills the plot edge to edge
-      case "HOTEL":
-      case "HOSPITALITY":
-        return 3;
-      case "INDUSTRIAL":
-      case "WAREHOUSE":
-        return 4;
-      case "FUTURE_DEVELOPMENT":
-      case "FUTURE DEVELOPMENT":
-        // Follow the INDUSTRIAL pattern: 4 m inset. Visually produces
-        // one near-plot-sized block, same treatment founder ratified
-        // 2026-04-23 for FUTURE_DEVELOPMENT plots.
-        return 4;
-      case "EDUCATIONAL":
-      case "EDUCATION":
-      case "HEALTHCARE":
-        return 5;
-      case "AGRICULTURAL":
-      case "AGRICULTURE":
-        return 10;
-      case "MIXED_USE":
-        return 4;
-      default:
-        return 5;
-    }
-  }
-
-  /**
-   * Pick the metres value to use for inset. Prefer DDA's affection-plan
-   * setbacks (most specific), fall back to land-use defaults, and bypass
-   * inset entirely for very small plots.
-   */
-  function computeSetbackM(
-    plotSqft: number,
-    landUse: string | null,
-    setbacks: Array<{ side: number; building: number | null; podium: number | null }> | null,
-    sub: string | null,
-  ): number {
-    // Tiny plots — building fills the boundary, no setback.
-    if (plotSqft > 0 && plotSqft < 5000) return 0;
-
-    if (setbacks && setbacks.length > 0) {
-      const vals = setbacks
-        .map((s) => s.building ?? s.podium ?? 0)
-        .filter((v) => v > 0);
-      if (vals.length > 0) {
-        return vals.reduce((a, b) => a + b, 0) / vals.length;
-      }
-    }
-    return defaultSetbackM(landUse, sub);
-  }
-
-  /**
-   * Inset a polygon ring uniformly toward its centroid by `setbackM`
-   * metres. Caps the resulting scale at 0.5 so very deep setbacks on
-   * small plots still produce a visible building. setbackM <= 0 returns
-   * the ring unchanged (used for the small-plot bypass + commercial).
-   */
-  function insetRingByMeters(ring: number[][], setbackM: number): number[][] {
-    if (setbackM <= 0) return ring;
-    const lngs = ring.map((p) => p[0]);
-    const lats = ring.map((p) => p[1]);
-    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const dLng =
-      (Math.max(...lngs) - Math.min(...lngs)) *
-      111000 *
-      Math.cos((midLat * Math.PI) / 180);
-    const dLat = (Math.max(...lats) - Math.min(...lats)) * 111000;
-    const halfWidth = Math.min(dLng, dLat) / 2;
-    if (halfWidth <= 0) return ring;
-    const scale = Math.max(0.5, 1 - setbackM / halfWidth);
-    const cLng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-    const cLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-    return ring.map(([lng, lat]) => [
-      cLng + (lng - cLng) * scale,
-      cLat + (lat - cLat) * scale,
-    ]);
-  }
+  // ZAAHI Signature 3D — setback helpers + ring transforms + tier
+  // composer now live in src/lib/signature/geometry.ts (Stage 1 of
+  // feat/signature-realistic, 2026-06-11). Imported at the top of
+  // this file. The vault renderer at loadVaultShared still uses the
+  // independent emitSignatureTiers from @/lib/zaahi-3d-tiers — kept
+  // separate intentionally for the duration of the Signature-realistic
+  // migration (see SIG-FINAL: revisit unification when shipping).
 
   // Phase 3 vault unification (2026-05-30): function is now idempotent —
   // safe to call after a vault add to refresh the source. On first call
@@ -3239,6 +3219,11 @@ function ParcelsMapPageInner() {
 
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
+      // Stage 2 of feat/signature-realistic — also collect per-parcel
+      // Tier[] for the Three.js CustomLayer when ?render=three is on.
+      // Populated unconditionally so we don't fork the loop body; the
+      // ref consumer below decides whether to feed the layer or drop it.
+      const threeInputs: ZaahiBuildingInput[] = [];
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
@@ -3356,37 +3341,35 @@ function ParcelsMapPageInner() {
 
         // ── ZAAHI Signature stepped 3D ──
         // Each building is 1, 2, or 3 features depending on height:
-        //   floors ≤ 4   → podium only (full footprint, full height)
-        //   floors 5-10  → podium (0–14 m) + body (14–top, 70% footprint)
-        //   floors > 10  → podium + body (14–top-7) + crown (top-7→top, 50%)
+        //   forceFlat OR floors ≤ 4 → podium only (full footprint, full height)
+        //   floors 5-10             → podium (0–14 m) + body (14–top, 70%)
+        //   floors > 10             → podium + body (14–top-7) + crown (top-7→top, 50%)
         // All features go into the SAME source and SAME fill-extrusion
         // layer below — no kind filters, no separate layers. Stepped
         // look comes from the ring being scaled toward its centroid.
-        const FLOOR_H = 3.5;
-        const PODIUM_TOP = 14; // 4 floors
-        const CROWN_H = 7;     // top 2 floors
-        const floors = Math.max(1, Math.round(totalH / FLOOR_H));
-
-        // Centroid scale of a ring (uniform inset toward its centroid).
-        const scaleRingFromCentroid = (ring: number[][], scale: number): number[][] => {
-          const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-          const cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-          return ring.map(([lng, lat]) => [
-            cx + (lng - cx) * scale,
-            cy + (lat - cy) * scale,
-          ]);
-        };
-
-        const pushTier = (ring: number[][], baseM: number, topM: number) => {
+        //
+        // Math + tier shape live in src/lib/signature/geometry.ts
+        // (Stage 1 of feat/signature-realistic, 2026-06-11). This call
+        // returns the same Tier[] the inline branch used to emit.
+        //
+        // AffectionPlan.buildingStyle === "FLAT" → single block of full
+        // footprint at full height. FUTURE_DEVELOPMENT → same flat-block
+        // render (founder 2026-04-23). Default/null/"SIGNATURE" → tiered.
+        const forceFlat =
+          it.plan?.buildingStyle === "FLAT" ||
+          landUse === "FUTURE_DEVELOPMENT" ||
+          landUse === "FUTURE DEVELOPMENT";
+        const tiers = emitListingTiers(footprintRing, totalH, { forceFlat });
+        for (const t of tiers) {
           buildingFeatures.push({
             type: "Feature",
-            geometry: { type: "Polygon", coordinates: [ring] },
+            geometry: { type: "Polygon", coordinates: [t.ring] },
             properties: {
               parcelId: it.id,
               landUse,
               color: buildingHex,
-              height: topM,
-              base: baseM,
+              height: t.topM,
+              base: t.baseM,
               // Phase 3 vault-only mode filter scopes ZAAHI_BUILDINGS_3D
               // by isVault === true. Tier features must carry the prop
               // or the filter excludes every building when the mode
@@ -3399,37 +3382,20 @@ function ParcelsMapPageInner() {
               status: it.status,
             },
           });
-        };
-
-        // ── Data-driven style selection ──
-        // AffectionPlan.buildingStyle === "FLAT" → single block of full
-        // footprint at full height (correct for most commercial office
-        // buildings where there is no visual podium/tower distinction).
-        // FUTURE_DEVELOPMENT → same flat-block render (founder 2026-04-23:
-        // match the INDUSTRIAL pattern regardless of floor count · no
-        // podium/body/crown taper for pre-master-plan land).
-        // Default/null/"SIGNATURE" → ZAAHI tiered model below.
-        // Per-plot opt-in keeps the renderer free of hardcoded plot-number
-        // overrides (per CLAUDE.md rule).
-        const forceFlat =
-          it.plan?.buildingStyle === "FLAT" ||
-          landUse === "FUTURE_DEVELOPMENT" ||
-          landUse === "FUTURE DEVELOPMENT";
-        if (forceFlat) {
-          pushTier(footprintRing, 0, totalH);
-        } else if (floors <= 4) {
-          // Podium only — short building, no taper.
-          pushTier(footprintRing, 0, totalH);
-        } else if (floors <= 10) {
-          // Podium + body. No crown — body extends to the very top.
-          pushTier(footprintRing, 0, PODIUM_TOP);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH);
-        } else {
-          // Full ZAAHI Signature — podium + body + crown.
-          pushTier(footprintRing, 0, PODIUM_TOP);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.7), PODIUM_TOP, totalH - CROWN_H);
-          pushTier(scaleRingFromCentroid(footprintRing, 0.5), totalH - CROWN_H, totalH);
         }
+        // Stage 2 of feat/signature-realistic: parallel feed for the
+        // Three.js CustomLayer. Same Tier[] data, just shaped as a
+        // single per-parcel record so the layer can keep parcelId for
+        // future picking (SIG-5). landUse added in Stage 3 to drive
+        // the procedural facade shader dispatch.
+        threeInputs.push({
+          parcelId: it.id,
+          tiers,
+          colorHex: buildingHex,
+          landUse,
+          isVault: it.isVault,
+          status: it.status,
+        });
       }
 
       console.log(
@@ -3565,9 +3531,74 @@ function ParcelsMapPageInner() {
               // stand out against the PMTiles background layers which
               // stay at 0.35. Single literal — data expressions are
               // not supported on fill-extrusion-opacity.
+              // Stage 2 of feat/signature-realistic: in ?render=three
+              // mode this gets re-painted to literal 0 below so the
+              // Three.js scene is the only visible building. Layer
+              // visibility stays "visible" so queryRenderedFeatures
+              // continues to land click/hover on the right parcel.
               "fill-extrusion-opacity": 1,
             },
           });
+        }
+      }
+
+      // ── Stage 2 of feat/signature-realistic ──
+      // ?render=three: hand the same Tier[] data to the Three.js
+      // CustomLayer + zero out fill-extrusion opacity (literal number,
+      // CLAUDE.md compliant). Idempotent: layer is installed on the
+      // first call; subsequent calls just refresh setBuildings.
+      //
+      // 2026-06-12 silent-fail investigation (preview zaahi-htioll2us):
+      // founder reports `addLayer: ...` log appears but `installing
+      // Three.js custom layer` does NOT. No throw caught by outer
+      // [zaahi-plots] load failed catch, no error in the new try/catch
+      // wrappers either. Only remaining explanation: useThreeRender is
+      // false on this loadZaahiPlots closure. Could be SSR/hydration
+      // race on the useMemo([]) reading window.location.search before
+      // the URL is fully populated. Live-read the URL right here as a
+      // safety net so the install fires regardless, and log both values
+      // so we can see if the memoized one ever disagrees with reality.
+      let liveRenderThree = false;
+      try {
+        liveRenderThree =
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("render") === "three";
+      } catch { /* ignore */ }
+      const installShouldRun = useThreeRender || liveRenderThree;
+      console.log(
+        "[ZAAHI] pre-install gate:",
+        "useThreeRender(memo)=" + useThreeRender,
+        "liveRenderThree=" + liveRenderThree,
+        "willInstall=" + installShouldRun,
+        "threeLayerCtrlRef.current=" + !!threeLayerCtrlRef.current,
+      );
+      if (installShouldRun) {
+        // try/catch wraps the whole install path so any error surfaces
+        // in console instead of being swallowed by the outer
+        // [zaahi-plots] load failed catch.
+        try {
+          if (!threeLayerCtrlRef.current) {
+            console.log("[ZAAHI]", "installing Three.js custom layer", "(buildings:", threeInputs.length, ")");
+            threeLayerCtrlRef.current = installZaahiThreeLayer(map);
+          }
+          threeLayerCtrlRef.current.setBuildings(threeInputs);
+          // Stage 5 — mirror the current selection (a basemap swap
+          // re-install should not lose the user's highlight). Filter
+          // visibility is re-derived by the [filterState, vaultOnlyMode]
+          // effect via rAF defer.
+          if (threeLayerCtrlRef.current) {
+            threeLayerCtrlRef.current.setSelected(selectedParcelId);
+          }
+          if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+            // Literal number — must NOT be a data expression
+            // (CLAUDE.md fill-extrusion-opacity rule). The LOD handler
+            // installed in map-init will keep this in sync with zoom.
+            map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", 0);
+          }
+        } catch (err) {
+          console.error("[ZAAHI] Three.js install/refresh failed:", err);
+          // Leave fill-extrusion at opacity 1 so prod render is the
+          // visible building, not blank.
         }
       }
 
@@ -4968,11 +4999,49 @@ function ParcelsMapPageInner() {
     const kbdNavCtrl = installKeyboardNav(map);
     kbdNavCtrlRef.current = kbdNavCtrl;
 
+    // Stage 5 of feat/signature-realistic (2026-06-12) — LOD handler.
+    // Three.js renders the curated 132 buildings at zoom>=15 on desktop;
+    // below 15 (overview) or on touch (mobile-coarse pointer) we fall
+    // back to MapLibre fill-extrusion. Cheaper, sharp at all zooms,
+    // touch-friendly. Handler is always installed; gated on
+    // useThreeRender inside the body so prod path stays untouched.
+    const isTouchDevice = (() => {
+      if (typeof window === "undefined") return false;
+      try {
+        if (window.matchMedia?.("(pointer: coarse)").matches) return true;
+      } catch { /* ignore */ }
+      if ("ontouchstart" in window) return true;
+      const mt = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints;
+      return typeof mt === "number" && mt > 0;
+    })();
+    const lodHandler = () => {
+      if (!useThreeRender) return;
+      const ctrl = threeLayerCtrlRef.current;
+      const z = map.getZoom();
+      const lodActive = z >= 15 && !isTouchDevice;
+      if (ctrl) ctrl.setEnabled(lodActive);
+      if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+        try {
+          // Literal number — CLAUDE.md fill-extrusion-opacity rule.
+          map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-opacity", lodActive ? 0 : 1);
+        } catch { /* layer torn down mid-handler */ }
+      }
+    };
+    map.on("zoom", lodHandler);
+
     return () => {
       autoRotateCtrl.destroy();
       autoRotateCtrlRef.current = null;
       kbdNavCtrl.destroy();
       kbdNavCtrlRef.current = null;
+      map.off("zoom", lodHandler);
+      // Three.js layer is installed lazily from loadZaahiPlots when
+      // ?render=three is on. Destroy here so HMR/teardown releases
+      // its WebGL meshes + the wrapper renderer cleanly.
+      if (threeLayerCtrlRef.current) {
+        threeLayerCtrlRef.current.destroy();
+        threeLayerCtrlRef.current = null;
+      }
       // Detach deck.gl overlay before MapLibre.remove() so its WebGL
       // resources release cleanly. Best-effort — ignore if MapLibre
       // already torn down the map.
@@ -5115,6 +5184,18 @@ function ParcelsMapPageInner() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    // Stage 5 of feat/signature-realistic (2026-06-12) — basemap-swap
+    // flicker fix. MapLibre setStyle clears all non-style layers
+    // INCLUDING our Three.js CustomLayer. Without nulling the ref,
+    // the next loadZaahiPlots call would skip re-install (the
+    // `if (!threeLayerCtrlRef.current)` guard sees a stale handle).
+    // Result: silent loss of Three.js render after a basemap switch.
+    if (threeLayerCtrlRef.current) {
+      // The custom layer instance is owned by MapLibre's style now
+      // gone — no need to call destroy() (it'd try to removeLayer
+      // on a non-existent layer). Just drop the reference.
+      threeLayerCtrlRef.current = null;
+    }
     map.setStyle(STYLES[baseMap]);
     map.once("styledata", async () => {
       map.dragRotate.enable();
