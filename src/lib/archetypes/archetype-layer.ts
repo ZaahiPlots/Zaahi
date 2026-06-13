@@ -16,12 +16,9 @@
 import type maplibregl from "maplibre-gl";
 import { MercatorCoordinate } from "maplibre-gl";
 import * as THREE from "three";
-import { buildArchetype, obbOf, FLOOR_H, type Solid } from "./geometry";
+import { buildArchetype, obbOf, clampToFootprint, FLOOR_H, type Solid } from "./geometry";
 
-const ORIGIN_LNG = 55.27;
-const ORIGIN_LAT = 25.20;
-const M_PER_DEG_LAT = 111_000;
-const M_PER_DEG_LNG = 111_000 * Math.cos((ORIGIN_LAT * Math.PI) / 180);
+const M_PER_DEG_LAT = 111_320;
 const LAYER_ID = "zaahi-archetypes-3d";
 
 export interface ArchetypeBuildingInput {
@@ -29,6 +26,9 @@ export interface ArchetypeBuildingInput {
   /** Building footprint ring as [lng, lat] pairs (DDA building-limit or
    *  setback inset — same ring loadZaahiPlots feeds fill-extrusion). */
   footprint: number[][];
+  /** Plot polygon ring as [lng, lat]. Hard boundary: all geometry is clamped
+   *  inside it (the inset footprint can poke outside the plot on concave plots). */
+  plot?: number[][];
   landUse: string | null;
   colorHex: string;
   totalH: number;
@@ -64,18 +64,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   scene.add(group);
   let renderer: THREE.WebGLRenderer | null = null;
 
-  const merc = MercatorCoordinate.fromLngLat([ORIGIN_LNG, ORIGIN_LAT], 0);
-  const mercScale = merc.meterInMercatorCoordinateUnits();
-
   // ── geometry helpers (Z-up: x=east, y=north, z=height in metres) ──
-
-  function projM(lng: number, lat: number): [number, number] {
-    return [(lng - ORIGIN_LNG) * M_PER_DEG_LNG, (lat - ORIGIN_LAT) * M_PER_DEG_LAT];
-  }
-  function centroidM(ring: number[][]): [number, number] {
+  // Each building is anchored at its OWN MercatorCoordinate via a per-building
+  // group matrix, and its geometry is built in metres relative to its own
+  // footprint centroid. (A single global origin + linear mercator scale drifts
+  // for plots far from it — that drift rendered the model off its plot.)
+  function ringCentroidLngLat(ring: number[][]): [number, number] {
+    const closed = ring.length > 1 &&
+      ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1];
+    const pts = closed ? ring.slice(0, -1) : ring;
     let sx = 0, sy = 0;
-    for (const [lng, lat] of ring) { const [x, y] = projM(lng, lat); sx += x; sy += y; }
-    return [sx / ring.length, sy / ring.length];
+    for (const [lng, lat] of pts) { sx += lng; sy += lat; }
+    return [sx / pts.length, sy / pts.length];
   }
 
   function prismGeom(ring: number[][], base: number, top: number): THREE.BufferGeometry {
@@ -152,61 +152,73 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
       let meshes = 0;
       for (const b of buildings) {
         if (!b.footprint || b.footprint.length < 3) continue;
-        const [ox, oy] = centroidM(b.footprint);
-        // building-local footprint metres (small coords → float32-safe)
-        const footLocal = b.footprint.map(([lng, lat]) => {
-          const [x, y] = projM(lng, lat);
-          return [x - ox, y - oy];
-        });
+        // Anchor at THIS building's footprint centroid + its own Mercator coord.
+        const [blng, blat] = ringCentroidLngLat(b.footprint);
+        const cosLat = Math.cos((blat * Math.PI) / 180);
+        const local = (ring: number[][]) =>
+          ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
+        const footLocal = local(b.footprint);
         const obb = obbOf(footLocal);
         const { solids } = buildArchetype(b.landUse ?? "", footLocal, obb, Math.max(3, b.totalH));
+        // Hard plot-boundary clamp: the inset footprint can poke a metre or two
+        // outside the plot on concave plots. Clamp every prism ring to the PLOT
+        // polygon so the massing never crosses the boundary the user sees.
+        const plotLocal = b.plot && b.plot.length >= 3 ? local(b.plot) : null;
+        if (plotLocal) {
+          for (const s of solids) if (s.t === "prism") s.ring = clampToFootprint(s.ring, plotLocal);
+        }
+
+        // Per-building group anchored at the building's Mercator coordinate.
+        const merc = MercatorCoordinate.fromLngLat([blng, blat], 0);
+        const s = merc.meterInMercatorCoordinateUnits();
+        const bGroup = new THREE.Group();
+        bGroup.matrixAutoUpdate = false;
+        bGroup.matrix = new THREE.Matrix4()
+          .makeTranslation(merc.x, merc.y, merc.z)
+          .multiply(new THREE.Matrix4().makeScale(s, -s, s));
+        bGroup.matrixWorldNeedsUpdate = true;
+
         const mat = makeMaterial(b.colorHex);
         const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
-        // Track the tallest PRISM body so floor bands wrap the main volume.
         let tallRing: number[][] | null = null;
         let tallBase = 0, tallTop = 0;
-        for (const s of solids) {
+        for (const sol of solids) {
           let geo: THREE.BufferGeometry;
-          if (s.t === "prism") {
-            geo = prismGeom(s.ring, s.base, s.top);
-            if (s.top - s.base > tallTop - tallBase) { tallRing = s.ring; tallBase = s.base; tallTop = s.top; }
-          } else if (s.t === "gable") geo = gableGeom(s);
-          else geo = sawtoothGeom(s);
+          if (sol.t === "prism") {
+            geo = prismGeom(sol.ring, sol.base, sol.top);
+            if (sol.top - sol.base > tallTop - tallBase) { tallRing = sol.ring; tallBase = sol.base; tallTop = sol.top; }
+          } else if (sol.t === "gable") geo = gableGeom(sol);
+          else geo = sawtoothGeom(sol);
           const mesh = new THREE.Mesh(geo, mat);
-          mesh.position.set(ox, oy, 0);
           mesh.frustumCulled = false;
           mesh.userData.parcelId = b.parcelId;
           mesh.userData.isVault = b.isVault;
           mesh.userData.status = b.status;
-          group.add(mesh);
+          bGroup.add(mesh);
           const eg = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), edgeMat);
-          eg.position.set(ox, oy, 0);
           eg.frustumCulled = false;
           eg.userData.parcelId = b.parcelId;
           eg.userData.isEdge = true;
-          group.add(eg);
+          bGroup.add(eg);
           meshes++;
         }
-        // Floor bands — light horizontal ribs every floor on the main body,
-        // for ALL land-use types (founder: gives volume + parity with the
-        // approved residential read). Geometry untouched — these are line
-        // overlays. Skip very short bodies (e.g. future-dev flat pad).
+        // Floor bands — light horizontal ribs every floor on the main body.
         if (tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
           const bandMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
-          const ring3 = (h: number) =>
-            new THREE.BufferGeometry().setFromPoints(
-              (tallRing as number[][]).map(([x, y]) => new THREE.Vector3(x, y, h)),
-            );
           const nFloors = Math.min(60, Math.floor((tallTop - tallBase) / FLOOR_H));
           for (let i = 1; i < nFloors; i++) {
-            const band = new THREE.LineLoop(ring3(tallBase + i * FLOOR_H), bandMat);
-            band.position.set(ox, oy, 0);
+            const h = tallBase + i * FLOOR_H;
+            const band = new THREE.LineLoop(
+              new THREE.BufferGeometry().setFromPoints((tallRing as number[][]).map(([x, y]) => new THREE.Vector3(x, y, h))),
+              bandMat,
+            );
             band.frustumCulled = false;
             band.userData.parcelId = b.parcelId;
-            band.userData.isEdge = true; // excluded from selection desaturation
-            group.add(band);
+            band.userData.isEdge = true;
+            bGroup.add(band);
           }
         }
+        group.add(bGroup);
       }
       console.log("[ZAAHI archetypes] setBuildings:", buildings.length, "buildings,", meshes, "solids");
       map.triggerRepaint();
@@ -294,10 +306,9 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
       // bound; without this Three draws into an unsized FBO → blank).
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-      const modelMatrix = new THREE.Matrix4()
-        .makeTranslation(merc.x, merc.y, merc.z)
-        .scale(new THREE.Vector3(mercScale, -mercScale, mercScale));
-      camera.projectionMatrix = new THREE.Matrix4().fromArray(flat).multiply(modelMatrix);
+      // Each building group carries its own Mercator anchor matrix, so the
+      // camera projection is just MapLibre's matrix (mercator → clip).
+      camera.projectionMatrix = new THREE.Matrix4().fromArray(flat);
 
       renderer.resetState();
       renderer.render(scene, camera);

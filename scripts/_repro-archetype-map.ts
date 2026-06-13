@@ -22,26 +22,42 @@ const map = new maplibregl.Map({
   canvasContextAttributes: { antialias: true } as never,
 });
 
+const plotParam = new URLSearchParams(location.search).get("plot");
+
 map.on("load", async () => {
-  const foots = await (await fetch("/docs/research/archetype-shots/footprints.json")).json();
-  const f = foots[cat];
-  if (!f) { document.getElementById("status")!.textContent = "no footprint for " + cat; return; }
-  const ring = f.geometry.coordinates[0] as number[][];
+  let ring: number[][]; let plotRing: number[][] | undefined; let totalH: number; let label: string;
+  if (plotParam) {
+    // Verify a specific real plot (plot ring + app footprint) — proves the
+    // plot-boundary clamp keeps the massing inside even on concave plots.
+    const vp = (await (await fetch("/docs/research/archetype-shots-v2/verify-plots.json")).json())[plotParam];
+    if (!vp) { document.getElementById("status")!.textContent = "no verify plot " + plotParam; return; }
+    ring = vp.footRing; plotRing = vp.plotRing; totalH = vp.totalH; label = `RESIDENTIAL · plot ${plotParam}`;
+  } else {
+    const foots = await (await fetch("/docs/research/archetype-shots/footprints.json")).json();
+    const f = foots[cat];
+    if (!f) { document.getElementById("status")!.textContent = "no footprint for " + cat; return; }
+    ring = f.geometry.coordinates[0]; totalH = (f.maxHeightMeters && f.maxHeightMeters > 0) ? f.maxHeightMeters : Math.max(1, f.floors) * 3.5;
+    label = `${cat} · plot ${f.plot} · ${Math.round(totalH)}m`;
+  }
   const clng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
   const clat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-  const totalH = (f.maxHeightMeters && f.maxHeightMeters > 0)
-    ? f.maxHeightMeters : Math.max(1, f.floors) * 3.5;
+  const useCat = plotParam ? "RESIDENTIAL" : cat;
   const inputs: ArchetypeBuildingInput[] = [{
-    parcelId: f.plot, footprint: ring, landUse: cat,
-    colorHex: COLORS[cat] || "#C8A96E", totalH, isVault: false, status: "LISTED",
+    parcelId: plotParam || (cat), footprint: ring, plot: plotRing, landUse: useCat,
+    colorHex: COLORS[useCat] || "#C8A96E", totalH, isVault: false, status: "LISTED",
   }];
-  // Draw the footprint ring as a gold outline so the screenshot proves the
-  // massing stays inside the plot polygon (founder within-bounds check).
+  // Plot polygon = RED outline (hard boundary the founder checks); footprint =
+  // gold. The massing must stay inside the RED plot line.
+  if (plotRing) {
+    map.addSource("plot", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [plotRing] } } });
+    map.addLayer({ id: "plot-line", type: "line", source: "plot", paint: { "line-color": "#E63946", "line-width": 3 } });
+  }
   map.addSource("footprint", { type: "geojson", data: {
     type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] },
   } });
   map.addLayer({ id: "footprint-line", type: "line", source: "footprint",
-    paint: { "line-color": "#C8A96E", "line-width": 2.5 } });
+    paint: { "line-color": "#C8A96E", "line-width": 2 } });
+  document.getElementById("status")!.textContent = label;
   const ctrl = installArchetypeLayer(map);
   ctrl.setBuildings(inputs);
   ctrl.setEnabled(true);
@@ -51,6 +67,5 @@ map.on("load", async () => {
   const zoom = Number(params2.get("zoom") ?? z);
   const pitch = Number(params2.get("pitch") ?? 52);
   map.jumpTo({ center: [clng, clat], zoom, pitch, bearing: 20 });
-  document.getElementById("status")!.textContent = `${cat} · plot ${f.plot} · ${Math.round(totalH)}m`;
   setTimeout(() => { (document.getElementById("ready") as HTMLElement).textContent = "ready"; }, 1200);
 });

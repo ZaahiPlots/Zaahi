@@ -100,7 +100,7 @@ function nearestOnBoundary(p: number[], r: number[][]): number[] {
   }
   return best;
 }
-function clampToFootprint(ring: number[][], foot: number[][]): number[][] {
+export function clampToFootprint(ring: number[][], foot: number[][]): number[][] {
   return ring.map((v) => (pointInRing(v, foot) ? v : nearestOnBoundary(v, foot)));
 }
 

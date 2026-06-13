@@ -3418,6 +3418,7 @@ function ParcelsMapPageInner() {
           archetypeInputs.push({
             parcelId: it.id,
             footprint: footprintRing,
+            plot: plotRing,
             landUse,
             colorHex: buildingHex,
             totalH,
