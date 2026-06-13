@@ -77,20 +77,26 @@ const FLOOR_H = 3.5;
 
 // ─────────────────────────────────────────────────────────────────────────
 // RESIDENTIAL — body with rows of balcony bands + a small terraced top.
+// EVERY part is strictly inside the footprint ring (founder 2026-06-13: nothing
+// may cross the plot polygon). The body is inset so the balcony ledges protrude
+// only OUT TO the footprint edge — never beyond it.
 export function buildResidential(foot: number[][], obb: Obb, H: number): BuildResult {
   const solids: Solid[] = [];
   const bodyTop = H * 0.88;
-  solids.push({ t: "prism", ring: foot, base: 0, top: bodyTop });
-  // balcony bands — thin slabs protruding ~6% beyond the body, evenly stacked
+  // Body inset from the footprint so balcony ledges have room to read while the
+  // whole massing stays inside the plot.
+  solids.push({ t: "prism", ring: scaleRing(foot, 0.92), base: 0, top: bodyTop });
+  // Balcony bands — thin slabs INSET just inside the footprint (0.98), so they
+  // protrude past the inset body yet keep a clear gap to the plot boundary.
   const bands = clamp(Math.round(bodyTop / 9), 3, 8);
-  const ring = scaleRing(foot, 1.06);
+  const bandRing = scaleRing(foot, 0.98);
   for (let i = 1; i <= bands; i++) {
     const y = (bodyTop / (bands + 1)) * i;
-    solids.push({ t: "prism", ring, base: y - 0.5, top: y + 0.5 });
+    solids.push({ t: "prism", ring: bandRing, base: y - 0.5, top: y + 0.5 });
   }
-  // terraced setback top (two steps)
-  solids.push({ t: "prism", ring: scaleRing(foot, 0.7), base: bodyTop, top: bodyTop + (H - bodyTop) * 0.6 });
-  solids.push({ t: "prism", ring: scaleRing(foot, 0.45), base: bodyTop + (H - bodyTop) * 0.6, top: H });
+  // Terraced setback top (two steps) — well inside.
+  solids.push({ t: "prism", ring: scaleRing(foot, 0.64), base: bodyTop, top: bodyTop + (H - bodyTop) * 0.6 });
+  solids.push({ t: "prism", ring: scaleRing(foot, 0.4), base: bodyTop + (H - bodyTop) * 0.6, top: H });
   return { solids, floorLines: true };
 }
 

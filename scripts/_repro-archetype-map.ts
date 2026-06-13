@@ -35,12 +35,22 @@ map.on("load", async () => {
     parcelId: f.plot, footprint: ring, landUse: cat,
     colorHex: COLORS[cat] || "#C8A96E", totalH, isVault: false, status: "LISTED",
   }];
+  // Draw the footprint ring as a gold outline so the screenshot proves the
+  // massing stays inside the plot polygon (founder within-bounds check).
+  map.addSource("footprint", { type: "geojson", data: {
+    type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] },
+  } });
+  map.addLayer({ id: "footprint-line", type: "line", source: "footprint",
+    paint: { "line-color": "#C8A96E", "line-width": 2.5 } });
   const ctrl = installArchetypeLayer(map);
   ctrl.setBuildings(inputs);
   ctrl.setEnabled(true);
   // Frame to fit: pull back for tall towers so the whole massing shows.
+  const params2 = new URLSearchParams(location.search);
   const z = totalH > 120 ? 15.6 : totalH > 50 ? 16.4 : 17.2;
-  map.jumpTo({ center: [clng, clat], zoom: z, pitch: 52, bearing: 20 });
+  const zoom = Number(params2.get("zoom") ?? z);
+  const pitch = Number(params2.get("pitch") ?? 52);
+  map.jumpTo({ center: [clng, clat], zoom, pitch, bearing: 20 });
   document.getElementById("status")!.textContent = `${cat} · plot ${f.plot} · ${Math.round(totalH)}m`;
   setTimeout(() => { (document.getElementById("ready") as HTMLElement).textContent = "ready"; }, 1200);
 });
