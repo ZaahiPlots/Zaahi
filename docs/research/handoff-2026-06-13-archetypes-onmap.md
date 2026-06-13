@@ -3,6 +3,24 @@
 Branch `research/landuse-archetypes` (pushed to origin).
 **STOP gates honoured:** not merged to main; tiles/canonical files/auth/prod DB untouched.
 
+## ROUND 4 UPDATE (colour fix — geometry approved)
+
+Founder approved the archetype **geometry** (residential = эталон). Only colour was
+broken (everything near-black). Fixed in `archetype-layer.ts` (geometry untouched):
+- **Root cause:** `renderer.outputColorSpace = LinearSRGBColorSpace` (leftover from the
+  signature *shader* layer) rendered lit colours near-black → changed to `SRGBColorSpace`.
+- Material `MeshStandard DoubleSide opacity 0.62` → `MeshLambert FrontSide opacity 0.8 +
+  emissive = colour×0.45`. FrontSide stops back-face-through-front alpha self-multiply
+  (the "alpha squaring → black" the founder suspected); emissive keeps shadowed faces
+  in-hue. Translucency kept.
+- **Floor bands for ALL types**: light horizontal rib LineLoops every `FLOOR_H` on the
+  main body (line overlays — geometry NOT touched) → volume reads, parity with the
+  approved residential look. Edges kept light (0.55).
+Verified on live MapLibre z16-17 — `docs/research/archetype-shots-v2/map-color-*.png`:
+RESIDENTIAL canon yellow #FFD700, COMMERCIAL blue, EDUCATIONAL teal, INDUSTRIAL
+steel-grey — all readable. (AGRICULTURAL/INVESTMENT/FUTURE_DEV not in footprints.json
+so not re-shot, but the fix is material-level → identical for them.) Legend unchanged.
+
 ## ROUND 3 UPDATE (env fix + DLRC + filter parity)
 
 - **Preview env FIXED.** Added the missing branch-Preview env vars (DIRECT_URL,
