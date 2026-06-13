@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html,body{margin:0;height:100%;background:#0A1628;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#E8EEF5}
+  #label{position:fixed;left:28px;top:24px;z-index:10}
+  #cat{font-family:Georgia,serif;font-size:30px;font-weight:700;letter-spacing:-0.01em}
+  #rule{font-size:13px;color:#C8A96E;margin-top:6px;letter-spacing:0.04em;text-transform:uppercase}
+  #meta{font-size:12px;color:#8FA3B8;margin-top:8px}
+  #swatch{display:inline-block;width:13px;height:13px;border-radius:3px;
+    vertical-align:middle;margin-right:7px;border:1px solid rgba(255,255,255,.3)}
+  #mode{position:fixed;right:28px;top:24px;z-index:10;font-size:12px;
+    color:#8FA3BF;letter-spacing:0.08em;text-transform:uppercase}
+  #ready{position:fixed;left:-9999px}
+</style>
+</head>
+<body>
+<div id="label">
+  <div id="cat">…</div>
+  <div id="rule"></div>
+  <div id="meta"></div>
+</div>
+<div id="mode"></div>
+<div id="ready">notready</div>
+<script type="importmap">
+{ "imports": { "three": "/node_modules/three/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+
+const COLORS = {
+  RESIDENTIAL:"#FFD700", COMMERCIAL:"#4A90D9", MIXED_USE:"#9B59B6",
+  HOTEL:"#E67E22", INDUSTRIAL:"#708090", EDUCATIONAL:"#1ABC9C",
+  HEALTHCARE:"#E74C3C", AGRICULTURAL:"#6B8E23", FUTURE_DEVELOPMENT:"#84CC16",
+  INVESTMENT:"#14B8A6",
+};
+const RULES = {
+  HOTEL:"Narrow tower on a wide low stylobate",
+  HOSPITALITY:"Narrow tower on a wide low stylobate",
+  COMMERCIAL:"Sheer curtain-wall prism + thin parapet",
+  RETAIL:"Sheer curtain-wall prism + thin parapet",
+  INVESTMENT:"AD off-plan → sheer commercial tower",
+  RESIDENTIAL:"Stepped terraces / balcony bands",
+  MIXED_USE:"Retail podium + tower + crown",
+  HEALTHCARE:"Compact: inset base block + upper block",
+  EDUCATIONAL:"Horizontal low-rise slab",
+  INDUSTRIAL:"Low long block",
+  WAREHOUSE:"Low long block",
+  AGRICULTURAL:"Barn — low block, large setback",
+  FUTURE_DEVELOPMENT:"Flat fill — no 3D massing",
+};
+
+const params = new URLSearchParams(location.search);
+const CAT = params.get("cat") || "HOTEL";
+const MODE = params.get("mode") || "archetype"; // archetype | legacy
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#0A1628");
+scene.fog = new THREE.Fog("#0A1628", 400, 1400);
+
+const W = window.innerWidth, H = window.innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(38, W/H, 1, 5000);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+dir.position.set(0.6, 1, 0.45); scene.add(dir);
+const dir2 = new THREE.DirectionalLight(0x9fc0ff, 0.35);
+dir2.position.set(-0.5, 0.4, -0.6); scene.add(dir2);
+
+function ringToShape(ring){
+  const s = new THREE.Shape();
+  ring.forEach(([x,y],i)=> i? s.lineTo(x,y) : s.moveTo(x,y));
+  return s;
+}
+
+fetch("./tiers.json").then(r=>r.json()).then(data=>{
+  const d = data[CAT];
+  document.getElementById("cat").textContent = CAT.replace(/_/g," ");
+  const colHex = COLORS[CAT] || "#C8A96E";
+  document.getElementById("rule").innerHTML =
+    `<span id="swatch" style="background:${colHex}"></span>${RULES[CAT]||""}`;
+  document.getElementById("meta").textContent =
+    `plot ${d.plot}${d.district?" · "+d.district:""} · ${d.floors} fl · ${Math.round(d.totalH)} m`;
+  document.getElementById("mode").textContent =
+    MODE==="legacy" ? "LEGACY podium/body/crown" : "ARCHETYPE massing";
+
+  const color = new THREE.Color(colHex);
+  const group = new THREE.Group();
+  const tiers = MODE==="legacy" ? d.legacy : d.archetype;
+
+  // Plot boundary on the ground (gold), shows the setback gap.
+  const plot = d.plotRingM.map(([x,y])=> new THREE.Vector3(x, 0.3, -y));
+  const plotLine = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(plot),
+    new THREE.LineBasicMaterial({ color:0xC8A96E, transparent:true, opacity:0.8 }));
+  group.add(plotLine);
+  const plotFill = new THREE.Mesh(
+    new THREE.ShapeGeometry(ringToShape(d.plotRingM)),
+    new THREE.MeshBasicMaterial({ color:0x16263f, transparent:true, opacity:0.55, side:THREE.DoubleSide }));
+  plotFill.rotation.x = Math.PI/2; plotFill.position.y = 0.05; group.add(plotFill);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color, transparent:true, opacity:0.45, roughness:0.55, metalness:0.0,
+    side:THREE.DoubleSide, depthWrite:false });
+
+  for (const t of tiers){
+    const depth = Math.max(0.2, t.top - t.base);
+    const geo = new THREE.ExtrudeGeometry(ringToShape(t.ring), { depth, bevelEnabled:false });
+    geo.rotateX(-Math.PI/2);          // extrude up: (x,y)->(x, ,-y), depth->+Y
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = t.base;
+    group.add(mesh);
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:0.8 }));
+    edges.position.y = t.base; group.add(edges);
+  }
+
+  scene.add(group);
+
+  // Frame the group.
+  const box = new THREE.Box3().setFromObject(group);
+  const c = box.getCenter(new THREE.Vector3());
+  const sz = box.getSize(new THREE.Vector3());
+  const radius = Math.max(sz.x, sz.y, sz.z) * 0.62 + 12;
+  const dist = radius / Math.sin((camera.fov*Math.PI/180)/2) * 1.05;
+  const az = Math.PI*0.27, el = Math.PI*0.30;
+  camera.position.set(
+    c.x + dist*Math.cos(el)*Math.sin(az),
+    c.y + dist*Math.sin(el),
+    c.z + dist*Math.cos(el)*Math.cos(az));
+  camera.lookAt(c.x, c.y - sz.y*0.05, c.z);
+
+  // Ground grid for scale.
+  const grid = new THREE.GridHelper(Math.max(sz.x,sz.z)*4, 24, 0x24405f, 0x16273d);
+  grid.position.set(c.x, 0, c.z); scene.add(grid);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(()=>{ renderer.render(scene, camera);
+    document.getElementById("ready").textContent = "ready"; });
+}).catch(e=>{ document.getElementById("ready").textContent = "error:"+e.message; });
+</script>
+</body>
+</html>
