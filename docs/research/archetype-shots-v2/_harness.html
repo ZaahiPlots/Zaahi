@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html,body{margin:0;height:100%;background:#0A1628;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#E8EEF5}
+  #label{position:fixed;left:28px;top:24px;z-index:10}
+  #cat{font-family:Georgia,serif;font-size:30px;font-weight:700;letter-spacing:-0.01em}
+  #rule{font-size:13px;color:#C8A96E;margin-top:6px;letter-spacing:0.04em;text-transform:uppercase}
+  #meta{font-size:12px;color:#8FA3B8;margin-top:8px}
+  #swatch{display:inline-block;width:13px;height:13px;border-radius:3px;
+    vertical-align:middle;margin-right:7px;border:1px solid rgba(255,255,255,.3)}
+  #mode{position:fixed;right:28px;top:24px;z-index:10;font-size:12px;
+    color:#8FA3BF;letter-spacing:0.08em;text-transform:uppercase}
+  #ready{position:fixed;left:-9999px}
+</style>
+</head>
+<body>
+<div id="label"><div id="cat">…</div><div id="rule"></div><div id="meta"></div></div>
+<div id="mode">ARCHETYPE MASSING v2</div>
+<div id="ready">notready</div>
+<script type="importmap">{ "imports": { "three": "/node_modules/three/build/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+
+const COLORS = { RESIDENTIAL:"#FFD700", COMMERCIAL:"#4A90D9", MIXED_USE:"#9B59B6",
+  HOTEL:"#E67E22", INDUSTRIAL:"#708090", EDUCATIONAL:"#1ABC9C", HEALTHCARE:"#E74C3C",
+  AGRICULTURAL:"#6B8E23", FUTURE_DEVELOPMENT:"#84CC16", INVESTMENT:"#14B8A6" };
+const RULES = {
+  RESIDENTIAL:"Balcony-band body + terraced top",
+  HOTEL:"L-shaped tower on a lobby podium",
+  EDUCATIONAL:"Low campus — bars, wings, courtyard, entrance",
+  HEALTHCARE:"Hospital H-plan — spine + ward wings + entrance",
+  COMMERCIAL:"Office tower — entrance plinth + parapet",
+  MIXED_USE:"Wide retail podium + slim tower (two volumes)",
+  INDUSTRIAL:"Warehouse shed — sawtooth roof + dock",
+  AGRICULTURAL:"Barn — gable roof, in its field",
+  FUTURE_DEVELOPMENT:"Flat fill — no 3D massing" };
+
+const params = new URLSearchParams(location.search);
+const CAT = params.get("cat") || "HOTEL";
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#0A1628");
+scene.fog = new THREE.Fog("#0A1628", 600, 2600);
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(38, W/H, 1, 20000);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const d1 = new THREE.DirectionalLight(0xffffff, 1.0); d1.position.set(0.6,1,0.45); scene.add(d1);
+const d2 = new THREE.DirectionalLight(0x9fc0ff, 0.35); d2.position.set(-0.5,0.4,-0.6); scene.add(d2);
+
+const W3 = (mx,my,h)=> new THREE.Vector3(mx, h, -my);          // metre→three space
+function ringShape(ring){ const s=new THREE.Shape();
+  ring.forEach(([x,y],i)=> i? s.lineTo(x,y):s.moveTo(x,y)); return s; }
+
+function gableGeom(s){ // {cx,cy,len,wid,ang,base?,eave,ridge}
+  const c=Math.cos(s.ang), si=Math.sin(s.ang), L=s.len/2, Wd=s.wid/2;
+  const loc=(lu,lv,h)=> W3(s.cx+lu*c-lv*si, s.cy+lu*si+lv*c, h);
+  const e0L=loc(-L,-Wd,s.eave), e0R=loc(-L,Wd,s.eave), r0=loc(-L,0,s.ridge);
+  const e1L=loc(L,-Wd,s.eave),  e1R=loc(L,Wd,s.eave),  r1=loc(L,0,s.ridge);
+  const v=[e0L,e0R,r0,e1L,e1R,r1];
+  const pos=[]; const tri=(a,b,cc)=>{pos.push(v[a].x,v[a].y,v[a].z,v[b].x,v[b].y,v[b].z,v[cc].x,v[cc].y,v[cc].z);};
+  tri(0,3,5); tri(0,5,2);   // left roof plane
+  tri(1,2,5); tri(1,5,4);   // right roof plane
+  tri(0,2,1); tri(3,4,5);   // gable ends
+  const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.computeVertexNormals(); return g;
+}
+function sawtoothGeom(s){ // {cx,cy,len,wid,ang,low,high,teeth}
+  const c=Math.cos(s.ang), si=Math.sin(s.ang), L=s.len, Wd=s.wid/2;
+  const loc=(lu,lv,h)=> W3(s.cx+(lu-s.len/2)*c-lv*si, s.cy+(lu-s.len/2)*si+lv*c, h);
+  const du=L/s.teeth, pos=[];
+  const quad=(a,b,cc,d)=>{pos.push(a.x,a.y,a.z,b.x,b.y,b.z,cc.x,cc.y,cc.z, a.x,a.y,a.z,cc.x,cc.y,cc.z,d.x,d.y,d.z);};
+  for(let i=0;i<s.teeth;i++){ const u0=i*du,u1=(i+1)*du;
+    const a=loc(u0,-Wd,s.low), b=loc(u0,Wd,s.low), cc=loc(u1,Wd,s.high), d=loc(u1,-Wd,s.high);
+    quad(a,b,cc,d);                                   // sloped roof
+    const e=loc(u1,-Wd,s.low), f=loc(u1,Wd,s.low);
+    quad(d,cc,f,e);                                   // vertical glazing drop
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.computeVertexNormals(); return g;
+}
+
+fetch("./massing.json").then(r=>r.json()).then(data=>{
+  const d=data[CAT];
+  document.getElementById("cat").textContent=CAT.replace(/_/g," ");
+  const hex=COLORS[CAT]||"#C8A96E";
+  document.getElementById("rule").innerHTML=`<span id="swatch" style="background:${hex}"></span>${RULES[CAT]||""}`;
+  document.getElementById("meta").textContent=`plot ${d.plot}${d.district?" · "+d.district:""} · ${d.floors} fl · ${Math.round(d.totalH)} m`;
+  const color=new THREE.Color(hex);
+  const group=new THREE.Group();
+
+  // plot boundary + ground fill (shows setback gap)
+  const plot=d.plotRingM.map(([x,y])=>W3(x,y,0.3));
+  group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(plot),
+    new THREE.LineBasicMaterial({color:0xC8A96E,transparent:true,opacity:0.8})));
+  const pf=new THREE.Mesh(new THREE.ShapeGeometry(ringShape(d.plotRingM)),
+    new THREE.MeshBasicMaterial({color:0x16263f,transparent:true,opacity:0.55,side:THREE.DoubleSide}));
+  pf.rotation.x=Math.PI/2; pf.position.y=0.05; group.add(pf);
+
+  const mat=new THREE.MeshStandardMaterial({color,transparent:true,opacity:0.45,
+    roughness:0.55,metalness:0,side:THREE.DoubleSide,depthWrite:false});
+  const edgeMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.8});
+  let tallest=null, tallH=0;
+  for(const s of d.solids){
+    let geo;
+    if(s.t==="prism"){
+      geo=new THREE.ExtrudeGeometry(ringShape(s.ring),{depth:Math.max(0.2,s.top-s.base),bevelEnabled:false});
+      geo.rotateX(-Math.PI/2);
+    } else if(s.t==="gable"){ geo=gableGeom(s); }
+    else if(s.t==="sawtooth"){ geo=sawtoothGeom(s); }
+    if(!geo) continue;
+    const m=new THREE.Mesh(geo,mat);
+    if(s.t==="prism") m.position.y=s.base;
+    group.add(m);
+    const eg=new THREE.LineSegments(new THREE.EdgesGeometry(geo,18),edgeMat);
+    if(s.t==="prism") eg.position.y=s.base; group.add(eg);
+    if(s.t==="prism" && (s.top-s.base)>tallH){ tallH=s.top-s.base; tallest=s; }
+  }
+
+  // floor-rhythm lines on the tallest body
+  if(d.floorLines && tallest){
+    const fl=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.18});
+    const n=Math.min(40,Math.floor((tallest.top-tallest.base)/3.5));
+    for(let i=1;i<=n;i++){ const y=tallest.base+i*3.5; if(y>=tallest.top) break;
+      const pts=tallest.ring.map(([x,yy])=>W3(x,yy,y));
+      group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),fl)); }
+  }
+  scene.add(group);
+
+  const box=new THREE.Box3().setFromObject(group);
+  const c=box.getCenter(new THREE.Vector3()), sz=box.getSize(new THREE.Vector3());
+  const radius=Math.max(sz.x,sz.y,sz.z)*0.62+12;
+  const dist=radius/Math.sin((camera.fov*Math.PI/180)/2)*1.05;
+  const FLAT=params.get("view")==="flat";
+  const az=Math.PI*0.27, el=FLAT?Math.PI*0.43:Math.PI*0.28;
+  camera.position.set(c.x+dist*Math.cos(el)*Math.sin(az), c.y+dist*Math.sin(el), c.z+dist*Math.cos(el)*Math.cos(az));
+  camera.lookAt(c.x, c.y - sz.y*0.04, c.z);
+  const grid=new THREE.GridHelper(Math.max(sz.x,sz.z)*3, 30, 0x24405f, 0x16273d);
+  grid.position.set(c.x,0,c.z); scene.add(grid);
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(()=>{ renderer.render(scene,camera); document.getElementById("ready").textContent="ready"; });
+}).catch(e=>{ document.getElementById("ready").textContent="error:"+e.message; });
+</script>
+</body>
+</html>
