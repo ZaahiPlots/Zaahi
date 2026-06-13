@@ -29,9 +29,17 @@ function squarePlot(centreLng: number, centreLat: number, sideM: number): GeoJSO
   };
 }
 foots.AGRICULTURAL ??= {
-  landUse: "AGRICULTURAL", plot: "(synthetic)", floors: 2, maxHeightMeters: 6,
-  areaSqft: 120000, setbacks: null, buildingStyle: null,
-  buildingLimitGeometry: null, geometry: squarePlot(55.32, 25.09, 100),
+  landUse: "AGRICULTURAL", plot: "(synthetic farm)", floors: 2, maxHeightMeters: 6,
+  areaSqft: 520000, setbacks: null, buildingStyle: null,
+  buildingLimitGeometry: null, geometry: squarePlot(55.32, 25.09, 220),
+};
+// FUTURE_DEVELOPMENT has no 3D massing by rule (flat fill only). The tallest
+// real future-dev plot (6464982) is a 95-pt ring that breaks extrusion, so use
+// a clean representative square to demonstrate the flat-land read.
+foots.FUTURE_DEVELOPMENT = {
+  landUse: "FUTURE_DEVELOPMENT", plot: "(representative — flat land)", floors: 0,
+  maxHeightMeters: 2, areaSqft: 200000, setbacks: null, buildingStyle: null,
+  buildingLimitGeometry: null, geometry: squarePlot(55.32, 25.10, 140),
 };
 foots.INVESTMENT ??= {
   landUse: "INVESTMENT", plot: "(synthetic, AD off-plan)", floors: 28,

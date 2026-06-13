@@ -219,6 +219,20 @@ export function emitArchetypeTiers(
   const lu = (landUse ?? "").toUpperCase();
   const S = (scale: number) => scaleRingFromCentroid(footprintRing, scale);
 
+  // True-centroid scaler (excludes the duplicated closing vertex, which skews
+  // the naive sum/length centroid ~10% on simple rings). Proportional, so it
+  // is collapse-safe on narrow plots and stays nested → used by the terraced /
+  // stepped archetypes that must read cleanly and stay centred.
+  const closed =
+    footprintRing.length > 1 &&
+    footprintRing[0][0] === footprintRing[footprintRing.length - 1][0] &&
+    footprintRing[0][1] === footprintRing[footprintRing.length - 1][1];
+  const uniq = closed ? footprintRing.slice(0, -1) : footprintRing;
+  const tcx = uniq.reduce((s, p) => s + p[0], 0) / uniq.length;
+  const tcy = uniq.reduce((s, p) => s + p[1], 0) / uniq.length;
+  const Sc = (scale: number): number[][] =>
+    footprintRing.map(([x, y]) => [tcx + (x - tcx) * scale, tcy + (y - tcy) * scale]);
+
   switch (lu) {
     case "HOTEL":
     case "HOSPITALITY": {
@@ -238,24 +252,29 @@ export function emitArchetypeTiers(
       ];
     }
     case "RESIDENTIAL": {
+      // Clean stepped terraces / balcony bands. Gentle proportional setbacks
+      // from the TRUE centroid → tiers stay nested + centred and never collapse
+      // on narrow plots. Step count scales with height.
       const floors = Math.max(1, Math.round(totalH / FLOOR_H));
       const scales =
-        floors > 30 ? [1.0, 0.84, 0.68, 0.52] :
-        floors > 15 ? [1.0, 0.80, 0.60] :
-        floors > 8  ? [1.0, 0.72] :
+        floors > 30 ? [1.0, 0.88, 0.76, 0.64] :
+        floors > 22 ? [1.0, 0.85, 0.70] :
+        floors > 10 ? [1.0, 0.80] :
                       [1.0];
       const band = totalH / scales.length;
       return scales.map((sc, i) => ({
-        ring: i === 0 ? footprintRing : S(sc),
+        ring: i === 0 ? footprintRing : Sc(sc),
         baseMeters: i * band,
         topMeters: (i + 1) * band,
       }));
     }
     case "HEALTHCARE": {
-      const split = totalH * 0.55;
+      // Compact clean massing: full-footprint base + a smaller upper block
+      // scaled from the TRUE centroid, so it sits squarely centred on the base.
+      const split = totalH * 0.6;
       return [
-        { ring: S(0.9), baseMeters: 0, topMeters: split },
-        { ring: S(0.72), baseMeters: split, topMeters: totalH },
+        { ring: footprintRing, baseMeters: 0, topMeters: split },
+        { ring: Sc(0.78), baseMeters: split, topMeters: totalH },
       ];
     }
     case "EDUCATIONAL":
@@ -267,7 +286,21 @@ export function emitArchetypeTiers(
       // Horizontal / low single full-footprint slab. Height stays honest
       // (resolveTotalHeightMeters already gives these types low defaults).
       return [{ ring: footprintRing, baseMeters: 0, topMeters: totalH }];
-    case "MIXED_USE":
+    case "MIXED_USE": {
+      // Multifunctional read: generous retail podium + tower body +
+      // PRONOUNCED crown setback. Deliberately distinct from the COMMERCIAL
+      // sheer prism (which is full-footprint with only a thin parapet).
+      const floors = Math.max(1, Math.round(totalH / FLOOR_H));
+      if (floors <= 4) return [{ ring: footprintRing, baseMeters: 0, topMeters: totalH }];
+      const podiumTop = Math.min(totalH * 0.22, 18);
+      const crownH = Math.max(totalH * 0.18, 10);
+      const bodyTop = Math.max(podiumTop + 1, totalH - crownH);
+      return [
+        { ring: footprintRing, baseMeters: 0, topMeters: podiumTop },
+        { ring: Sc(0.66), baseMeters: podiumTop, topMeters: bodyTop },
+        { ring: Sc(0.42), baseMeters: bodyTop, topMeters: totalH },
+      ];
+    }
     default:
       return emitDefaultTiers(footprintRing, totalH);
   }

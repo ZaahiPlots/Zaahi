@@ -1,7 +1,26 @@
 # Land-Use Archetypes — recon + visual preview
 
 Branch: `research/landuse-archetypes` (от `main` 40060d8). Date 2026-06-13.
-Status: **STOP — awaits founder approval, archetype-by-archetype. Tiles untouched.**
+Status: **STOP — awaits founder re-verdict on the 3 revised archetypes. Tiles untouched.**
+
+### Founder verdict 2026-06-13 (round 1, standalone shots)
+- **APPROVED as-is:** HOTEL, COMMERCIAL, EDUCATIONAL, INDUSTRIAL, INVESTMENT — these
+  cases are frozen, not touched in round 2.
+- **Revised (round 2, re-shot):**
+  - **RESIDENTIAL** — was "melting"/overhanging on a concave plot. Root cause: proportional
+    scale drifted on a concave 65-pt footprint **and** the shared centroid helper skewed
+    ~10% by counting the duplicated closing vertex. Fix: a true-centroid, collapse-safe
+    scaler + gentler steps; hero shot moved to a clean rectangular plot (6117231, 25 fl).
+    Now clean nested terraces, strictly inside footprint.
+  - **HEALTHCARE** — upper block sat skewed (same duplicated-vertex centroid bug). Fix:
+    full-footprint base + upper block scaled from the **true centroid** → centred.
+  - **MIXED_USE** — too close to COMMERCIAL. Fix: generous retail podium + narrower body +
+    **pronounced crown setback** (0.42) so podium/body/crown reads as multifunctional.
+- **Newly shown:** AGRICULTURAL (barn in field, large setback) + FUTURE_DEVELOPMENT
+  (flat lime land, no 3D — per CLAUDE.md rule, rendered top-down).
+- The true-centroid scaler is local to these revised archetypes; the **approved** HOTEL/
+  COMMERCIAL/INVESTMENT keep their exact approved `scaleRingFromCentroid` path. The
+  founder-locked `insetRingByMeters` / `computeSetbackM` were **not** modified.
 
 Founder concept (2026-06-13): здания должны читаться как **ТИП** назначения, не
 просто цветные коробки. Полупрозрачный фирменный стиль + канонический цвет 9/10
@@ -24,7 +43,7 @@ diff for `parcels/map/page.tsx` (page.tsx-review gate).
 | Land use            | # parcels | Archetype example used in shots |
 |---------------------|-----------|---------------------------------|
 | MIXED_USE           | 58        | 6460178 (City of Arabia, 66 fl) |
-| RESIDENTIAL         | 56        | 4158723 (56 fl)                 |
+| RESIDENTIAL         | 56        | 6117231 (Bu Kadra, 25 fl — clean rectangle) |
 | COMMERCIAL          | 14        | 202-613-000-C9 (AD, 60 fl)      |
 | HOTEL               | 5         | 6757711 (Dubai Studio City, 16 fl) |
 | HEALTHCARE          | 4         | 6455948 (Majan, 9 fl)           |
@@ -83,9 +102,9 @@ rules are untouched — only tier rings + height splits change.
 | **HOTEL / HOSPITALITY** | narrow tower on a wide low stylobate | 1.00 (0→~7m) · 0.42 (→top) |
 | **COMMERCIAL / RETAIL** | sheer curtain-wall prism + thin parapet | 1.00 (0→top−3) · 0.94 (→top) |
 | **INVESTMENT** | (AD off-plan) → sheer commercial tower | same as COMMERCIAL |
-| **RESIDENTIAL** | stepped terraces / balcony bands | steps scale by height: >30fl → 1.0/0.84/0.68/0.52 · >15 → 1.0/0.80/0.60 · >8 → 1.0/0.72 · else 1.0 |
-| **MIXED_USE** | retail podium + tower (+crown) — reference massing | 1.00 (0→14) · 0.70 (→top−7) · 0.50 (→top) |
-| **HEALTHCARE** | compact: inset base block + smaller upper block | 0.90 (0→55%) · 0.72 (→top) |
+| **RESIDENTIAL** | clean stepped terraces / balcony bands (true-centroid, collapse-safe) | >30fl → 1.0/0.88/0.76/0.64 · >22 → 1.0/0.85/0.70 · >10 → 1.0/0.80 · else 1.0 |
+| **MIXED_USE** | retail podium + tower + **pronounced crown** (distinct from COMMERCIAL prism) | podium 0→min(22%·H,18) · body 0.66 → top−crown · crown 0.42, crownH=max(18%·H,10) |
+| **HEALTHCARE** | compact: full-footprint base + centred upper block | 1.00 (0→60%) · 0.78 (→top), true-centroid |
 | **EDUCATIONAL** | horizontal low-rise slab | 1.00 single block |
 | **INDUSTRIAL / WAREHOUSE** | low long block | 1.00 single block |
 | **AGRICULTURAL** | barn — low block, large setback (10m default) | 1.00 single block |
@@ -123,14 +142,15 @@ podium/body/crown for side-by-side comparison.
 
 - `HOTEL-archetype.png` — wide stylobate + slim tower ✅ (DLRC-first not possible: no DLRC
   hotel in curated DB; used 6757711, the tallest curated hotel — see §1a).
-- `RESIDENTIAL-archetype.png` — 4 receding terraces ✅
+- `RESIDENTIAL-archetype.png` — clean 3 nested terraces on a rectangular plot ✅ (v2)
 - `COMMERCIAL-archetype.png` — sheer tower + parapet ✅
 - `EDUCATIONAL-archetype.png` — long horizontal slab ✅
 - `INDUSTRIAL-archetype.png` — low long block ✅
-- `HEALTHCARE-archetype.png` — compact base + upper block ✅
-- `MIXED_USE-archetype.png` — podium/body/crown reference ✅
-- `INVESTMENT-archetype.png` / `AGRICULTURAL-archetype.png` — synthetic plots ✅
-- `FUTURE_DEVELOPMENT-archetype.png` — intentionally flat (no 3D), reads as bare land ✅
+- `HEALTHCARE-archetype.png` — compact base + centred upper block ✅ (v2)
+- `MIXED_USE-archetype.png` — pronounced podium/body/crown, distinct from commercial ✅ (v2)
+- `INVESTMENT-archetype.png` — synthetic AD off-plan tower ✅
+- `AGRICULTURAL-archetype.png` — barn in field, large setback (synthetic farm) ✅
+- `FUTURE_DEVELOPMENT-archetype.png` — flat lime land, no 3D (top-down, representative) ✅
 
 Harness: `docs/research/archetype-shots/_harness.html` (Three.js) +
 `tiers.json` (computed by the real lib) + `footprints.json` (real plot geometry).

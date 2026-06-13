@@ -130,7 +130,8 @@ fetch("./tiers.json").then(r=>r.json()).then(data=>{
   const sz = box.getSize(new THREE.Vector3());
   const radius = Math.max(sz.x, sz.y, sz.z) * 0.62 + 12;
   const dist = radius / Math.sin((camera.fov*Math.PI/180)/2) * 1.05;
-  const az = Math.PI*0.27, el = Math.PI*0.30;
+  const FLAT = params.get("view") === "flat"; // top-down for flat land parcels
+  const az = Math.PI*0.27, el = FLAT ? Math.PI*0.43 : Math.PI*0.30;
   camera.position.set(
     c.x + dist*Math.cos(el)*Math.sin(az),
     c.y + dist*Math.sin(el),
