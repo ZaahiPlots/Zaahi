@@ -181,7 +181,13 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         bGroup.matrixWorldNeedsUpdate = true;
 
         const mat = makeMaterial(b.colorHex);
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
+        // ALL lines take the building's legend colour (founder 2026-06-14) — a
+        // solid colour monolith, never a white wireframe. Edges = the body hex
+        // (silhouette reads against the basemap; interior edges blend away);
+        // ribs/bands = the same hex ×0.8 for delicate tonal relief, opaque.
+        const bodyCol = new THREE.Color(b.colorHex);
+        const reliefCol = bodyCol.clone().multiplyScalar(0.8);
+        const edgeMat = new THREE.LineBasicMaterial({ color: bodyCol });
         let tallRing: number[][] | null = null;
         let tallBase = 0, tallTop = 0;
         for (const sol of solids) {
@@ -208,7 +214,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // mixed-use (built.ribs) so the dense lattice doesn't read as a
         // transparent cage over the solid body; residential keeps per-floor.
         if (tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
-          const bandMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28 });
+          const bandMat = new THREE.LineBasicMaterial({ color: reliefCol });
           const span = tallTop - tallBase;
           const bandStep = built.ribs ? Math.max(FLOOR_H, span / 8) : FLOOR_H; // ≤~8 bands for mixed-use
           for (let h = tallBase + bandStep; h < tallTop - 0.5; h += bandStep) {
@@ -226,7 +232,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // 2026-06-14). SPARSE — ~every 14 m along the perimeter — so the solid
         // purple body dominates and reads opaque. Line overlay; geometry intact.
         if (built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
-          const ribMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
+          const ribMat = new THREE.LineBasicMaterial({ color: reliefCol });
           const pos: number[] = [];
           const r = tallRing;
           for (let i = 0; i < r.length - 1; i++) {
