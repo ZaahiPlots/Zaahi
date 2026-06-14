@@ -47,6 +47,25 @@ export interface ArchetypeLayerController {
 
 const GREY = new THREE.Color(0x7a7a7a);
 
+// Line-texture variant (founder A/B/C/D/E review, 2026-06-14). Read from the
+// `?lv=` URL param; default = the current delicate tonal treatment so prod is
+// unchanged. Each field is a multiplier on the body's legend colour, "gold"
+// (#C8A96E brand accent), or null (omit that line family).
+type LineVariant = { edge: number | "gold"; band: number | "gold" | null; rib: number | "gold" | null; ribSpacing: number };
+function resolveLineVariant(): LineVariant {
+  let lv = "";
+  try { lv = (new URLSearchParams(window.location.search).get("lv") || "").toUpperCase(); } catch { /* ignore */ }
+  switch (lv) {
+    case "A": return { edge: 1.2, band: 1.4, rib: 1.4, ribSpacing: 14 };  // floors lighter — highlight
+    case "B": return { edge: 0.5, band: 0.5, rib: 0.5, ribSpacing: 14 };  // floors darker — shadow
+    case "C": return { edge: 1.0, band: 0.5, rib: null, ribSpacing: 14 }; // horizontal floors only
+    case "D": return { edge: 1.0, band: null, rib: 1.3, ribSpacing: 18 }; // vertical ribs only
+    case "E": return { edge: 1.0, band: "gold", rib: "gold", ribSpacing: 16 }; // brand gold accent
+    default:  return { edge: 1.0, band: 0.8, rib: 0.8, ribSpacing: 14 };  // current tonal
+  }
+}
+const GOLD_LINE = new THREE.Color(0xc8a96e);
+
 export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerController {
   const scene = new THREE.Scene();
   scene.up = new THREE.Vector3(0, 0, 1);
@@ -150,6 +169,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   function setBuildings(buildings: ArchetypeBuildingInput[]): void {
     try {
       disposeGroup();
+      const lineVariant = resolveLineVariant();
       let meshes = 0;
       for (const b of buildings) {
         if (!b.footprint || b.footprint.length < 3) continue;
@@ -181,13 +201,12 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         bGroup.matrixWorldNeedsUpdate = true;
 
         const mat = makeMaterial(b.colorHex);
-        // ALL lines take the building's legend colour (founder 2026-06-14) — a
-        // solid colour monolith, never a white wireframe. Edges = the body hex
-        // (silhouette reads against the basemap; interior edges blend away);
-        // ribs/bands = the same hex ×0.8 for delicate tonal relief, opaque.
+        // Line texture per the active variant (default = delicate tonal). Colour
+        // derived from the body legend hex (or brand gold), never white.
         const bodyCol = new THREE.Color(b.colorHex);
-        const reliefCol = bodyCol.clone().multiplyScalar(0.8);
-        const edgeMat = new THREE.LineBasicMaterial({ color: bodyCol });
+        const lineColOf = (m: number | "gold"): THREE.Color =>
+          m === "gold" ? GOLD_LINE.clone() : bodyCol.clone().multiplyScalar(m);
+        const edgeMat = new THREE.LineBasicMaterial({ color: lineColOf(lineVariant.edge) });
         let tallRing: number[][] | null = null;
         let tallBase = 0, tallTop = 0;
         for (const sol of solids) {
@@ -213,8 +232,8 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // Floor bands — light horizontal rhythm on the main body. SPARSE for
         // mixed-use (built.ribs) so the dense lattice doesn't read as a
         // transparent cage over the solid body; residential keeps per-floor.
-        if (tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
-          const bandMat = new THREE.LineBasicMaterial({ color: reliefCol });
+        if (lineVariant.band !== null && tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
+          const bandMat = new THREE.LineBasicMaterial({ color: lineColOf(lineVariant.band) });
           const span = tallTop - tallBase;
           const bandStep = built.ribs ? Math.max(FLOOR_H, span / 8) : FLOOR_H; // ≤~8 bands for mixed-use
           for (let h = tallBase + bandStep; h < tallTop - 0.5; h += bandStep) {
@@ -231,15 +250,15 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // Vertical rib pilasters on the body (mixed-use facade rhythm, founder
         // 2026-06-14). SPARSE — ~every 14 m along the perimeter — so the solid
         // purple body dominates and reads opaque. Line overlay; geometry intact.
-        if (built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
-          const ribMat = new THREE.LineBasicMaterial({ color: reliefCol });
+        if (lineVariant.rib !== null && built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
+          const ribMat = new THREE.LineBasicMaterial({ color: lineColOf(lineVariant.rib) });
           const pos: number[] = [];
           const r = tallRing;
           for (let i = 0; i < r.length - 1; i++) {
             const [ax, ay] = r[i];
             const [bx, by] = r[i + 1];
             const segLen = Math.hypot(bx - ax, by - ay);
-            const steps = Math.max(1, Math.round(segLen / 14));
+            const steps = Math.max(1, Math.round(segLen / lineVariant.ribSpacing));
             for (let k = 0; k < steps; k++) {
               const t = k / steps;
               const x = ax + (bx - ax) * t;
