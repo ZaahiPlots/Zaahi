@@ -182,11 +182,16 @@ export function buildMixedUse(foot: number[][], _obb: Obb, H: number): BuildResu
   // rib pilasters on the body give the facade rhythm of the reference.
   const podiumTop = H * 0.20;
   const bodyTop = H * 0.80;
+  // Inner tiers use scaleRing ONLY (a homothety → always a simple, fillable
+  // polygon). Do NOT clampToFootprint here: clamping a concave-footprint
+  // homothety creates a self-intersecting ring that ExtrudeGeometry can't fill
+  // (→ a see-through wireframe body). The layer's plot-polygon clamp still keeps
+  // everything in bounds (and is a no-op for the smaller inner tiers).
   return {
     solids: [
-      { t: "prism", ring: foot, base: 0, top: podiumTop },                                         // retail podium
-      { t: "prism", ring: clampToFootprint(scaleRing(foot, 0.82), foot), base: podiumTop, top: bodyTop }, // body
-      { t: "prism", ring: clampToFootprint(scaleRing(foot, 0.65), foot), base: bodyTop, top: H },         // crown
+      { t: "prism", ring: foot, base: 0, top: podiumTop },                       // retail podium
+      { t: "prism", ring: scaleRing(foot, 0.82), base: podiumTop, top: bodyTop }, // body
+      { t: "prism", ring: scaleRing(foot, 0.65), base: bodyTop, top: H },         // crown
     ],
     floorLines: true,
     ribs: true,

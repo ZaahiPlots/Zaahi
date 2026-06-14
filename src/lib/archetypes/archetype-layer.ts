@@ -204,12 +204,14 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           bGroup.add(eg);
           meshes++;
         }
-        // Floor bands — light horizontal ribs every floor on the main body.
+        // Floor bands — light horizontal rhythm on the main body. SPARSE for
+        // mixed-use (built.ribs) so the dense lattice doesn't read as a
+        // transparent cage over the solid body; residential keeps per-floor.
         if (tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
-          const bandMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
-          const nFloors = Math.min(60, Math.floor((tallTop - tallBase) / FLOOR_H));
-          for (let i = 1; i < nFloors; i++) {
-            const h = tallBase + i * FLOOR_H;
+          const bandMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28 });
+          const span = tallTop - tallBase;
+          const bandStep = built.ribs ? Math.max(FLOOR_H, span / 8) : FLOOR_H; // ≤~8 bands for mixed-use
+          for (let h = tallBase + bandStep; h < tallTop - 0.5; h += bandStep) {
             const band = new THREE.LineLoop(
               new THREE.BufferGeometry().setFromPoints((tallRing as number[][]).map(([x, y]) => new THREE.Vector3(x, y, h))),
               bandMat,
@@ -220,18 +222,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
             bGroup.add(band);
           }
         }
-        // Vertical rib pilasters on the body (mixed-use facade rhythm,
-        // founder 2026-06-14). Sampled ~6 m along the body ring perimeter,
-        // each a vertical segment base→top. Line overlay — geometry untouched.
+        // Vertical rib pilasters on the body (mixed-use facade rhythm, founder
+        // 2026-06-14). SPARSE — ~every 14 m along the perimeter — so the solid
+        // purple body dominates and reads opaque. Line overlay; geometry intact.
         if (built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
-          const ribMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
+          const ribMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
           const pos: number[] = [];
           const r = tallRing;
           for (let i = 0; i < r.length - 1; i++) {
             const [ax, ay] = r[i];
             const [bx, by] = r[i + 1];
             const segLen = Math.hypot(bx - ax, by - ay);
-            const steps = Math.max(1, Math.round(segLen / 6));
+            const steps = Math.max(1, Math.round(segLen / 14));
             for (let k = 0; k < steps; k++) {
               const t = k / steps;
               const x = ax + (bx - ax) * t;
