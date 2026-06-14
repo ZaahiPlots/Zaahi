@@ -47,10 +47,11 @@ export interface ArchetypeLayerController {
 
 const GREY = new THREE.Color(0x7a7a7a);
 
-// Line-texture variant (founder A/B/C/D/E review, 2026-06-14). Read from the
-// `?lv=` URL param; default = the current delicate tonal treatment so prod is
-// unchanged. Each field is a multiplier on the body's legend colour, "gold"
-// (#C8A96E brand accent), or null (omit that line family).
+// Line-texture style. Founder ratified VARIANT C (2026-06-14) as the default for
+// ALL types: edges = body legend hex, horizontal floor bands ×0.5 darker, NO
+// vertical ribs — clean floors, no wireframe cage. The `?lv=` URL param still
+// overrides for future tuning (A/B/D/E). Each field is a multiplier on the body
+// legend colour, "gold" (#C8A96E), or null to omit that line family.
 type LineVariant = { edge: number | "gold"; band: number | "gold" | null; rib: number | "gold" | null; ribSpacing: number };
 function resolveLineVariant(): LineVariant {
   let lv = "";
@@ -58,10 +59,10 @@ function resolveLineVariant(): LineVariant {
   switch (lv) {
     case "A": return { edge: 1.2, band: 1.4, rib: 1.4, ribSpacing: 14 };  // floors lighter — highlight
     case "B": return { edge: 0.5, band: 0.5, rib: 0.5, ribSpacing: 14 };  // floors darker — shadow
-    case "C": return { edge: 1.0, band: 0.5, rib: null, ribSpacing: 14 }; // horizontal floors only
     case "D": return { edge: 1.0, band: null, rib: 1.3, ribSpacing: 18 }; // vertical ribs only
     case "E": return { edge: 1.0, band: "gold", rib: "gold", ribSpacing: 16 }; // brand gold accent
-    default:  return { edge: 1.0, band: 0.8, rib: 0.8, ribSpacing: 14 };  // current tonal
+    case "C":
+    default:  return { edge: 1.0, band: 0.5, rib: null, ribSpacing: 14 };  // C — clean horizontal floors (DEFAULT)
   }
 }
 const GOLD_LINE = new THREE.Color(0xc8a96e);
