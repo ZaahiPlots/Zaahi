@@ -396,22 +396,31 @@ function bindGlobalMapEvent(
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
   const sel = selectedId ?? "__none__";
+  // When the residential archetype layer is active, residential renders as ONE
+  // solid Three.js model — extinguish its translucent flat plot-fill so nothing
+  // ghosts under/around it (founder 2026-06-14). Click/hover still work (an
+  // opacity-0 fill is still query-hit-testable). Other land-uses unchanged.
+  const archOn = !!(map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive;
+  const hideRes = (inner: unknown): unknown =>
+    archOn
+      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE"], true, false], 0, inner]
+      : inner;
   // Plot fill: bright on selected, dim on others when selection is
   // active. Outline-only parcels (hasLandUse === false) ALWAYS render
   // with fill-opacity 0 — selection state must not give them a fill.
   if (selectedId) {
-    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", hideRes([
       "case",
       ["!=", ["get", "hasLandUse"], true], 0,
       ["==", ["get", "id"], sel], 0.85,
       0.08,
-    ]);
+    ]) as never);
   } else {
-    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", hideRes([
       "case",
       ["==", ["get", "hasLandUse"], true], 0.4,
       0,
-    ]);
+    ]) as never);
   }
   // Outline: thick + fully opaque on selected, thin + dim elsewhere so
   // neighbours recede visually.
@@ -3410,11 +3419,11 @@ function ParcelsMapPageInner() {
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
 
-        // Archetype massing input — RESIDENTIAL ONLY (founder 2026-06-13).
-        // All other land-uses are intentionally NOT added → they stay on the
-        // existing fill-extrusion path unchanged. Same footprint ring + height
-        // the fill-extrusion would use.
-        if (landUse === "RESIDENTIAL") {
+        // Archetype massing input — RESIDENTIAL + MIXED_USE (founder approved
+        // these two; 2026-06-13/14). All other land-uses are intentionally NOT
+        // added → they stay on the existing fill-extrusion path unchanged. Same
+        // footprint ring + height the fill-extrusion would use.
+        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE") {
           archetypeInputs.push({
             parcelId: it.id,
             footprint: footprintRing,
@@ -3688,12 +3697,14 @@ function ParcelsMapPageInner() {
         "· zoom=", map.getZoom().toFixed(1),
       );
       archetypeActiveRef.current = arFlag;
+      // Flag read by applySelectionPaint to extinguish the residential flat
+      // plot-fill ghost under the solid model (founder 2026-06-14, one layer).
+      (map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive = arFlag;
       if (arFlag) {
-        // Founder 2026-06-13: ONLY landUse=RESIDENTIAL renders as archetype
-        // morphology. archetypeInputs is already filtered to residential
-        // upstream; every other land-use keeps the existing fill-extrusion,
-        // untouched.
-        console.log("[ZAAHI archetypes] ON (RESIDENTIAL only) · residential inputs:", archetypeInputs.length);
+        // Founder 2026-06-13/14: RESIDENTIAL + MIXED_USE render as archetype
+        // morphology. archetypeInputs is already filtered to those two upstream;
+        // every other land-use keeps the existing fill-extrusion, untouched.
+        console.log("[ZAAHI archetypes] ON (RESIDENTIAL+MIXED_USE) · inputs:", archetypeInputs.length);
         if (!archetypeCtrlRef.current) {
           const ctrl = installArchetypeLayer(map);
           archetypeCtrlRef.current = ctrl;
@@ -3709,7 +3720,7 @@ function ParcelsMapPageInner() {
               map.setFilter(
                 ZAAHI_BUILDINGS_3D,
                 show
-                  ? (["all", base, ["!=", ["get", "landUse"], "RESIDENTIAL"]] as FilterSpecification)
+                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE"], false, true]] as FilterSpecification)
                   : base,
               );
             }
@@ -3719,9 +3730,11 @@ function ParcelsMapPageInner() {
         }
         archetypeCtrlRef.current.setBuildings(archetypeInputs);
         // Apply LOD now (sets enabled + residential exclusion per current zoom).
-        // ZAAHI_PLOTS_FILL / _LINE (click / hover / search) are never touched —
-        // residential stays fully interactive at every zoom.
         (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod?.();
+        // Re-apply the plot-fill paint now that the archetype flag is set so the
+        // residential flat-fill ghost is extinguished on first paint (no
+        // selection yet → null). ZAAHI_PLOTS_FILL stays click/hover-able.
+        applySelectionPaint(map, selectedParcelId);
       }
 
       // ── Vault conflict markers (Phase 3 migration) ──
@@ -3881,7 +3894,7 @@ function ParcelsMapPageInner() {
           archetypeActiveRef.current &&
           map.getZoom() >= ARCHETYPE_MIN_ZOOM
         ) {
-          map.setFilter(lid, ["all", expr, ["!=", ["get", "landUse"], "RESIDENTIAL"]] as FilterSpecification);
+          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE"], false, true]] as FilterSpecification);
         } else {
           map.setFilter(lid, expr);
         }

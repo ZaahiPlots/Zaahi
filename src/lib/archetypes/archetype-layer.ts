@@ -118,17 +118,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   }
 
   function makeMaterial(colorHex: string): THREE.MeshLambertMaterial {
-    // Lambert (not PBR) so the flat canonical hue reads predictably; emissive
-    // lifts shadowed faces so they stay in-hue (never black). FrontSide avoids
-    // the back-face-through-front-face alpha doubling that darkened solids.
+    // SOLID listing model (founder 2026-06-14 — opacity 1, one layer, the
+    // translucent ghost under it is extinguished separately). Lambert keeps the
+    // canonical hue readable; emissive lifts shadowed faces so they never go
+    // black. FrontSide + depthWrite for clean opaque z-ordering.
     const c = new THREE.Color(colorHex);
     const mat = new THREE.MeshLambertMaterial({
       color: c,
-      emissive: c.clone().multiplyScalar(0.45),
-      transparent: true,
-      opacity: 0.8,
+      emissive: c.clone().multiplyScalar(0.22),
+      transparent: false,
+      opacity: 1,
       side: THREE.FrontSide,
-      depthWrite: false,
+      depthWrite: true,
     });
     mat.userData.originalColorHex = colorHex;
     return mat;
@@ -159,7 +160,8 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
         const footLocal = local(b.footprint);
         const obb = obbOf(footLocal);
-        const { solids } = buildArchetype(b.landUse ?? "", footLocal, obb, Math.max(3, b.totalH));
+        const built = buildArchetype(b.landUse ?? "", footLocal, obb, Math.max(3, b.totalH));
+        const { solids } = built;
         // Hard plot-boundary clamp: the inset footprint can poke a metre or two
         // outside the plot on concave plots. Clamp every prism ring to the PLOT
         // polygon so the massing never crosses the boundary the user sees.
@@ -217,6 +219,34 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
             band.userData.isEdge = true;
             bGroup.add(band);
           }
+        }
+        // Vertical rib pilasters on the body (mixed-use facade rhythm,
+        // founder 2026-06-14). Sampled ~6 m along the body ring perimeter,
+        // each a vertical segment base→top. Line overlay — geometry untouched.
+        if (built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
+          const ribMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
+          const pos: number[] = [];
+          const r = tallRing;
+          for (let i = 0; i < r.length - 1; i++) {
+            const [ax, ay] = r[i];
+            const [bx, by] = r[i + 1];
+            const segLen = Math.hypot(bx - ax, by - ay);
+            const steps = Math.max(1, Math.round(segLen / 6));
+            for (let k = 0; k < steps; k++) {
+              const t = k / steps;
+              const x = ax + (bx - ax) * t;
+              const y = ay + (by - ay) * t;
+              pos.push(x, y, tallBase, x, y, tallTop);
+            }
+          }
+          const rib = new THREE.LineSegments(
+            new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)),
+            ribMat,
+          );
+          rib.frustumCulled = false;
+          rib.userData.parcelId = b.parcelId;
+          rib.userData.isEdge = true;
+          bGroup.add(rib);
         }
         group.add(bGroup);
       }

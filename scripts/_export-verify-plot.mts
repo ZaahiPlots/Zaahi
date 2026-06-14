@@ -7,7 +7,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { writeFileSync } from "node:fs";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
-const PLOTS = ["6453982", "5310384"]; // worst two overhangers (pre-fix)
+// plotNumber → archetype category
+const PLOTS: Record<string, string> = {
+  "6453982": "RESIDENTIAL", "5310384": "RESIDENTIAL", // worst two overhangers (pre-fix)
+  "6460178": "MIXED_USE",                              // эталon mixed-use (City of Arabia, 66fl)
+};
 
 function insetRingByMeters(ring: number[][], setbackM: number): number[][] {
   if (setbackM <= 0) return ring;
@@ -23,7 +27,7 @@ function insetRingByMeters(ring: number[][], setbackM: number): number[][] {
 }
 
 const out: Record<string, unknown> = {};
-for (const pn of PLOTS) {
+for (const [pn, cat] of Object.entries(PLOTS)) {
   const p = await prisma.parcel.findFirst({ where: { plotNumber: pn },
     select: { plotNumber: true, geometry: true, area: true,
       affectionPlans: { orderBy: { fetchedAt: "desc" }, take: 1,
@@ -37,7 +41,7 @@ for (const pn of PLOTS) {
   const footRing = (blg && blg.type === "Polygon") ? blg.coordinates[0]
     : insetRingByMeters(plotRing, (ap?.plotAreaSqft ?? p.area ?? 0) < 5000 ? 0 : setback);
   const H = (ap?.maxHeightMeters && ap.maxHeightMeters > 0) ? ap.maxHeightMeters : Math.max(1, ap?.maxFloors ?? 4) * 3.5;
-  out[pn] = { plot: pn, plotRing, footRing, totalH: H };
+  out[pn] = { plot: pn, cat, plotRing, footRing, totalH: H };
   console.log(`${pn}: plot ${plotRing.length}pts foot ${footRing.length}pts H=${Math.round(H)}`);
 }
 writeFileSync("docs/research/archetype-shots-v2/verify-plots.json", JSON.stringify(out));

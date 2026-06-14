@@ -19,7 +19,7 @@ export type Solid =
   | { t: "sawtooth"; cx: number; cy: number; len: number; wid: number; ang: number; base: number; low: number; high: number; teeth: number };
 
 export interface Obb { cx: number; cy: number; ang: number; hl: number; hw: number }
-export interface BuildResult { solids: Solid[]; floorLines: boolean }
+export interface BuildResult { solids: Solid[]; floorLines: boolean; ribs?: boolean }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -174,12 +174,23 @@ export function buildCommercial(foot: number[][], obb: Obb, H: number): BuildRes
 }
 
 // MIXED_USE — wide retail podium (2-3 floors) + a clearly separate slim tower.
-export function buildMixedUse(foot: number[][], obb: Obb, H: number): BuildResult {
-  const solids: Solid[] = [];
-  const podium = Math.min(12, H * 0.16);
-  solids.push({ t: "prism", ring: foot, base: 0, top: podium });            // retail podium
-  solids.push({ t: "prism", ring: rectRing(obb, -0.6, 0.25, -0.5, 0.5), base: podium, top: H }); // tower
-  return { solids, floorLines: true };
+export function buildMixedUse(foot: number[][], _obb: Obb, H: number): BuildResult {
+  // ZAAHI Signature podium/body/crown — ONE building, founder canon for
+  // mixed-use (2026-06-14). Scales 1.0 / 0.82 / 0.65, height 20% / 60% / 20%.
+  // Every tier centroid-scaled THEN clamped to the footprint (concave-safe);
+  // the layer additionally clamps to the plot polygon. floorLines + vertical
+  // rib pilasters on the body give the facade rhythm of the reference.
+  const podiumTop = H * 0.20;
+  const bodyTop = H * 0.80;
+  return {
+    solids: [
+      { t: "prism", ring: foot, base: 0, top: podiumTop },                                         // retail podium
+      { t: "prism", ring: clampToFootprint(scaleRing(foot, 0.82), foot), base: podiumTop, top: bodyTop }, // body
+      { t: "prism", ring: clampToFootprint(scaleRing(foot, 0.65), foot), base: bodyTop, top: H },         // crown
+    ],
+    floorLines: true,
+    ribs: true,
+  };
 }
 
 // INDUSTRIAL — long warehouse shed with a sawtooth (north-light) roof + dock.

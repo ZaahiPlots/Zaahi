@@ -77,10 +77,11 @@ const parcels = await prisma.parcel.findMany({
       select: { landUseMix: true, maxFloors: true, maxHeightMeters: true, plotAreaSqft: true, setbacks: true, buildingLimitGeometry: true } } },
 });
 
-const results: { plot: string; vsPlot: number; vsFoot: number; foot: string }[] = [];
+const results: { plot: string; cat: string; vsPlot: number; vsFoot: number; foot: string }[] = [];
 for (const p of parcels) {
   const ap = p.affectionPlans[0];
-  if (deriveLandUse(ap?.landUseMix as never) !== "RESIDENTIAL") continue;
+  const cat = deriveLandUse(ap?.landUseMix as never);
+  if (cat !== "RESIDENTIAL" && cat !== "MIXED_USE") continue;
   const geom = p.geometry as GeoJSON.Polygon | null;
   if (!geom || geom.type !== "Polygon") continue;
   const plotRing = geom.coordinates[0];
@@ -88,7 +89,7 @@ for (const p of parcels) {
   const blg = ap?.buildingLimitGeometry as GeoJSON.Polygon | null;
   let footDeg: number[][]; let footSrc: string;
   if (blg && blg.type === "Polygon") { footDeg = blg.coordinates[0]; footSrc = "buildingLimit"; }
-  else { footDeg = insetRingByMeters(plotRing, computeSetbackM(ap?.plotAreaSqft ?? p.area ?? 0, "RESIDENTIAL", ap?.setbacks as never, null)); footSrc = "inset"; }
+  else { footDeg = insetRingByMeters(plotRing, computeSetbackM(ap?.plotAreaSqft ?? p.area ?? 0, cat, ap?.setbacks as never, null)); footSrc = "inset"; }
   // project both to metres around the footprint centroid (like the layer)
   const cl = footDeg.reduce((s, q) => s + q[0], 0) / footDeg.length;
   const ct = footDeg.reduce((s, q) => s + q[1], 0) / footDeg.length;
@@ -96,18 +97,20 @@ for (const p of parcels) {
   const toM = (r: number[][]) => r.map(([lng, lat]) => [(lng - cl) * 111320 * cos, (lat - ct) * 111320]);
   const footM = toM(footDeg); const plotM = toM(plotRing);
   const H = (ap?.maxHeightMeters && ap.maxHeightMeters > 0) ? ap.maxHeightMeters : Math.max(1, ap?.maxFloors ?? 4) * 3.5;
-  const { solids } = buildArchetype("RESIDENTIAL", footM, obbOf(footM), Math.max(3, H));
+  const { solids } = buildArchetype(cat, footM, obbOf(footM), Math.max(3, H));
   // Apply the layer's hard plot-boundary clamp before measuring.
   for (const s of solids) if (s.t === "prism") s.ring = clampToFootprint(s.ring, plotM);
   let vsPlot = 0, vsFoot = 0;
   for (const s of solids) { if (s.t !== "prism") continue; for (const v of s.ring) { vsPlot = Math.max(vsPlot, overhang(v, plotM)); vsFoot = Math.max(vsFoot, overhang(v, footM)); } }
-  results.push({ plot: p.plotNumber, vsPlot, vsFoot, foot: footSrc });
+  results.push({ plot: p.plotNumber, cat, vsPlot, vsFoot, foot: footSrc });
 }
 
 results.sort((a, b) => b.vsPlot - a.vsPlot);
-console.log(`residential parcels: ${results.length}`);
-console.log("plotNumber       vsPLOT(m)  vsFOOT(m)  footSrc");
-for (const r of results) console.log(`${r.plot.padEnd(16)} ${r.vsPlot.toFixed(2).padStart(8)}  ${r.vsFoot.toFixed(2).padStart(8)}  ${r.foot}`);
-const bad = results.filter((r) => r.vsPlot > 0.1);
-console.log(`\nOVERHANGING plot boundary (>0.1m): ${bad.length} / ${results.length}`);
+for (const C of ["RESIDENTIAL", "MIXED_USE"]) {
+  const rows = results.filter((r) => r.cat === C);
+  const bad = rows.filter((r) => r.vsPlot > 0.1);
+  console.log(`\n${C}: ${rows.length} parcels · OVERHANGING plot (>0.1m): ${bad.length} / ${rows.length}`);
+  for (const r of bad) console.log(`  ${r.plot.padEnd(16)} vsPLOT=${r.vsPlot.toFixed(2)} vsFOOT=${r.vsFoot.toFixed(2)} ${r.foot}`);
+  if (bad.length === 0) console.log("  all inside ✓");
+}
 await prisma.$disconnect();

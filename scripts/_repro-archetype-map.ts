@@ -4,10 +4,11 @@
 import maplibregl from "maplibre-gl";
 import { installArchetypeLayer, type ArchetypeBuildingInput } from "../src/lib/archetypes/archetype-layer";
 
+// Live ZAAHI_LANDUSE_COLOR values (page.tsx) so repro shots match the app.
 const COLORS: Record<string, string> = {
-  RESIDENTIAL: "#FFD700", COMMERCIAL: "#4A90D9", MIXED_USE: "#9B59B6",
-  HOTEL: "#E67E22", INDUSTRIAL: "#708090", EDUCATIONAL: "#1ABC9C",
-  HEALTHCARE: "#E74C3C", AGRICULTURAL: "#6B8E23", FUTURE_DEVELOPMENT: "#84CC16",
+  RESIDENTIAL: "#2D6A4F", COMMERCIAL: "#1B3A5C", MIXED_USE: "#6B4C9A",
+  HOTEL: "#7B1E2B", INDUSTRIAL: "#495057", EDUCATIONAL: "#0077B6",
+  HEALTHCARE: "#E63946", AGRICULTURAL: "#606C38", FUTURE_DEVELOPMENT: "#A8926E",
   INVESTMENT: "#14B8A6",
 };
 
@@ -26,12 +27,14 @@ const plotParam = new URLSearchParams(location.search).get("plot");
 
 map.on("load", async () => {
   let ring: number[][]; let plotRing: number[][] | undefined; let totalH: number; let label: string;
+  let verifyCat = "RESIDENTIAL";
   if (plotParam) {
     // Verify a specific real plot (plot ring + app footprint) — proves the
     // plot-boundary clamp keeps the massing inside even on concave plots.
     const vp = (await (await fetch("/docs/research/archetype-shots-v2/verify-plots.json")).json())[plotParam];
     if (!vp) { document.getElementById("status")!.textContent = "no verify plot " + plotParam; return; }
-    ring = vp.footRing; plotRing = vp.plotRing; totalH = vp.totalH; label = `RESIDENTIAL · plot ${plotParam}`;
+    ring = vp.footRing; plotRing = vp.plotRing; totalH = vp.totalH;
+    verifyCat = vp.cat || "RESIDENTIAL"; label = `${verifyCat} · plot ${plotParam}`;
   } else {
     const foots = await (await fetch("/docs/research/archetype-shots/footprints.json")).json();
     const f = foots[cat];
@@ -41,7 +44,7 @@ map.on("load", async () => {
   }
   const clng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
   const clat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-  const useCat = plotParam ? "RESIDENTIAL" : cat;
+  const useCat = plotParam ? verifyCat : cat;
   const inputs: ArchetypeBuildingInput[] = [{
     parcelId: plotParam || (cat), footprint: ring, plot: plotRing, landUse: useCat,
     colorHex: COLORS[useCat] || "#C8A96E", totalH, isVault: false, status: "LISTED",
