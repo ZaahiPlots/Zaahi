@@ -236,10 +236,41 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           bGroup.add(eg);
           meshes++;
         }
+        // HOTEL window grid (🏨, founder 2026-06-15): a REGULAR grid of rows
+        // (every floor) × columns (~every 4.5 m) in the light legend colour —
+        // the "many identical rooms" signature. Independent of the line variant.
+        if (built.windowGrid && tallRing && tallTop - tallBase >= FLOOR_H) {
+          const gridMat = new THREE.LineBasicMaterial({ color: lineColOf(1.4) });
+          const r = tallRing;
+          for (let h = tallBase + FLOOR_H; h < tallTop - 0.5; h += FLOOR_H) {
+            const row = new THREE.LineLoop(
+              new THREE.BufferGeometry().setFromPoints(r.map(([x, y]) => new THREE.Vector3(x, y, h))),
+              gridMat,
+            );
+            row.frustumCulled = false; row.userData.parcelId = b.parcelId; row.userData.isEdge = true;
+            bGroup.add(row);
+          }
+          const cpos: number[] = [];
+          for (let i = 0; i < r.length - 1; i++) {
+            const [ax, ay] = r[i]; const [bx, by] = r[i + 1];
+            const segLen = Math.hypot(bx - ax, by - ay);
+            const steps = Math.max(1, Math.round(segLen / 4.5));
+            for (let k = 0; k < steps; k++) {
+              const t = k / steps;
+              cpos.push(ax + (bx - ax) * t, ay + (by - ay) * t, tallBase, ax + (bx - ax) * t, ay + (by - ay) * t, tallTop);
+            }
+          }
+          const cols = new THREE.LineSegments(
+            new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(cpos, 3)),
+            gridMat,
+          );
+          cols.frustumCulled = false; cols.userData.parcelId = b.parcelId; cols.userData.isEdge = true;
+          bGroup.add(cols);
+        }
         // Floor bands — light horizontal rhythm on the main body. SPARSE for
         // mixed-use (built.ribs) so the dense lattice doesn't read as a
         // transparent cage over the solid body; residential keeps per-floor.
-        if (lineVariant.band !== null && tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
+        if (!built.windowGrid && lineVariant.band !== null && tallRing && tallTop - tallBase >= FLOOR_H * 1.5) {
           const bandMat = new THREE.LineBasicMaterial({ color: lineColOf(lineVariant.band) });
           const span = tallTop - tallBase;
           const bandStep = built.ribs ? Math.max(FLOOR_H, span / 8) : FLOOR_H; // ≤~8 bands for mixed-use
@@ -257,7 +288,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // Vertical rib pilasters on the body (mixed-use facade rhythm, founder
         // 2026-06-14). SPARSE — ~every 14 m along the perimeter — so the solid
         // purple body dominates and reads opaque. Line overlay; geometry intact.
-        if (lineVariant.rib !== null && built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
+        if (!built.windowGrid && lineVariant.rib !== null && built.ribs && tallRing && tallTop - tallBase >= FLOOR_H) {
           const ribMat = new THREE.LineBasicMaterial({ color: lineColOf(lineVariant.rib) });
           const pos: number[] = [];
           const r = tallRing;

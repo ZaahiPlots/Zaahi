@@ -19,7 +19,7 @@ export type Solid =
   | { t: "sawtooth"; cx: number; cy: number; len: number; wid: number; ang: number; base: number; low: number; high: number; teeth: number };
 
 export interface Obb { cx: number; cy: number; ang: number; hl: number; hw: number }
-export interface BuildResult { solids: Solid[]; floorLines: boolean; ribs?: boolean }
+export interface BuildResult { solids: Solid[]; floorLines: boolean; ribs?: boolean; windowGrid?: boolean }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -132,15 +132,20 @@ export function buildResidential(foot: number[][], obb: Obb, H: number): BuildRe
   return { solids, floorLines: true };
 }
 
-// HOTEL — L-shaped tower on a wide low lobby podium.
+// HOTEL — 🏨 emoji read: a WIDE flat-roofed slab filling the footprint, with a
+// regular window grid (rows × columns, drawn by the layer via windowGrid) — the
+// "many identical rooms" signature. Not a needle, not an L-tower. Height honest
+// from data; the footprint sets the (wide) plan. Optional entrance canopy: a low
+// slab protruding at the front edge so it reads as a lobby entrance.
 export function buildHotel(foot: number[][], obb: Obb, H: number): BuildResult {
-  const solids: Solid[] = [];
-  const podium = Math.min(8, H * 0.18);
-  solids.push({ t: "prism", ring: foot, base: 0, top: podium }); // lobby podium
-  // L: a long slab along one edge + a perpendicular wing at one end
-  solids.push({ t: "prism", ring: rectRing(obb, -1, 1, 0.25, 0.95), base: podium, top: H });
-  solids.push({ t: "prism", ring: rectRing(obb, 0.25, 0.95, -0.95, 0.95), base: podium, top: H });
-  return { solids, floorLines: true };
+  const solids: Solid[] = [
+    { t: "prism", ring: foot, base: 0, top: H }, // main slab, flat roof, fills footprint
+  ];
+  // Entrance canopy — a low wide marquee at the front edge (clamped to plot by
+  // the layer). Reads as the lobby entrance under the window grid.
+  const canopyTop = Math.min(6, Math.max(3, H * 0.12));
+  solids.push({ t: "prism", ring: rectRing(obb, -0.5, 0.5, 0.92, 1.18), base: 0, top: canopyTop });
+  return { solids, floorLines: true, windowGrid: true };
 }
 
 // EDUCATIONAL — low campus: long main bar + two wings (U / courtyard) + entrance.

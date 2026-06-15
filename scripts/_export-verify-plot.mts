@@ -11,6 +11,7 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: proc
 const PLOTS: Record<string, string> = {
   "6453982": "RESIDENTIAL", "5310384": "RESIDENTIAL", // worst two overhangers (pre-fix)
   "6460178": "MIXED_USE",                              // эталon mixed-use (City of Arabia, 66fl)
+  "6727759": "HOTEL", "6757711": "HOTEL",             // wide-low + taller hotels
 };
 
 function insetRingByMeters(ring: number[][], setbackM: number): number[][] {

@@ -81,7 +81,7 @@ const results: { plot: string; cat: string; vsPlot: number; vsFoot: number; foot
 for (const p of parcels) {
   const ap = p.affectionPlans[0];
   const cat = deriveLandUse(ap?.landUseMix as never);
-  if (cat !== "RESIDENTIAL" && cat !== "MIXED_USE") continue;
+  if (cat !== "RESIDENTIAL" && cat !== "MIXED_USE" && cat !== "HOTEL") continue;
   const geom = p.geometry as GeoJSON.Polygon | null;
   if (!geom || geom.type !== "Polygon") continue;
   const plotRing = geom.coordinates[0];
@@ -106,7 +106,7 @@ for (const p of parcels) {
 }
 
 results.sort((a, b) => b.vsPlot - a.vsPlot);
-for (const C of ["RESIDENTIAL", "MIXED_USE"]) {
+for (const C of ["RESIDENTIAL", "MIXED_USE", "HOTEL"]) {
   const rows = results.filter((r) => r.cat === C);
   const bad = rows.filter((r) => r.vsPlot > 0.1);
   console.log(`\n${C}: ${rows.length} parcels · OVERHANGING plot (>0.1m): ${bad.length} / ${rows.length}`);
