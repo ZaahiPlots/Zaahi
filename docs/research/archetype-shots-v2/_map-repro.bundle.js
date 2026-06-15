@@ -58993,7 +58993,8 @@ void main() {
     HEALTHCARE: "/glb/archetypes/healthcare.glb",
     INDUSTRIAL: "/glb/archetypes/industrial.glb",
     AGRICULTURAL: "/glb/archetypes/agricultural.glb",
-    FUTURE_DEVELOPMENT: "/glb/archetypes/future_development.glb"
+    FUTURE_DEVELOPMENT: "/glb/archetypes/future_development.glb",
+    INVESTMENT: "/glb/archetypes/investment.glb"
   };
   var M_PER_DEG_LAT = 111320;
   var LAYER_ID = "zaahi-archetypes-3d";
@@ -59134,8 +59135,11 @@ void main() {
       g.computeVertexNormals();
       return g;
     }
-    function makeMaterial(colorHex) {
+    function makeMaterial(colorHex, landUse) {
       const c = new Color(colorHex);
+      if (landUse === "INDUSTRIAL" || landUse === "WAREHOUSE") {
+        c.lerp(new Color(16777215), 0.42);
+      }
       const mat = new MeshStandardMaterial({
         color: c,
         metalness: 0,
@@ -59146,7 +59150,7 @@ void main() {
         side: FrontSide,
         depthWrite: true
       });
-      mat.userData.originalColorHex = colorHex;
+      mat.userData.originalColorHex = "#" + c.getHexString();
       return mat;
     }
     function disposeGroup() {
@@ -59188,7 +59192,7 @@ void main() {
             bGroup2.matrix = new Matrix4().makeTranslation(merc2.x, merc2.y, merc2.z).multiply(new Matrix4().makeScale(s2, -s2, s2));
             bGroup2.matrixWorldNeedsUpdate = true;
             const clone2 = proto.clone(true);
-            const glbMat = makeMaterial(b.colorHex);
+            const glbMat = makeMaterial(b.colorHex, b.landUse);
             const glbBodyCol = new Color(b.colorHex);
             const glbEdgeCol = lineVariant.edge === "gold" ? GOLD_LINE.clone() : glbBodyCol.clone().multiplyScalar(lineVariant.edge);
             const glbEdgeMat = new LineBasicMaterial({ color: glbEdgeCol });
@@ -59205,8 +59209,11 @@ void main() {
                 mm.add(eg);
               }
             });
+            const capXY = b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT" ? 55 : Infinity;
+            const sx = Math.min(2 * obb.hl, capXY);
+            const sy = Math.min(2 * obb.hw, capXY);
             clone2.matrixAutoUpdate = false;
-            clone2.matrix.identity().multiply(new Matrix4().makeTranslation(obb.cx, obb.cy, 0)).multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(2 * obb.hl, 2 * obb.hw, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
+            clone2.matrix.identity().multiply(new Matrix4().makeTranslation(obb.cx, obb.cy, 0)).multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(sx, sy, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
             clone2.matrixWorldNeedsUpdate = true;
             bGroup2.add(clone2);
             group.add(bGroup2);
@@ -59225,7 +59232,7 @@ void main() {
           bGroup.matrixAutoUpdate = false;
           bGroup.matrix = new Matrix4().makeTranslation(merc.x, merc.y, merc.z).multiply(new Matrix4().makeScale(s, -s, s));
           bGroup.matrixWorldNeedsUpdate = true;
-          const mat = makeMaterial(b.colorHex);
+          const mat = makeMaterial(b.colorHex, b.landUse);
           const bodyCol = new Color(b.colorHex);
           const lineColOf = (m) => m === "gold" ? GOLD_LINE.clone() : bodyCol.clone().multiplyScalar(m);
           const edgeMat = new LineBasicMaterial({ color: lineColOf(lineVariant.edge) });

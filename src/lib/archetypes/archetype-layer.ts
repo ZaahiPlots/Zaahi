@@ -209,7 +209,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     return g;
   }
 
-  function makeMaterial(colorHex: string): THREE.MeshStandardMaterial {
+  function makeMaterial(colorHex: string, landUse?: string | null): THREE.MeshStandardMaterial {
     // SOLID listing model (founder 2026-06-14 — opacity 1, one layer, the
     // translucent ghost under it is extinguished separately). PBR Standard
     // (metalness 0, mid roughness) so the directional SUN sculpts the recessed
@@ -217,6 +217,13 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     // Lambert+heavy-emissive that flat-lit everything. A tiny emissive floor
     // keeps the deepest recesses from going pure black (founder "never-black").
     const c = new THREE.Color(colorHex);
+    // INDUSTRIAL #495057 is so dark it reads as a black void on the bright
+    // satellite (founder 2026-06-15). Lift ONLY its RENDER lightness toward a
+    // mid-grey so the warehouse + sawtooth read and it sits in the family. The
+    // legend/fill hex stays #495057 (data untouched) — this is render-only.
+    if (landUse === "INDUSTRIAL" || landUse === "WAREHOUSE") {
+      c.lerp(new THREE.Color(0xffffff), 0.42);
+    }
     const mat = new THREE.MeshStandardMaterial({
       color: c,
       metalness: 0.0,
@@ -227,7 +234,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
       side: THREE.FrontSide,
       depthWrite: true,
     });
-    mat.userData.originalColorHex = colorHex;
+    mat.userData.originalColorHex = "#" + c.getHexString(); // render colour (lifted for industrial) so deselect restores it
     return mat;
   }
 
@@ -277,7 +284,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
             .multiply(new THREE.Matrix4().makeScale(s2, -s2, s2));
           bGroup2.matrixWorldNeedsUpdate = true;
           const clone = proto.clone(true);
-          const glbMat = makeMaterial(b.colorHex);
+          const glbMat = makeMaterial(b.colorHex, b.landUse);
           // Edge lines (style G): the map material is flat-lit + emissive (the
           // ratified "never-black" solid look), which kills the self-shadowing
           // that makes recessed windows read. Outline the GLB's hard edges —
@@ -300,11 +307,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           // Unit GLB (X,Y∈[-0.5,0.5] footprint, Z∈[0,1] height after Blender
           // Z-up export → glTF Y-up) → fit the footprint OBB + data height:
           // T(obb centre) · Rz(obb angle) · S(2hl, 2hw, H) · Rx(90° Y-up→Z-up).
+          // AGRICULTURAL / FUTURE_DEVELOPMENT are small markers (barn, site) — a
+          // farm/site does NOT fill a giant plot. Cap their footprint scale so
+          // they stay a sensible size centred in the plot, land around them
+          // (founder 2026-06-15 huge-plot fix). Other types fill the footprint.
+          const capXY = (b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT") ? 55 : Infinity;
+          const sx = Math.min(2 * obb.hl, capXY);
+          const sy = Math.min(2 * obb.hw, capXY);
           clone.matrixAutoUpdate = false;
           clone.matrix.identity()
             .multiply(new THREE.Matrix4().makeTranslation(obb.cx, obb.cy, 0))
             .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))
-            .multiply(new THREE.Matrix4().makeScale(2 * obb.hl, 2 * obb.hw, H))
+            .multiply(new THREE.Matrix4().makeScale(sx, sy, H))
             .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
           clone.matrixWorldNeedsUpdate = true;
           bGroup2.add(clone);
@@ -333,7 +347,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           .multiply(new THREE.Matrix4().makeScale(s, -s, s));
         bGroup.matrixWorldNeedsUpdate = true;
 
-        const mat = makeMaterial(b.colorHex);
+        const mat = makeMaterial(b.colorHex, b.landUse);
         // Line texture per the active variant (default = delicate tonal). Colour
         // derived from the body legend hex (or brand gold), never white.
         const bodyCol = new THREE.Color(b.colorHex);

@@ -167,21 +167,30 @@ def build_educational():
     main = make_box("main", -0.50, 0.50, -0.50, 0.50, 0.00, 0.90)
     roofedge = make_box("redge", -0.50, 0.50, -0.50, 0.50, 0.90, 0.925)
     main = join([main, roofedge], "main")
-    # open central courtyard (cut through; a thin ground slab stays below z=0.03)
-    court = make_box("court", -0.27, 0.27, -0.27, 0.27, 0.03, 1.10)
+    # BIGGER open central courtyard (founder 2026-06-15: reads as a campus quad
+    # from above, not a flat slab). Cut through; thin ground slab stays below 0.03.
+    court = make_box("court", -0.32, 0.32, -0.32, 0.32, 0.03, 1.10)
     boolean_diff(main, court)
-    # large classroom windows — 3 tall rows, wide panes, on all 4 outer facades
-    rec = 0.03; cutters = []
-    half = 0.40; mull = 0.018; ncols = 7; wh = 0.135
+    # large classroom windows — 3 tall rows, wide panes, DEEPER recess (more PBR
+    # shadow → reads on the bright map), on all 4 OUTER + 4 INNER (courtyard) faces
+    rec = 0.06; cutters = []
+    half = 0.42; mull = 0.018; ncols = 7; wh = 0.145
     pane = (2 * half - mull * (ncols + 1)) / ncols
-    for z in linspace(0.20, 0.74, 3):
+    for z in linspace(0.20, 0.76, 3):
         z0, z1 = z - wh / 2, z + wh / 2
         for i in range(ncols):
             a = -half + mull + i * (pane + mull); b = a + pane
-            cutters.append(make_box(f"ex", 0.50 - rec, 0.51, a, b, z0, z1))
-            cutters.append(make_box(f"enx", -0.51, -0.50 + rec, a, b, z0, z1))
-            cutters.append(make_box(f"ey", a, b, 0.50 - rec, 0.51, z0, z1))
-            cutters.append(make_box(f"eny", a, b, -0.51, -0.50 + rec, z0, z1))
+            # outer facades (wall outer face at ±0.50)
+            cutters.append(make_box("ex", 0.50 - rec, 0.51, a, b, z0, z1))
+            cutters.append(make_box("enx", -0.51, -0.50 + rec, a, b, z0, z1))
+            cutters.append(make_box("ey", a, b, 0.50 - rec, 0.51, z0, z1))
+            cutters.append(make_box("eny", a, b, -0.51, -0.50 + rec, z0, z1))
+            # inner courtyard facades (wall inner face at ±0.32) — quad windows
+            if -0.30 < a and b < 0.30:
+                cutters.append(make_box("ix", 0.32, 0.32 + rec, a, b, z0, z1))
+                cutters.append(make_box("inx", -0.32 - rec, -0.32, a, b, z0, z1))
+                cutters.append(make_box("iy", a, b, 0.32, 0.32 + rec, z0, z1))
+                cutters.append(make_box("iny", a, b, -0.32 - rec, -0.32, z0, z1))
     boolean_diff(main, join(cutters, "cut"))
     parts.append(make_box("canopy", -0.17, 0.17, 0.40, 0.50, 0.16, 0.195))   # entrance portico
     parts.append(make_box("roofbox", 0.30, 0.44, 0.30, 0.44, 0.925, 0.965))  # rooftop plant
@@ -280,13 +289,15 @@ def build_future_development():
 #    lines) + a stepped-back terraced crown. Green. ──
 def build_residential():
     parts = []
-    parts.append(make_box("core", -0.40, 0.40, -0.40, 0.40, 0.00, 0.90))  # glazed core
-    # projecting balcony floor plates (extend past the core → shadow per floor)
-    for i, z in enumerate(linspace(0.07, 0.86, 13)):
-        parts.append(make_box(f"bal{i}", -0.48, 0.48, -0.48, 0.48, z, z + 0.022))
+    parts.append(make_box("core", -0.36, 0.36, -0.36, 0.36, 0.00, 0.90))  # slimmer glazed core
+    # projecting balcony floor plates — DEEPER projection (core 0.36 → plate 0.50
+    # = 0.14 overhang) + thicker + fewer/bigger gaps so each plate casts a strong
+    # PBR shadow band that reads from above on the bright map (founder 2026-06-15).
+    for i, z in enumerate(linspace(0.07, 0.85, 11)):
+        parts.append(make_box(f"bal{i}", -0.50, 0.50, -0.50, 0.50, z, z + 0.030))
     # terraced crown — two stepped-back top tiers
-    parts.append(make_box("t1", -0.32, 0.32, -0.32, 0.32, 0.90, 0.96))
-    parts.append(make_box("t2", -0.22, 0.22, -0.22, 0.22, 0.96, 1.00))
+    parts.append(make_box("t1", -0.30, 0.30, -0.30, 0.30, 0.90, 0.96))
+    parts.append(make_box("t2", -0.20, 0.20, -0.20, 0.20, 0.96, 1.00))
     return join(parts, "residential")
 
 # ── MIXED_USE: podium / body / crown (3 stepped tiers with setbacks, as ratified)
