@@ -58987,8 +58987,6 @@ void main() {
   var DUBAI_LAT = 25.2;
   var DUBAI_LNG = 55.27;
   var ARCHETYPE_GLB = {
-    RESIDENTIAL: "/glb/archetypes/residential.glb",
-    MIXED_USE: "/glb/archetypes/mixed_use.glb",
     HOTEL: "/glb/archetypes/hotel.glb",
     COMMERCIAL: "/glb/archetypes/commercial.glb",
     EDUCATIONAL: "/glb/archetypes/educational.glb",
@@ -59191,12 +59189,20 @@ void main() {
             bGroup2.matrixWorldNeedsUpdate = true;
             const clone2 = proto.clone(true);
             const glbMat = makeMaterial(b.colorHex);
+            const glbBodyCol = new Color(b.colorHex);
+            const glbEdgeCol = lineVariant.edge === "gold" ? GOLD_LINE.clone() : glbBodyCol.clone().multiplyScalar(lineVariant.edge);
+            const glbEdgeMat = new LineBasicMaterial({ color: glbEdgeCol });
             clone2.traverse((o) => {
               const mm = o;
               if (mm.isMesh && mm.geometry) {
                 mm.material = glbMat;
                 mm.frustumCulled = false;
                 mm.userData.parcelId = b.parcelId;
+                const eg = new LineSegments(new EdgesGeometry(mm.geometry, 30), glbEdgeMat);
+                eg.frustumCulled = false;
+                eg.userData.parcelId = b.parcelId;
+                eg.userData.isEdge = true;
+                mm.add(eg);
               }
             });
             clone2.matrixAutoUpdate = false;
