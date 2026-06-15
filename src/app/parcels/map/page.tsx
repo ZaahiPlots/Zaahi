@@ -5513,7 +5513,7 @@ function ParcelsMapPageInner() {
     { color: "#0077B6", name: "Educational",          desc: "Образовательное" },
     { color: "#E63946", name: "Healthcare",           desc: "Медицина" },
     { color: "#606C38", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
-    { color: "#C8A96E", name: "Future Development",   desc: "Под застройку" },
+    { color: "#A8926E", name: "Future Development",   desc: "Под застройку" },
     { color: "#14B8A6", name: "Investment",           desc: "Инвестиционные (AD off-plan)" },
   ];
 

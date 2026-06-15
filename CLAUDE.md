@@ -267,23 +267,29 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
 - Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
 
-### Цвета по Land Use — APPROVED 10 категорий (9 утверждены 2026-04-11, INVESTMENT добавлен 2026-06-03)
+### Цвета по Land Use — APPROVED 10 категорий (палитра пересмотрена; 1-в-1 с кодом 2026-06-15)
 **НЕ менять без явного согласия основателя.** Это финальный список.
+
+Эти hex приведены 1-в-1 к живому коду `ZAAHI_LANDUSE_COLOR` (`src/app/parcels/map/page.tsx`)
+2026-06-15 (founder-санкция). Прежняя таблица (Residential `#FFD700` жёлтый и т.д.,
+палитра 2026-04-11) была устаревшей — код перекрасили, а CLAUDE.md не обновили.
 
 | # | Category | Hex | Цвет |
 |---|---|---|---|
-| 1 | Residential | `#FFD700` | жёлтый |
-| 2 | Commercial | `#4A90D9` | синий |
-| 3 | Mixed Use | `#9B59B6` | фиолетовый |
-| 4 | Hotel / Hospitality | `#E67E22` | оранжевый |
-| 5 | Industrial / Warehouse | `#708090` | стальной серый |
-| 6 | Educational | `#1ABC9C` | бирюзовый |
-| 7 | Healthcare | `#E74C3C` | красный |
-| 8 | Agricultural / Farm | `#6B8E23` | оливковый |
-| 9 | Future Development | `#84CC16` | лайм |
-| 10 | Investment | `#14B8A6` | бирюзовый-teal (AD off-plan, ~29K плотов) |
+| 1 | Residential | `#2D6A4F` | зелёный |
+| 2 | Commercial | `#1B3A5C` | тёмно-синий (navy) |
+| 3 | Mixed Use | `#6B4C9A` | фиолетовый |
+| 4 | Hotel / Hospitality | `#7B1E2B` | бордовый |
+| 5 | Industrial / Warehouse | `#495057` | серый |
+| 6 | Educational | `#0077B6` | небесно-синий |
+| 7 | Healthcare | `#E63946` | красный |
+| 8 | Agricultural / Farm | `#606C38` | оливковый |
+| 9 | Future Development | `#A8926E` | песчаник (warm earth · отличается от бренд-золота) |
+| 10 | Investment | `#14B8A6` | бирюзовый-teal (AD off-plan) |
 
-DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour).
+DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour). Future Development = `#A8926E` намеренно ОТЛИЧАЕТСЯ от бренд-золота `#C8A96E`, чтобы участки под застройку не сливались с контурами районов.
+
+**⚠️ Дрейф цвета FutureDev в коде (2026-06-15, частично закрыто):** `ZAAHI_LANDUSE_COLOR` + `LAND_USE_LEGEND` приведены к `#A8926E`. НЕ синхронизированы (хвост): `SidePanel.tsx` (`#C8A96E`), `filter-state.ts` (`#84CC16` — старый лайм), `scripts/prepare-tiles.ts` (`#C8A96E`, tile-build — менять только при ребилде тайлов). Привести при следующем заходе.
 
 **Маппинг из DDA land use строк в категории** (case-insensitive `contains`, реализован в `deriveLandUse` в `src/app/parcels/map/page.tsx`):
 - `residential`, `villa`, `townhouse`, `apartment` → Residential
