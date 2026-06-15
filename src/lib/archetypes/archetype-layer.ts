@@ -47,10 +47,11 @@ export interface ArchetypeLayerController {
 
 const GREY = new THREE.Color(0x7a7a7a);
 
-// Line-texture style. Founder ratified VARIANT C (2026-06-14) as the default for
-// ALL types: edges = body legend hex, horizontal floor bands ×0.5 darker, NO
-// vertical ribs — clean floors, no wireframe cage. The `?lv=` URL param still
-// overrides for future tuning (A/B/D/E). Each field is a multiplier on the body
+// Line-texture style. Founder ratified VARIANT G (2026-06-15) as the default for
+// ALL types: edges ×1.5 LIGHTER (volume corners read as light cants) + floor
+// bands ×1.4 LIGHTER (levels highlighted) + NO vertical ribs — volumetric and
+// multi-storey, not a solid block nor a wireframe cage. The `?lv=` URL param
+// overrides for tuning (A/B/C/D/E/F/H). Each field is a multiplier on the body
 // legend colour, "gold" (#C8A96E), or null to omit that line family.
 type LineVariant = { edge: number | "gold"; band: number | "gold" | null; rib: number | "gold" | null; ribSpacing: number };
 function resolveLineVariant(): LineVariant {
@@ -61,8 +62,13 @@ function resolveLineVariant(): LineVariant {
     case "B": return { edge: 0.5, band: 0.5, rib: 0.5, ribSpacing: 14 };  // floors darker — shadow
     case "D": return { edge: 1.0, band: null, rib: 1.3, ribSpacing: 18 }; // vertical ribs only
     case "E": return { edge: 1.0, band: "gold", rib: "gold", ribSpacing: 16 }; // brand gold accent
-    case "C":
-    default:  return { edge: 1.0, band: 0.5, rib: null, ribSpacing: 14 };  // C — clean horizontal floors (DEFAULT)
+    // F/G/H (founder round 2): bright volume edges (light cants) + visible
+    // floor levels — read volumetric + multi-storey without a wireframe cage.
+    case "F": return { edge: 1.5, band: 0.6, rib: null, ribSpacing: 14 };  // edges light, floors mid-dark
+    case "H": return { edge: 1.5, band: 0.5, rib: 0.7, ribSpacing: 20 };   // edges light, dark floors + sparse ribs
+    case "C": return { edge: 1.0, band: 0.5, rib: null, ribSpacing: 14 };  // clean horizontal floors
+    case "G":
+    default:  return { edge: 1.5, band: 1.4, rib: null, ribSpacing: 14 };  // G — light volume edges + light floor levels, no ribs (DEFAULT, founder 2026-06-15)
   }
 }
 const GOLD_LINE = new THREE.Color(0xc8a96e);

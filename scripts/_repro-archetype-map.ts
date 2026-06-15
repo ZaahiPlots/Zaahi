@@ -16,9 +16,21 @@ const cat = new URLSearchParams(location.search).get("cat") || "HOTEL";
 
 const map = new maplibregl.Map({
   container: "map",
-  style: { version: 8, sources: {}, layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#0A1628" } },
-  ] },
+  // Satellite raster basemap so the archetype is reviewed ON THE MAP (real
+  // context), not on a blank background (founder 2026-06-14).
+  style: { version: 8,
+    sources: {
+      sat: {
+        type: "raster", tileSize: 256,
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+        attribution: "Esri",
+      },
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#0A1628" } },
+      { id: "sat", type: "raster", source: "sat" },
+    ],
+  },
   center: [55.27, 25.2], zoom: 17, pitch: 55, bearing: 20,
   canvasContextAttributes: { antialias: true } as never,
 });
