@@ -279,7 +279,7 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 | 1 | Residential | `#2D6A4F` | зелёный |
 | 2 | Commercial | `#1B3A5C` | тёмно-синий (navy) |
 | 3 | Mixed Use | `#6B4C9A` | фиолетовый |
-| 4 | Hotel / Hospitality | `#7B1E2B` | бордовый |
+| 4 | Hotel / Hospitality | `#E8732A` | морковный оранжевый (founder 2026-06-15, был бордовый `#7B1E2B`) |
 | 5 | Industrial / Warehouse | `#495057` | серый |
 | 6 | Educational | `#0077B6` | небесно-синий |
 | 7 | Healthcare | `#E63946` | красный |

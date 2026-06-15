@@ -321,8 +321,8 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   RESIDENTIAL: "#2D6A4F",         // green
   COMMERCIAL: "#1B3A5C",          // navy
   MIXED_USE: "#6B4C9A",           // purple
-  HOTEL: "#7B1E2B",               // burgundy
-  HOSPITALITY: "#7B1E2B",         // burgundy (alias)
+  HOTEL: "#E8732A",               // carrot orange (founder 2026-06-15)
+  HOSPITALITY: "#E8732A",         // carrot orange (alias)
   INDUSTRIAL: "#495057",          // gray
   WAREHOUSE: "#495057",           // gray (alias)
   EDUCATIONAL: "#0077B6",         // sky blue
@@ -403,7 +403,7 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   const archOn = !!(map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive;
   const hideRes = (inner: unknown): unknown =>
     archOn
-      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL"], true, false], 0, inner]
+      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], true, false], 0, inner]
       : inner;
   // Plot fill: bright on selected, dim on others when selection is
   // active. Outline-only parcels (hasLandUse === false) ALWAYS render
@@ -2040,6 +2040,12 @@ function ParcelsMapPageInner() {
   // live wall-clock time.
   const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
+  // Drive the archetype CustomLayer's directional sun from the SAME override the
+  // sun slider feeds MapLibre's native light → archetypes self-shadow + react to
+  // the sun toggle exactly like the fill-extrusion 3D (founder 2026-06-15).
+  useEffect(() => {
+    archetypeCtrlRef.current?.setSun(sunTimeOverride);
+  }, [sunTimeOverride, mapStyleReady]);
 
   // 2026-06-10 (founder backlog follow-up): live count of vault entries
   // OTHER users have shared with the caller. Drives the "Shared with me"
@@ -3419,11 +3425,11 @@ function ParcelsMapPageInner() {
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
 
-        // Archetype massing input — RESIDENTIAL + MIXED_USE + HOTEL (founder
-        // approved; 2026-06-13/14/15). All other land-uses are intentionally NOT
-        // added → they stay on the existing fill-extrusion path unchanged. Same
-        // footprint ring + height the fill-extrusion would use.
-        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE" || landUse === "HOTEL") {
+        // Archetype massing input — RESIDENTIAL + MIXED_USE + HOTEL + COMMERCIAL
+        // (founder approved; 2026-06-13/14/15). All other land-uses are
+        // intentionally NOT added → they stay on the existing fill-extrusion path
+        // unchanged. Same footprint ring + height the fill-extrusion would use.
+        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE" || landUse === "HOTEL" || landUse === "COMMERCIAL" || landUse === "EDUCATIONAL" || landUse === "HEALTHCARE" || landUse === "INDUSTRIAL" || landUse === "AGRICULTURAL" || landUse === "FUTURE_DEVELOPMENT") {
           archetypeInputs.push({
             parcelId: it.id,
             footprint: footprintRing,
@@ -3720,7 +3726,7 @@ function ParcelsMapPageInner() {
               map.setFilter(
                 ZAAHI_BUILDINGS_3D,
                 show
-                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL"], false, true]] as FilterSpecification)
+                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], false, true]] as FilterSpecification)
                   : base,
               );
             }
@@ -3894,7 +3900,7 @@ function ParcelsMapPageInner() {
           archetypeActiveRef.current &&
           map.getZoom() >= ARCHETYPE_MIN_ZOOM
         ) {
-          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL"], false, true]] as FilterSpecification);
+          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], false, true]] as FilterSpecification);
         } else {
           map.setFilter(lid, expr);
         }
@@ -5508,7 +5514,7 @@ function ParcelsMapPageInner() {
     { color: "#2D6A4F", name: "Residential",          desc: "Жилое" },
     { color: "#1B3A5C", name: "Commercial",           desc: "Коммерческое" },
     { color: "#6B4C9A", name: "Mixed Use",            desc: "Смешанное" },
-    { color: "#7B1E2B", name: "Hotel / Hospitality",  desc: "Отельное" },
+    { color: "#E8732A", name: "Hotel / Hospitality",  desc: "Отельное" },
     { color: "#495057", name: "Industrial / Warehouse", desc: "Промышленное" },
     { color: "#0077B6", name: "Educational",          desc: "Образовательное" },
     { color: "#E63946", name: "Healthcare",           desc: "Медицина" },

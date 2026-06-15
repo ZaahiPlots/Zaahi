@@ -7,7 +7,11 @@
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    try {
+      return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    } catch (e) {
+      throw mod = 0, e;
+    }
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -41071,89 +41075,6 @@ ${n2.shaderPreludeCode.vertexSource}`, define: n2.shaderDefine }, defaultProject
       return this;
     }
   };
-  var MeshLambertMaterial = class extends Material {
-    /**
-     * Constructs a new mesh lambert material.
-     *
-     * @param {Object} [parameters] - An object with one or more properties
-     * defining the material's appearance. Any property of the material
-     * (including any property from inherited materials) can be passed
-     * in here. Color values can be passed any type of value accepted
-     * by {@link Color#set}.
-     */
-    constructor(parameters) {
-      super();
-      this.isMeshLambertMaterial = true;
-      this.type = "MeshLambertMaterial";
-      this.color = new Color(16777215);
-      this.map = null;
-      this.lightMap = null;
-      this.lightMapIntensity = 1;
-      this.aoMap = null;
-      this.aoMapIntensity = 1;
-      this.emissive = new Color(0);
-      this.emissiveIntensity = 1;
-      this.emissiveMap = null;
-      this.bumpMap = null;
-      this.bumpScale = 1;
-      this.normalMap = null;
-      this.normalMapType = TangentSpaceNormalMap;
-      this.normalScale = new Vector2(1, 1);
-      this.displacementMap = null;
-      this.displacementScale = 1;
-      this.displacementBias = 0;
-      this.specularMap = null;
-      this.alphaMap = null;
-      this.envMap = null;
-      this.envMapRotation = new Euler();
-      this.combine = MultiplyOperation;
-      this.reflectivity = 1;
-      this.envMapIntensity = 1;
-      this.refractionRatio = 0.98;
-      this.wireframe = false;
-      this.wireframeLinewidth = 1;
-      this.wireframeLinecap = "round";
-      this.wireframeLinejoin = "round";
-      this.flatShading = false;
-      this.fog = true;
-      this.setValues(parameters);
-    }
-    copy(source) {
-      super.copy(source);
-      this.color.copy(source.color);
-      this.map = source.map;
-      this.lightMap = source.lightMap;
-      this.lightMapIntensity = source.lightMapIntensity;
-      this.aoMap = source.aoMap;
-      this.aoMapIntensity = source.aoMapIntensity;
-      this.emissive.copy(source.emissive);
-      this.emissiveMap = source.emissiveMap;
-      this.emissiveIntensity = source.emissiveIntensity;
-      this.bumpMap = source.bumpMap;
-      this.bumpScale = source.bumpScale;
-      this.normalMap = source.normalMap;
-      this.normalMapType = source.normalMapType;
-      this.normalScale.copy(source.normalScale);
-      this.displacementMap = source.displacementMap;
-      this.displacementScale = source.displacementScale;
-      this.displacementBias = source.displacementBias;
-      this.specularMap = source.specularMap;
-      this.alphaMap = source.alphaMap;
-      this.envMap = source.envMap;
-      this.envMapRotation.copy(source.envMapRotation);
-      this.combine = source.combine;
-      this.reflectivity = source.reflectivity;
-      this.envMapIntensity = source.envMapIntensity;
-      this.refractionRatio = source.refractionRatio;
-      this.wireframe = source.wireframe;
-      this.wireframeLinewidth = source.wireframeLinewidth;
-      this.wireframeLinecap = source.wireframeLinecap;
-      this.wireframeLinejoin = source.wireframeLinejoin;
-      this.flatShading = source.flatShading;
-      this.fog = source.fog;
-      return this;
-    }
-  };
   var MeshDepthMaterial = class extends Material {
     /**
      * Constructs a new mesh depth material.
@@ -59014,9 +58935,65 @@ void main() {
     }
   }
 
+  // src/lib/sun-position.ts
+  var RAD = Math.PI / 180;
+  var DEG = 180 / Math.PI;
+  function julianDay(date) {
+    return date.getTime() / 864e5 + 24405875e-1;
+  }
+  function getSunPosition(date, lat, lng) {
+    const JD = julianDay(date);
+    const n = JD - 2451545;
+    const L = (280.46 + 0.9856474 * n) % 360;
+    const g = (357.528 + 0.9856003 * n) % 360 * RAD;
+    const lambda = (L + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * RAD;
+    const epsilon = (23.439 - 4e-7 * n) * RAD;
+    const alpha = Math.atan2(Math.cos(epsilon) * Math.sin(lambda), Math.cos(lambda));
+    const delta = Math.asin(Math.sin(epsilon) * Math.sin(lambda));
+    const GMSThours = (18.697374558 + 24.06570982441908 * n) % 24;
+    const LSTrad = (GMSThours * 15 + lng) * RAD;
+    const H = LSTrad - alpha;
+    const latRad = lat * RAD;
+    const altRad = Math.asin(
+      Math.sin(latRad) * Math.sin(delta) + Math.cos(latRad) * Math.cos(delta) * Math.cos(H)
+    );
+    const azRad = Math.atan2(
+      -Math.sin(H),
+      Math.cos(latRad) * Math.tan(delta) - Math.sin(latRad) * Math.cos(H)
+    );
+    const altitude = altRad * DEG;
+    let azimuth = azRad * DEG;
+    azimuth = (azimuth % 360 + 360) % 360;
+    const { color, intensity } = lightingForAltitude(altitude);
+    return { azimuth, altitude, color, intensity };
+  }
+  function lightingForAltitude(altitude) {
+    if (altitude < 0) {
+      return { color: "#0A1628", intensity: 0.1 };
+    }
+    if (altitude < 10) {
+      return { color: "#FF8C42", intensity: 0.4 };
+    }
+    if (altitude < 30) {
+      return { color: "#FFD4A3", intensity: 0.6 };
+    }
+    if (altitude < 60) {
+      return { color: "#FFFFFF", intensity: 0.9 };
+    }
+    return { color: "#FFFFFF", intensity: 1 };
+  }
+
   // src/lib/archetypes/archetype-layer.ts
+  var DUBAI_LAT = 25.2;
+  var DUBAI_LNG = 55.27;
   var ARCHETYPE_GLB = {
-    HOTEL: "/glb/archetypes/hotel.glb"
+    HOTEL: "/glb/archetypes/hotel.glb",
+    COMMERCIAL: "/glb/archetypes/commercial.glb",
+    EDUCATIONAL: "/glb/archetypes/educational.glb",
+    HEALTHCARE: "/glb/archetypes/healthcare.glb",
+    INDUSTRIAL: "/glb/archetypes/industrial.glb",
+    AGRICULTURAL: "/glb/archetypes/agricultural.glb",
+    FUTURE_DEVELOPMENT: "/glb/archetypes/future_development.glb"
   };
   var M_PER_DEG_LAT = 111320;
   var LAYER_ID = "zaahi-archetypes-3d";
@@ -59060,11 +59037,27 @@ void main() {
   function installArchetypeLayer(map2) {
     const scene = new Scene();
     scene.up = new Vector3(0, 0, 1);
-    scene.add(new HemisphereLight(16777215, 3493995, 1.15));
-    scene.add(new AmbientLight(16777215, 0.75));
-    const key = new DirectionalLight(16777215, 0.6);
-    key.position.set(0.5, -0.6, 1.2);
-    scene.add(key);
+    const ambient = new AmbientLight(16777215, 0.42);
+    scene.add(ambient);
+    const skyFill = new HemisphereLight(12571903, 2827808, 0.3);
+    scene.add(skyFill);
+    const sun = new DirectionalLight(16777215, 2.6);
+    sun.position.set(0.4, -0.7, 1);
+    scene.add(sun);
+    scene.add(sun.target);
+    function applySun(date) {
+      const sp = getSunPosition(date ?? /* @__PURE__ */ new Date(), DUBAI_LAT, DUBAI_LNG);
+      const altR = Math.max(sp.altitude, 3) * (Math.PI / 180);
+      const azR = sp.azimuth * (Math.PI / 180);
+      const cosA = Math.cos(altR);
+      sun.position.set(Math.sin(azR) * cosA, -Math.cos(azR) * cosA, Math.sin(altR));
+      sun.color.set(sp.color);
+      const day = sp.altitude > 0;
+      sun.intensity = day ? 1.7 + sp.intensity * 1.3 : 0.45;
+      ambient.intensity = day ? 0.34 + sp.intensity * 0.16 : 0.5;
+      map2.triggerRepaint();
+    }
+    applySun(null);
     const camera = new PerspectiveCamera();
     let group = new Group();
     scene.add(group);
@@ -59143,9 +59136,11 @@ void main() {
     }
     function makeMaterial(colorHex) {
       const c = new Color(colorHex);
-      const mat = new MeshLambertMaterial({
+      const mat = new MeshStandardMaterial({
         color: c,
-        emissive: c.clone().multiplyScalar(0.22),
+        metalness: 0,
+        roughness: 0.62,
+        emissive: c.clone().multiplyScalar(0.05),
         transparent: false,
         opacity: 1,
         side: FrontSide,
@@ -59178,7 +59173,7 @@ void main() {
           const local = (ring) => ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
           const footLocal = local(b.footprint);
           const obb = obbOf(footLocal);
-          const H = Math.max(3, b.totalH);
+          const H = b.landUse === "FUTURE_DEVELOPMENT" ? 3.5 : Math.max(3, b.totalH);
           const glbUrl = b.landUse ? ARCHETYPE_GLB[b.landUse] : void 0;
           if (glbUrl) {
             const proto = glbCache.get(glbUrl);
@@ -59194,12 +59189,20 @@ void main() {
             bGroup2.matrixWorldNeedsUpdate = true;
             const clone2 = proto.clone(true);
             const glbMat = makeMaterial(b.colorHex);
+            const glbBodyCol = new Color(b.colorHex);
+            const glbEdgeCol = lineVariant.edge === "gold" ? GOLD_LINE.clone() : glbBodyCol.clone().multiplyScalar(lineVariant.edge);
+            const glbEdgeMat = new LineBasicMaterial({ color: glbEdgeCol });
             clone2.traverse((o) => {
               const mm = o;
-              if (mm.isMesh) {
+              if (mm.isMesh && mm.geometry) {
                 mm.material = glbMat;
                 mm.frustumCulled = false;
                 mm.userData.parcelId = b.parcelId;
+                const eg = new LineSegments(new EdgesGeometry(mm.geometry, 30), glbEdgeMat);
+                eg.frustumCulled = false;
+                eg.userData.parcelId = b.parcelId;
+                eg.userData.isEdge = true;
+                mm.add(eg);
               }
             });
             clone2.matrixAutoUpdate = false;
@@ -59377,6 +59380,8 @@ void main() {
           });
           renderer.autoClear = false;
           renderer.outputColorSpace = SRGBColorSpace;
+          renderer.toneMapping = NeutralToneMapping;
+          renderer.toneMappingExposure = 1;
         } catch (err) {
           console.error("[ZAAHI archetypes] onAdd FAILED:", err);
           throw err;
@@ -59444,6 +59449,9 @@ void main() {
       setVisibility,
       setEnabled,
       layerId: LAYER_ID,
+      setSun(date) {
+        applySun(date);
+      },
       destroy() {
         try {
           canvas.removeEventListener("webglcontextlost", onLost);
@@ -59465,7 +59473,7 @@ void main() {
     RESIDENTIAL: "#2D6A4F",
     COMMERCIAL: "#1B3A5C",
     MIXED_USE: "#6B4C9A",
-    HOTEL: "#7B1E2B",
+    HOTEL: "#E8732A",
     INDUSTRIAL: "#495057",
     EDUCATIONAL: "#0077B6",
     HEALTHCARE: "#E63946",
@@ -59501,6 +59509,12 @@ void main() {
   });
   var plotParam = new URLSearchParams(location.search).get("plot");
   map.on("load", async () => {
+    if (new URLSearchParams(location.search).get("nobg") === "1") {
+      try {
+        map.removeLayer("sat");
+      } catch {
+      }
+    }
     let ring;
     let plotRing;
     let totalH;
@@ -59564,7 +59578,17 @@ void main() {
     const z = totalH > 120 ? 15.6 : totalH > 50 ? 16.4 : 17.2;
     const zoom = Number(params2.get("zoom") ?? z);
     const pitch = Number(params2.get("pitch") ?? 52);
-    map.jumpTo({ center: [clng, clat], zoom, pitch, bearing: 20 });
+    const bearing = Number(params2.get("bearing") ?? 20);
+    map.jumpTo({ center: [clng, clat], zoom, pitch, bearing });
+    try {
+      const sunParam = params2.get("sun");
+      const hour = sunParam !== null ? Number(sunParam) : 8.25;
+      const d = /* @__PURE__ */ new Date();
+      d.setHours(Math.floor(hour), Math.round(hour % 1 * 60), 0, 0);
+      ctrl.setSun(d);
+    } catch (e) {
+      console.error("sun set failed", e);
+    }
     setTimeout(() => {
       document.getElementById("ready").textContent = "ready";
     }, 1200);

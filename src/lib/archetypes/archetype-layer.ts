@@ -18,12 +18,24 @@ import { MercatorCoordinate } from "maplibre-gl";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { buildArchetype, obbOf, clampToFootprint, FLOOR_H, type Solid } from "./geometry";
+import { getSunPosition } from "../sun-position";
+
+// Same observer the map's sun slider uses (useSunLight.ts) so archetype
+// lighting tracks the SAME solar model → reacts to the sun toggle.
+const DUBAI_LAT = 25.2;
+const DUBAI_LNG = 55.27;
 
 // GLB archetype models (Meshy→Blender pipeline). Normalized to a unit box
 // (X,Y ∈ [-0.5,0.5], Z ∈ [0,1] base-on-ground after Blender Z-up export). When a
 // land-use has a GLB it's instanced+scaled per plot instead of procedural massing.
 const ARCHETYPE_GLB: Record<string, string> = {
   HOTEL: "/glb/archetypes/hotel.glb",
+  COMMERCIAL: "/glb/archetypes/commercial.glb",
+  EDUCATIONAL: "/glb/archetypes/educational.glb",
+  HEALTHCARE: "/glb/archetypes/healthcare.glb",
+  INDUSTRIAL: "/glb/archetypes/industrial.glb",
+  AGRICULTURAL: "/glb/archetypes/agricultural.glb",
+  FUTURE_DEVELOPMENT: "/glb/archetypes/future_development.glb",
 };
 
 const M_PER_DEG_LAT = 111_320;
@@ -49,6 +61,9 @@ export interface ArchetypeLayerController {
   setSelected(parcelId: string | null): void;
   setVisibility(predicate: (parcelId: string) => boolean): void;
   setEnabled(enabled: boolean): void;
+  /** Aim the archetype SUN from the solar model for `date` (null = now) so the
+   *  models self-shadow + react to the map's sun toggle. */
+  setSun(date: Date | null): void;
   destroy(): void;
   readonly layerId: string;
 }
@@ -84,14 +99,39 @@ const GOLD_LINE = new THREE.Color(0xc8a96e);
 export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerController {
   const scene = new THREE.Scene();
   scene.up = new THREE.Vector3(0, 0, 1);
-  // Bright, even lighting so the canonical land-use colour reads on every face
-  // (the near-black bug was outputColorSpace + double-side alpha, fixed below;
-  // generous ambient + emissive keep shadowed faces in-hue too).
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x35506b, 1.15));
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const key = new THREE.DirectionalLight(0xffffff, 0.6);
-  key.position.set(0.5, -0.6, 1.2);
-  scene.add(key);
+  // PBR-grade lighting (hero-building parity, founder 2026-06-15). The OLD setup
+  // (hemisphere 1.15 + ambient 0.75 + emissive 0.22) flooded every face evenly,
+  // so the Blender-modelled recessed windows never self-shadowed → they vanished
+  // on the map. Now: LOW ambient + a strong directional "SUN" wired to the SAME
+  // getSunPosition() the map's sun slider uses (so recess lintels darken exactly
+  // like the render AND the whole thing reacts to the sun toggle). Tone mapping
+  // rolls highlights off so the sun can be strong without clipping to white,
+  // and is hue-preserving (Neutral) so the canonical legend colours stay true.
+  const ambient = new THREE.AmbientLight(0xffffff, 0.42);
+  scene.add(ambient);
+  const skyFill = new THREE.HemisphereLight(0xbfd4ff, 0x2b2620, 0.30);
+  scene.add(skyFill);
+  const sun = new THREE.DirectionalLight(0xffffff, 2.6);
+  sun.position.set(0.4, -0.7, 1.0);
+  scene.add(sun);
+  scene.add(sun.target); // target stays at origin → parallel (directional) rays
+
+  // Aim + colour the sun from the solar model for `date` (null = now). Scene
+  // axes are X=east, Y=south (the per-building group applies S(s,-s,s), flipping
+  // north→-Y), Z=up — so ENU (E,N,U) maps to (x, -y, z).
+  function applySun(date: Date | null): void {
+    const sp = getSunPosition(date ?? new Date(), DUBAI_LAT, DUBAI_LNG);
+    const altR = Math.max(sp.altitude, 3) * (Math.PI / 180); // graze, never from below
+    const azR = sp.azimuth * (Math.PI / 180);
+    const cosA = Math.cos(altR);
+    sun.position.set(Math.sin(azR) * cosA, -Math.cos(azR) * cosA, Math.sin(altR));
+    sun.color.set(sp.color);
+    const day = sp.altitude > 0;
+    sun.intensity = day ? 1.7 + sp.intensity * 1.3 : 0.45;     // strong key by day
+    ambient.intensity = day ? 0.34 + sp.intensity * 0.16 : 0.5; // floor so night ≠ black
+    map.triggerRepaint();
+  }
+  applySun(null); // seed at the current solar time; setSun() re-aims on toggle
 
   const camera = new THREE.PerspectiveCamera();
   let group = new THREE.Group();
@@ -168,15 +208,19 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     return g;
   }
 
-  function makeMaterial(colorHex: string): THREE.MeshLambertMaterial {
+  function makeMaterial(colorHex: string): THREE.MeshStandardMaterial {
     // SOLID listing model (founder 2026-06-14 — opacity 1, one layer, the
-    // translucent ghost under it is extinguished separately). Lambert keeps the
-    // canonical hue readable; emissive lifts shadowed faces so they never go
-    // black. FrontSide + depthWrite for clean opaque z-ordering.
+    // translucent ghost under it is extinguished separately). PBR Standard
+    // (metalness 0, mid roughness) so the directional SUN sculpts the recessed
+    // window geometry the way it does in the Blender render — replaces the old
+    // Lambert+heavy-emissive that flat-lit everything. A tiny emissive floor
+    // keeps the deepest recesses from going pure black (founder "never-black").
     const c = new THREE.Color(colorHex);
-    const mat = new THREE.MeshLambertMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: c,
-      emissive: c.clone().multiplyScalar(0.22),
+      metalness: 0.0,
+      roughness: 0.62,
+      emissive: c.clone().multiplyScalar(0.05),
       transparent: false,
       opacity: 1,
       side: THREE.FrontSide,
@@ -213,7 +257,11 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
         const footLocal = local(b.footprint);
         const obb = obbOf(footLocal);
-        const H = Math.max(3, b.totalH);
+        // FUTURE_DEVELOPMENT has no building (the model is a cleared PAD + low
+        // hoarding FENCE marker, founder 2026-06-15 — no crane), so its height is
+        // a fixed low fence height, not GFA/data. All other types take their
+        // height strictly from the data (founder spec).
+        const H = b.landUse === "FUTURE_DEVELOPMENT" ? 3.5 : Math.max(3, b.totalH);
 
         // ── GLB archetype path (Meshy→Blender model, instanced+scaled) ──
         const glbUrl = b.landUse ? ARCHETYPE_GLB[b.landUse] : undefined;
@@ -229,9 +277,24 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           bGroup2.matrixWorldNeedsUpdate = true;
           const clone = proto.clone(true);
           const glbMat = makeMaterial(b.colorHex);
+          // Edge lines (style G): the map material is flat-lit + emissive (the
+          // ratified "never-black" solid look), which kills the self-shadowing
+          // that makes recessed windows read. Outline the GLB's hard edges —
+          // window openings, floor lines, volume corners — in the lighter legend
+          // tone so the window GRID reads on the map exactly like the procedural
+          // types do. Without this a GLB collapses to a flat block from above.
+          const glbBodyCol = new THREE.Color(b.colorHex);
+          const glbEdgeCol = lineVariant.edge === "gold"
+            ? GOLD_LINE.clone() : glbBodyCol.clone().multiplyScalar(lineVariant.edge);
+          const glbEdgeMat = new THREE.LineBasicMaterial({ color: glbEdgeCol });
           clone.traverse((o) => {
             const mm = o as THREE.Mesh;
-            if (mm.isMesh) { mm.material = glbMat; mm.frustumCulled = false; mm.userData.parcelId = b.parcelId; }
+            if (mm.isMesh && mm.geometry) {
+              mm.material = glbMat; mm.frustumCulled = false; mm.userData.parcelId = b.parcelId;
+              const eg = new THREE.LineSegments(new THREE.EdgesGeometry(mm.geometry, 30), glbEdgeMat);
+              eg.frustumCulled = false; eg.userData.parcelId = b.parcelId; eg.userData.isEdge = true;
+              mm.add(eg);
+            }
           });
           // Unit GLB (X,Y∈[-0.5,0.5] footprint, Z∈[0,1] height after Blender
           // Z-up export → glTF Y-up) → fit the footprint OBB + data height:
@@ -429,6 +492,11 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
         // brightness. LinearSRGB (used by the shader layer) rendered the
         // canonical hues near-black — that was the founder's "почти ЧЁРНЫМИ" bug.
         renderer.outputColorSpace = THREE.SRGBColorSpace;
+        // Hue-preserving tone mapping (Khronos PBR Neutral) so the strong sun
+        // can carve shadows without clipping lit faces to white, while the
+        // canonical land-use hues stay accurate (ACES would desaturate them).
+        renderer.toneMapping = THREE.NeutralToneMapping;
+        renderer.toneMappingExposure = 1.0;
       } catch (err) {
         console.error("[ZAAHI archetypes] onAdd FAILED:", err);
         throw err;
@@ -494,6 +562,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
 
   return {
     setBuildings, setSelected, setVisibility, setEnabled, layerId: LAYER_ID,
+    setSun(date: Date | null): void { applySun(date); },
     destroy(): void {
       try {
         canvas.removeEventListener("webglcontextlost", onLost);

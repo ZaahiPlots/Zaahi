@@ -7,7 +7,7 @@ import { installArchetypeLayer, type ArchetypeBuildingInput } from "../src/lib/a
 // Live ZAAHI_LANDUSE_COLOR values (page.tsx) so repro shots match the app.
 const COLORS: Record<string, string> = {
   RESIDENTIAL: "#2D6A4F", COMMERCIAL: "#1B3A5C", MIXED_USE: "#6B4C9A",
-  HOTEL: "#7B1E2B", INDUSTRIAL: "#495057", EDUCATIONAL: "#0077B6",
+  HOTEL: "#E8732A", INDUSTRIAL: "#495057", EDUCATIONAL: "#0077B6",
   HEALTHCARE: "#E63946", AGRICULTURAL: "#606C38", FUTURE_DEVELOPMENT: "#A8926E",
   INVESTMENT: "#14B8A6",
 };
@@ -38,6 +38,11 @@ const map = new maplibregl.Map({
 const plotParam = new URLSearchParams(location.search).get("plot");
 
 map.on("load", async () => {
+  // ?nobg=1 → drop the satellite layer (clean navy background) for isolated,
+  // consistent PBR model renders used in the all-types overview grid.
+  if (new URLSearchParams(location.search).get("nobg") === "1") {
+    try { map.removeLayer("sat"); } catch { /* already gone */ }
+  }
   let ring: number[][]; let plotRing: number[][] | undefined; let totalH: number; let label: string;
   let verifyCat = "RESIDENTIAL";
   if (plotParam) {
@@ -81,6 +86,18 @@ map.on("load", async () => {
   const z = totalH > 120 ? 15.6 : totalH > 50 ? 16.4 : 17.2;
   const zoom = Number(params2.get("zoom") ?? z);
   const pitch = Number(params2.get("pitch") ?? 52);
-  map.jumpTo({ center: [clng, clat], zoom, pitch, bearing: 20 });
+  const bearing = Number(params2.get("bearing") ?? 20);
+  map.jumpTo({ center: [clng, clat], zoom, pitch, bearing });
+  // ?sun=HH(.MM as decimal) → set the archetype sun to that hour today so the
+  // PBR self-shadowing can be screenshot at different solar positions. Default
+  // 08.25 (08:15) matches the app's founder-spec dawn-shadow look. AFTER jumpTo
+  // + guarded so a bad value can never block navigation.
+  try {
+    const sunParam = params2.get("sun");
+    const hour = sunParam !== null ? Number(sunParam) : 8.25;
+    const d = new Date();
+    d.setHours(Math.floor(hour), Math.round((hour % 1) * 60), 0, 0);
+    ctrl.setSun(d);
+  } catch (e) { console.error("sun set failed", e); }
   setTimeout(() => { (document.getElementById("ready") as HTMLElement).textContent = "ready"; }, 1200);
 });

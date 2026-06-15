@@ -29,6 +29,50 @@ bpy.ops.object.join()
 obj = bpy.context.view_layer.objects.active
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+# ── MESH REPAIR (root-cause fix for the torn decimate) ──────────────────
+# Meshy exports split (unwelded) vertices → every edge reads as a boundary,
+# so decimate collapses disconnected triangles into holes. Weld FIRST, then
+# recalc normals + fill holes + strip the rooftop flagpole artifact.
+import bmesh, mathutils as _mu
+def _bbox(o):
+    cs = [o.matrix_world @ _mu.Vector(c) for c in o.bound_box]
+    xs=[v.x for v in cs]; ys=[v.y for v in cs]; zs=[v.z for v in cs]
+    return min(xs),max(xs),min(ys),max(ys),min(zs),max(zs)
+minx,maxx,miny,maxy,minz,maxz = _bbox(obj)
+spanXY = max(maxx-minx, maxy-miny, 1e-6); spanZ = max(maxz-minz,1e-6)
+cx0=(minx+maxx)/2; cy0=(miny+maxy)/2
+
+bm = bmesh.new(); bm.from_mesh(obj.data)
+b0 = sum(1 for e in bm.edges if e.is_boundary)
+# 1) weld coincident verts → restores shared topology
+bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=spanXY*0.0008)
+# 2) delete the rooftop flag/antenna spike — data-driven: scan Z slabs from the
+#    top down; the pole has a tiny XY cross-section until we reach the real roof,
+#    where the occupied area jumps. Cut everything above that jump.
+footArea = max((maxx-minx)*(maxy-miny), 1e-9)
+areaCut = footArea * 0.06     # roof considered "real" when slab area > 6% of footprint
+roofTop = maxz
+N = 80
+for i in range(N):                       # descend from the very top
+    t = maxz - (spanZ * i / N)
+    vs = [v for v in bm.verts if v.co.z >= t]
+    if len(vs) < 3: continue
+    axs=[v.co.x for v in vs]; ays=[v.co.y for v in vs]
+    area = (max(axs)-min(axs))*(max(ays)-min(ays))
+    if area > areaCut:                   # first real (wide) slab from the top = roof
+        roofTop = t
+        break
+kill=[f for f in bm.faces if f.calc_center_median().z > roofTop + spanZ*0.002]
+if kill: bmesh.ops.delete(bm, geom=kill, context="FACES")
+print(f"FLAG-CUT roofTop_frac={(roofTop-minz)/spanZ:.3f} faces_killed={len(kill)}")
+# 3) fill any genuine holes left after welding / flag removal
+bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=8)
+# 4) recompute consistent outward normals
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+b1 = sum(1 for e in bm.edges if e.is_boundary)
+print(f"REPAIR boundary_edges {b0} -> {b1}  faces_removed(flag):{len(kill)}  faces_now:{len(bm.faces)}")
+bm.to_mesh(obj.data); bm.free(); obj.data.update()
+
 # world-space bbox
 import mathutils
 cs = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
@@ -44,10 +88,16 @@ bpy.ops.object.transform_apply(location=True)
 obj.scale = (1.0 / w, 1.0 / d, 1.0 / ht)
 bpy.ops.object.transform_apply(scale=True)
 
-# decimate to low-poly
+# decimate ONLY if genuinely heavy — and use PLANAR (angle-limited) decimation
+# which merges coplanar faces without distorting shape/boundaries. We are NOT
+# on mobile: keep a generous budget so the mesh stays intact.
 tri0 = len(obj.data.polygons)
-if tri0 > 4000:
-    m = obj.modifiers.new("dec", "DECIMATE"); m.ratio = min(1.0, 4000 / tri0)
+TRI_BUDGET = 30000
+if tri0 > TRI_BUDGET:
+    m = obj.modifiers.new("dec", "DECIMATE")
+    m.decimate_type = "DISSOLVE"      # planar — preserves silhouette & window grid
+    m.angle_limit = math.radians(1.0)
+    m.use_dissolve_boundaries = False
     bpy.ops.object.modifier_apply(modifier="dec")
 print("tris:", tri0, "->", len(obj.data.polygons))
 
@@ -57,6 +107,7 @@ bsdf = mat.node_tree.nodes.get("Principled BSDF")
 r, g, b = hex_rgb(hexc)
 bsdf.inputs["Base Color"].default_value = (r, g, b, 1)
 bsdf.inputs["Roughness"].default_value = 0.7
+mat.diffuse_color = (r, g, b, 1)   # Workbench MATERIAL viewport colour (preview render)
 obj.data.materials.clear(); obj.data.materials.append(mat)
 
 out_glb.parent.mkdir(parents=True, exist_ok=True)
