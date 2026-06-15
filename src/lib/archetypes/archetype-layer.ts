@@ -16,7 +16,15 @@
 import type maplibregl from "maplibre-gl";
 import { MercatorCoordinate } from "maplibre-gl";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { buildArchetype, obbOf, clampToFootprint, FLOOR_H, type Solid } from "./geometry";
+
+// GLB archetype models (Meshy→Blender pipeline). Normalized to a unit box
+// (X,Y ∈ [-0.5,0.5], Z ∈ [0,1] base-on-ground after Blender Z-up export). When a
+// land-use has a GLB it's instanced+scaled per plot instead of procedural massing.
+const ARCHETYPE_GLB: Record<string, string> = {
+  HOTEL: "/glb/archetypes/hotel.glb",
+};
 
 const M_PER_DEG_LAT = 111_320;
 const LAYER_ID = "zaahi-archetypes-3d";
@@ -89,6 +97,23 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   let group = new THREE.Group();
   scene.add(group);
   let renderer: THREE.WebGLRenderer | null = null;
+
+  // GLB archetype models — loaded once, cloned per building. Async; re-runs
+  // setBuildings(lastBuildings) when a model finishes so it appears.
+  const gltfLoader = new GLTFLoader();
+  const glbCache = new Map<string, THREE.Object3D>();
+  const glbPending = new Set<string>();
+  let lastBuildings: ArchetypeBuildingInput[] = [];
+  function ensureGlb(url: string): void {
+    if (glbCache.has(url) || glbPending.has(url)) return;
+    glbPending.add(url);
+    gltfLoader.load(
+      url,
+      (gltf) => { glbCache.set(url, gltf.scene); glbPending.delete(url); setBuildings(lastBuildings); map.triggerRepaint(); },
+      undefined,
+      (e) => { glbPending.delete(url); console.error("[ZAAHI archetypes] GLB load failed", url, e); },
+    );
+  }
 
   // ── geometry helpers (Z-up: x=east, y=north, z=height in metres) ──
   // Each building is anchored at its OWN MercatorCoordinate via a per-building
@@ -176,6 +201,7 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
   function setBuildings(buildings: ArchetypeBuildingInput[]): void {
     try {
       disposeGroup();
+      lastBuildings = buildings;
       const lineVariant = resolveLineVariant();
       let meshes = 0;
       for (const b of buildings) {
@@ -187,7 +213,43 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
         const footLocal = local(b.footprint);
         const obb = obbOf(footLocal);
-        const built = buildArchetype(b.landUse ?? "", footLocal, obb, Math.max(3, b.totalH));
+        const H = Math.max(3, b.totalH);
+
+        // ── GLB archetype path (Meshy→Blender model, instanced+scaled) ──
+        const glbUrl = b.landUse ? ARCHETYPE_GLB[b.landUse] : undefined;
+        if (glbUrl) {
+          const proto = glbCache.get(glbUrl);
+          if (!proto) { ensureGlb(glbUrl); continue; } // appears once loaded
+          const merc2 = MercatorCoordinate.fromLngLat([blng, blat], 0);
+          const s2 = merc2.meterInMercatorCoordinateUnits();
+          const bGroup2 = new THREE.Group();
+          bGroup2.matrixAutoUpdate = false;
+          bGroup2.matrix = new THREE.Matrix4().makeTranslation(merc2.x, merc2.y, merc2.z)
+            .multiply(new THREE.Matrix4().makeScale(s2, -s2, s2));
+          bGroup2.matrixWorldNeedsUpdate = true;
+          const clone = proto.clone(true);
+          const glbMat = makeMaterial(b.colorHex);
+          clone.traverse((o) => {
+            const mm = o as THREE.Mesh;
+            if (mm.isMesh) { mm.material = glbMat; mm.frustumCulled = false; mm.userData.parcelId = b.parcelId; }
+          });
+          // Unit GLB (X,Y∈[-0.5,0.5] footprint, Z∈[0,1] height after Blender
+          // Z-up export → glTF Y-up) → fit the footprint OBB + data height:
+          // T(obb centre) · Rz(obb angle) · S(2hl, 2hw, H) · Rx(90° Y-up→Z-up).
+          clone.matrixAutoUpdate = false;
+          clone.matrix.identity()
+            .multiply(new THREE.Matrix4().makeTranslation(obb.cx, obb.cy, 0))
+            .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))
+            .multiply(new THREE.Matrix4().makeScale(2 * obb.hl, 2 * obb.hw, H))
+            .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+          clone.matrixWorldNeedsUpdate = true;
+          bGroup2.add(clone);
+          group.add(bGroup2);
+          meshes++;
+          continue;
+        }
+
+        const built = buildArchetype(b.landUse ?? "", footLocal, obb, H);
         const { solids } = built;
         // Hard plot-boundary clamp: the inset footprint can poke a metre or two
         // outside the plot on concave plots. Clamp every prism ring to the PLOT

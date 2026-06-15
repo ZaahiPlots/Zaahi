@@ -1,0 +1,31 @@
+{
+  "id": "019ecaa5-d743-7a50-ba89-53244038bca0",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2480115662,
+  "art_style": "realistic",
+  "texture_richness": "",
+  "prompt": "Low-poly architectural massing model of a WIDE rectangular mid-rise hotel building, clearly wider than tall, flat roof, a dense REGULAR GRID of identical small square windows arranged in even rows and columns across the entire facade (hotel room windows), a wide flat cantilevered entrance canopy over the ground-floor lobby, simple clean blocky geometry, single material, no clutter, isometric, game-ready low poly, plain white",
+  "negative_prompt": "skyscraper, tall tower, needle, spire, dome, curved walls, organic shapes, people, trees, cars, ground plane, terrain, base, multiple buildings",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1781516329312,
+  "progress": 100,
+  "started_at": 1781516329333,
+  "finished_at": 1781516497154,
+  "task_error": null,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/model.glb?Expires=4935081600&Signature=PQxOEq5wqxwbfZosld12yxY6YUaYSKE97IFlqKMCHys4Ww1FrWf7xV3jPftS6pYbmoVStQEhe8IkxZs8rB1vlTl9OgIVPe8lfOd4Ji~rQlVAcEgRiZSEO0Fi9b9eFOb~oEQUwUxq~P2KUZnpu69255DvU8dvKWkLoAnhhkqtwP83hFh-xNAElPmko9MdvcPXKzuuImC-jRXLHkcc2zf04BSW2SEJ5D2LbU3p~BkZ5U~G~08rT1xTaX0dfrI1y7HGWRKvU-7JYG5jjBgkakN6qjLKeaoWLt0jXBcrojSL15QBVczrzwQpeuWFzj~~Ci~x1HslrxuX0w1h0z6UlQC9xQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/model.fbx?Expires=4935081600&Signature=JwzjbjGvKm9XGfaE8FY8XRuL3RFTbVs6ThuKHdpACi6VOlI2rZcdhRpaT86GslSLYmtbkCHQP0d9tnQssyxxQOXHdsp6HcE4Dg~hoXI-ApCXaNekQ976PJZQx4Pr~keenUyKzAGE65fARjwXqSxzoqWJ5j2tc7Cip0g-vmZC4giUfG8snfhglMWq1DLXdHdf0oQucfKhrqD0cYBtw9O5kT3WMT0bU7t9HlieCATERGq9gZIFfjqTqjFm~p4131qtE3MUkqFuMSmt6N4I9c2V1XklbL8mk1ZMmQ0XiF8NSL-E-Gh4MVG3BDrcdpEhougNHeFEyBHS45BK8nUpFRhDPw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/model.usdz?Expires=4935081600&Signature=WmYtzHgIw3Oo4a02KZUb1VZGZIuK3Y9lIBttc~CehOeC-Mef9ZTCZGCXJSNiBvS-tisIcPSfmd9SdhxuhnBCuURKp0Mzp-VzRJYnCPojJ2RORVdMf1-SEI8jIkTk1YhyYfocjWl21k2hC1k-rg8-5J8i-Pq~hyx0quceZGdGZ-y8VeRwSNRaxsGYdbYWuhAST8xPI0u3CMVEGlqzEUozwqw9mrJROkBSYK3gUgO24qRXRV~kXCQ6ejwo0gZJVM0oxFtoj~AoY5WIriR0EC9pjmJZ4FrvotTfL1PEsyyC9ND4uJV3eB6cUl0vS6Bf4TbjaQ~nEL849q8CakeDFghmSA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/model.obj?Expires=4935081600&Signature=nacpfvFXOG-cF9owcww11kWjDJ8l0ZuK6Dh0hKQgujeZN1kzVVLxJBbthUFSrdgG9Kh7MjaKWvra7pd7UoXJNMqMuvtEBrEDyGTm-O92bRLEoG-Ox~KOqANhCt0OT3JB5r0ZFCLnHJNNNOGAjhCHpKUlT-5CrHRDWNMj-~VfJSEY9OnwvXiV~HIeuBJYqaSb5lJBr8WwDqrf-Xy9y-KTrAajBWdY5p1jakyhTkdN2SCIz11k~yqSqzrF7S8SBHZWiUpBeRLgVaYNdHSrxHBbyshmdjaOo0wrqwfx52O6XMJwl-nSrDwliBoGnjmgObQKAoLp2rveEb8jmXmEf6C5Yw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/model.stl?Expires=4935081600&Signature=GhjLOFIsC9MpnefmRPL0AL2gWJH557knhfHixsTRPEmMfbTdWmUBtUociAtgjtVZNww1B4hj~cus5RhozExtk-NCY1HZpU0IqL8gmv8A7yCLC3QBXX1EMwH2L0~Yzyi1g-6QrsvqNNQGhliX7U3iccXiIV--sI6bO9VpenOe-9ZB1Yzg9OriQ8v3XfHAWxIUbBq8~o-H9nBn73gPL8VO5UNafmi5vf99qKYkSRMa6i61RAB-dRIHv-gC71qAWKHTmzY9uCDV2VXoepK1CT-leSE3SCP2IzY49EMIAlgZtXlpY6DWy9chJutgjkAHCKGtlhSBkLeSoHDf8uhzRv3-fw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7a626ca7-7aa6-4dbf-8cca-75524805691f/tasks/019ecaa5-d743-7a50-ba89-53244038bca0/output/preview.png?Expires=4935081600&Signature=TjLstKuHIsHkdK1zpXgbE1K2id6r278Ob938GDwixl4HJsMLB4lDrnqeqtE~fPyweov205eI4Yy~izdO2Zz0h1KyYVRXqjnIFYnLOw-SPjzre0z2zxwN8nP7kivtxnYV-msxtOmMNmVndRMP0aPzQr7ZVdzgRsnXKWur4-~Vm8s6MgLCSp~-RiR2AEAeRN8TwWsR27O~hVt6h9cN6BjFyrlKntoeDWh-5NNN4aUxQJ3UuyXF1tq2Brk83sw6HGlqw73JYPbS1PIeG-8z-YEH1v4q06lsuwmE1~dIVtMutk60jgNDOm3uHczOc3OKt93o1TONEnOoMayGEtzwmp8wpg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "video_url": "",
+  "texture_urls": [],
+  "consumed_credits": 5
+}
