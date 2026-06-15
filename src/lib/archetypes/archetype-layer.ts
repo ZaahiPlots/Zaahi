@@ -36,6 +36,7 @@ const ARCHETYPE_GLB: Record<string, string> = {
   INDUSTRIAL: "/glb/archetypes/industrial.glb",
   AGRICULTURAL: "/glb/archetypes/agricultural.glb",
   FUTURE_DEVELOPMENT: "/glb/archetypes/future_development.glb",
+  INVESTMENT: "/glb/archetypes/investment.glb",
 };
 
 const M_PER_DEG_LAT = 111_320;

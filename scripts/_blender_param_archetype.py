@@ -314,11 +314,42 @@ def build_mixeduse():
     boolean_diff(podium, join(grid(0.50, 0.05, 0.14, 1, 7, 0.50, "p"), "pcut"))   # podium retail glazing
     return join([podium, body, crown], "mixed_use")
 
+# ── INVESTMENT: AD off-plan = a tower UNDER CONSTRUCTION + a tower CRANE beside
+#    it (the off-plan marker — "строится сейчас"). Tower has window grid on the
+#    lower BUILT floors, bare top (unfinished). Crane (mast + jib over the tower
+#    + counter-jib + cab) reused from the future-dev crane. Teal. ──
+def build_investment():
+    parts = []
+    tx0, tx1, ty0, ty1 = -0.45, 0.26, -0.42, 0.42
+    tower = make_box("tower", tx0, tx1, ty0, ty1, 0.00, 0.88)
+    rec = 0.03; ww = 0.05; wh = 0.045; cut = []
+    gy = linspace(ty0 + 0.07, ty1 - 0.07, 7)
+    gx = linspace(tx0 + 0.07, tx1 - 0.07, 6)
+    for z in linspace(0.10, 0.64, 8):                     # windows on BUILT floors only
+        z0, z1 = z - wh / 2, z + wh / 2
+        for y in gy:
+            cut.append(make_box("ix", tx1 - rec, tx1 + 0.01, y - ww / 2, y + ww / 2, z0, z1))
+            cut.append(make_box("inx", tx0 - 0.01, tx0 + rec, y - ww / 2, y + ww / 2, z0, z1))
+        for x in gx:
+            cut.append(make_box("iy", x - ww / 2, x + ww / 2, ty1 - rec, ty1 + 0.01, z0, z1))
+            cut.append(make_box("iny", x - ww / 2, x + ww / 2, ty0 - 0.01, ty0 + rec, z0, z1))
+    boolean_diff(tower, join(cut, "cut"))
+    parts.append(tower)
+    # tower crane beside the tower, taller than it (mast + jib over tower + counter-jib)
+    mx, my, mr = 0.40, 0.08, 0.024
+    parts.append(make_box("mast", mx - mr, mx + mr, my - mr, my + mr, 0.00, 0.97))
+    parts.append(make_box("cab", mx - 0.04, mx + 0.04, my - 0.04, my + 0.04, 0.84, 0.90))
+    parts.append(make_box("jib", -0.12, mx, my - 0.016, my + 0.016, 0.90, 0.945))   # jib over the tower
+    parts.append(make_box("cjib", mx, 0.49, my - 0.016, my + 0.016, 0.90, 0.945))   # counter-jib
+    parts.append(make_box("apex", mx - 0.012, mx + 0.012, my - 0.012, my + 0.012, 0.945, 1.00))
+    return join(parts, "investment")
+
 BUILDERS = {"hotel": build_hotel, "commercial": build_commercial,
             "educational": build_educational, "healthcare": build_healthcare,
             "industrial": build_industrial, "agricultural": build_agricultural,
             "future_development": build_future_development,
-            "residential": build_residential, "mixed_use": build_mixeduse}
+            "residential": build_residential, "mixed_use": build_mixeduse,
+            "investment": build_investment}
 if cat not in BUILDERS:
     print("NO BUILDER for", cat); sys.exit(1)
 obj = BUILDERS[cat]()

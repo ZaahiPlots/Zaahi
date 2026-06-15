@@ -403,7 +403,7 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
   const archOn = !!(map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive;
   const hideRes = (inner: unknown): unknown =>
     archOn
-      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], true, false], 0, inner]
+      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], true, false], 0, inner]
       : inner;
   // Plot fill: bright on selected, dim on others when selection is
   // active. Outline-only parcels (hasLandUse === false) ALWAYS render
@@ -3429,7 +3429,7 @@ function ParcelsMapPageInner() {
         // (founder approved; 2026-06-13/14/15). All other land-uses are
         // intentionally NOT added → they stay on the existing fill-extrusion path
         // unchanged. Same footprint ring + height the fill-extrusion would use.
-        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE" || landUse === "HOTEL" || landUse === "COMMERCIAL" || landUse === "EDUCATIONAL" || landUse === "HEALTHCARE" || landUse === "INDUSTRIAL" || landUse === "AGRICULTURAL" || landUse === "FUTURE_DEVELOPMENT") {
+        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE" || landUse === "HOTEL" || landUse === "COMMERCIAL" || landUse === "EDUCATIONAL" || landUse === "HEALTHCARE" || landUse === "INDUSTRIAL" || landUse === "AGRICULTURAL" || landUse === "FUTURE_DEVELOPMENT" || landUse === "INVESTMENT") {
           archetypeInputs.push({
             parcelId: it.id,
             footprint: footprintRing,
@@ -3726,7 +3726,7 @@ function ParcelsMapPageInner() {
               map.setFilter(
                 ZAAHI_BUILDINGS_3D,
                 show
-                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], false, true]] as FilterSpecification)
+                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], false, true]] as FilterSpecification)
                   : base,
               );
             }
@@ -3900,7 +3900,7 @@ function ParcelsMapPageInner() {
           archetypeActiveRef.current &&
           map.getZoom() >= ARCHETYPE_MIN_ZOOM
         ) {
-          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT"], false, true]] as FilterSpecification);
+          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], false, true]] as FilterSpecification);
         } else {
           map.setFilter(lid, expr);
         }
