@@ -275,10 +275,50 @@ def build_future_development():
     parts.append(make_box("fW", -0.50, -0.50 + t, -0.50, 0.50, 0.0, 1.0))
     return join(parts, "future_development")
 
+# ── RESIDENTIAL: terraced balcony tower — glazed core + projecting BALCONY
+#    PLATES per floor (real slabs that cast PBR shadow = the floor rhythm, not
+#    lines) + a stepped-back terraced crown. Green. ──
+def build_residential():
+    parts = []
+    parts.append(make_box("core", -0.40, 0.40, -0.40, 0.40, 0.00, 0.90))  # glazed core
+    # projecting balcony floor plates (extend past the core → shadow per floor)
+    for i, z in enumerate(linspace(0.07, 0.86, 13)):
+        parts.append(make_box(f"bal{i}", -0.48, 0.48, -0.48, 0.48, z, z + 0.022))
+    # terraced crown — two stepped-back top tiers
+    parts.append(make_box("t1", -0.32, 0.32, -0.32, 0.32, 0.90, 0.96))
+    parts.append(make_box("t2", -0.22, 0.22, -0.22, 0.22, 0.96, 1.00))
+    return join(parts, "residential")
+
+# ── MIXED_USE: podium / body / crown (3 stepped tiers with setbacks, as ratified)
+#    + recessed window grids per tier (boolean → PBR shadow, no lines). Purple. ──
+def build_mixeduse():
+    parts = []
+    podium = make_box("podium", -0.50, 0.50, -0.50, 0.50, 0.00, 0.18)   # full
+    body = make_box("body", -0.41, 0.41, -0.41, 0.41, 0.18, 0.74)       # ~0.82 inset
+    crown = make_box("crown", -0.325, 0.325, -0.325, 0.325, 0.74, 1.00) # ~0.65 inset
+    rec = 0.03; ww = 0.05; wh = 0.05
+
+    def grid(half, z0, z1, nrows, ncols, wall, tag):
+        out = []
+        gx = linspace(-half * 0.86, half * 0.86, ncols)
+        for zi, z in enumerate(linspace(z0, z1, nrows)):
+            for g in gx:
+                out.append(make_box(f"{tag}px", wall - rec, wall + 0.01, g - ww / 2, g + ww / 2, z - wh / 2, z + wh / 2))
+                out.append(make_box(f"{tag}nx", -wall - 0.01, -wall + rec, g - ww / 2, g + ww / 2, z - wh / 2, z + wh / 2))
+                out.append(make_box(f"{tag}py", g - ww / 2, g + ww / 2, wall - rec, wall + 0.01, z - wh / 2, z + wh / 2))
+                out.append(make_box(f"{tag}ny", g - ww / 2, g + ww / 2, -wall - 0.01, -wall + rec, z - wh / 2, z + wh / 2))
+        return out
+
+    boolean_diff(body, join(grid(0.41, 0.26, 0.70, 6, 6, 0.41, "b"), "bcut"))     # body windows
+    boolean_diff(crown, join(grid(0.325, 0.80, 0.96, 3, 5, 0.325, "c"), "ccut"))  # crown windows
+    boolean_diff(podium, join(grid(0.50, 0.05, 0.14, 1, 7, 0.50, "p"), "pcut"))   # podium retail glazing
+    return join([podium, body, crown], "mixed_use")
+
 BUILDERS = {"hotel": build_hotel, "commercial": build_commercial,
             "educational": build_educational, "healthcare": build_healthcare,
             "industrial": build_industrial, "agricultural": build_agricultural,
-            "future_development": build_future_development}
+            "future_development": build_future_development,
+            "residential": build_residential, "mixed_use": build_mixeduse}
 if cat not in BUILDERS:
     print("NO BUILDER for", cat); sys.exit(1)
 obj = BUILDERS[cat]()

@@ -29,6 +29,8 @@ const DUBAI_LNG = 55.27;
 // (X,Y ∈ [-0.5,0.5], Z ∈ [0,1] base-on-ground after Blender Z-up export). When a
 // land-use has a GLB it's instanced+scaled per plot instead of procedural massing.
 const ARCHETYPE_GLB: Record<string, string> = {
+  RESIDENTIAL: "/glb/archetypes/residential.glb",
+  MIXED_USE: "/glb/archetypes/mixed_use.glb",
   HOTEL: "/glb/archetypes/hotel.glb",
   COMMERCIAL: "/glb/archetypes/commercial.glb",
   EDUCATIONAL: "/glb/archetypes/educational.glb",
@@ -277,23 +279,15 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           bGroup2.matrixWorldNeedsUpdate = true;
           const clone = proto.clone(true);
           const glbMat = makeMaterial(b.colorHex);
-          // Edge lines (style G): the map material is flat-lit + emissive (the
-          // ratified "never-black" solid look), which kills the self-shadowing
-          // that makes recessed windows read. Outline the GLB's hard edges —
-          // window openings, floor lines, volume corners — in the lighter legend
-          // tone so the window GRID reads on the map exactly like the procedural
-          // types do. Without this a GLB collapses to a flat block from above.
-          const glbBodyCol = new THREE.Color(b.colorHex);
-          const glbEdgeCol = lineVariant.edge === "gold"
-            ? GOLD_LINE.clone() : glbBodyCol.clone().multiplyScalar(lineVariant.edge);
-          const glbEdgeMat = new THREE.LineBasicMaterial({ color: glbEdgeCol });
+          // No edge/line overlay on GLB types (founder 2026-06-15 polish): the
+          // boolean-recessed windows now self-shadow under the PBR sun, so the
+          // old style-G edge lines just outlined every window → busy, wireframe-
+          // ish clutter that buried the shading. Geometry + light carry the
+          // detail; the clean opaque PBR surface is the premium look.
           clone.traverse((o) => {
             const mm = o as THREE.Mesh;
             if (mm.isMesh && mm.geometry) {
               mm.material = glbMat; mm.frustumCulled = false; mm.userData.parcelId = b.parcelId;
-              const eg = new THREE.LineSegments(new THREE.EdgesGeometry(mm.geometry, 30), glbEdgeMat);
-              eg.frustumCulled = false; eg.userData.parcelId = b.parcelId; eg.userData.isEdge = true;
-              mm.add(eg);
             }
           });
           // Unit GLB (X,Y∈[-0.5,0.5] footprint, Z∈[0,1] height after Blender
