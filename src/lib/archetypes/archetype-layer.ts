@@ -294,12 +294,14 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
       let meshes = 0;
       for (const b of buildings) {
         if (!b.footprint || b.footprint.length < 3) continue;
-        // Anchor at the PLOT-polygon centroid (founder 2026-06-15). Models must
-        // sit CENTRED in their plot with a uniform setback gap; anchoring by the
-        // footprint OBB centre let asymmetric / building-limit footprints drift
-        // off-centre vs the plot outline ("разъезд"). Plot centroid + centring
-        // the model there → building centred over its plot, even gap all round.
-        const [blng, blat] = ringCentroidLngLat(b.plot && b.plot.length >= 3 ? b.plot : b.footprint);
+        // Anchor at the FOOTPRINT centroid (founder 2026-06-16). The footprint is
+        // the BUILDING-LIMIT (if DDA gives one) or the setback-inset plot. The
+        // model is centred here so it sits exactly ON the building-limit (matches
+        // the gold outline). Plot-centroid centring (the prior attempt) misplaced
+        // 68/148 listings by up to 28 m because the building-limit is offset from
+        // the plot centre — measured in verify-plots-real.json. OBB only drives
+        // orientation + size; the building-limit centroid is the position.
+        const [blng, blat] = ringCentroidLngLat(b.footprint);
         const cosLat = Math.cos((blat * Math.PI) / 180);
         const local = (ring: number[][]) =>
           ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
@@ -354,10 +356,10 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           const capXY = (b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT") ? 55 : Infinity;
           const sx = Math.min(2 * obb.hl, capXY);
           const sy = Math.min(2 * obb.hw, capXY);
-          // Centre the model at the PLOT centroid (local origin) — NOT the OBB
-          // centre — so it sits centred in the plot with a uniform setback gap
-          // (founder 2026-06-15 "разъезд" fix). Footprint OBB only drives the
-          // orientation (Rz) + footprint size (S); position is the plot centre.
+          // Centre the model at the FOOTPRINT centroid (local origin) — NOT the
+          // OBB centre, NOT the plot centroid — so it sits exactly on the
+          // BUILDING-LIMIT and matches the gold outline (founder 2026-06-16).
+          // Footprint OBB only drives orientation (Rz) + footprint size (S).
           clone.matrixAutoUpdate = false;
           clone.matrix.identity()
             .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))

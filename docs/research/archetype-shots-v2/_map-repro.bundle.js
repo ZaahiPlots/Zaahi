@@ -59220,7 +59220,7 @@ void main() {
         let meshes = 0;
         for (const b of buildings) {
           if (!b.footprint || b.footprint.length < 3) continue;
-          const [blng, blat] = ringCentroidLngLat(b.plot && b.plot.length >= 3 ? b.plot : b.footprint);
+          const [blng, blat] = ringCentroidLngLat(b.footprint);
           const cosLat = Math.cos(blat * Math.PI / 180);
           const local = (ring) => ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
           const footLocal = local(b.footprint);
