@@ -2061,6 +2061,10 @@ function ParcelsMapPageInner() {
   // only" because tile-level features have no global index — the panel
   // surfaces that honestly in its tooltip.
   const [visibleCount, setVisibleCount] = useState<{ listings: number; pmtiles: number } | undefined>(undefined);
+  // Total ZAAHI listings loaded — drives the FilterPanel "Listings only · N"
+  // header (was a hardcoded "114"; backlog #4 2026-06-16). Distinct from
+  // visibleCount.listings (the filtered / in-view subset).
+  const [totalListings, setTotalListings] = useState(0);
   const activeFilterCount = useMemo(
     () => countActiveFilters(filterState),
     [filterState],
@@ -3438,6 +3442,8 @@ function ParcelsMapPageInner() {
         "buildingFeatures:", buildingFeatures.length,
         "(of", payload.items.length, "parcels)",
       );
+      // backlog #4 — dynamic listings counter (was hardcoded "114").
+      setTotalListings(payload.items.length);
 
       // Wave 2: surface the distinct district names so the Filter
       // Panel's District multi-select has real options. Listings only —
@@ -6076,6 +6082,7 @@ function ParcelsMapPageInner() {
         onReset={() => setFilterState(EMPTY_FILTER_STATE)}
         availableDistricts={mergedDistricts}
         visibleCount={visibleCount}
+        totalListings={totalListings}
       />
 
       {layersOpen && (

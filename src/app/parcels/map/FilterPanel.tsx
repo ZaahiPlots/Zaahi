@@ -54,6 +54,9 @@ interface FilterPanelProps {
     listings: number;
     pmtiles: number;
   };
+  /** Total ZAAHI listings loaded (backlog #4) — drives the "Listings only · N"
+   *  header. Falls back to 114 before the listings payload arrives. */
+  totalListings?: number;
 }
 
 const COMMIT_DEBOUNCE_MS = 250;
@@ -444,6 +447,7 @@ export default function FilterPanel({
   onReset,
   availableDistricts,
   visibleCount,
+  totalListings,
 }: FilterPanelProps) {
   // Local draft = state of the sliders mid-drag. Commits to parent
   // via onChange after COMMIT_DEBOUNCE_MS so we don't trigger
@@ -727,7 +731,7 @@ export default function FilterPanel({
               fontFamily: "Georgia, serif",
             }}
           >
-            Listings only · 114
+            Listings only · {totalListings || 114}
           </span>
           <div
             style={{
@@ -745,7 +749,7 @@ export default function FilterPanel({
             lineHeight: 1.4,
           }}
         >
-          ⓘ Price &amp; district apply only to the 114 ZAAHI listings — the
+          ⓘ Price &amp; district apply only to the {totalListings || 114} ZAAHI listings — the
           461K DDA/AD registry has no price field and no district name in
           PMTiles (would need a tile re-bake).
         </div>
