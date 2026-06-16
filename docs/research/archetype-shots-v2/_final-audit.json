@@ -1,0 +1,96 @@
+{
+ "tally": {
+  "RESIDENTIAL": {
+   "n": 57,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 7,
+   "needle": 1,
+   "sliver": 0
+  },
+  "COMMERCIAL": {
+   "n": 14,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 4,
+   "needle": 3,
+   "sliver": 1
+  },
+  "HOTEL": {
+   "n": 5,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 0,
+   "needle": 0,
+   "sliver": 0
+  },
+  "MIXED_USE": {
+   "n": 59,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 6,
+   "needle": 3,
+   "sliver": 0
+  },
+  "EDUCATIONAL": {
+   "n": 3,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 2,
+   "needle": 0,
+   "sliver": 0
+  },
+  "INDUSTRIAL": {
+   "n": 2,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 0,
+   "needle": 0,
+   "sliver": 0
+  },
+  "FUTURE_DEVELOPMENT": {
+   "n": 4,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 0,
+   "needle": 0,
+   "sliver": 0
+  },
+  "HEALTHCARE": {
+   "n": 4,
+   "centerBad": 0,
+   "overhang": 0,
+   "tiny": 3,
+   "needle": 0,
+   "sliver": 0
+  }
+ },
+ "problems": [
+  "3260904        MIXED_USE    centerOff=0.0m over=0 k=0.44 XY=18x11 H=28 aspect=2.5 minXY=11m",
+  "4154777        MIXED_USE    centerOff=0.0m over=0 k=0.34 XY=45x37 H=64 aspect=1.7 minXY=37m",
+  "5310384        RESIDENTIAL  centerOff=0.0m over=0 k=0.30 XY=42x21 H=24 aspect=1.1 minXY=21m",
+  "6218398        MIXED_USE    centerOff=0.0m over=0 k=0.15 XY=8x6 H=36 aspect=5.8 minXY=6m",
+  "6439976        MIXED_USE    centerOff=0.0m over=0 k=0.42 XY=164x105 H=40 aspect=0.4 minXY=105m",
+  "6453278        RESIDENTIAL  centerOff=0.0m over=0 k=0.35 XY=24x23 H=48 aspect=2.1 minXY=23m",
+  "6453279        RESIDENTIAL  centerOff=0.0m over=0 k=0.29 XY=28x19 H=48 aspect=2.5 minXY=19m",
+  "6453982        RESIDENTIAL  centerOff=0.0m over=0 k=0.25 XY=27x23 H=84 aspect=3.7 minXY=23m",
+  "6455948        HEALTHCARE   centerOff=0.0m over=0 k=0.44 XY=30x24 H=36 aspect=1.5 minXY=24m",
+  "6455961        RESIDENTIAL  centerOff=0.0m over=0 k=0.44 XY=22x12 H=64 aspect=5.2 minXY=12m",
+  "6455974        MIXED_USE    centerOff=0.0m over=0 k=0.39 XY=51x26 H=96 aspect=3.8 minXY=26m",
+  "6457961        COMMERCIAL   centerOff=0.0m over=0 k=0.97 XY=19x5 H=20 aspect=4.4 minXY=5m",
+  "6459715        EDUCATIONAL  centerOff=0.0m over=0 k=0.43 XY=122x91 H=16 aspect=0.2 minXY=91m",
+  "6460177        MIXED_USE    centerOff=0.0m over=0 k=0.51 XY=38x37 H=264 aspect=7.2 minXY=37m",
+  "6460179        MIXED_USE    centerOff=0.0m over=0 k=0.71 XY=63x40 H=264 aspect=6.6 minXY=40m",
+  "6466964        MIXED_USE    centerOff=0.0m over=0 k=0.32 XY=24x24 H=204 aspect=8.6 minXY=24m",
+  "6466979        RESIDENTIAL  centerOff=0.0m over=0 k=0.46 XY=31x22 H=136 aspect=6.2 minXY=22m",
+  "6488549        HEALTHCARE   centerOff=0.0m over=0 k=0.38 XY=23x20 H=24 aspect=1.2 minXY=20m",
+  "6731108        RESIDENTIAL  centerOff=0.0m over=0 k=0.28 XY=39x22 H=44 aspect=2.0 minXY=22m",
+  "6850743        EDUCATIONAL  centerOff=0.0m over=0 k=0.45 XY=120x59 H=20 aspect=0.3 minXY=59m",
+  "6854566        HEALTHCARE   centerOff=0.0m over=0 k=0.26 XY=14x13 H=32 aspect=2.4 minXY=13m",
+  "9118380        COMMERCIAL   centerOff=0.0m over=0 k=0.41 XY=97x79 H=88 aspect=1.1 minXY=79m",
+  "RA-TH          RESIDENTIAL  centerOff=0.0m over=0 k=0.31 XY=61x43 H=12 aspect=0.3 minXY=43m",
+  "202-613-000-C9 COMMERCIAL   centerOff=0.0m over=0 k=0.37 XY=28x23 H=240 aspect=10.3 minXY=23m",
+  "202-613-000-C33 COMMERCIAL   centerOff=0.0m over=0 k=0.19 XY=16x15 H=240 aspect=16.0 minXY=15m",
+  "202-613-000-C34 COMMERCIAL   centerOff=0.0m over=0 k=0.35 XY=26x22 H=180 aspect=8.3 minXY=22m"
+ ]
+}

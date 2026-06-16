@@ -59273,7 +59273,7 @@ void main() {
               const cA = Math.cos(obb.ang), sA = Math.sin(obb.ang);
               const cornersInside = (k) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].every(([su, sv]) => {
                 const u = su * (fitW / 2) * k, v = sv * (fitD / 2) * k;
-                return pointInRingLocal(obb.cx + u * cA - v * sA, obb.cy + u * sA + v * cA, plotLoc);
+                return pointInRingLocal(u * cA - v * sA, u * sA + v * cA, plotLoc);
               });
               if (!cornersInside(1)) {
                 let lo = 0.05, hi = 1;
@@ -59287,7 +59287,7 @@ void main() {
               }
             }
             clone2.matrixAutoUpdate = false;
-            clone2.matrix.identity().multiply(new Matrix4().makeTranslation(obb.cx, obb.cy, 0)).multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(fitW, fitD, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
+            clone2.matrix.identity().multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(fitW, fitD, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
             clone2.matrixWorldNeedsUpdate = true;
             bGroup2.add(clone2);
             group.add(bGroup2);

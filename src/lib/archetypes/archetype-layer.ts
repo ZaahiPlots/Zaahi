@@ -368,17 +368,18 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           let fitD = Math.min(2 * obb.hw, capXY);
           // FIT-TO-PLOT clamp (founder 2026-06-16): the footprint OBB bounding
           // rectangle exceeds the footprint POLYGON (and pokes outside the plot)
-          // for irregular / diagonal / concave building-limits → the model
-          // overhangs the plot. Shrink the model about the OBB centre until all
-          // 4 corners sit INSIDE the plot polygon → model always within the plot,
-          // setback gap preserved. (Binary search; floor 0.2 so it never vanishes.)
+          // for irregular / diagonal / concave building-limits → the model would
+          // overhang. Model is centred on the FOOTPRINT CENTROID (local origin —
+          // the centre founder ratified); shrink it about the centroid until all
+          // 4 corners sit INSIDE the plot polygon → centred AND within the plot,
+          // setback gap preserved. (Binary search; floor 0.05.)
           const plotLoc = b.plot && b.plot.length >= 3 ? local(b.plot) : null;
           if (plotLoc) {
             const cA = Math.cos(obb.ang), sA = Math.sin(obb.ang);
             const cornersInside = (k: number): boolean =>
               [[-1, -1], [1, -1], [1, 1], [-1, 1]].every(([su, sv]) => {
                 const u = su * (fitW / 2) * k, v = sv * (fitD / 2) * k;
-                return pointInRingLocal(obb.cx + u * cA - v * sA, obb.cy + u * sA + v * cA, plotLoc);
+                return pointInRingLocal(u * cA - v * sA, u * sA + v * cA, plotLoc);
               });
             if (!cornersInside(1)) {
               let lo = 0.05, hi = 1;
@@ -386,12 +387,11 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
               fitW *= lo; fitD *= lo;
             }
           }
-          // Centre the model at the footprint OBB centre (≈ building-limit centre)
-          // so it sits on the building-limit; OBB drives orientation (Rz) + size
-          // (S, now clamped inside the plot). Founder 2026-06-16.
+          // Centre the model at the FOOTPRINT centroid (local origin) — the centre
+          // founder ratified (разъезд <3m). OBB drives orientation (Rz) + size (S,
+          // clamped inside the plot). Founder 2026-06-16.
           clone.matrixAutoUpdate = false;
           clone.matrix.identity()
-            .multiply(new THREE.Matrix4().makeTranslation(obb.cx, obb.cy, 0))
             .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))
             .multiply(new THREE.Matrix4().makeScale(fitW, fitD, H))
             .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
