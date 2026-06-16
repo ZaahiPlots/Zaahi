@@ -37846,6 +37846,26 @@ ${n2.shaderPreludeCode.vertexSource}`, define: n2.shaderDefine }, defaultProject
       this.image = value;
     }
   };
+  var CanvasTexture = class extends Texture {
+    /**
+     * Constructs a new texture.
+     *
+     * @param {HTMLCanvasElement} [canvas] - The HTML canvas element.
+     * @param {number} [mapping=Texture.DEFAULT_MAPPING] - The texture mapping.
+     * @param {number} [wrapS=ClampToEdgeWrapping] - The wrapS value.
+     * @param {number} [wrapT=ClampToEdgeWrapping] - The wrapT value.
+     * @param {number} [magFilter=LinearFilter] - The mag filter value.
+     * @param {number} [minFilter=LinearMipmapLinearFilter] - The min filter value.
+     * @param {number} [format=RGBAFormat] - The texture format.
+     * @param {number} [type=UnsignedByteType] - The texture type.
+     * @param {number} [anisotropy=Texture.DEFAULT_ANISOTROPY] - The anisotropy value.
+     */
+    constructor(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy) {
+      super(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+      this.isCanvasTexture = true;
+      this.needsUpdate = true;
+    }
+  };
   var DepthTexture = class extends Texture {
     /**
      * Constructs a new depth texture.
@@ -59135,15 +59155,43 @@ void main() {
       g.computeVertexNormals();
       return g;
     }
+    let envTex = null;
+    function getEnvTex() {
+      if (envTex) return envTex;
+      if (!renderer) return null;
+      const cv = document.createElement("canvas");
+      cv.width = 16;
+      cv.height = 256;
+      const ctx = cv.getContext("2d");
+      if (!ctx) return null;
+      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, "#aecbf2");
+      g.addColorStop(0.48, "#eef4fc");
+      g.addColorStop(0.52, "#d8c9a8");
+      g.addColorStop(1, "#7d6e52");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 16, 256);
+      const eq = new CanvasTexture(cv);
+      eq.mapping = EquirectangularReflectionMapping;
+      eq.colorSpace = SRGBColorSpace;
+      const pmrem = new PMREMGenerator(renderer);
+      envTex = pmrem.fromEquirectangular(eq).texture;
+      eq.dispose();
+      pmrem.dispose();
+      return envTex;
+    }
     function makeMaterial(colorHex, landUse) {
       const c = new Color(colorHex);
       if (landUse === "INDUSTRIAL" || landUse === "WAREHOUSE") {
         c.lerp(new Color(16777215), 0.42);
       }
+      const isGlass = landUse === "HOTEL" || landUse === "HOSPITALITY" || landUse === "COMMERCIAL" || landUse === "INVESTMENT" || landUse === "MIXED_USE" || landUse === "RESIDENTIAL";
       const mat = new MeshStandardMaterial({
         color: c,
-        metalness: 0,
-        roughness: 0.62,
+        metalness: isGlass ? 0.35 : 0.05,
+        roughness: isGlass ? 0.09 : 0.7,
+        envMap: getEnvTex(),
+        envMapIntensity: isGlass ? 1.15 : 0.35,
         emissive: c.clone().multiplyScalar(0.05),
         transparent: false,
         opacity: 1,

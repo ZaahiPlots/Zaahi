@@ -209,6 +209,32 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     return g;
   }
 
+  // Lazy sky/ground PMREM environment for glass REFLECTIONS (founder 2026-06-15
+  // experiment: turn the flat colour box into a reflective glass tower). Built
+  // once from a canvas gradient (sky→horizon→desert); needs the renderer, so
+  // built on first use (setBuildings runs after onAdd → renderer exists).
+  let envTex: THREE.Texture | null = null;
+  function getEnvTex(): THREE.Texture | null {
+    if (envTex) return envTex;
+    if (!renderer) return null;
+    const cv = document.createElement("canvas"); cv.width = 16; cv.height = 256;
+    const ctx = cv.getContext("2d");
+    if (!ctx) return null;
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0.0, "#aecbf2");  // sky (top of reflection)
+    g.addColorStop(0.48, "#eef4fc"); // bright horizon
+    g.addColorStop(0.52, "#d8c9a8"); // desert/ground
+    g.addColorStop(1.0, "#7d6e52");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 16, 256);
+    const eq = new THREE.CanvasTexture(cv);
+    eq.mapping = THREE.EquirectangularReflectionMapping;
+    eq.colorSpace = THREE.SRGBColorSpace;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    envTex = pmrem.fromEquirectangular(eq).texture;
+    eq.dispose(); pmrem.dispose();
+    return envTex;
+  }
+
   function makeMaterial(colorHex: string, landUse?: string | null): THREE.MeshStandardMaterial {
     // SOLID listing model (founder 2026-06-14 — opacity 1, one layer, the
     // translucent ghost under it is extinguished separately). PBR Standard
@@ -219,15 +245,25 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
     const c = new THREE.Color(colorHex);
     // INDUSTRIAL #495057 is so dark it reads as a black void on the bright
     // satellite (founder 2026-06-15). Lift ONLY its RENDER lightness toward a
-    // mid-grey so the warehouse + sawtooth read and it sits in the family. The
-    // legend/fill hex stays #495057 (data untouched) — this is render-only.
+    // mid-grey. Legend/fill hex stays #495057 (data untouched) — render-only.
     if (landUse === "INDUSTRIAL" || landUse === "WAREHOUSE") {
       c.lerp(new THREE.Color(0xffffff), 0.42);
     }
+    // ── Per-type PBR materials (founder 2026-06-15, glass experiment → all 10) ──
+    // Two classes, both tinted to the legend colour (colour-code preserved) and
+    // reflecting the sky PMREM env so the SUN plays on them — turns flat boxes
+    // into volumes. opacity 1 (never see-through).
+    //   GLASS  (towers/residential): low roughness + envMap → reflective glazed facade.
+    //   CONCRETE (sheds/low/institutional): high roughness + light env → matte PBR depth.
+    const isGlass = landUse === "HOTEL" || landUse === "HOSPITALITY" ||
+      landUse === "COMMERCIAL" || landUse === "INVESTMENT" ||
+      landUse === "MIXED_USE" || landUse === "RESIDENTIAL";
     const mat = new THREE.MeshStandardMaterial({
       color: c,
-      metalness: 0.0,
-      roughness: 0.62,
+      metalness: isGlass ? 0.35 : 0.05,
+      roughness: isGlass ? 0.09 : 0.70,
+      envMap: getEnvTex(),
+      envMapIntensity: isGlass ? 1.15 : 0.35,
       emissive: c.clone().multiplyScalar(0.05),
       transparent: false,
       opacity: 1,
