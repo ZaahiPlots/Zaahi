@@ -59220,7 +59220,7 @@ void main() {
         let meshes = 0;
         for (const b of buildings) {
           if (!b.footprint || b.footprint.length < 3) continue;
-          const [blng, blat] = ringCentroidLngLat(b.footprint);
+          const [blng, blat] = ringCentroidLngLat(b.plot && b.plot.length >= 3 ? b.plot : b.footprint);
           const cosLat = Math.cos(blat * Math.PI / 180);
           const local = (ring) => ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
           const footLocal = local(b.footprint);
@@ -59261,7 +59261,7 @@ void main() {
             const sx = Math.min(2 * obb.hl, capXY);
             const sy = Math.min(2 * obb.hw, capXY);
             clone2.matrixAutoUpdate = false;
-            clone2.matrix.identity().multiply(new Matrix4().makeTranslation(obb.cx, obb.cy, 0)).multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(sx, sy, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
+            clone2.matrix.identity().multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(sx, sy, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
             clone2.matrixWorldNeedsUpdate = true;
             bGroup2.add(clone2);
             group.add(bGroup2);

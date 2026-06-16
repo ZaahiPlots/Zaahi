@@ -294,8 +294,12 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
       let meshes = 0;
       for (const b of buildings) {
         if (!b.footprint || b.footprint.length < 3) continue;
-        // Anchor at THIS building's footprint centroid + its own Mercator coord.
-        const [blng, blat] = ringCentroidLngLat(b.footprint);
+        // Anchor at the PLOT-polygon centroid (founder 2026-06-15). Models must
+        // sit CENTRED in their plot with a uniform setback gap; anchoring by the
+        // footprint OBB centre let asymmetric / building-limit footprints drift
+        // off-centre vs the plot outline ("разъезд"). Plot centroid + centring
+        // the model there → building centred over its plot, even gap all round.
+        const [blng, blat] = ringCentroidLngLat(b.plot && b.plot.length >= 3 ? b.plot : b.footprint);
         const cosLat = Math.cos((blat * Math.PI) / 180);
         const local = (ring: number[][]) =>
           ring.map(([lng, lat]) => [(lng - blng) * M_PER_DEG_LAT * cosLat, (lat - blat) * M_PER_DEG_LAT]);
@@ -350,9 +354,12 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           const capXY = (b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT") ? 55 : Infinity;
           const sx = Math.min(2 * obb.hl, capXY);
           const sy = Math.min(2 * obb.hw, capXY);
+          // Centre the model at the PLOT centroid (local origin) — NOT the OBB
+          // centre — so it sits centred in the plot with a uniform setback gap
+          // (founder 2026-06-15 "разъезд" fix). Footprint OBB only drives the
+          // orientation (Rz) + footprint size (S); position is the plot centre.
           clone.matrixAutoUpdate = false;
           clone.matrix.identity()
-            .multiply(new THREE.Matrix4().makeTranslation(obb.cx, obb.cy, 0))
             .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))
             .multiply(new THREE.Matrix4().makeScale(sx, sy, H))
             .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
