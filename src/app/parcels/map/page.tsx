@@ -37,6 +37,7 @@ import { useProactiveArchie } from "@/lib/use-proactive-archie";
 import AuthGuard from "@/components/AuthGuard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { apiFetch } from "@/lib/api-fetch";
+import { formatParcelStatus } from "@/lib/format-parcel-status";
 import type { MapControls } from "@/lib/archie-tools";
 import {
   EMPTY_FILTER_STATE,
@@ -1758,6 +1759,7 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    status: string;
   } | null>(null);
   // Vault hover popup — mirrors zaahiHover so a vault polygon reads
   // the same as a public listing on hover. Click → VaultSidePanelAdapter
@@ -4704,6 +4706,7 @@ function ParcelsMapPageInner() {
             maxHeightCode?: string;
             far?: number;
             planDateIso?: string;
+            status?: string;
           };
           // Polygon centroid (mean of outer-ring vertices). Used for the
           // click-flyTo destination — falls back to the cursor lngLat
@@ -4738,6 +4741,7 @@ function ParcelsMapPageInner() {
             maxHeightCode: p.maxHeightCode ?? "",
             far: p.far ?? 0,
             planDateIso: p.planDateIso ?? "",
+            status: p.status ?? "",
           });
           // ZAAHI listings take priority — drop any PMTiles / shared-vault
           // popup that fired for the same cursor frame so only one card
@@ -6568,6 +6572,9 @@ function ParcelsMapPageInner() {
                 )}
               </span>
             </div>
+            {zaahiHover.status && (
+              <PmtilesHoverRow label="Status" value={formatParcelStatus(zaahiHover.status)} />
+            )}
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
                 value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />

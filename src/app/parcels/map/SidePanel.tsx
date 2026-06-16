@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 import { PdfProgressBar } from "./PdfProgressBar";
+import { formatParcelStatus } from "@/lib/format-parcel-status";
 import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 // Phase 1 style unification (2026-05-31): the aside container migrates
 // to the shared Panel + tokens. Inner content keeps its existing
@@ -477,6 +478,12 @@ export default function SidePanel({
               <div style={{ color: SUBTLE, fontSize: 12 }} className="truncate">
                 {data.district} · {data.emirate}
               </div>
+              {data.status && (
+                <div style={{ color: GOLD, fontSize: 10, fontWeight: 600,
+                  textTransform: "uppercase", letterSpacing: 0.8, marginTop: 3 }}>
+                  {formatParcelStatus(data.status)}
+                </div>
+              )}
             </>
           ) : (
             <div style={{ color: SUBTLE, fontSize: 11 }}>{loading ? "Loading…" : ""}</div>
