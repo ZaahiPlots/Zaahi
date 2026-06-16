@@ -42,6 +42,16 @@ const ARCHETYPE_GLB: Record<string, string> = {
 const M_PER_DEG_LAT = 111_320;
 const LAYER_ID = "zaahi-archetypes-3d";
 
+// Point-in-polygon (ring in local metres) — for the fit-to-plot scale clamp.
+function pointInRingLocal(x: number, y: number, r: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
 export interface ArchetypeBuildingInput {
   parcelId: string;
   /** Building footprint ring as [lng, lat] pairs (DDA building-limit or
@@ -354,16 +364,36 @@ export function installArchetypeLayer(map: maplibregl.Map): ArchetypeLayerContro
           // they stay a sensible size centred in the plot, land around them
           // (founder 2026-06-15 huge-plot fix). Other types fill the footprint.
           const capXY = (b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT") ? 55 : Infinity;
-          const sx = Math.min(2 * obb.hl, capXY);
-          const sy = Math.min(2 * obb.hw, capXY);
-          // Centre the model at the FOOTPRINT centroid (local origin) — NOT the
-          // OBB centre, NOT the plot centroid — so it sits exactly on the
-          // BUILDING-LIMIT and matches the gold outline (founder 2026-06-16).
-          // Footprint OBB only drives orientation (Rz) + footprint size (S).
+          let fitW = Math.min(2 * obb.hl, capXY);
+          let fitD = Math.min(2 * obb.hw, capXY);
+          // FIT-TO-PLOT clamp (founder 2026-06-16): the footprint OBB bounding
+          // rectangle exceeds the footprint POLYGON (and pokes outside the plot)
+          // for irregular / diagonal / concave building-limits → the model
+          // overhangs the plot. Shrink the model about the OBB centre until all
+          // 4 corners sit INSIDE the plot polygon → model always within the plot,
+          // setback gap preserved. (Binary search; floor 0.2 so it never vanishes.)
+          const plotLoc = b.plot && b.plot.length >= 3 ? local(b.plot) : null;
+          if (plotLoc) {
+            const cA = Math.cos(obb.ang), sA = Math.sin(obb.ang);
+            const cornersInside = (k: number): boolean =>
+              [[-1, -1], [1, -1], [1, 1], [-1, 1]].every(([su, sv]) => {
+                const u = su * (fitW / 2) * k, v = sv * (fitD / 2) * k;
+                return pointInRingLocal(obb.cx + u * cA - v * sA, obb.cy + u * sA + v * cA, plotLoc);
+              });
+            if (!cornersInside(1)) {
+              let lo = 0.05, hi = 1;
+              for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (cornersInside(m)) lo = m; else hi = m; }
+              fitW *= lo; fitD *= lo;
+            }
+          }
+          // Centre the model at the footprint OBB centre (≈ building-limit centre)
+          // so it sits on the building-limit; OBB drives orientation (Rz) + size
+          // (S, now clamped inside the plot). Founder 2026-06-16.
           clone.matrixAutoUpdate = false;
           clone.matrix.identity()
+            .multiply(new THREE.Matrix4().makeTranslation(obb.cx, obb.cy, 0))
             .multiply(new THREE.Matrix4().makeRotationZ(obb.ang))
-            .multiply(new THREE.Matrix4().makeScale(sx, sy, H))
+            .multiply(new THREE.Matrix4().makeScale(fitW, fitD, H))
             .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
           clone.matrixWorldNeedsUpdate = true;
           bGroup2.add(clone);

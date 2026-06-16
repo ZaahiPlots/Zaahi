@@ -59018,6 +59018,14 @@ void main() {
   };
   var M_PER_DEG_LAT = 111320;
   var LAYER_ID = "zaahi-archetypes-3d";
+  function pointInRingLocal(x, y, r) {
+    let inside = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+      if (yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
   var GREY = new Color(8026746);
   function resolveLineVariant() {
     let lv = "";
@@ -59258,10 +59266,28 @@ void main() {
               }
             });
             const capXY = b.landUse === "AGRICULTURAL" || b.landUse === "FUTURE_DEVELOPMENT" ? 55 : Infinity;
-            const sx = Math.min(2 * obb.hl, capXY);
-            const sy = Math.min(2 * obb.hw, capXY);
+            let fitW = Math.min(2 * obb.hl, capXY);
+            let fitD = Math.min(2 * obb.hw, capXY);
+            const plotLoc = b.plot && b.plot.length >= 3 ? local(b.plot) : null;
+            if (plotLoc) {
+              const cA = Math.cos(obb.ang), sA = Math.sin(obb.ang);
+              const cornersInside = (k) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].every(([su, sv]) => {
+                const u = su * (fitW / 2) * k, v = sv * (fitD / 2) * k;
+                return pointInRingLocal(obb.cx + u * cA - v * sA, obb.cy + u * sA + v * cA, plotLoc);
+              });
+              if (!cornersInside(1)) {
+                let lo = 0.05, hi = 1;
+                for (let i = 0; i < 12; i++) {
+                  const m = (lo + hi) / 2;
+                  if (cornersInside(m)) lo = m;
+                  else hi = m;
+                }
+                fitW *= lo;
+                fitD *= lo;
+              }
+            }
             clone2.matrixAutoUpdate = false;
-            clone2.matrix.identity().multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(sx, sy, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
+            clone2.matrix.identity().multiply(new Matrix4().makeTranslation(obb.cx, obb.cy, 0)).multiply(new Matrix4().makeRotationZ(obb.ang)).multiply(new Matrix4().makeScale(fitW, fitD, H)).multiply(new Matrix4().makeRotationX(Math.PI / 2));
             clone2.matrixWorldNeedsUpdate = true;
             bGroup2.add(clone2);
             group.add(bGroup2);
