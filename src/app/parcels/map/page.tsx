@@ -1735,53 +1735,50 @@ function ParcelsMapPageInner() {
 
   // Defer-close timer so the user can move the cursor from the polygon
   // onto the (now clickable) hover card without it disappearing first.
-  const hoverCloseTimerRef = useRef<number | null>(null);
-  const [zaahiHover, setZaahiHover] = useState<{
-    x: number;
-    y: number;
-    id: string;
-    lng: number;
-    lat: number;
-    plotNumber: string;
-    district: string;
-    emirate: string;
-    area: number;
-    priceAed: number | null;
-    landUse: string;
-    projectName: string;
-    plotAreaSqm: number;
-    plotAreaSqft: number;
-    maxGfaSqm: number;
-    maxGfaSqft: number;
-    maxFloors: number;
-    maxHeightMeters: number;
-    maxHeightCode: string;
-    far: number;
-    planDateIso: string;
+  // backlog #9 — hover now lights up the plot OUTLINE via MapLibre
+  // feature-state instead of showing a card. This ref tracks the single
+  // currently-hovered plot across ALL plot layers (only one at a time);
+  // the per-layer zaahiHover / vaultHover card state was removed.
+  const hoveredFeatureRef = useRef<{
+    source: string;
+    sourceLayer?: string;
+    id: string | number;
   } | null>(null);
-  // Vault hover popup — mirrors zaahiHover so a vault polygon reads
-  // the same as a public listing on hover. Click → VaultSidePanelAdapter
-  // (via setSelectedVaultEntry), same handshake as ZAAHI listings.
-  const [vaultHover, setVaultHover] = useState<{
-    x: number;
-    y: number;
-    id: string;
-    plotNumber: string;
-    district: string;
-    landUse: string;
-    projectName: string;
-    askingAed: number | null;
-    area: number;
-    plotAreaSqft: number;
-    maxGfaSqft: number;
-    maxFloors: number;
-    maxHeightMeters: number;
-    maxHeightCode: string;
-    far: number;
-    planDateIso: string;
-    mode: "owner" | "share";
-  } | null>(null);
-  const [ddaLandHover, setDdaLandHover] = useState<{
+  // Flip feature-state.hover off the previously-hovered plot and on the
+  // new one. id null/"" clears. sourceLayer is required for vector
+  // (PMTiles "plots") sources, omitted for geojson (ZAAHI / vault).
+  const setPlotHover = (
+    map: MLMap,
+    source: string,
+    sourceLayer: string | undefined,
+    id: string | number | null | undefined,
+  ) => {
+    const prev = hoveredFeatureRef.current;
+    if (prev && (prev.source !== source || prev.id !== id)) {
+      map.setFeatureState(
+        { source: prev.source, sourceLayer: prev.sourceLayer, id: prev.id },
+        { hover: false },
+      );
+      hoveredFeatureRef.current = null;
+    }
+    if (id == null || id === "") return;
+    hoveredFeatureRef.current = { source, sourceLayer, id };
+    map.setFeatureState({ source, sourceLayer, id }, { hover: true });
+  };
+  const clearPlotHover = (map: MLMap) => {
+    const prev = hoveredFeatureRef.current;
+    if (prev) {
+      map.setFeatureState(
+        { source: prev.source, sourceLayer: prev.sourceLayer, id: prev.id },
+        { hover: false },
+      );
+      hoveredFeatureRef.current = null;
+    }
+  };
+  // Mini-card shown on CLICK of a background DDA/AD plot (backlog #9 —
+  // was previously a hover card). Closed via its × or auto-cleared when
+  // a SidePanel / vault panel opens.
+  const [ddaLandCard, setDdaLandCard] = useState<{
     x: number; y: number;
     plotNumber: string;
     mainLandUse: string;
@@ -1801,13 +1798,8 @@ function ParcelsMapPageInner() {
   // still on the same polygon.
   useEffect(() => {
     if (!selectedParcelId && !selectedVaultEntry) return;
-    setZaahiHover(null);
-    setVaultHover(null);
-    setDdaLandHover(null);
-    if (hoverCloseTimerRef.current != null) {
-      window.clearTimeout(hoverCloseTimerRef.current);
-      hoverCloseTimerRef.current = null;
-    }
+    // backlog #9 — auto-close the DDA click mini-card when a panel opens.
+    setDdaLandCard(null);
     popupRef.current?.remove();
   }, [selectedParcelId, selectedVaultEntry]);
   // Split plotNumber index for PMTiles exclusion (founder spec 2026-05-31,
@@ -1937,9 +1929,7 @@ function ParcelsMapPageInner() {
   // misfired on every click of the new "+" hover button.
   function openVaultWizardWith(plotNumber: string) {
     if (!plotNumber.match(/^\d{5,10}$/)) return;
-    setZaahiHover(null);
-    setDdaLandHover(null);
-    setVaultHover(null);
+    setDdaLandCard(null);
     setAddPlotPrefill(plotNumber);
     setAddFlow("vault");
   }
@@ -3508,8 +3498,9 @@ function ParcelsMapPageInner() {
             source: ZAAHI_PLOTS_SRC,
             filter: initialFilter,
             paint: {
-              "line-color": ["get", "color"],
-              "line-width": 2,
+              // backlog #9 — bright white outline on hover (feature-state).
+              "line-color": ["case", ["boolean", ["feature-state", "hover"], false], "#FFFFFF", ["get", "color"]],
+              "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 3.5, 2],
               "line-opacity-transition": { duration: 300 },
             },
           });
@@ -3855,6 +3846,9 @@ function ParcelsMapPageInner() {
         map.addSource(VAULT_SHARED_SRC, {
           type: "geojson",
           data: { type: "FeatureCollection", features },
+          // backlog #9 — promote id so feature-state hover outline works
+          // (vault features carry no top-level id).
+          promoteId: "id",
         });
       }
 
@@ -3865,7 +3859,8 @@ function ParcelsMapPageInner() {
           source: VAULT_SHARED_SRC,
           layout: { visibility: "none" },
           paint: {
-            "fill-extrusion-color": ["get", "color"],
+            // backlog #9 — lighten on hover (color only; opacity stays a literal number).
+            "fill-extrusion-color": ["case", ["boolean", ["feature-state", "hover"], false], "#FFE9A8", ["get", "color"]],
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-opacity": 1, // listing parity — solid (founder 2026-05-30)
@@ -4090,7 +4085,10 @@ function ParcelsMapPageInner() {
     // memory project_pmtiles_overzoom_band for the rebuild history).
     const tilesBase = process.env.NEXT_PUBLIC_TILES_BASE_URL ?? "";
     const fullTilesUrl = tilesUrl.startsWith("http") ? tilesUrl : `${tilesBase}${tilesUrl}`;
-    map.addSource(srcId, { type: "vector", url: `pmtiles://${fullTilesUrl}`, maxzoom: 18 });
+    // promoteId lifts plotNumber to the feature id so feature-state
+    // (hover outline, backlog #9) works — PMTiles features carry no
+    // intrinsic id. Load-time only; no tile rebuild.
+    map.addSource(srcId, { type: "vector", url: `pmtiles://${fullTilesUrl}`, maxzoom: 18, promoteId: "plotNumber" });
     // 2D fill — only "flat" features (tier=flat, height=0)
     map.addLayer({ id: fillId, type: "fill", source: srcId, "source-layer": "plots", minzoom: 10, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],
@@ -4102,7 +4100,10 @@ function ParcelsMapPageInner() {
     map.addLayer({ id: lineId, type: "line", source: srcId, "source-layer": "plots", minzoom: 12, layout: { visibility: "none" },
       filter: ["==", ["get", "tier"], "flat"],
       paint: {
-        "line-color": ["get", "color"], "line-width": 1, "line-opacity": 0.6,
+        // backlog #9 — white, thicker, opaque outline on hover (feature-state).
+        "line-color": ["case", ["boolean", ["feature-state", "hover"], false], "#FFFFFF", ["get", "color"]],
+        "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 3, 1],
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.6],
     }});
     // 3D extrusion — only tier features (podium/body/crown).
     // maxzoom: 24 is MapLibre's default cap but is set explicitly here
@@ -4111,7 +4112,8 @@ function ParcelsMapPageInner() {
     map.addLayer({ id: extId, type: "fill-extrusion", source: srcId, "source-layer": "plots", minzoom: 14, maxzoom: 24, layout: { visibility: "none" },
       filter: ["!=", ["get", "tier"], "flat"],
       paint: {
-        "fill-extrusion-color": ["get", "color"],
+        // backlog #9 — lighten 3D plot on hover (color only; opacity stays a literal number).
+        "fill-extrusion-color": ["case", ["boolean", ["feature-state", "hover"], false], "#FFE9A8", ["get", "color"]],
         "fill-extrusion-height": ["get", "height"],
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.45,
@@ -4119,42 +4121,43 @@ function ParcelsMapPageInner() {
     // Hover — bindLayerEvent clears any previous binding for this
     // (event, layer) pair so style swaps don't pile up extra hover
     // callbacks. Same guard as the listeners in attachOverlays.
-    bindLayerEvent(map, "mousemove", fillId, (e0: unknown) => {
-      const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
-      const f = e.features?.[0];
-      if (!f) return;
-      // Priority: ZAAHI listings + shared-vault outrank PMTiles. If the
-      // cursor is over either of those layers at this frame, defer —
-      // those handlers fire on the same event and have their own popup.
-      // Avoids the dual-popup overlap (e.g. "Business Bay" ZAAHI listing
-      // stacked with "3460730 Open Space" PMTiles polygon).
+    // ZAAHI listings + shared-vault outrank PMTiles for the same cursor
+    // frame — their handlers open the big SidePanel, so PMTiles defers.
+    const ddaCursorBlocked = (e: MapMouseEvent) => {
       const blockingLayers = [ZAAHI_PLOTS_FILL, VAULT_SHARED_3D].filter(
         (lid) => map.getLayer(lid),
       );
-      if (blockingLayers.length > 0) {
-        const upper = map.queryRenderedFeatures(e.point, { layers: blockingLayers });
-        if (upper.length > 0) {
-          setDdaLandHover(null);
-          return;
-        }
-      }
-      // Re-hovering after a brief mouseleave cancels the pending close
-      // so the popup stays alive through the keep-alive window.
-      if (hoverCloseTimerRef.current != null) {
-        window.clearTimeout(hoverCloseTimerRef.current);
-        hoverCloseTimerRef.current = null;
-      }
+      return (
+        blockingLayers.length > 0 &&
+        map.queryRenderedFeatures(e.point, { layers: blockingLayers }).length > 0
+      );
+    };
+    // backlog #9 — hover lights the plot OUTLINE via feature-state; no
+    // card. Bound to both the 2D fill (flat plots) and the 3D extrusion.
+    const ddaHoverMove = (e0: unknown) => {
+      const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
+      const f = e.features?.[0];
+      if (!f) return;
+      if (ddaCursorBlocked(e)) { clearPlotHover(map); return; }
       map.getCanvas().style.cursor = "pointer";
-      // Symmetric hover dedup (founder spec 2026-05-31): when PMTiles
-      // activates, kill ZAAHI + vault state too. The priority gate
-      // above only checks whether the cursor is STILL over ZAAHI on
-      // this frame — it does NOT clear stale state from a sibling
-      // ZAAHI polygon whose 220ms close timer was just cancelled by
-      // our hoverCloseTimerRef clear above. Without this, dragging
-      // from "Business Bay Phase 1" onto adjacent DDA 3460654 leaves
-      // both cards stacked.
-      setZaahiHover(null);
-      setVaultHover(null);
+      setPlotHover(map, srcId, "plots", f.id ?? "");
+    };
+    const ddaHoverLeave = () => {
+      map.getCanvas().style.cursor = "";
+      clearPlotHover(map);
+    };
+    bindLayerEvent(map, "mousemove", fillId, ddaHoverMove);
+    bindLayerEvent(map, "mouseleave", fillId, ddaHoverLeave);
+    bindLayerEvent(map, "mousemove", extId, ddaHoverMove);
+    bindLayerEvent(map, "mouseleave", extId, ddaHoverLeave);
+    // backlog #9 — CLICK on a background DDA/AD plot opens the mini-card
+    // (the content that used to appear on hover). Defers when a ZAAHI /
+    // vault plot is under the cursor (their click opens the SidePanel).
+    const ddaClick = (e0: unknown) => {
+      const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
+      const f = e.features?.[0];
+      if (!f) return;
+      if (ddaCursorBlocked(e)) return;
       const pr = f.properties as Record<string, unknown>;
       const areaSqm = (pr.areaSqm as number) ?? 0;
       // DDA tiles carry AREA_SQFT directly; AD tiles only have
@@ -4162,7 +4165,7 @@ function ParcelsMapPageInner() {
       const areaSqft = (pr.areaSqft as number) || Math.round(areaSqm * 10.7639);
       const gfaSqm = (pr.gfaSqm as number) ?? 0;
       const gfaSqft = gfaSqm > 0 ? Math.round(gfaSqm * 10.7639) : 0;
-      setDdaLandHover({
+      setDdaLandCard({
         x: e.point.x, y: e.point.y,
         plotNumber: (pr.plotNumber as string) ?? "",
         mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
@@ -4172,23 +4175,10 @@ function ParcelsMapPageInner() {
         municipality: (pr.municipality as string) ?? "",
         district: (pr.district as string) ?? "",
       });
-      // Kill the shared boundary native popup too (see ZAAHI handler).
       popupRef.current?.remove();
-    });
-    // Delayed close — the hover card now has interactive content ("+"
-    // button), so leaving the PMTiles polygon shouldn't instantly kill
-    // the popup. 220ms window matches the zaahiHover pattern and is
-    // cancellable by the popup's onMouseEnter.
-    bindLayerEvent(map, "mouseleave", fillId, () => {
-      map.getCanvas().style.cursor = "";
-      if (hoverCloseTimerRef.current != null) {
-        window.clearTimeout(hoverCloseTimerRef.current);
-      }
-      hoverCloseTimerRef.current = window.setTimeout(() => {
-        setDdaLandHover(null);
-        hoverCloseTimerRef.current = null;
-      }, 220);
-    });
+    };
+    bindLayerEvent(map, "click", fillId, ddaClick);
+    bindLayerEvent(map, "click", extId, ddaClick);
   }
 
   function setLandTileVisibility(map: MLMap, fillId: string, lineId: string, extId: string, on: boolean) {
@@ -4588,77 +4578,27 @@ function ParcelsMapPageInner() {
         const id = f?.properties?.id as string | undefined;
         if (id) setSelectedVaultEntry({ id, mode: "share" });
       });
-      // Hover popup parity with ZAAHI listings (founder spec 2026-05-30).
-      // Mirrors the ZAAHI mousemove handler at ZAAHI_PLOTS_FILL: card
-      // shows projectName / plotNumber, plot area, max GFA, FAR, max
-      // height, plan date + asking price (vault) instead of total price.
-      const vaultMove = (mode: "owner" | "share") =>
-        (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-          const f = e.features?.[0];
-          if (!f) return;
-          // Priority: ZAAHI listings outrank the shared-vault popup.
-          // If the cursor is also on a ZAAHI plot, defer to that handler.
-          if (map.getLayer(ZAAHI_PLOTS_FILL)) {
-            const upper = map.queryRenderedFeatures(e.point, {
-              layers: [ZAAHI_PLOTS_FILL],
-            });
-            if (upper.length > 0) {
-              setVaultHover(null);
-              return;
-            }
-          }
-          if (hoverCloseTimerRef.current != null) {
-            window.clearTimeout(hoverCloseTimerRef.current);
-            hoverCloseTimerRef.current = null;
-          }
-          map.getCanvas().style.cursor = "pointer";
-          // Symmetric hover dedup — see PMTiles handler for the race
-          // explanation. Vault clears ZAAHI for the same reason: an
-          // adjacent ZAAHI listing's close timer may have been killed
-          // by the shared hoverCloseTimerRef just above.
-          setZaahiHover(null);
-          const p = f.properties as Record<string, unknown>;
-          const id = typeof p.id === "string" ? p.id : "";
-          const fils = typeof p.askingPriceFils === "string" ? p.askingPriceFils : null;
-          const askingAed = fils ? Math.floor(Number(fils) / 100) : null;
-          setVaultHover({
-            x: e.point.x,
-            y: e.point.y,
-            id,
-            plotNumber: typeof p.plotNumber === "string" ? p.plotNumber : "",
-            district: typeof p.district === "string" ? p.district : "",
-            landUse: typeof p.landUse === "string" ? p.landUse : "",
-            projectName: typeof p.projectName === "string" ? p.projectName : "",
-            askingAed,
-            area: typeof p.area === "number" ? p.area : 0,
-            plotAreaSqft: typeof p.plotAreaSqft === "number" ? p.plotAreaSqft : 0,
-            maxGfaSqft: typeof p.maxGfaSqft === "number" ? p.maxGfaSqft : 0,
-            maxFloors: typeof p.maxFloors === "number" ? p.maxFloors : 0,
-            maxHeightMeters: typeof p.maxHeightMeters === "number" ? p.maxHeightMeters : 0,
-            maxHeightCode: typeof p.maxHeightCode === "string" ? p.maxHeightCode : "",
-            far: typeof p.far === "number" ? p.far : 0,
-            planDateIso: typeof p.planDateIso === "string" ? p.planDateIso : "",
-            mode,
-          });
-          // Shared-vault popup wins over PMTiles for the same cursor frame.
-          setDdaLandHover(null);
-          // Kill the shared boundary native popup too (see ZAAHI handler).
-          popupRef.current?.remove();
-        };
+      // backlog #9 — hover lights the shared-vault plot via feature-state
+      // (no card). Click still opens the VaultSidePanelAdapter (handler
+      // above). ZAAHI listings outrank vault for the same cursor frame.
+      const vaultMove = (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
+        const f = e.features?.[0];
+        if (!f) return;
+        if (map.getLayer(ZAAHI_PLOTS_FILL)) {
+          const upper = map.queryRenderedFeatures(e.point, { layers: [ZAAHI_PLOTS_FILL] });
+          if (upper.length > 0) { clearPlotHover(map); return; }
+        }
+        map.getCanvas().style.cursor = "pointer";
+        setPlotHover(map, VAULT_SHARED_SRC, undefined, f.id ?? "");
+        popupRef.current?.remove();
+      };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
-        if (hoverCloseTimerRef.current != null) {
-          window.clearTimeout(hoverCloseTimerRef.current);
-        }
-        hoverCloseTimerRef.current = window.setTimeout(() => {
-          setVaultHover(null);
-          hoverCloseTimerRef.current = null;
-        }, 220);
+        clearPlotHover(map);
       };
-      // Owner-side hover flows through the ZAAHI_PLOTS_FILL mousemove
-      // handler (Phase 3 unification). Shared layer keeps its own.
-      bindLayerEvent(map, "mousemove", VAULT_SHARED_3D, vaultMove("share") as (e: unknown) => void);
-      bindLayerEvent(map, "mouseleave", VAULT_SHARED_3D, vaultLeave as (e: unknown) => void);
+      bindLayerEvent(map, "mousemove", VAULT_SHARED_3D, vaultMove);
+      bindLayerEvent(map, "mouseleave", VAULT_SHARED_3D, vaultLeave);
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
@@ -4680,88 +4620,16 @@ function ParcelsMapPageInner() {
           const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
           const f = e.features?.[0];
           if (!f) return;
-          // Cancel any scheduled close — we're back on a polygon.
-          if (hoverCloseTimerRef.current != null) {
-            window.clearTimeout(hoverCloseTimerRef.current);
-            hoverCloseTimerRef.current = null;
-          }
+          // backlog #9 — light the listing outline via feature-state; no
+          // card. Click (handler below) still opens the SidePanel.
           map.getCanvas().style.cursor = "pointer";
-          const p = f.properties as {
-            id?: string;
-            plotNumber: string;
-            district: string;
-            emirate: string;
-            area: number;
-            priceAed: number | null;
-            landUse: string;
-            projectName?: string;
-            plotAreaSqm?: number;
-            plotAreaSqft?: number;
-            maxGfaSqm?: number;
-            maxGfaSqft?: number;
-            maxFloors?: number;
-            maxHeightMeters?: number;
-            maxHeightCode?: string;
-            far?: number;
-            planDateIso?: string;
-          };
-          // Polygon centroid (mean of outer-ring vertices). Used for the
-          // click-flyTo destination — falls back to the cursor lngLat
-          // when the geometry isn't a Polygon (vector-tile fragmentation
-          // can yield MultiPolygon at parcel boundaries).
-          let cLng = e.lngLat.lng, cLat = e.lngLat.lat;
-          const g = f.geometry;
-          if (g && g.type === "Polygon" && g.coordinates[0]?.length > 0) {
-            const ring = g.coordinates[0];
-            cLng = ring.reduce((s, q) => s + q[0], 0) / ring.length;
-            cLat = ring.reduce((s, q) => s + q[1], 0) / ring.length;
-          }
-          setZaahiHover({
-            x: e.point.x,
-            y: e.point.y,
-            id: p.id ?? "",
-            lng: cLng,
-            lat: cLat,
-            plotNumber: p.plotNumber,
-            district: p.district,
-            emirate: p.emirate ?? "",
-            area: p.area,
-            priceAed: p.priceAed,
-            landUse: p.landUse,
-            projectName: p.projectName ?? "",
-            plotAreaSqm: p.plotAreaSqm ?? 0,
-            plotAreaSqft: p.plotAreaSqft ?? 0,
-            maxGfaSqm: p.maxGfaSqm ?? 0,
-            maxGfaSqft: p.maxGfaSqft ?? 0,
-            maxFloors: p.maxFloors ?? 0,
-            maxHeightMeters: p.maxHeightMeters ?? 0,
-            maxHeightCode: p.maxHeightCode ?? "",
-            far: p.far ?? 0,
-            planDateIso: p.planDateIso ?? "",
-          });
-          // ZAAHI listings take priority — drop any PMTiles / shared-vault
-          // popup that fired for the same cursor frame so only one card
-          // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
-          setDdaLandHover(null);
-          setVaultHover(null);
-          // Also kill the shared maplibre Popup if a boundary FILL layer
-          // (DDA Projects / Communities / AD muni-dist-comm / FZ) had
-          // attached its name-label popup at the same cursor point. The
-          // detailed JSX card always wins over the one-line boundary tag.
+          setPlotHover(map, ZAAHI_PLOTS_SRC, undefined, f.id ?? "");
+          // Kill any boundary name popup that fired for the same frame.
           popupRef.current?.remove();
         });
         bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
           map.getCanvas().style.cursor = "";
-          // Defer close ~220 ms so the cursor can transit onto the now
-          // clickable card without it vanishing. Card's onMouseEnter
-          // cancels the timer; onMouseLeave closes immediately.
-          if (hoverCloseTimerRef.current != null) {
-            window.clearTimeout(hoverCloseTimerRef.current);
-          }
-          hoverCloseTimerRef.current = window.setTimeout(() => {
-            setZaahiHover(null);
-            hoverCloseTimerRef.current = null;
-          }, 220);
+          clearPlotHover(map);
         });
         bindLayerEvent(map, "click", ZAAHI_PLOTS_FILL, (e0: unknown) => {
           const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
@@ -6485,208 +6353,24 @@ function ParcelsMapPageInner() {
           opacity: 1;
         }
       `}</style>
-      {!selectedParcelId && !selectedVaultEntry && zaahiHover && (() => {
-        const title = zaahiHover.projectName || zaahiHover.plotNumber;
+      {!selectedParcelId && !selectedVaultEntry && ddaLandCard && (() => {
+        const m = ddaLandCard.municipality;
         const authority =
-          zaahiHover.emirate === "Dubai" ? "DDA"
-          : zaahiHover.emirate === "Abu Dhabi" ? "ADDED"
+          ddaLandCard.source === "dda" ? "DDA"
+          : ddaLandCard.source === "ad" && m === "ADM" ? "ADM"
+          : ddaLandCard.source === "ad" && m === "AAM" ? "AAM"
+          : ddaLandCard.source === "ad" ? "AD"
           : "";
-        const hasPlotArea = zaahiHover.plotAreaSqft > 0 || zaahiHover.plotAreaSqm > 0;
-        const hasGfa = zaahiHover.maxGfaSqft > 0 || zaahiHover.maxGfaSqm > 0;
-        const hasFar = zaahiHover.far > 0;
-        const hasHeight = !!zaahiHover.maxHeightCode || zaahiHover.maxFloors > 0 || zaahiHover.maxHeightMeters > 0;
-        const heightParts: string[] = [];
-        if (zaahiHover.maxHeightCode) heightParts.push(zaahiHover.maxHeightCode);
-        if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
-        if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
-        const planDate = formatPlanDate(zaahiHover.planDateIso);
-        // Physical status (Under Construction / Completed / etc.) is not
-        // stored on Parcel or AffectionPlan today — only Parcel.status
-        // (ParcelStatus enum) which is the marketplace listing state, and
-        // Building.status (separate table, not joined here). Row omitted
-        // until schema gains a physical-status field or Parcel↔Building FK.
-        const handleOpenParcel = () => {
-          const map = mapRef.current;
-          if (!map || !zaahiHover.id) return;
-          map.flyTo({
-            center: [zaahiHover.lng, zaahiHover.lat],
-            zoom: 16, pitch: 45, duration: 2000, essential: true,
-          });
-          // Mirror HeaderBar Find handshake (page.tsx ~6155) — open the
-          // right SidePanel after the camera lands, not during flight.
-          window.setTimeout(() => {
-            setSelectedParcelId(zaahiHover.id);
-          }, 2000);
-          setZaahiHover(null);
-        };
+        const status = formatPmtilesStatus(ddaLandCard.status);
+        const canAdd = /^\d{5,10}$/.test(ddaLandCard.plotNumber);
         return (
           <Panel
             radius={RADIUS_CARD}
             noShadow
             style={{
               position: "absolute",
-              left: zaahiHover.x + 14,
-              top: zaahiHover.y + 14,
-              width: 260,
-              // Gold left-border accent kept — distinguishes ZAAHI
-              // listings from PMTiles (blue) and vault (gold variant).
-              borderLeft: `3px solid ${GOLD}`,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-              padding: "10px 12px",
-              fontSize: 11,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              lineHeight: 1.45,
-              pointerEvents: "auto",
-              cursor: "pointer",
-              zIndex: 30,
-            }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => setZaahiHover(null)}
-            onClick={handleOpenParcel}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {title}
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                {authority && (
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                  }}>{authority}</span>
-                )}
-                {!!zaahiHover.plotNumber && /^\d{5,10}$/.test(zaahiHover.plotNumber) && (
-                  <VaultAddButton
-                    plotNumber={zaahiHover.plotNumber}
-                    onClick={() => openVaultWizardWith(zaahiHover.plotNumber)}
-                  />
-                )}
-              </span>
-            </div>
-            {hasPlotArea && (
-              <PmtilesHoverRow label="Plot Area"
-                value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />
-            )}
-            {hasGfa && (
-              <PmtilesHoverRow label="Max GFA"
-                value={fmtA(zaahiHover.maxGfaSqft, zaahiHover.maxGfaSqm) ?? "—"} />
-            )}
-            {hasFar && (
-              <PmtilesHoverRow label="FAR" value={zaahiHover.far.toFixed(1)} />
-            )}
-            {hasHeight && (
-              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
-            )}
-            {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
-            )}
-            {/* Add-to-Vault button moved to the header row (top-right
-                "+" icon) as part of the founder spec 2026-05-31. The
-                openVaultWizardWith helper handles auth-redirect, popup
-                close, and plot pre-fill. */}
-          </Panel>
-        );
-      })()}
-      {!selectedParcelId && !selectedVaultEntry && vaultHover && (() => {
-        const title = vaultHover.projectName || vaultHover.plotNumber;
-        const hasPlotArea = vaultHover.plotAreaSqft > 0 || vaultHover.area > 0;
-        const hasGfa = vaultHover.maxGfaSqft > 0;
-        const hasFar = vaultHover.far > 0;
-        const hasHeight = !!vaultHover.maxHeightCode || vaultHover.maxFloors > 0 || vaultHover.maxHeightMeters > 0;
-        const heightParts: string[] = [];
-        if (vaultHover.maxHeightCode) heightParts.push(vaultHover.maxHeightCode);
-        if (vaultHover.maxFloors > 0) heightParts.push(`${vaultHover.maxFloors} floors`);
-        if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
-        const planDate = formatPlanDate(vaultHover.planDateIso);
-        const handleOpen = () => {
-          if (vaultHover.id) setSelectedVaultEntry({ id: vaultHover.id, mode: vaultHover.mode });
-          setVaultHover(null);
-        };
-        return (
-          <Panel
-            radius={RADIUS_CARD}
-            noShadow
-            style={{
-              position: "absolute",
-              left: vaultHover.x + 14,
-              top: vaultHover.y + 14,
-              width: 260,
-              borderLeft: `3px solid ${GOLD}`,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-              padding: "10px 12px",
-              fontSize: 11,
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              lineHeight: 1.45,
-              pointerEvents: "auto",
-              cursor: "pointer",
-              zIndex: 30,
-            }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => setVaultHover(null)}
-            onClick={handleOpen}
-          >
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontWeight: 700, color: GOLD, fontSize: 13 }}>
-                {title}
-              </span>
-              <span style={{
-                fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-                letterSpacing: "0.06em", textTransform: "uppercase",
-              }}>
-                {vaultHover.mode === "share" ? "SHARED" : "VAULT"}
-              </span>
-            </div>
-            {hasPlotArea && (
-              <PmtilesHoverRow label="Plot Area"
-                value={fmtA(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area, null) ?? "—"} />
-            )}
-            {hasGfa && (
-              <PmtilesHoverRow label="Max GFA" value={fmtA(vaultHover.maxGfaSqft, null) ?? "—"} />
-            )}
-            {hasFar && (
-              <PmtilesHoverRow label="FAR" value={vaultHover.far.toFixed(1)} />
-            )}
-            {hasHeight && (
-              <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
-            )}
-            {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
-            )}
-            <PmtilesHoverRow
-              label="Asking Price"
-              value={fmtPShort(vaultHover.askingAed) ?? "—"}
-            />
-          </Panel>
-        );
-      })()}
-      {!selectedParcelId && !selectedVaultEntry && ddaLandHover && (() => {
-        const m = ddaLandHover.municipality;
-        const authority =
-          ddaLandHover.source === "dda" ? "DDA"
-          : ddaLandHover.source === "ad" && m === "ADM" ? "ADM"
-          : ddaLandHover.source === "ad" && m === "AAM" ? "AAM"
-          : ddaLandHover.source === "ad" ? "AD"
-          : "";
-        const status = formatPmtilesStatus(ddaLandHover.status);
-        const canAdd = /^\d{5,10}$/.test(ddaLandHover.plotNumber);
-        return (
-          <Panel
-            radius={RADIUS_CARD}
-            noShadow
-            style={{
-              position: "absolute",
-              left: ddaLandHover.x + 14,
-              top: ddaLandHover.y + 14,
+              left: ddaLandCard.x + 14,
+              top: ddaLandCard.y + 14,
               width: 250,
               // PMTiles plots use a blue left-border accent — visually
               // distinct from the gold-borderLeft ZAAHI listing card.
@@ -6701,25 +6385,10 @@ function ParcelsMapPageInner() {
               pointerEvents: "auto",
               zIndex: 30,
             }}
-            onMouseEnter={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-                hoverCloseTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => {
-              if (hoverCloseTimerRef.current != null) {
-                window.clearTimeout(hoverCloseTimerRef.current);
-              }
-              hoverCloseTimerRef.current = window.setTimeout(() => {
-                setDdaLandHover(null);
-                hoverCloseTimerRef.current = null;
-              }, 220);
-            }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontWeight: 700, color: "#4A90D9", fontSize: 13, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {ddaLandHover.plotNumber || "—"}
+                {ddaLandCard.plotNumber || "—"}
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
               {authority && (
@@ -6730,22 +6399,31 @@ function ParcelsMapPageInner() {
               )}
               {canAdd && (
                 <VaultAddButton
-                  plotNumber={ddaLandHover.plotNumber}
-                  onClick={() => openVaultWizardWith(ddaLandHover.plotNumber)}
+                  plotNumber={ddaLandCard.plotNumber}
+                  onClick={() => openVaultWizardWith(ddaLandCard.plotNumber)}
                 />
               )}
+              {/* backlog #9 — click card needs an explicit close. */}
+              <button
+                onClick={() => setDdaLandCard(null)}
+                aria-label="Close"
+                style={{
+                  background: "transparent", border: "none", color: "rgba(255,255,255,0.6)",
+                  cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 0, fontFamily: "inherit",
+                }}
+              >×</button>
               </span>
             </div>
-            {ddaLandHover.mainLandUse && (
+            {ddaLandCard.mainLandUse && (
               <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
-                {ddaLandHover.mainLandUse}
+                {ddaLandCard.mainLandUse}
               </div>
             )}
             <PmtilesHoverRow label="Plot Area"
-              value={fmtA(ddaLandHover.areaSqft, ddaLandHover.areaSqm) ?? "—"} />
-            {ddaLandHover.gfaSqm > 0 && (
+              value={fmtA(ddaLandCard.areaSqft, ddaLandCard.areaSqm) ?? "—"} />
+            {ddaLandCard.gfaSqm > 0 && (
               <PmtilesHoverRow label="Max GFA"
-                value={fmtA(ddaLandHover.gfaSqft, ddaLandHover.gfaSqm) ?? "—"} />
+                value={fmtA(ddaLandCard.gfaSqft, ddaLandCard.gfaSqm) ?? "—"} />
             )}
             {/* Max Height + Affection Plan rows intentionally omitted —
                 neither field is emitted by scripts/prepare-tiles.ts into
@@ -6898,7 +6576,7 @@ function VaultAddButton({
   );
 }
 
-// One small row of label + value, used inside the ddaLandHover popup
+// One small row of label + value, used inside the ddaLandCard popup
 // JSX. Style mirrors the rest of the hover card (Georgia / SF Mono).
 function PmtilesHoverRow({ label, value }: { label: string; value: string }) {
   // Phase A 2026-05-31: dropped the SF Mono monospace stack — it
