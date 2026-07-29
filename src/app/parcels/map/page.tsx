@@ -52,6 +52,72 @@ import { installAutoRotate, type AutoRotateController } from "@/lib/auto-rotate"
 import { installKeyboardNav, type KeyboardNavController } from "@/lib/keyboard-nav";
 import { emitSignatureTiers, type SetbackEntry } from "@/lib/zaahi-3d-tiers";
 import {
+  installArchetypeLayer,
+  type ArchetypeBuildingInput,
+  type ArchetypeLayerController,
+} from "@/lib/archetypes/archetype-layer";
+
+// research/landuse-archetypes — `?archetypes=1` renders ZAAHI listings as
+// per-land-use morphology massing via a Three.js CustomLayer. Default off →
+// prod unchanged. The flag is read LIVE from window.location.search inside
+// loadZaahiPlots (+ localStorage fallback seeded at mount) — never via a
+// memo/SSR value, per the Signature §10 stale-flag lesson.
+// LOD: the residential Three.js massing only renders at/above this zoom. Below
+// it the archetype is hidden and residential falls back to the normal
+// fill-extrusion (no double-render, no far-zoom perspective overhang).
+const ARCHETYPE_MIN_ZOOM = 14;
+
+// VARIANT A (2026-06-13): on a Vercel PREVIEW deployment the SSO auth redirect
+// strips `?archetypes=1` before React mounts, so the query never survives. So on
+// preview hosts the archetype massing defaults ON (no flag needed) for review.
+// PROD stays hard-OFF: the allow-list matches ONLY the auto-generated preview
+// hostnames `*-zaahiplots-projects.vercel.app` — never the prod aliases
+// zaahi.io / www.zaahi.io / zaahi.vercel.app. `?archetypes=0` / the Layers
+// toggle (Variant B) override via localStorage.
+function isArchetypePreviewHost(): boolean {
+  try {
+    return window.location.hostname.endsWith("-zaahiplots-projects.vercel.app");
+  } catch {
+    return false;
+  }
+}
+
+/** localStorage key backing the Layers-panel archetype toggle (Variant B). */
+const ARCHETYPE_STORAGE_KEY = "zaahi-archetypes";
+
+/**
+ * Single source of truth for the archetype flag. Both the Layers-panel toggle's
+ * initial state and loadZaahiPlots read THIS — splitting the two is the
+ * Signature §10 stale-flag class of bug the branch already fought once.
+ *
+ * Precedence: explicit `?archetypes=1/0` → localStorage (the Layers toggle) →
+ * preview-host default ON → prod OFF. The query can't be relied on (Vercel SSO
+ * strips it before React mounts) so it's only the top override.
+ */
+function resolveArchetypeFlag(): { on: boolean; via: string } {
+  try {
+    const search =
+      typeof window !== "undefined" && window.location ? window.location.search : "";
+    const v = new URLSearchParams(search).get("archetypes");
+    let stored: string | null = null;
+    try { stored = window.localStorage.getItem(ARCHETYPE_STORAGE_KEY); } catch { /* ignore */ }
+    if (v === "1") {
+      try { window.localStorage.setItem(ARCHETYPE_STORAGE_KEY, "1"); } catch { /* ignore */ }
+      return { on: true, via: "query-on" };
+    }
+    if (v === "0") {
+      try { window.localStorage.setItem(ARCHETYPE_STORAGE_KEY, "0"); } catch { /* ignore */ }
+      return { on: false, via: "query-off" };
+    }
+    if (stored === "1") return { on: true, via: "localStorage-on" };
+    if (stored === "0") return { on: false, via: "localStorage-off" };
+    const preview = isArchetypePreviewHost();
+    return { on: preview, via: preview ? "preview-default-ON" : "prod-default-OFF" };
+  } catch {
+    return { on: false, via: "error-default-OFF" };
+  }
+}
+import {
   HERO_BUILDINGS,
   HERO_OVERRIDES_STORAGE_KEY,
   effectiveValues,
@@ -291,8 +357,8 @@ const ZAAHI_LANDUSE_COLOR: Record<string, string> = {
   RESIDENTIAL: "#2D6A4F",         // green
   COMMERCIAL: "#1B3A5C",          // navy
   MIXED_USE: "#6B4C9A",           // purple
-  HOTEL: "#7B1E2B",               // burgundy
-  HOSPITALITY: "#7B1E2B",         // burgundy (alias)
+  HOTEL: "#E8732A",               // carrot orange (founder 2026-06-15)
+  HOSPITALITY: "#E8732A",         // carrot orange (alias)
   INDUSTRIAL: "#495057",          // gray
   WAREHOUSE: "#495057",           // gray (alias)
   EDUCATIONAL: "#0077B6",         // sky blue
@@ -366,22 +432,31 @@ function bindGlobalMapEvent(
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
   const sel = selectedId ?? "__none__";
+  // When the residential archetype layer is active, residential renders as ONE
+  // solid Three.js model — extinguish its translucent flat plot-fill so nothing
+  // ghosts under/around it (founder 2026-06-14). Click/hover still work (an
+  // opacity-0 fill is still query-hit-testable). Other land-uses unchanged.
+  const archOn = !!(map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive;
+  const hideRes = (inner: unknown): unknown =>
+    archOn
+      ? ["case", ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], true, false], 0, inner]
+      : inner;
   // Plot fill: bright on selected, dim on others when selection is
   // active. Outline-only parcels (hasLandUse === false) ALWAYS render
   // with fill-opacity 0 — selection state must not give them a fill.
   if (selectedId) {
-    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", hideRes([
       "case",
       ["!=", ["get", "hasLandUse"], true], 0,
       ["==", ["get", "id"], sel], 0.85,
       0.08,
-    ]);
+    ]) as never);
   } else {
-    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", [
+    map.setPaintProperty(ZAAHI_PLOTS_FILL, "fill-opacity", hideRes([
       "case",
       ["==", ["get", "hasLandUse"], true], 0.4,
       0,
-    ]);
+    ]) as never);
   }
   // Outline: thick + fully opaque on selected, thin + dim elsewhere so
   // neighbours recede visually.
@@ -420,6 +495,10 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
       map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-color", ["get", "color"]);
     }
   }
+  // Archetype CustomLayer selection parity (?archetypes=1) — desaturate
+  // non-selected morphologies. Controller is stashed on the map handle.
+  const ac = (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes;
+  ac?.setSelected(selectedId);
 }
 
 /**
@@ -1637,6 +1716,44 @@ function detectCountryFromLngLat(lng: number, lat: number): LayerCountry {
 function ParcelsMapPageInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  // ?archetypes=1 — Three.js morphology CustomLayer controller (lazily
+  // installed inside loadZaahiPlots). Null when the flag is off.
+  const archetypeCtrlRef = useRef<ArchetypeLayerController | null>(null);
+  // True while the residential archetype layer is active (preview/flag). Used
+  // so reapplyMapFilters keeps residential excluded from the fill-extrusion.
+  const archetypeActiveRef = useRef<boolean>(false);
+  // Layers-panel toggle state (Variant B). Mirrors resolveArchetypeFlag() so
+  // the checkbox reflects whatever loadZaahiPlots actually applied. Starts
+  // false on the server and is reconciled at mount — reading localStorage in
+  // the initialiser would desync SSR and client HTML.
+  const [archetypesOn, setArchetypesOn] = useState(false);
+  // Seed the archetypes flag at mount, when window.location.search is freshest
+  // (before any auth/SSO redirect can strip the query, and before
+  // loadZaahiPlots reads it). Persisted to localStorage so the flag survives
+  // the redirect dance. `?archetypes=0` turns it off again.
+  useEffect(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get("archetypes");
+      if (v === "1") window.localStorage.setItem(ARCHETYPE_STORAGE_KEY, "1");
+      else if (v === "0") window.localStorage.removeItem(ARCHETYPE_STORAGE_KEY);
+      console.log("[ZAAHI archetypes] mount seed: search=", JSON.stringify(window.location.search), "· stored=", window.localStorage.getItem(ARCHETYPE_STORAGE_KEY));
+      setArchetypesOn(resolveArchetypeFlag().on);
+    } catch { /* ignore */ }
+  }, []);
+  // Layers-panel toggle handler. Persists the choice, then re-runs
+  // loadZaahiPlots: turning the flag ON from a cold prod session has no
+  // controller yet (installArchetypeLayer sits behind the `if (arFlag)` gate)
+  // and archetypeInputs are computed inside loadZaahiPlots, so a re-run is the
+  // only way to install + feed the layer. Turning it OFF falls into the new
+  // else-branch there, which tears the overlay down and restores Signature.
+  const handleArchetypesToggle = (next: boolean) => {
+    setArchetypesOn(next);
+    try {
+      window.localStorage.setItem(ARCHETYPE_STORAGE_KEY, next ? "1" : "0");
+    } catch { /* ignore */ }
+    const map = mapRef.current;
+    if (map) void loadZaahiPlots(map);
+  };
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
@@ -1979,6 +2096,12 @@ function ParcelsMapPageInner() {
   // live wall-clock time.
   const [sunSliderActive, setSunSliderActive] = useState(false);
   useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
+  // Drive the archetype CustomLayer's directional sun from the SAME override the
+  // sun slider feeds MapLibre's native light → archetypes self-shadow + react to
+  // the sun toggle exactly like the fill-extrusion 3D (founder 2026-06-15).
+  useEffect(() => {
+    archetypeCtrlRef.current?.setSun(sunTimeOverride);
+  }, [sunTimeOverride, mapStyleReady]);
 
   // 2026-06-10 (founder backlog follow-up): live count of vault entries
   // OTHER users have shared with the caller. Drives the "Shared with me"
@@ -3243,6 +3366,10 @@ function ParcelsMapPageInner() {
 
       const plotFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
+      // ?archetypes=1 — per-land-use morphology massing fed to the Three.js
+      // CustomLayer at the end of this function. Accumulated alongside the
+      // fill-extrusion features; empty + ignored when the flag is off.
+      const archetypeInputs: ArchetypeBuildingInput[] = [];
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
         const aed = it.currentValuation ? Math.floor(Number(it.currentValuation) / 100) : null;
@@ -3357,6 +3484,23 @@ function ParcelsMapPageInner() {
         }
 
         const buildingHex = ZAAHI_LANDUSE_COLOR[landUse] ?? ZAAHI_DEFAULT_COLOR;
+
+        // Archetype massing input — RESIDENTIAL + MIXED_USE + HOTEL + COMMERCIAL
+        // (founder approved; 2026-06-13/14/15). All other land-uses are
+        // intentionally NOT added → they stay on the existing fill-extrusion path
+        // unchanged. Same footprint ring + height the fill-extrusion would use.
+        if (landUse === "RESIDENTIAL" || landUse === "MIXED_USE" || landUse === "HOTEL" || landUse === "COMMERCIAL" || landUse === "EDUCATIONAL" || landUse === "HEALTHCARE" || landUse === "INDUSTRIAL" || landUse === "AGRICULTURAL" || landUse === "FUTURE_DEVELOPMENT" || landUse === "INVESTMENT") {
+          archetypeInputs.push({
+            parcelId: it.id,
+            footprint: footprintRing,
+            plot: plotRing,
+            landUse,
+            colorHex: buildingHex,
+            totalH,
+            isVault: it.isVault,
+            status: it.status,
+          });
+        }
 
         // ── ZAAHI Signature stepped 3D ──
         // Each building is 1, 2, or 3 features depending on height:
@@ -3577,6 +3721,90 @@ function ParcelsMapPageInner() {
         }
       }
 
+      // ── Archetype morphology layer (?archetypes=1) ──────────────────
+      // RESIDENTIAL ONLY (founder 2026-06-13): residential listings/vault plots
+      // render as Three.js morphology massing (reuses the proven BuildingGlbLayer
+      // / signature three-layer matrix + framebuffer pattern); residential is
+      // excluded from the fill-extrusion so it doesn't double-render. Every
+      // other land-use stays on the existing fill-extrusion, untouched.
+      // Default-off in prod (hostname allow-list).
+      // Flag read LIVE from the URL at call time (Signature §10 lesson: never
+      // via memo/SSR). localStorage fallback survives any auth/SSO redirect that
+      // strips the query before loadZaahiPlots runs (also seeded at mount, see
+      // the archetypes-flag useEffect). `?archetypes=0` clears it.
+      // Resolve precedence: explicit ?archetypes=1/0 → localStorage toggle
+      // (Variant B) → preview-host default ON (Variant A) → prod OFF. The query
+      // can't be relied on (SSO strips it) so it's only the top override.
+      const arSearch =
+        typeof window !== "undefined" && window.location ? window.location.search : "";
+      const { on: arFlag, via: arVia } = resolveArchetypeFlag();
+      // Keep the panel toggle in step when the flag came from the query or the
+      // preview-host default (the toggle itself already sets this state).
+      setArchetypesOn(arFlag);
+      // ALWAYS log (before the gate) so flag activation is observable.
+      console.log(
+        "[ZAAHI archetypes] flag check: search=", JSON.stringify(arSearch),
+        "· result=", arFlag, "· via=", arVia,
+        "· host=", (typeof window !== "undefined" ? window.location.hostname : ""),
+        "· zoom=", map.getZoom().toFixed(1),
+      );
+      archetypeActiveRef.current = arFlag;
+      // Flag read by applySelectionPaint to extinguish the residential flat
+      // plot-fill ghost under the solid model (founder 2026-06-14, one layer).
+      (map as unknown as { __zaahiArchetypeActive?: boolean }).__zaahiArchetypeActive = arFlag;
+      if (arFlag) {
+        // Founder 2026-06-13/14: RESIDENTIAL + MIXED_USE render as archetype
+        // morphology. archetypeInputs is already filtered to those two upstream;
+        // every other land-use keeps the existing fill-extrusion, untouched.
+        console.log("[ZAAHI archetypes] ON (RESIDENTIAL+MIXED_USE) · inputs:", archetypeInputs.length);
+        if (!archetypeCtrlRef.current) {
+          const ctrl = installArchetypeLayer(map);
+          archetypeCtrlRef.current = ctrl;
+          (map as unknown as { __zaahiArchetypes?: ArchetypeLayerController }).__zaahiArchetypes = ctrl;
+          // LOD: show the Three.js massing only at zoom >= ARCHETYPE_MIN_ZOOM
+          // and exclude residential from the fill-extrusion only then (else
+          // residential renders normally as fill-extrusion). No double-render.
+          const applyArchetypeLod = () => {
+            const show = archetypeActiveRef.current && map.getZoom() >= ARCHETYPE_MIN_ZOOM;
+            archetypeCtrlRef.current?.setEnabled(show);
+            if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+              const base = buildZaahiFilter();
+              map.setFilter(
+                ZAAHI_BUILDINGS_3D,
+                show
+                  ? (["all", base, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], false, true]] as FilterSpecification)
+                  : base,
+              );
+            }
+          };
+          map.on("zoom", applyArchetypeLod);
+          (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod = applyArchetypeLod;
+        }
+        archetypeCtrlRef.current.setBuildings(archetypeInputs);
+        // Apply LOD now (sets enabled + residential exclusion per current zoom).
+        (map as unknown as { __zaahiArchetypeLod?: () => void }).__zaahiArchetypeLod?.();
+        // Re-apply the plot-fill paint now that the archetype flag is set so the
+        // residential flat-fill ghost is extinguished on first paint (no
+        // selection yet → null). ZAAHI_PLOTS_FILL stays click/hover-able.
+        applySelectionPaint(map, selectedParcelId);
+      } else if (archetypeCtrlRef.current) {
+        // OFF branch (Layers toggle turned the flag off after the layer was
+        // already installed). Without this the Three.js models stayed drawn
+        // and ZAAHI_BUILDINGS_3D stayed filtered — i.e. the archetype hid the
+        // Signature extrusion but rendered nothing in its place, and the
+        // translucent plot-fill stayed extinguished (the "ghost" plot).
+        console.log("[ZAAHI archetypes] OFF · tearing down overlay");
+        archetypeCtrlRef.current.setEnabled(false);
+        // Restore the Signature fill-extrusion: drop the land-use exclusion so
+        // podium/body/crown renders for every classified listing again.
+        if (map.getLayer(ZAAHI_BUILDINGS_3D)) {
+          map.setFilter(ZAAHI_BUILDINGS_3D, buildZaahiFilter());
+        }
+        // __zaahiArchetypeActive is already false above, so this repaint
+        // restores the normal translucent plot-fill (no ghost left behind).
+        applySelectionPaint(map, selectedParcelId);
+      }
+
       // ── Vault conflict markers (Phase 3 migration) ──
       // Red dot rendered above polygons where the caller's vault
       // entry conflicts with another user's entry for the same plot.
@@ -3725,8 +3953,34 @@ function ParcelsMapPageInner() {
     const expr = buildZaahiFilter();
     for (const lid of [ZAAHI_PLOTS_FILL, ZAAHI_PLOTS_LINE, ZAAHI_BUILDINGS_3D]) {
       if (map.getLayer(lid)) {
-        map.setFilter(lid, expr);
+        // Exclude residential from the 3D fill-extrusion ONLY while the
+        // archetype massing is actually showing (active AND zoom >= min) —
+        // otherwise residential renders normally as fill-extrusion (LOD).
+        // Plot fill/line keep all types for click/hover/search.
+        if (
+          lid === ZAAHI_BUILDINGS_3D &&
+          archetypeActiveRef.current &&
+          map.getZoom() >= ARCHETYPE_MIN_ZOOM
+        ) {
+          map.setFilter(lid, ["all", expr, ["match", ["get", "landUse"], ["RESIDENTIAL", "MIXED_USE", "HOTEL", "COMMERCIAL", "EDUCATIONAL", "HEALTHCARE", "INDUSTRIAL", "AGRICULTURAL", "FUTURE_DEVELOPMENT", "INVESTMENT"], false, true]] as FilterSpecification);
+        } else {
+          map.setFilter(lid, expr);
+        }
       }
+    }
+    // Archetype layer filter parity (?archetypes=1): reuse the SAME filter
+    // expression via querySourceFeatures (no JS reimplementation) to get the
+    // passing parcelIds, then drive the CustomLayer mesh visibility.
+    const ac = archetypeCtrlRef.current;
+    if (ac && map.getSource(ZAAHI_PLOTS_SRC)) {
+      try {
+        const passing = new Set<string>();
+        for (const feat of map.querySourceFeatures(ZAAHI_PLOTS_SRC, { filter: expr })) {
+          const id = (feat.properties as { id?: string } | null)?.id;
+          if (id) passing.add(id);
+        }
+        ac.setVisibility((pid) => passing.has(pid));
+      } catch { /* querySourceFeatures can throw mid-style-swap — ignore */ }
     }
     // Wave 1: propagate Archie landUse/status filters to PMTiles too.
     // applyZaahiExclusionToTileLayers now composes everything (tier base
@@ -5322,12 +5576,12 @@ function ParcelsMapPageInner() {
     { color: "#2D6A4F", name: "Residential",          desc: "Жилое" },
     { color: "#1B3A5C", name: "Commercial",           desc: "Коммерческое" },
     { color: "#6B4C9A", name: "Mixed Use",            desc: "Смешанное" },
-    { color: "#7B1E2B", name: "Hotel / Hospitality",  desc: "Отельное" },
+    { color: "#E8732A", name: "Hotel / Hospitality",  desc: "Отельное" },
     { color: "#495057", name: "Industrial / Warehouse", desc: "Промышленное" },
     { color: "#0077B6", name: "Educational",          desc: "Образовательное" },
     { color: "#E63946", name: "Healthcare",           desc: "Медицина" },
     { color: "#606C38", name: "Agricultural / Farm",  desc: "Сельскохозяйственное" },
-    { color: "#C8A96E", name: "Future Development",   desc: "Под застройку" },
+    { color: "#A8926E", name: "Future Development",   desc: "Под застройку" },
     { color: "#14B8A6", name: "Investment",           desc: "Инвестиционные (AD off-plan)" },
   ];
 
@@ -6200,6 +6454,33 @@ function ParcelsMapPageInner() {
             on the map unconditionally — the change is purely UI.
             Earlier dynamic-counter commit e1d14fb was also dropped
             during this cleanup since its only render site is now gone. */}
+
+        {/* Land-Use Archetypes — per-land-use 3D building morphology on the
+            ZAAHI listings (Three.js CustomLayer). Prod default-OFF; this row
+            is the user-facing switch (Variant B) that was previously only
+            reachable via ?archetypes=1. Backed by localStorage so the choice
+            survives the auth/SSO redirect that strips the query. */}
+        <div
+          style={{
+            padding: "8px 14px 2px",
+            fontSize: 11,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: GOLD,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontWeight: 700,
+            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+          }}
+        >
+          Listings 3D
+        </div>
+        <LayerToggle
+          label="Land-Use Archetypes"
+          description={`Per-land-use 3D building shapes on ZAAHI listings instead of the default stepped massing. Visible from zoom ${ARCHETYPE_MIN_ZOOM}.`}
+          checked={archetypesOn}
+          onChange={handleArchetypesToggle}
+          color={GOLD}
+        />
 
         {/* Buildings — digital-twin layer (completed + under-construction
             real towers). 2026-06-10: rows with count=0 hide entirely so
