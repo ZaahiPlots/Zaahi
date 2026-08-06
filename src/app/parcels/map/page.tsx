@@ -273,10 +273,22 @@ const ZAAHI_BUILDINGS_3D = "zaahi-plots-buildings-3d";
 // rides its own source/layer — it's a different access path and stays
 // untouched here.
 //
-// Conflict-marker dots ride on the unified ZAAHI source with
-// `isVault && conflictsWithOthers` filter.
+// Conflict-marker dots ride their own Point source, one centroid per
+// conflicting plot — see VAULT_CONFLICT_MARKERS_SRC below.
 const VAULT_SHARED_SRC = "vault-shared-buildings";
 const VAULT_SHARED_3D = "vault-shared-buildings-3d";
+// ── Vault conflict markers — dedicated Point source (2026-08-06 fix) ──
+// The layer used to sit directly on ZAAHI_PLOTS_SRC (a Polygon source)
+// with an `isVault && conflictsWithOthers` filter. MapLibre's CircleBucket
+// emits one circle PER VERTEX of the geometry it is given
+// (`for (const ring of geometry) for (const point of ring)`), so a plot
+// polygon with 40 vertices painted 40 red dots around its outline instead
+// of one marker on the plot. A circle layer is only ever one-dot-per-feature
+// on a Point source, so the markers now get their own source built in
+// loadZaahiPlots: one Point feature per conflicting plot, at the polygon's
+// centroid. Keep this source Point-typed — pointing the layer back at any
+// polygon source resurrects the dotted-outline bug.
+const VAULT_CONFLICT_MARKERS_SRC = "vault-conflict-markers-src";
 const VAULT_CONFLICT_MARKERS_LAYER = "vault-conflict-markers";
 // Land-use legend — APPROVED by founder 2026-04-11. NEVER change without
 // explicit founder approval. 9 canonical categories. The exact same set
@@ -420,6 +432,51 @@ function applySelectionPaint(map: MLMap, selectedId: string | null) {
       map.setPaintProperty(ZAAHI_BUILDINGS_3D, "fill-extrusion-color", ["get", "color"]);
     }
   }
+}
+
+/**
+ * Area-weighted centroid of a polygon's outer ring, in [lng, lat].
+ *
+ * Used to place exactly one vault conflict marker per plot. The shoelace
+ * centroid is preferred over a plain vertex mean because plot rings from DDA
+ * are sampled unevenly — a long edge split into many points would drag a
+ * vertex mean toward that edge. Degenerate rings (zero area, or fewer than
+ * three points) fall back to the vertex mean, which is always defined.
+ *
+ * Ring winding does not matter: the signed area cancels in the division.
+ */
+function ringCentroid(ring: number[][]): [number, number] | null {
+  if (!ring || ring.length === 0) return null;
+  // A closed ring repeats its first point last; drop it so the duplicate
+  // does not get double-weighted in the fallback mean.
+  const pts = ring.length > 1
+    && ring[0][0] === ring[ring.length - 1][0]
+    && ring[0][1] === ring[ring.length - 1][1]
+      ? ring.slice(0, -1)
+      : ring;
+  if (pts.length === 0) return null;
+
+  let twiceArea = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[(i + 1) % pts.length];
+    const cross = x0 * y1 - x1 * y0;
+    twiceArea += cross;
+    cx += (x0 + x1) * cross;
+    cy += (y0 + y1) * cross;
+  }
+
+  if (Math.abs(twiceArea) < 1e-12) {
+    const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+    const my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    return Number.isFinite(mx) && Number.isFinite(my) ? [mx, my] : null;
+  }
+
+  const lng = cx / (3 * twiceArea);
+  const lat = cy / (3 * twiceArea);
+  return Number.isFinite(lng) && Number.isFinite(lat) ? [lng, lat] : null;
 }
 
 /**
@@ -3242,6 +3299,10 @@ function ParcelsMapPageInner() {
       applyZaahiExclusionToTileLayers(map);
 
       const plotFeatures: GeoJSON.Feature[] = [];
+      // One Point per conflicting vault plot, at the plot's centroid.
+      // Fills VAULT_CONFLICT_MARKERS_SRC — see the constant for why the
+      // markers cannot ride the polygon source.
+      const conflictMarkerFeatures: GeoJSON.Feature[] = [];
       const buildingFeatures: GeoJSON.Feature[] = [];
       for (const it of payload.items) {
         if (!it.geometry || it.geometry.type !== "Polygon") continue;
@@ -3277,8 +3338,9 @@ function ParcelsMapPageInner() {
             maxHeightCode: it.plan?.maxHeightCode ?? "",
             far: it.plan?.far ?? 0,
             planDateIso: it.plan?.sitePlanIssue ?? it.plan?.fetchedAt ?? "",
-            // Vault branch (Phase 3) — drives click routing + conflict
-            // marker filter + vault-only mode filter.
+            // Vault branch (Phase 3) — drives click routing + vault-only
+            // mode filter. The conflict marker no longer reads these off
+            // this source; it gets its own Point feature below.
             isVault: it.isVault,
             vaultEntryId: it.vaultEntryId,
             conflictsWithOthers: it.conflictsWithOthers,
@@ -3287,6 +3349,24 @@ function ParcelsMapPageInner() {
             status: it.status,
           },
         });
+        // Conflict marker — one centroid Point per conflicting vault plot.
+        // Sits above the `hasLandUse` early-return below on purpose: a vault
+        // entry can conflict while DDA has not classified the plot yet, and
+        // that entry still needs its dot.
+        if (it.isVault && it.conflictsWithOthers) {
+          const centroid = ringCentroid(it.geometry.coordinates[0]);
+          if (centroid) {
+            conflictMarkerFeatures.push({
+              type: "Feature",
+              geometry: { type: "Point", coordinates: centroid },
+              properties: {
+                id: it.id,
+                plotNumber: it.plotNumber,
+                vaultEntryId: it.vaultEntryId,
+              },
+            });
+          }
+        }
         // Skip 3D building generation for parcels without a land use —
         // founder spec: outline only when land use is missing.
         if (!hasLandUse) continue;
@@ -3577,23 +3657,31 @@ function ParcelsMapPageInner() {
         }
       }
 
-      // ── Vault conflict markers (Phase 3 migration) ──
-      // Red dot rendered above polygons where the caller's vault
-      // entry conflicts with another user's entry for the same plot.
-      // Migrated off the old VAULT_MINE_SRC onto ZAAHI_PLOTS_SRC —
-      // one feature per parcel, no tier-multiplication, so the marker
-      // never doubles up. Filter gates on isVault + conflictsWithOthers
-      // so public listings never carry the dot.
+      // ── Vault conflict markers (centroid rendering, 2026-08-06) ──
+      // One red dot per plot where the caller's vault entry conflicts with
+      // another user's entry for the same plot. The features are Points
+      // computed above (one centroid per conflicting plot), so the circle
+      // layer needs no filter and cannot multiply per vertex — see
+      // VAULT_CONFLICT_MARKERS_SRC for the bug this replaces.
+      const markerData: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: conflictMarkerFeatures,
+      };
+      const markerSrc = map.getSource(VAULT_CONFLICT_MARKERS_SRC);
+      if (markerSrc) {
+        // Refresh path (e.g. after a vault add) — data only, layer stays.
+        (markerSrc as maplibregl.GeoJSONSource).setData(markerData);
+      } else {
+        map.addSource(VAULT_CONFLICT_MARKERS_SRC, {
+          type: "geojson",
+          data: markerData,
+        });
+      }
       if (!map.getLayer(VAULT_CONFLICT_MARKERS_LAYER)) {
         map.addLayer({
           id: VAULT_CONFLICT_MARKERS_LAYER,
           type: "circle",
-          source: ZAAHI_PLOTS_SRC,
-          filter: [
-            "all",
-            ["==", ["get", "isVault"], true],
-            ["==", ["get", "conflictsWithOthers"], true],
-          ],
+          source: VAULT_CONFLICT_MARKERS_SRC,
           // v2 fix (founder spec 2026-05-31): markers must hide when
           // vault polygons are hidden, otherwise red dots float on the
           // map where the underlying VAULT_PRIVATE plot was filtered
@@ -5197,8 +5285,10 @@ function ParcelsMapPageInner() {
   // Layer visibility flips O(1) — source is loaded on map-init and
   // stays alive for the page lifetime. Owner-side vault rendering is
   // unified with public listings (Phase 3 2026-05-30) and visibility
-  // is no longer gated on a "My Vault" toggle — the conflict-marker
-  // layer is always visible (filter does the gating).
+  // is no longer gated on a "My Vault" toggle. The conflict-marker layer
+  // is NOT in that group: it is gated on vaultOnlyMode via layout
+  // visibility in the next useEffect (its source carries only conflicting
+  // vault plots, so a filter cannot do that gating for it).
   //
   // Vault-only mode override: when ON, the shared layer is
   // force-visible regardless of the user's per-layer toggle state.
