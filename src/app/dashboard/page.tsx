@@ -1486,7 +1486,7 @@ function Documents() {
           <H1>Documents</H1>
           <Sub>All paperwork attached to your account, organised by type.</Sub>
         </div>
-        <GoldBtn>Upload Document</GoldBtn>
+        <GoldBtn disabled>Upload Document</GoldBtn>
       </div>
       <ComingSoonBanner text="Document management (upload, preview, share links, expiry tracking) — Phase 2. The list below is illustrative placeholder data." />
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
