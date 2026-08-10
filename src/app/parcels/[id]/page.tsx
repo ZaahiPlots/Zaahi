@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { filsToAed } from "@/lib/valuation";
 import MapPreview from "./MapPreview";
 import AreaRow, { AreaInline } from "./AreaRow";
+import DownloadPdfButton from "./DownloadPdfButton";
 
 export const dynamic = "force-dynamic";
 
@@ -51,14 +52,10 @@ export default async function ParcelPage({ params }: { params: Promise<{ id: str
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-amber-400 font-bold">Affection Plan</h2>
             <div className="flex gap-2">
-              <a
-                href={`/api/parcels/${parcel.id}/pdf`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700"
-              >
-                Download Official PDF
-              </a>
+              <DownloadPdfButton
+                parcelId={parcel.id}
+                plotNumber={parcel.plotNumber}
+              />
               {has3d && (
                 <Link
                   href={`/parcels/${parcel.id}/3d`}
