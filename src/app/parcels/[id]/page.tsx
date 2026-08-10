@@ -26,7 +26,6 @@ export default async function ParcelPage({ params }: { params: Promise<{ id: str
   const landUse = (plan?.landUseMix as LandUseJson[] | null) ?? [];
   const plotGeom = parcel.geometry as unknown as GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
   const buildingGeom = (plan?.buildingLimitGeometry as unknown as GeoJSON.Polygon | null) ?? null;
-  const has3d = plan?.maxFloors != null && buildingGeom != null;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -56,14 +55,6 @@ export default async function ParcelPage({ params }: { params: Promise<{ id: str
                 parcelId={parcel.id}
                 plotNumber={parcel.plotNumber}
               />
-              {has3d && (
-                <Link
-                  href={`/parcels/${parcel.id}/3d`}
-                  className="text-xs px-3 py-1 rounded-lg bg-amber-500 text-black font-bold hover:bg-amber-400"
-                >
-                  Open in 3D →
-                </Link>
-              )}
             </div>
           </div>
 
