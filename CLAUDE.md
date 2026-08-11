@@ -267,23 +267,54 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
 - Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
 
-### Цвета по Land Use — APPROVED 10 категорий (9 утверждены 2026-04-11, INVESTMENT добавлен 2026-06-03)
+### Цвета по Land Use — APPROVED 10 категорий (ратифицировано 2026-08-10)
 **НЕ менять без явного согласия основателя.** Это финальный список.
+
+> **Обновлено 2026-08-10 — supersedes the palette frozen 2026-04-11 / 2026-06-03.**
+> Founder confirmed that the palette **in code** is the approved one and that this
+> document was stale. The table below is transcribed from `ZAAHI_LANDUSE_COLOR` in
+> `src/app/parcels/map/page.tsx` (the map render path — these are the hexes that
+> actually paint plots). The earlier table (Residential `#FFD700`, Commercial
+> `#4A90D9`, Mixed Use `#9B59B6`, Hotel `#E67E22`, Industrial `#708090`,
+> Educational `#1ABC9C`, Healthcare `#E74C3C`, Agricultural `#6B8E23`, Future
+> Development `#84CC16`) is **superseded and must not be restored**. Код не менялся —
+> обновлена только документация.
 
 | # | Category | Hex | Цвет |
 |---|---|---|---|
-| 1 | Residential | `#FFD700` | жёлтый |
-| 2 | Commercial | `#4A90D9` | синий |
-| 3 | Mixed Use | `#9B59B6` | фиолетовый |
-| 4 | Hotel / Hospitality | `#E67E22` | оранжевый |
-| 5 | Industrial / Warehouse | `#708090` | стальной серый |
-| 6 | Educational | `#1ABC9C` | бирюзовый |
-| 7 | Healthcare | `#E74C3C` | красный |
-| 8 | Agricultural / Farm | `#6B8E23` | оливковый |
-| 9 | Future Development | `#84CC16` | лайм |
+| 1 | Residential | `#2D6A4F` | зелёный |
+| 2 | Commercial | `#1B3A5C` | тёмно-синий (navy) |
+| 3 | Mixed Use | `#6B4C9A` | фиолетовый |
+| 4 | Hotel / Hospitality | `#7B1E2B` | бордовый (burgundy) |
+| 5 | Industrial / Warehouse | `#495057` | серый |
+| 6 | Educational | `#0077B6` | небесно-синий |
+| 7 | Healthcare | `#E63946` | ярко-красный |
+| 8 | Agricultural / Farm | `#606C38` | оливковый |
+| 9 | Future Development | `#A8926E` | песчаник (sandstone) — ⚠️ см. расхождение ниже |
 | 10 | Investment | `#14B8A6` | бирюзовый-teal (AD off-plan, ~29K плотов) |
 
+Aliases in code resolve to the same hex: `HOSPITALITY`→Hotel, `WAREHOUSE`→Industrial,
+`EDUCATION`→Educational, `AGRICULTURE`→Agricultural, `"FUTURE DEVELOPMENT"`→Future Development.
+
 DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour).
+
+> ⚠️ **ОТКРЫТОЕ РАСХОЖДЕНИЕ — Future Development (2026-08-10, требует решения founder).**
+> Единого значения в коде нет. Четыре зеркала расходятся:
+> - `ZAAHI_LANDUSE_COLOR` (`page.tsx`) → `#A8926E` — **это то, что реально красит участки** (комментарий в коде: *"sandstone (warm earth · distinct from gold brand colour)"*)
+> - `LAND_USE_LEGEND` (`page.tsx`, та же строка кода) → `#C8A96E` — **это то, что показывает легенда на карте**
+> - `LANDUSE_COLORS` (`SidePanel.tsx`) → `#C8A96E`
+> - `prepare-tiles.ts` (tile-build mirror) → `#C8A96E`
+>
+> Следствие: **свотч в легенде не совпадает с цветом самих участков** на карте.
+> Похоже на частично применённый переход с бренд-золота на sandstone. В таблице выше
+> указан render-path (`#A8926E`) как фактический. Решение founder'а — какой из двух
+> канонический — фиксируется отдельно; **код здесь не трогался.**
+>
+> Отдельно: `LAND_USE_OPTIONS` в `src/lib/filter-state.ts` всё ещё несёт **старую**
+> (superseded) палитру целиком — Residential `#FFD700`, Mixed Use `#9B59B6`,
+> Industrial `#708090`, Educational `#1ABC9C`, Healthcare `#E74C3C`,
+> Agricultural `#6B8E23`, Future Dev `#84CC16`. Это чипы фильтр-панели; они не
+> совпадают ни с картой, ни с легендой. Тоже требует отдельного code-fix.
 
 **Маппинг из DDA land use строк в категории** (case-insensitive `contains`, реализован в `deriveLandUse` в `src/app/parcels/map/page.tsx`):
 - `residential`, `villa`, `townhouse`, `apartment` → Residential
@@ -301,7 +332,7 @@ DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT
 
 **Source-of-truth in code:** `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx` AND `scripts/prepare-tiles.ts` (tile-build mirror — both must stay in sync). The 3D `fill-extrusion-color` match expression in `loadZaahiPlots`, the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx`, the `LAND_USE_LEGEND` array in the map page, and `LAND_USE_OPTIONS` in `src/lib/filter-state.ts` MUST stay in sync. CLAUDE.md is the human-readable source of truth — code is the machine-readable one.
 
-**Land Use легенда (10 категорий) — 9 утверждены основателем 2026-04-11, INVESTMENT добавлен 2026-06-03. НЕ менять без явного согласия.**
+**Land Use легенда (10 категорий) — ратифицирована founder'ом 2026-08-10 (заменяет фиксацию 2026-04-11 / 2026-06-03). НЕ менять без явного согласия.**
 
 ### 3D модели — ZAAHI Signature стиль
 Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
