@@ -27,7 +27,7 @@
  * Per CLAUDE.md the price is owner-set only — leaving currentValuation null
  * is the explicit "Price on request" signal for the JV path.
  *
- * Run: npx tsx -r dotenv/config scripts/seed-jv-3261270.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/seed-jv-3261270.ts dotenv_config_path=.env.local
  */
 import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
@@ -36,6 +36,9 @@ import {
   parseAffectionPlan,
   fetchBuildingLimit,
 } from '../src/lib/dda';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-00000000zaah';
 const SYSTEM_EMAIL = 'system@zaahi.ae';

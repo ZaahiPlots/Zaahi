@@ -25,6 +25,9 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 type Entry = { category?: string; sub?: string; areaSqm?: number } & Record<string, unknown>;
 

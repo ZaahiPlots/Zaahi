@@ -1,7 +1,7 @@
 // Seed: Como Residences (Nakheel) as a Building row on ZAAHI's
 // digital-twin layer. Status = UNDER_CONSTRUCTION (handover Q2 2028).
 //
-// Run:  pnpm dlx tsx scripts/seed-como-residences.ts
+// Run:  ALLOW_PROD_WRITE=1 pnpm dlx tsx scripts/seed-como-residences.ts
 //
 // Notes:
 //   - photos: [] per the same convention used for Burj Khalifa / Burj
@@ -22,6 +22,9 @@
 import { PrismaClient, BuildingStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { assertProdWriteAllowed } from "./_guard";
+
+assertProdWriteAllowed();
 
 config({ path: ".env.local" });
 

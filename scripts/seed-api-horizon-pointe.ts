@@ -4,7 +4,7 @@
 // append-only with an idempotency guard: it exits cleanly if a Building
 // with the same name already exists.
 //
-// Run:  pnpm dlx tsx scripts/seed-api-horizon-pointe.ts
+// Run:  ALLOW_PROD_WRITE=1 pnpm dlx tsx scripts/seed-api-horizon-pointe.ts
 //
 // Research provenance (2026-04-24):
 //   • OSM way 699267153 → centroid 25.1821676, 55.3225533 (high conf.)
@@ -27,6 +27,9 @@
 import { PrismaClient, BuildingStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { assertProdWriteAllowed } from "./_guard";
+
+assertProdWriteAllowed();
 
 config({ path: ".env.local" });
 

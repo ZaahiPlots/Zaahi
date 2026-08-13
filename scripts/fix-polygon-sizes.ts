@@ -14,11 +14,14 @@
  * Only the `geometry` field is updated — no touching currentValuation,
  * status, buildingStyle, area, etc. Idempotent.
  *
- * Run: npx tsx -r dotenv/config scripts/fix-polygon-sizes.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/fix-polygon-sizes.ts dotenv_config_path=.env.local
  */
 import proj4 from 'proj4';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 // Dubai Local TM — identical definition to seed-new-listings.ts.
 proj4.defs(

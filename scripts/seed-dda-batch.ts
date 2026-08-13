@@ -25,11 +25,14 @@
  *   Set on CREATE only. On re-run the existing currentValuation is left
  *   exactly as-is (owner may have edited it via UI).
  *
- * Run: npx tsx -r dotenv/config scripts/seed-dda-batch.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/seed-dda-batch.ts dotenv_config_path=.env.local
  */
 import { UserRole, ParcelStatus, Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
 import { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit } from '../src/lib/dda';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-00000000zaah';
 const SYSTEM_EMAIL = 'system@zaahi.ae';

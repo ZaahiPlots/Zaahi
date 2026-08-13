@@ -23,11 +23,14 @@
  *   → currentValuation is null on create; the JV-only note lives in the
  *   AffectionPlan.notes field.
  *
- * Run: npx tsx -r dotenv/config scripts/seed-warsan-dubai-south.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/seed-warsan-dubai-south.ts dotenv_config_path=.env.local
  */
 import proj4 from 'proj4';
 import { UserRole, ParcelStatus, Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-00000000zaah';
 const SYSTEM_EMAIL = 'system@zaahi.ae';

@@ -1,6 +1,6 @@
 // Seed: Burj Khalifa as a Building row on ZAAHI's digital-twin layer.
 //
-// Run:  pnpm dlx tsx scripts/seed-burj-khalifa-building.ts
+// Run:  ALLOW_PROD_WRITE=1 pnpm dlx tsx scripts/seed-burj-khalifa-building.ts
 //
 // Notes:
 //   - photos: [] per founder spec ("no photos") — card just hides the
@@ -23,6 +23,9 @@
 import { PrismaClient, BuildingStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { assertProdWriteAllowed } from "./_guard";
+
+assertProdWriteAllowed();
 
 config({ path: ".env.local" });
 

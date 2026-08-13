@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "agent": "python3 agent.py"
   },
   "dependencies": {

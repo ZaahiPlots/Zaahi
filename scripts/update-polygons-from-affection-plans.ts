@@ -10,11 +10,14 @@
  * Uses the same EPSG:3997 projection as `fix-polygon-sizes.ts`. Only the
  * `geometry` field is updated. Idempotent.
  *
- * Run: npx tsx -r dotenv/config scripts/update-polygons-from-affection-plans.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/update-polygons-from-affection-plans.ts dotenv_config_path=.env.local
  */
 import proj4 from 'proj4';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 proj4.defs(
   'EPSG:3997',

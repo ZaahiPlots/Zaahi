@@ -1,0 +1,14 @@
+{
+  "//": "Type-checks scripts/ — the root tsconfig excludes that directory, which is why there was no safe way to check a seeder and someone reached for tsx instead (tsx EXECUTES the file). Run via `pnpm typecheck:scripts`.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "dom", "dom.iterable"],
+    "incremental": false,
+    "typeRoots": ["./node_modules/@types", "./node_modules/.pnpm/node_modules/@types"],
+    "types": ["node", "geojson"]
+  },
+  "include": ["scripts/**/*.ts", "next-env.d.ts"],
+  "exclude": ["node_modules"]
+}

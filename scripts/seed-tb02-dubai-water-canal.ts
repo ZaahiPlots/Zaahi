@@ -23,11 +23,14 @@
  *   1,200,000,000 AED → 120,000,000,000 fils. Set on CREATE only.
  *   On re-run currentValuation is left exactly as-is.
  *
- * Run: npx tsx -r dotenv/config scripts/seed-tb02-dubai-water-canal.ts dotenv_config_path=.env.local
+ * Run: ALLOW_PROD_WRITE=1 npx tsx -r dotenv/config scripts/seed-tb02-dubai-water-canal.ts dotenv_config_path=.env.local
  */
 import proj4 from "proj4";
 import { UserRole, ParcelStatus, Prisma } from "@prisma/client";
 import { prisma } from "../src/lib/prisma";
+import { assertProdWriteAllowed } from "./_guard";
+
+assertProdWriteAllowed();
 
 // EPSG:3997 — Dubai Local TM (central meridian 55°20′)
 proj4.defs(

@@ -24,6 +24,9 @@
 import { Prisma, ParcelStatus, UserRole } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
 import { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit } from '../src/lib/dda';
+import { assertProdWriteAllowed } from './_guard';
+
+assertProdWriteAllowed();
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-00000000zaah';
 const SYSTEM_EMAIL = 'system@zaahi.ae';

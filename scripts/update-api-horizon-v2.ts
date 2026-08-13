@@ -9,11 +9,14 @@
 // prepending a new entry to `sources[]`, not by deleting any field
 // history.
 //
-// Run:  pnpm dlx tsx scripts/update-api-horizon-v2.ts
+// Run:  ALLOW_PROD_WRITE=1 pnpm dlx tsx scripts/update-api-horizon-v2.ts
 
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { assertProdWriteAllowed } from "./_guard";
+
+assertProdWriteAllowed();
 
 config({ path: ".env.local" });
 

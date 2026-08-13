@@ -468,6 +468,16 @@ Footprint каждого верхнего яруса получается чер
 - If you discover unfamiliar files, branches, or in-progress changes — investigate first, never delete or overwrite as a shortcut
 - Risky / hard-to-reverse actions (destructive git, schema changes, infra edits) require explicit founder approval before execution
 
+### tsx НИКОГДА не используется для проверки типов
+- **`tsx` ЗАПУСКАЕТ файл, а не проверяет его.** Флага «только проверить» у него нет. `npx tsx scripts/seed-x.ts` = выполненный сид, а не линт.
+- Это уже стоило продакшену строки: commit `004f532` — «ts-check» через `tsx` вставил Burj Khalifa в `Building` на проде.
+- Проверка типов — только так:
+  - `pnpm typecheck` → `tsc --noEmit` (приложение, `src/`)
+  - `pnpm typecheck:scripts` → `tsc -p tsconfig.scripts.json` (папка `scripts/`, которую корневой `tsconfig.json` исключает — именно этот пробел и толкал агентов к `tsx`)
+- **Каждый скрипт в `scripts/`, который пишет в БД, ОБЯЗАН** первой строкой после импортов вызывать `assertProdWriteAllowed()` из `scripts/_guard.ts`. Без `ALLOW_PROD_WRITE=1` он выходит с кодом 1, не открывая соединение.
+- Запуск такого скрипта — осознанное действие: `ALLOW_PROD_WRITE=1 npx tsx scripts/seed-x.ts`. Никогда не ставь `ALLOW_PROD_WRITE` в `.env.local` и не экспортируй его в профиль shell — флаг обязан задаваться в самой команде.
+- Новый скрипт с записью в БД без этого guard'а — незакрытая задача, как красный билд.
+
 ## SMOKE TEST — ОБЯЗАТЕЛЬНО ПОСЛЕ КАЖДОГО ИЗМЕНЕНИЯ
 После ЛЮБОГО изменения кода ПЕРЕД `git push` выполни этот чеклист.
 
