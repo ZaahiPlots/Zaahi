@@ -22,6 +22,10 @@ type ParcelItem = {
   area: number;
   geometry: GeoJSON.Polygon | null;
   currentValuation: string | null;
+  // /api/parcels/map returns these for the caller's own VAULT_PRIVATE
+  // rows (route.ts). Without them a vault row opens the public panel.
+  isVault?: boolean;
+  vaultEntryId?: string | null;
   plan: { projectName?: string | null } | null;
 };
 
@@ -30,16 +34,24 @@ type Props = {
   onClose: () => void;
   mapRef: React.RefObject<MLMap | null>;
   onSelectParcel: (id: string) => void;
+  onSelectVaultEntry: (vaultEntryId: string) => void;
 };
 
-const STATUS_ORDER = ["LISTED", "VERIFIED", "IN_DEAL"] as const;
+// Display order only — NOT a whitelist. This used to be mapped over
+// directly, so any status outside it was silently dropped from the
+// rendered list while the header still counted it: the map boots into
+// vault view, every row is VAULT_PRIVATE, none of them were in this
+// list, and the panel read "No parcels match." with "Parcels (197)"
+// in its own header. Statuses not named here now render after these,
+// alphabetically, instead of disappearing.
+const STATUS_PRIORITY: string[] = ["LISTED", "VERIFIED", "IN_DEAL", "VAULT_PRIVATE"];
 const STATUS_COLOR: Record<string, string> = {
   LISTED: GOLD,
   VERIFIED: "#1B4965",
   IN_DEAL: "#2D6A4F",
 };
 
-export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParcel }: Props) {
+export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParcel, onSelectVaultEntry }: Props) {
   const [items, setItems] = useState<ParcelItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -81,16 +93,31 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
       arr.push(it);
       m.set(it.status, arr);
     }
-    return STATUS_ORDER
-      .map((s) => ({ status: s, items: m.get(s) ?? [] }))
-      .filter((g) => g.items.length > 0);
+    const present = Array.from(m.keys());
+    const ordered = [
+      ...STATUS_PRIORITY.filter((s) => m.has(s)),
+      ...present.filter((s) => !STATUS_PRIORITY.includes(s)).sort(),
+    ];
+    return ordered.map((s) => ({ status: s, items: m.get(s) ?? [] }));
   }, [filtered]);
 
   function handleClick(it: ParcelItem) {
     const map = mapRef.current;
-    if (!map || !it.geometry) return;
-    const centroid = polygonCentroid(it.geometry);
-    if (!centroid) return;
+    if (!map) return;
+    // Vault rows carry a VaultEntry id and must open VaultSidePanelAdapter,
+    // exactly as the map click handler routes them (page.tsx `isVault`
+    // branch). Selecting by Parcel id here opened the public panel instead.
+    const select = () =>
+      it.isVault && it.vaultEntryId
+        ? onSelectVaultEntry(it.vaultEntryId)
+        : onSelectParcel(it.id);
+
+    const centroid = it.geometry ? polygonCentroid(it.geometry) : null;
+    if (!centroid) {
+      // No mapped boundary: still open the row rather than dead-clicking.
+      select();
+      return;
+    }
     map.flyTo({
       center: centroid,
       zoom: 16,
@@ -98,10 +125,9 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
       duration: 2000,
       essential: true,
     });
-    // Mirror HeaderBar Find (page.tsx:6155): wait for the flyTo to land
-    // before popping the right SidePanel — otherwise the panel can race
-    // a still-animating camera and the map jolt feels broken.
-    window.setTimeout(() => onSelectParcel(it.id), 2000);
+    // Mirror HeaderBar Find: wait for the flyTo to land before popping the
+    // right SidePanel — otherwise the panel races a still-animating camera.
+    window.setTimeout(select, 2000);
   }
 
   if (!open) return null;
@@ -192,9 +218,14 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
             Loading…
           </div>
         )}
-        {!error && items !== null && grouped.length === 0 && (
+        {!error && items !== null && items.length === 0 && (
           <div style={{ padding: "16px 14px", fontSize: 11, opacity: 0.55 }}>
-            No parcels match.
+            No parcels loaded.
+          </div>
+        )}
+        {!error && items !== null && items.length > 0 && grouped.length === 0 && (
+          <div style={{ padding: "16px 14px", fontSize: 11, opacity: 0.55 }}>
+            No parcels match &ldquo;{search.trim()}&rdquo; — {items.length} loaded.
           </div>
         )}
         {grouped.map((group) => (

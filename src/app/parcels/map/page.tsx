@@ -5602,6 +5602,9 @@ function ParcelsMapPageInner() {
           })
         }
         onSelectParcel={(id) => setSelectedParcelId(id)}
+        onSelectVaultEntry={(vaultEntryId) =>
+          setSelectedVaultEntry({ id: vaultEntryId, mode: "owner" })
+        }
         onOpenAddModal={() => setAddFlow("chooser")}
         vaultOnlyMode={vaultOnlyMode}
         onToggleVaultOnly={() => setVaultOnlyMode((v) => !v)}
@@ -6801,6 +6804,9 @@ function ParcelsMapPageInner() {
         onClose={() => setPortalOpen(false)}
         mapRef={mapRef}
         onSelectParcel={(id) => setSelectedParcelId(id)}
+        onSelectVaultEntry={(vaultEntryId) =>
+          setSelectedVaultEntry({ id: vaultEntryId, mode: "owner" })
+        }
       />
       <ParcelsNav
         mapRef={mapRef}
@@ -7386,6 +7392,7 @@ function HeaderBar({
   isDark,
   onFly,
   onSelectParcel,
+  onSelectVaultEntry,
   onOpenAddModal,
   vaultOnlyMode,
   onToggleVaultOnly,
@@ -7397,6 +7404,7 @@ function HeaderBar({
   isDark: boolean;
   onFly: (lng: number, lat: number) => void;
   onSelectParcel: (id: string) => void;
+  onSelectVaultEntry: (vaultEntryId: string) => void;
   onOpenAddModal: () => void;
   vaultOnlyMode: boolean;
   onToggleVaultOnly: () => void;
@@ -7442,28 +7450,56 @@ function HeaderBar({
   };
 
   async function doFind() {
-    const plotNumber = find.trim();
+    // Normalise both sides: users paste "3261253", "3 261 253" and
+    // "3261253 " interchangeably. Strict === on the raw input made those
+    // last two miss a plot that is definitely loaded.
+    const raw = find.trim();
+    const plotNumber = raw.replace(/\s+/g, "");
     if (!plotNumber) return;
     setFindError(null);
     setFindBusy(true);
     try {
       const r = await apiFetch("/api/parcels/map");
       const data = (await r.json()) as {
-        items: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
+        items: Array<{
+          id: string;
+          plotNumber: string;
+          geometry: GeoJSON.Polygon | null;
+          isVault?: boolean;
+          vaultEntryId?: string | null;
+        }>;
       };
-      const hit = data.items.find((it) => it.plotNumber === plotNumber);
-      if (!hit?.geometry) {
-        setFindError("Plot not found");
-      } else {
-        const ring = hit.geometry.coordinates[0];
-        const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
-        const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-        onFly(lng, lat);
-        // Wait for the 2s flyTo animation to land before popping the side panel.
-        setTimeout(() => onSelectParcel(hit.id), 2000);
-        setFind("");
-        setFindOpen(false);
+      const hit = data.items.find(
+        (it) => (it.plotNumber ?? "").replace(/\s+/g, "") === plotNumber,
+      );
+      if (!hit) {
+        // Name the number back. "Plot not found" alone reads like the
+        // control broke; the audit could not tell a miss from a no-op.
+        setFindError(`Plot ${plotNumber} not found`);
+        return;
       }
+      // Vault rows open VaultSidePanelAdapter, same branch the map click
+      // handler uses. Selecting by Parcel id opened the public panel, so
+      // on the vault-only map Find flew nowhere useful and no drawer came.
+      const select = () =>
+        hit.isVault && hit.vaultEntryId
+          ? onSelectVaultEntry(hit.vaultEntryId)
+          : onSelectParcel(hit.id);
+      const ring = hit.geometry?.coordinates?.[0];
+      if (!ring || ring.length === 0) {
+        // Found, but has no mapped boundary — say so instead of claiming
+        // "not found", and still open the record.
+        select();
+        setFindError(`Plot ${plotNumber} has no mapped boundary`);
+        return;
+      }
+      const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+      const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+      onFly(lng, lat);
+      // Wait for the 2s flyTo animation to land before popping the side panel.
+      setTimeout(select, 2000);
+      setFind("");
+      setFindOpen(false);
     } catch {
       setFindError("Network error");
     } finally {
