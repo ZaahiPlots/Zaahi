@@ -4675,120 +4675,129 @@ function ParcelsMapPageInner() {
       // a separate cleanup PR if founder confirms the channel is dead.
 
       // ── ZAAHI Plots hover + click ──
-      if (map.getLayer(ZAAHI_PLOTS_FILL)) {
-        bindLayerEvent(map, "mousemove", ZAAHI_PLOTS_FILL, (e0: unknown) => {
-          const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
-          const f = e.features?.[0];
-          if (!f) return;
-          // Cancel any scheduled close — we're back on a polygon.
-          if (hoverCloseTimerRef.current != null) {
-            window.clearTimeout(hoverCloseTimerRef.current);
-            hoverCloseTimerRef.current = null;
-          }
-          map.getCanvas().style.cursor = "pointer";
-          const p = f.properties as {
-            id?: string;
-            plotNumber: string;
-            district: string;
-            emirate: string;
-            area: number;
-            priceAed: number | null;
-            landUse: string;
-            projectName?: string;
-            plotAreaSqm?: number;
-            plotAreaSqft?: number;
-            maxGfaSqm?: number;
-            maxGfaSqft?: number;
-            maxFloors?: number;
-            maxHeightMeters?: number;
-            maxHeightCode?: string;
-            far?: number;
-            planDateIso?: string;
-          };
-          // Polygon centroid (mean of outer-ring vertices). Used for the
-          // click-flyTo destination — falls back to the cursor lngLat
-          // when the geometry isn't a Polygon (vector-tile fragmentation
-          // can yield MultiPolygon at parcel boundaries).
-          let cLng = e.lngLat.lng, cLat = e.lngLat.lat;
-          const g = f.geometry;
-          if (g && g.type === "Polygon" && g.coordinates[0]?.length > 0) {
-            const ring = g.coordinates[0];
-            cLng = ring.reduce((s, q) => s + q[0], 0) / ring.length;
-            cLat = ring.reduce((s, q) => s + q[1], 0) / ring.length;
-          }
-          setZaahiHover({
-            x: e.point.x,
-            y: e.point.y,
-            id: p.id ?? "",
-            lng: cLng,
-            lat: cLat,
-            plotNumber: p.plotNumber,
-            district: p.district,
-            emirate: p.emirate ?? "",
-            area: p.area,
-            priceAed: p.priceAed,
-            landUse: p.landUse,
-            projectName: p.projectName ?? "",
-            plotAreaSqm: p.plotAreaSqm ?? 0,
-            plotAreaSqft: p.plotAreaSqft ?? 0,
-            maxGfaSqm: p.maxGfaSqm ?? 0,
-            maxGfaSqft: p.maxGfaSqft ?? 0,
-            maxFloors: p.maxFloors ?? 0,
-            maxHeightMeters: p.maxHeightMeters ?? 0,
-            maxHeightCode: p.maxHeightCode ?? "",
-            far: p.far ?? 0,
-            planDateIso: p.planDateIso ?? "",
-          });
-          // ZAAHI listings take priority — drop any PMTiles / shared-vault
-          // popup that fired for the same cursor frame so only one card
-          // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
-          setDdaLandHover(null);
-          setVaultHover(null);
-          // Also kill the shared maplibre Popup if a boundary FILL layer
-          // (DDA Projects / Communities / AD muni-dist-comm / FZ) had
-          // attached its name-label popup at the same cursor point. The
-          // detailed JSX card always wins over the one-line boundary tag.
-          popupRef.current?.remove();
+      // No `map.getLayer(ZAAHI_PLOTS_FILL)` guard here — audit 1.17.
+      // attachOverlays() always runs BEFORE loadZaahiPlots() creates that
+      // layer (init :4568→:4574, basemap swap :5147→:5151), so the guard
+      // was always false and these three handlers never bound: the cursor
+      // stayed `grab` and clicking a plot did nothing, silently.
+      // Binding ahead of the layer is safe — MapLibre 5 delegated
+      // listeners re-resolve layer ids at dispatch time
+      // (`_createDelegatedListener` filters on `this.getLayer(id)` per
+      // event), so these start firing the moment loadZaahiPlots adds the
+      // layer, and keep working across a style swap. Same unguarded
+      // pattern as the VAULT_SHARED_3D click bind above, which works.
+      bindLayerEvent(map, "mousemove", ZAAHI_PLOTS_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
+        const f = e.features?.[0];
+        if (!f) return;
+        // Cancel any scheduled close — we're back on a polygon.
+        if (hoverCloseTimerRef.current != null) {
+          window.clearTimeout(hoverCloseTimerRef.current);
+          hoverCloseTimerRef.current = null;
+        }
+        map.getCanvas().style.cursor = "pointer";
+        const p = f.properties as {
+          id?: string;
+          plotNumber: string;
+          district: string;
+          emirate: string;
+          area: number;
+          priceAed: number | null;
+          landUse: string;
+          projectName?: string;
+          plotAreaSqm?: number;
+          plotAreaSqft?: number;
+          maxGfaSqm?: number;
+          maxGfaSqft?: number;
+          maxFloors?: number;
+          maxHeightMeters?: number;
+          maxHeightCode?: string;
+          far?: number;
+          planDateIso?: string;
+        };
+        // Polygon centroid (mean of outer-ring vertices). Used for the
+        // click-flyTo destination — falls back to the cursor lngLat
+        // when the geometry isn't a Polygon (vector-tile fragmentation
+        // can yield MultiPolygon at parcel boundaries).
+        let cLng = e.lngLat.lng, cLat = e.lngLat.lat;
+        const g = f.geometry;
+        if (g && g.type === "Polygon" && g.coordinates[0]?.length > 0) {
+          const ring = g.coordinates[0];
+          cLng = ring.reduce((s, q) => s + q[0], 0) / ring.length;
+          cLat = ring.reduce((s, q) => s + q[1], 0) / ring.length;
+        }
+        setZaahiHover({
+          x: e.point.x,
+          y: e.point.y,
+          id: p.id ?? "",
+          lng: cLng,
+          lat: cLat,
+          plotNumber: p.plotNumber,
+          district: p.district,
+          emirate: p.emirate ?? "",
+          area: p.area,
+          priceAed: p.priceAed,
+          landUse: p.landUse,
+          projectName: p.projectName ?? "",
+          plotAreaSqm: p.plotAreaSqm ?? 0,
+          plotAreaSqft: p.plotAreaSqft ?? 0,
+          maxGfaSqm: p.maxGfaSqm ?? 0,
+          maxGfaSqft: p.maxGfaSqft ?? 0,
+          maxFloors: p.maxFloors ?? 0,
+          maxHeightMeters: p.maxHeightMeters ?? 0,
+          maxHeightCode: p.maxHeightCode ?? "",
+          far: p.far ?? 0,
+          planDateIso: p.planDateIso ?? "",
         });
-        bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
-          map.getCanvas().style.cursor = "";
-          // Defer close ~220 ms so the cursor can transit onto the now
-          // clickable card without it vanishing. Card's onMouseEnter
-          // cancels the timer; onMouseLeave closes immediately.
-          if (hoverCloseTimerRef.current != null) {
-            window.clearTimeout(hoverCloseTimerRef.current);
-          }
-          hoverCloseTimerRef.current = window.setTimeout(() => {
-            setZaahiHover(null);
-            hoverCloseTimerRef.current = null;
-          }, 220);
-        });
-        bindLayerEvent(map, "click", ZAAHI_PLOTS_FILL, (e0: unknown) => {
-          const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
-          const f = e.features?.[0];
-          if (!f) return;
-          const props = f.properties as {
-            id?: string;
-            isVault?: boolean;
-            vaultEntryId?: string | null;
-          };
-          if (!props.id) return;
-          // Founder spec 2026-04-12: a single combined cyberpunk
-          // click effect (sweep + noise burst) — sound.click() now
-          // emits both layers itself, so we no longer chain swooshOpen.
-          sound.click();
-          // Phase 3 unification (2026-05-30): vault rows ride the same
-          // layer as public listings; the click handler routes to
-          // VaultSidePanelAdapter via the isVault flag so the broker
-          // pipeline / asking price / owner contact panel renders
-          // instead of the public SidePanel.
-          if (props.isVault === true && props.vaultEntryId) {
-            setSelectedVaultEntry({ id: props.vaultEntryId, mode: "owner" });
-            return;
-          }
-          setSelectedParcelId(props.id);
-        });
-      }
+        // ZAAHI listings take priority — drop any PMTiles / shared-vault
+        // popup that fired for the same cursor frame so only one card
+        // shows. Avoids stacked "Business Bay" + "3460730 Open Space".
+        setDdaLandHover(null);
+        setVaultHover(null);
+        // Also kill the shared maplibre Popup if a boundary FILL layer
+        // (DDA Projects / Communities / AD muni-dist-comm / FZ) had
+        // attached its name-label popup at the same cursor point. The
+        // detailed JSX card always wins over the one-line boundary tag.
+        popupRef.current?.remove();
+      });
+      bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
+        map.getCanvas().style.cursor = "";
+        // Defer close ~220 ms so the cursor can transit onto the now
+        // clickable card without it vanishing. Card's onMouseEnter
+        // cancels the timer; onMouseLeave closes immediately.
+        if (hoverCloseTimerRef.current != null) {
+          window.clearTimeout(hoverCloseTimerRef.current);
+        }
+        hoverCloseTimerRef.current = window.setTimeout(() => {
+          setZaahiHover(null);
+          hoverCloseTimerRef.current = null;
+        }, 220);
+      });
+      bindLayerEvent(map, "click", ZAAHI_PLOTS_FILL, (e0: unknown) => {
+        const e = e0 as MapMouseEvent & { features?: GeoJSON.Feature[] };
+        const f = e.features?.[0];
+        if (!f) return;
+        const props = f.properties as {
+          id?: string;
+          isVault?: boolean;
+          vaultEntryId?: string | null;
+        };
+        if (!props.id) return;
+        // Founder spec 2026-04-12: a single combined cyberpunk
+        // click effect (sweep + noise burst) — sound.click() now
+        // emits both layers itself, so we no longer chain swooshOpen.
+        sound.click();
+        // Phase 3 unification (2026-05-30): vault rows ride the same
+        // layer as public listings; the click handler routes to
+        // VaultSidePanelAdapter via the isVault flag so the broker
+        // pipeline / asking price / owner contact panel renders
+        // instead of the public SidePanel.
+        if (props.isVault === true && props.vaultEntryId) {
+          setSelectedVaultEntry({ id: props.vaultEntryId, mode: "owner" });
+          return;
+        }
+        setSelectedParcelId(props.id);
+      });
 
       // ── Communities hover ──
       bindLayerEvent(map, "mousemove", COMMUNITIES_FILL, (e0: unknown) => {
