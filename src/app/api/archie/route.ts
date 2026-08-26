@@ -22,6 +22,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getApprovedUserId } from "@/lib/auth";
+import { debugLog } from "@/lib/debug";
 
 export const runtime = "nodejs";
 
@@ -778,7 +779,7 @@ Use this only to decide whether the FEEDBACK proactive offer applies.`;
     // the model is calling tools as expected. Kept permanently
     // (founder spec 2026-05-31): if tool-call rate drops, this is
     // the cheapest signal.
-    console.log(
+    debugLog(
       "[archie] finish:",
       choice.finish_reason,
       "tools:",

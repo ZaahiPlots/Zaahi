@@ -270,11 +270,11 @@ function build(): IndexBuild {
   // "wins" the byKey slot. DDA projects + AD municipalities (curated,
   // user-friendly names) before community polygons (more granular,
   // sometimes overlap).
-  try { loadAbuDhabiMunicipalities(next); } catch (e) { console.warn("[district-boundaries] AD municipalities:", (e as Error).message); }
-  try { loadDdaProjects(next); } catch (e) { console.warn("[district-boundaries] DDA projects:", (e as Error).message); }
-  try { loadDubaiCommunities(next); } catch (e) { console.warn("[district-boundaries] Dubai communities:", (e as Error).message); }
-  try { loadAbuDhabiDistricts(next); } catch (e) { console.warn("[district-boundaries] AD districts:", (e as Error).message); }
-  try { loadAbuDhabiCommunities(next); } catch (e) { console.warn("[district-boundaries] AD communities:", (e as Error).message); }
+  try { loadAbuDhabiMunicipalities(next); } catch (e) { console.error("[district-boundaries] AD municipalities:", (e as Error).message); }
+  try { loadDdaProjects(next); } catch (e) { console.error("[district-boundaries] DDA projects:", (e as Error).message); }
+  try { loadDubaiCommunities(next); } catch (e) { console.error("[district-boundaries] Dubai communities:", (e as Error).message); }
+  try { loadAbuDhabiDistricts(next); } catch (e) { console.error("[district-boundaries] AD districts:", (e as Error).message); }
+  try { loadAbuDhabiCommunities(next); } catch (e) { console.error("[district-boundaries] AD communities:", (e as Error).message); }
   cache = next;
   return next;
 }

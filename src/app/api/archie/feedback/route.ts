@@ -29,6 +29,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { sendTelegramToAdmins } from "@/lib/telegram";
+import { debugLog } from "@/lib/debug";
 
 export const runtime = "nodejs";
 
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // the per-hour quota — the user pressing "send again" is intent, not
   // abuse, but the message itself is noise.
   if (isDuplicate(userId, text, now)) {
-    console.log(`[archie/feedback] dedup user=${userId.slice(0, 8)}…`);
+    debugLog(`[archie/feedback] dedup user=${userId.slice(0, 8)}…`);
     return NextResponse.json({
       ok: true,
       deduped: true,
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   }
   if (!withinRateLimit(userId, now)) {
-    console.log(`[archie/feedback] rate-limited user=${userId.slice(0, 8)}…`);
+    debugLog(`[archie/feedback] rate-limited user=${userId.slice(0, 8)}…`);
     return NextResponse.json(
       {
         ok: false,
@@ -180,7 +181,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     disablePreview: true,
   });
 
-  console.log(
+  debugLog(
     `[archie/feedback] sent category=${category} user=${userId.slice(0, 8)}… len=${text.length}`,
   );
 

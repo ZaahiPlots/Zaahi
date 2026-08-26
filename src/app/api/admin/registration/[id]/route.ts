@@ -46,7 +46,7 @@ export async function GET(
           emailConfirmedAt = data.user.email_confirmed_at ?? null;
         }
       } catch (e) {
-        console.warn("[admin/registration/detail] getUserById failed:", e);
+        console.error("[admin/registration/detail] getUserById failed:", e);
       }
     }
     const userRow = await prisma.user.findUnique({

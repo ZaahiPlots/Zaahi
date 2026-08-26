@@ -77,7 +77,7 @@ export async function recordDealEvent(
     return { txHash: tx.hash as string, pending: false };
   } catch (err) {
     // Never block a deal on chain failure. Log non-PII info only.
-    console.warn("[blockchain] recordDealEvent failed, marking pending:", (err as Error).message);
+    console.error("[blockchain] recordDealEvent failed, marking pending:", (err as Error).message);
     return { txHash: PENDING_TX, pending: true };
   }
 }

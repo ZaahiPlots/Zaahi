@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
+import { debugWarn } from '@/lib/debug';
 
 /**
  * Legacy ambassador-application linkage — DORMANT per spec-05 §13.4.
@@ -56,7 +57,7 @@ async function linkApprovedApplication(userId: string, email: string): Promise<v
     // Common expected cause: user.referralCode @unique collision if the
     // user already had one assigned before application was approved.
     const msg = e instanceof Error ? e.message : String(e);
-    console.warn("[users/sync] ambassador application link skipped:", msg);
+    debugWarn("[users/sync] ambassador application link skipped:", msg);
   }
 }
 

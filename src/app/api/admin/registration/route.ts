@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
         }
       }
     } catch (e) {
-      console.warn("[admin/registration list] listUsers failed:", e);
+      console.error("[admin/registration list] listUsers failed:", e);
     }
   }
 

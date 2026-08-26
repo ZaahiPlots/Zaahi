@@ -36,6 +36,7 @@ import type {
 } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
 import type { BuildingDTO } from "./types";
+import { debugLog } from "@/lib/debug";
 import {
   createBuildingGlbLayer,
 } from "./BuildingGlbLayer";
@@ -154,14 +155,14 @@ export function useBuildingsLayer({
   // ── Fetch once on mount ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    console.log("[BUILDINGS] fetching /api/buildings …");
+    debugLog("[BUILDINGS] fetching /api/buildings …");
     apiFetch("/api/buildings")
       .then(async (res) => {
         if (!res.ok) throw new Error(`GET /api/buildings → ${res.status}`);
         const json = (await res.json()) as { items: BuildingDTO[] };
         if (cancelled) return;
         const items = json.items ?? [];
-        console.log(
+        debugLog(
           "[BUILDINGS] fetch ok — items:",
           items.length,
           items.map((b) => ({
@@ -190,11 +191,11 @@ export function useBuildingsLayer({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) {
-      console.log("[BUILDINGS] effect skipped — no map instance yet");
+      debugLog("[BUILDINGS] effect skipped — no map instance yet");
       return;
     }
     if (!mapReady) {
-      console.log("[BUILDINGS] effect skipped — map style not ready yet");
+      debugLog("[BUILDINGS] effect skipped — map style not ready yet");
       return;
     }
 
@@ -206,7 +207,7 @@ export function useBuildingsLayer({
       return true;
     });
 
-    console.log(
+    debugLog(
       "[BUILDINGS] effect run — enabled:",
       enabled,
       "filter:",
@@ -227,7 +228,7 @@ export function useBuildingsLayer({
     if (existingSrc) {
       existingSrc.setData(fc);
     } else {
-      console.log("[BUILDINGS] installing footprint source + fill/line layers");
+      debugLog("[BUILDINGS] installing footprint source + fill/line layers");
       map.addSource(SRC_ID, { type: "geojson", data: fc });
 
       // Tan fill · hover boosts opacity 0.15 → 0.35 · matches LISTED-plot
@@ -283,7 +284,7 @@ export function useBuildingsLayer({
       ) => {
         const f = e.features?.[0];
         const id = f?.properties?.id;
-        console.log("[BUILDINGS] footprint click", { id });
+        debugLog("[BUILDINGS] footprint click", { id });
         if (typeof id === "string") onSelectBuildingRef.current(id);
       };
       const mouseMove = (
@@ -320,7 +321,7 @@ export function useBuildingsLayer({
       mouseMoveRef.current = mouseMove;
       mouseLeaveRef.current = mouseLeave;
       handlersInstalledRef.current = true;
-      console.log("[BUILDINGS] footprint handlers installed (click + hover)");
+      debugLog("[BUILDINGS] footprint handlers installed (click + hover)");
     }
 
     // Toggle visibility.
@@ -335,7 +336,7 @@ export function useBuildingsLayer({
 
     liveLayersRef.current = liveLayersRef.current.filter((live) => {
       if (!targetIds.has(live.buildingId)) {
-        console.log(
+        debugLog(
           "[BUILDINGS] removing layer",
           live.layerId,
           "(building no longer active)",
@@ -349,7 +350,7 @@ export function useBuildingsLayer({
     const liveIds = new Set(liveLayersRef.current.map((l) => l.buildingId));
     for (const b of activeBuildings) {
       if (!b.modelPath) {
-        console.log(
+        debugLog(
           "[BUILDINGS] building",
           b.name,
           "has no modelPath — skipping GLB layer (footprint-only)",
@@ -359,7 +360,7 @@ export function useBuildingsLayer({
       if (liveIds.has(b.id)) continue;
 
       const modelUrl = b.modelPath.startsWith("/") ? b.modelPath : `/${b.modelPath}`;
-      console.log(
+      debugLog(
         "[BUILDINGS] addLayer for",
         b.name,
         "modelUrl:",
@@ -379,7 +380,7 @@ export function useBuildingsLayer({
       });
       if (!map.getLayer(layer.id)) {
         map.addLayer(layer);
-        console.log(
+        debugLog(
           "[BUILDINGS] layer added —",
           layer.id,
           "getLayer post-check:",
@@ -413,7 +414,7 @@ export function useBuildingsLayer({
     return () => {
       const map = mapRef.current;
       if (!map) return;
-      console.log("[BUILDINGS] unmount cleanup");
+      debugLog("[BUILDINGS] unmount cleanup");
 
       for (const live of liveLayersRef.current) {
         if (map.getLayer(live.layerId)) map.removeLayer(live.layerId);

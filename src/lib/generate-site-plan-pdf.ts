@@ -126,7 +126,7 @@ async function captureMap(
     const canvas = map.getCanvas();
     return canvas.toDataURL('image/jpeg', 0.92);
   } catch (e) {
-    console.warn('[site-plan-pdf] map capture failed:', e);
+    console.error('[site-plan-pdf] map capture failed:', e);
     return null;
   }
 }
@@ -256,7 +256,7 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
     try {
       doc.addImage(mapImg, 'JPEG', leftX, bodyY, leftW, mapH, undefined, 'FAST');
     } catch (e) {
-      console.warn('[site-plan-pdf] addImage failed:', e);
+      console.error('[site-plan-pdf] addImage failed:', e);
     }
   } else {
     doc.setDrawColor(...FAINT);
@@ -398,7 +398,7 @@ export async function generateSitePlanPdf(args: SitePlanArgs): Promise<void> {
     const qrSize = 14;
     doc.addImage(qr, 'PNG', W - M - qrSize, footerY - qrSize + 2, qrSize, qrSize);
   } catch (e) {
-    console.warn('[site-plan-pdf] QR failed:', e);
+    console.error('[site-plan-pdf] QR failed:', e);
   }
 
   doc.setFont('helvetica', 'bold');

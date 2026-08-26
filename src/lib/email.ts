@@ -34,7 +34,7 @@ function getClient(): Resend | null {
   if (!key || key.trim() === "") {
     if (!warnedMissing) {
       warnedMissing = true;
-      console.warn("[email] RESEND_API_KEY missing — skipping");
+      console.error("[email] RESEND_API_KEY missing — skipping");
     }
     return null;
   }

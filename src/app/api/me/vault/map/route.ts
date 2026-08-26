@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
       try {
         affectionPlan = synthesizeAffectionPlanFromDdaSnapshot(e.ddaSnapshot as unknown as DdaSnapshot);
       } catch (err) {
-        console.warn("[vault map] DDA snapshot synth failed for entry", e.id, err);
+        console.error("[vault map] DDA snapshot synth failed for entry", e.id, err);
       }
     }
 

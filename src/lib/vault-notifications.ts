@@ -53,7 +53,7 @@ function capPayload(
   if (!payload) return null;
   try {
     if (JSON.stringify(payload).length > MAX_PAYLOAD_BYTES) {
-      console.warn("[vault-notifications] payload too large — dropping");
+      console.error("[vault-notifications] payload too large — dropping");
       return null;
     }
     return payload;

@@ -66,6 +66,7 @@ import ParcelsNav from "./ParcelsNav";
 // follow in the next commit after founder review.
 import { Panel } from "@/components/Panel";
 import { ChromeBtn } from "@/components/ChromeBtn";
+import { debugLog, debugWarn } from "@/lib/debug";
 import {
   PANEL_BG,
   PANEL_BLUR,
@@ -3456,7 +3457,7 @@ function ParcelsMapPageInner() {
         }
       }
 
-      console.log(
+      debugLog(
         "[ZAAHI]",
         "plotFeatures:", plotFeatures.length,
         "buildingFeatures:", buildingFeatures.length,
@@ -3560,7 +3561,7 @@ function ParcelsMapPageInner() {
       // tiers. Each feature carries its own `color` (hex string from
       // ZAAHI_LANDUSE_COLOR) and `height` (metres) so the paint can
       // use plain `["get", "color"]` and `["get", "height"]`.
-      console.log("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
+      debugLog("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
       const buildingSrc = map.getSource(ZAAHI_BUILDINGS_SRC);
       if (buildingSrc) {
         (buildingSrc as maplibregl.GeoJSONSource).setData({
@@ -3568,13 +3569,13 @@ function ParcelsMapPageInner() {
           features: buildingFeatures,
         });
       } else {
-        console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
+        debugLog("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
         map.addSource(ZAAHI_BUILDINGS_SRC, {
           type: "geojson",
           data: { type: "FeatureCollection", features: buildingFeatures },
         });
         if (!map.getLayer(ZAAHI_BUILDINGS_3D)) {
-          console.log("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
+          debugLog("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
           map.addLayer({
             id: ZAAHI_BUILDINGS_3D,
             type: "fill-extrusion",
@@ -3773,7 +3774,7 @@ function ParcelsMapPageInner() {
     try {
       const r = await apiFetch("/api/vault/shared-with-me/map");
       if (!r.ok) {
-        if (r.status !== 401) console.warn("[vault-shared] fetch:", r.status);
+        if (r.status !== 401) console.error("[vault-shared] fetch:", r.status);
         return;
       }
       const data = (await r.json()) as GeoJSON.FeatureCollection;
@@ -4244,7 +4245,7 @@ function ParcelsMapPageInner() {
             resolve();
           };
           img.onerror = () => {
-            console.warn(`[amenity-icon] failed to load ${url}`);
+            debugWarn(`[amenity-icon] failed to load ${url}`);
             resolve();
           };
           img.src = url;
@@ -5044,9 +5045,9 @@ function ParcelsMapPageInner() {
       map.addControl(overlay as unknown as maplibregl.IControl);
       deckOverlayRef.current = overlay;
       setOverlayReady(true);
-      console.log("[GLB] MapboxOverlay attached (deferred init)");
+      debugLog("[GLB] MapboxOverlay attached (deferred init)");
     } catch (e) {
-      console.warn("[deckgl-spike] overlay init failed:", e);
+      console.error("[deckgl-spike] overlay init failed:", e);
     }
   }, [mapStyleReady]);
 
@@ -5650,7 +5651,7 @@ function ParcelsMapPageInner() {
           onSubmitted={(id) => {
             // Submitted parcels start in PENDING_REVIEW and don't show on the
             // public map until verified — so we can't fly to them yet, just close.
-            console.log("[zaahi] submitted parcel", id);
+            debugLog("[zaahi] submitted parcel", id);
             setAddFlow("none");
             setToast({
               kind: "success",
@@ -5670,7 +5671,7 @@ function ParcelsMapPageInner() {
             setAddPlotPrefill(null);
           }}
           onCreated={(id, coords) => {
-            console.log("[zaahi] vault entry created", id, coords);
+            debugLog("[zaahi] vault entry created", id, coords);
             setAddFlow("none");
             setAddPlotPrefill(null);
             // Phase 3 (2026-05-30): vault rows ride the unified ZAAHI
@@ -5699,7 +5700,7 @@ function ParcelsMapPageInner() {
             });
           }}
           onExistingFound={(id) => {
-            console.log("[zaahi] vault entry already exists", id);
+            debugLog("[zaahi] vault entry already exists", id);
             setAddFlow("none");
             setAddPlotPrefill(null);
             setToast({

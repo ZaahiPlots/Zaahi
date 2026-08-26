@@ -398,12 +398,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       options: { redirectTo: `${publicOrigin(req)}/` },
     });
     if (linkErr) {
-      console.warn("[register/submit] generateLink failed:", linkErr.message);
+      console.error("[register/submit] generateLink failed:", linkErr.message);
     } else if (linkData?.properties?.action_link) {
       verificationLink = linkData.properties.action_link;
     }
   } catch (e) {
-    console.warn("[register/submit] generateLink threw:", e);
+    console.error("[register/submit] generateLink threw:", e);
   }
 
   // ── 8. Insert User (placeholder) + RegistrationApplication (atomic) ─
