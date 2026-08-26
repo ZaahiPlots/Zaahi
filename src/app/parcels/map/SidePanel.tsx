@@ -139,6 +139,14 @@ interface Plan {
 
 export interface ParcelDetail {
   id: string;
+  // False ONLY when `id` is not a real `Parcel.id` — i.e. a vault entry
+  // that has no public Parcel row behind it (VaultSidePanelAdapter maps
+  // `promotedParcelId ?? entry.id`). Controls that call
+  // /api/parcels/:id/* must be hidden in that case or they 404.
+  // Undefined on the normal path (data fetched from /api/parcels/:id),
+  // where `id` is always a real Parcel id — so only an explicit `false`
+  // suppresses anything.
+  hasBackingParcel?: boolean;
   plotNumber: string;
   district: string;
   emirate: string;
@@ -856,7 +864,15 @@ export default function SidePanel({
                   (founder 2026-06-09). Source documents sit between
                   General Notes and the Calculator so users see the
                   affection plan before running numbers. DDA Bearer-auth
-                  download flow unchanged. */}
+                  download flow unchanged.
+
+                  Hidden entirely when `hasBackingParcel === false` — a vault
+                  entry with no public Parcel row behind it. Both buttons below
+                  call /api/parcels/:id/*, which resolves `id` against the
+                  Parcel table; with a VaultEntry id they returned 404. This
+                  section holds nothing but those two buttons, so hiding the
+                  whole block avoids leaving an empty accordion. */}
+              {data.hasBackingParcel !== false && (
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <button
                   onClick={() => setDocsOpen((v) => !v)}
@@ -958,6 +974,7 @@ export default function SidePanel({
                   </div>
                 )}
               </div>
+              )}
 
               {/* Feasibility Calculator — ALWAYS visible. Manual GFA / price entry
                   is supported when DDA data is missing. */}
@@ -1020,7 +1037,17 @@ export default function SidePanel({
                         projectName={plan.projectName}
                         masterDeveloper={plan.masterDeveloper}
                         maxHeightCode={plan.maxHeightCode}
-                        onStartNegotiation={() => setOfferOpen(true)}
+                        // Undefined when there is no backing Parcel row, so
+                        // FeasibilityCalculator hides the CTA entirely (it
+                        // renders it only when the handler is supplied — see
+                        // FeasibilityCalculator.tsx:949). OfferModal would
+                        // otherwise POST a VaultEntry id to /api/deals as
+                        // parcelId.
+                        onStartNegotiation={
+                          data.hasBackingParcel === false
+                            ? undefined
+                            : () => setOfferOpen(true)
+                        }
                       />
                     )}
                   </div>
@@ -1120,7 +1147,9 @@ export default function SidePanel({
         </div>
       )}
 
-      {offerOpen && data && (
+      {/* Second gate: even if offerOpen were set some other way, never hand
+          OfferModal an id that is not a real Parcel.id. */}
+      {offerOpen && data && data.hasBackingParcel !== false && (
         <OfferModal
           parcelId={data.id}
           askingPriceAed={aed}

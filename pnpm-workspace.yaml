@@ -1,0 +1,14 @@
+# pnpm 11 no longer reads `pnpm.onlyBuiltDependencies` from package.json —
+# the setting moved here. Without it, pnpm blocks these packages' install
+# scripts, `node_modules/.prisma/client` is never generated, and
+# `pnpm build` fails with:
+#   Module not found: Can't resolve '.prisma/client/index-browser'
+#
+# `prisma generate` is also wired into the `build` script in package.json so
+# generation does not depend on the install-script allowlist at all.
+allowBuilds:
+  '@prisma/engines': true
+  core-js: true
+  esbuild: true
+  prisma: true
+  sharp: true

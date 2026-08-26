@@ -151,8 +151,20 @@ interface Props {
 // reused via directData).
 function mapEntryToParcelDetail(view: EntryView): ParcelDetail {
   const plan = view.affectionPlan;
+  // `view.id` is a VaultEntry id, NOT a Parcel id. Anything SidePanel does
+  // with `data.id` hits /api/parcels/:id/*, which resolves against the
+  // Parcel table — so a VaultEntry id 404s (PDF, plot-guidelines) or writes
+  // a bad FK (OfferModal → /api/deals). `promotedParcelId` is the real
+  // Parcel id when the entry has been promoted to a public listing; it is
+  // null otherwise, and hasBackingParcel tells SidePanel to hide those
+  // controls rather than let them fail.
+  // Only OwnerView carries promotedParcelId; RecipientView (shared-with-me)
+  // has no Parcel link at all, so those entries always report false.
+  const backingParcelId =
+    "promotedParcelId" in view ? (view.promotedParcelId ?? null) : null;
   return {
-    id: view.id,
+    id: backingParcelId ?? view.id,
+    hasBackingParcel: backingParcelId !== null,
     plotNumber: view.plotNumber,
     district: view.district,
     emirate: view.emirate,
