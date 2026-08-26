@@ -211,15 +211,15 @@ export const LAND_USE_OPTIONS: ReadonlyArray<{
   label: string;
   color: string;
 }> = [
-  { key: "RESIDENTIAL", label: "Residential", color: "#FFD700" },
+  { key: "RESIDENTIAL", label: "Residential", color: "#2D6A4F" },
   { key: "COMMERCIAL", label: "Commercial", color: "#1B3A5C" },
-  { key: "MIXED_USE", label: "Mixed Use", color: "#9B59B6" },
+  { key: "MIXED_USE", label: "Mixed Use", color: "#6B4C9A" },
   { key: "HOTEL", label: "Hotel", color: "#E8732A" },
-  { key: "INDUSTRIAL", label: "Industrial", color: "#708090" },
-  { key: "EDUCATIONAL", label: "Educational", color: "#1ABC9C" },
-  { key: "HEALTHCARE", label: "Healthcare", color: "#E74C3C" },
-  { key: "AGRICULTURAL", label: "Agricultural", color: "#6B8E23" },
-  { key: "FUTURE_DEVELOPMENT", label: "Future Dev", color: "#84CC16" },
+  { key: "INDUSTRIAL", label: "Industrial", color: "#495057" },
+  { key: "EDUCATIONAL", label: "Educational", color: "#0077B6" },
+  { key: "HEALTHCARE", label: "Healthcare", color: "#E63946" },
+  { key: "AGRICULTURAL", label: "Agricultural", color: "#606C38" },
+  { key: "FUTURE_DEVELOPMENT", label: "Future Dev", color: "#A8926E" },
   // 10th category — founder approval 2026-06-03. Covers ~29K AD
   // off-plan plots (primaryUse="Investment") previously invisible
   // under any chip. Chip colour follows ZAAHI_LANDUSE_COLOR in
