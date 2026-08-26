@@ -377,14 +377,17 @@ Footprint каждого верхнего яруса получается чер
 - ВЫКЛЮЧЕНЫ по умолчанию: все DDA районы, мастер-планы, Communities, Major Roads, Metro и прочие overlays. Пользователь сам включает через Layers panel.
 
 ### Навигация по карте
-- WASD drone navigation — **toggleable**, default OFF на desktop (не активируется на touch/mobile). Пользователь включает через кнопку-дрон в правом вертикальном стакане под 2D/3D. Состояние сохраняется в `localStorage["zaahi-drone-mode"]`.
-  - OFF (default): стандартная MapLibre навигация, WASD/Space/Shift не перехватываются, правая кнопка мыши не захватывает курсор.
-  - ON: W/A/S/D (через `e.code`, layout-independent) — полёт в направлении камеры, Space — выше, Shift — ниже, Shift+WASD — ×3 turbo. Правая кнопка мыши → pointer lock → свободное вращение bearing + pitch (0–85°). Escape отпускает lock. Velocity-based физика с easing.
-  - Левая кнопка — клик по участку (не трогать), стандартная MapLibre навигация работает параллельно.
+- **Always-on keyboard nav** — без режимов, без UI-переключателя. W/A/S/D (через `e.code`, layout-independent) — движение в направлении камеры, Q/E — поворот bearing, Space/C — выше/ниже, R/F — pitch, Shift — ускорение. Работает всегда, параллельно со стандартной MapLibre-навигацией мышью.
   - Ignore keys когда фокус в input/textarea/contenteditable.
-  - При выключении: velocity сбрасывается в 0, keys Set очищается, pointer lock отпускается.
-  - Кнопка "D" на клавиатуре — только движение, НЕ переключает drone mode (переключение только через UI кнопку).
-  - Реализация: `src/lib/drone-controls.ts` (controller pattern: `{ enable, disable, destroy }`), install в map-init useEffect, state `droneEnabled` в `src/app/parcels/map/page.tsx`.
+  - Реализация: `src/lib/keyboard-nav.ts` (controller pattern: `{ destroy }`), install в map-init useEffect. MapLibre собственный keyboard-handler отключён при конструировании карты (`keyboard: false`), чтобы стрелки / +/- не конфликтовали.
+
+> **Drone mode удалён 2026-06-11.** FPS free-flight режим (`3bac358`) был
+> отреверчен в тот же день (`6e87fd4`) и затем удалён целиком (`6d02f28`):
+> `DroneHUD.tsx` и `src/lib/drone-controls.ts` больше не существуют, ключ
+> `localStorage["zaahi-drone-mode"]` не читается. Замена — always-on
+> keyboard nav выше (`be1bac2`). Постмортем:
+> `docs/research/drone-fps-postmortem-2026-06-11.md`. Не восстанавливать
+> без явного решения основателя.
 
 ### UI
 - Hover на участок: мини-карточка (plotNumber | район | sqft | цена | landUse)
@@ -493,7 +496,7 @@ Footprint каждого верхнего яруса получается чер
 - [ ] "ZAAHI Listings (114) — ALWAYS ON" индикатор в топе панели
 - [ ] По умолчанию видны ТОЛЬКО ZAAHI Plots (остальные слои off)
 - [ ] DDA Districts, мастер-планы, Communities, Roads НЕ загружаются автоматически
-- [ ] Drone-mode кнопка (иконка дрон, под 2D/3D) toggle работает: OFF → серая + стандартная навигация; ON → gold + WASD/Space/Shift + правый клик = pointer lock rotate; состояние сохраняется в localStorage между reload
+- [ ] Keyboard nav работает всегда: W/A/S/D движение, Q/E поворот, Space/C высота, R/F pitch, Shift ускорение; клавиши игнорируются когда фокус в input/textarea
 - [ ] Toggle отдельного слоя работает (вкл/выкл)
 - [ ] Чекбокс секции (ALL) работает
 - [ ] Archibald (кот) иконка видна
