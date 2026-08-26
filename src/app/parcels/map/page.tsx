@@ -27,6 +27,7 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import MapZoomReadout from "./MapZoomReadout";
+import MapCoordsReadout from "./MapCoordsReadout";
 import MapCompassIcon from "./MapCompassIcon";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
@@ -1903,7 +1904,16 @@ function ParcelsMapPageInner() {
   });
   loadedBuildingsRef.current = loadedBuildings;
   const [theme, setTheme] = useState<Theme>("light");
+  // Live mirror of `baseMap` for the map-init effect, which has [] deps and
+  // would otherwise close over the mount-time value. Read by the
+  // webglcontextrestored handler (perf-2026-08-21 item 5) to rebuild the
+  // style the user is actually looking at, not the one they loaded with.
+  const baseMapRef = useRef<BaseMap>("light");
   const [baseMap, setBaseMap] = useState<BaseMap>("light");
+  baseMapRef.current = baseMap;
+  // WebGL context loss. Set by the canvas `webglcontextlost` handler in the
+  // map-init effect; drives the recovery overlay near the bottom of the JSX.
+  const [contextLost, setContextLost] = useState(false);
   // Throttle basemap swaps so impatient clicking can't queue multiple
   // setStyle()s while the previous styledata handler is still loading
   // (founder fix 2026-06-03 — companion to the listener-leak fix in
@@ -1921,7 +1931,6 @@ function ParcelsMapPageInner() {
     });
   }, [baseMapBusy]);
   const [is3D, setIs3D] = useState(true);
-  const [cursor, setCursor] = useState({ lng: 55.27, lat: 25.20 });
   // zoom / bearing React-state mirrors removed 2026-06-11 (perf fix
   // on feat/keyboard-nav). MapLibre's "zoom"/"rotate" events fire
   // ~60 Hz under keyboard nav and the setState chain was forcing a
@@ -4405,7 +4414,6 @@ function ParcelsMapPageInner() {
     // map.keyboard.enable() removed 2026-06-11 — handler disabled
     // at construction (see keyboard:false above). keyboard-nav.ts
     // installs window-level listeners that drive the camera instead.
-    map.on("mousemove", (e) => setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat }));
     // map.on("zoom" / "rotate") → setState mirrors removed 2026-06-11
     // (perf fix on feat/keyboard-nav). See the matching comment above
     // the deleted useState declarations. MapZoomReadout + MapCompassIcon
@@ -4972,6 +4980,52 @@ function ParcelsMapPageInner() {
 
     mapRef.current = map;
 
+    // ── WebGL context loss / restore (perf-2026-08-21 item 5) ──────
+    // There was no handling at all: a lost context left MapLibre's canvas
+    // permanently blank underneath fully interactive chrome, recoverable
+    // only by reloading the page. That presents as a hang, and it is the
+    // most likely explanation for the "WebGL context was lost" report.
+    //
+    // preventDefault() on webglcontextlost is what makes restoration
+    // possible — without it the browser never fires webglcontextrestored.
+    // The context is genuinely gone at this point, so every GPU-backed
+    // resource (style, sources, layers, deck.gl overlay) has to be rebuilt
+    // on the way back; setStyle does that for the MapLibre side and the
+    // deck.gl MapboxOverlay re-adds its interleaved layers off its own
+    // styledata subscription.
+    const canvas = map.getCanvas();
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
+      setContextLost(true);
+    };
+    const onContextRestored = () => {
+      // Rebuild the style the user is currently on, not the mount-time one
+      // — this effect has [] deps, hence baseMapRef.
+      try {
+        map.setStyle(STYLES[baseMapRef.current]);
+        map.once("styledata", async () => {
+          const ls = layersRef.current;
+          addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+          addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
+          addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+          setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, ls.ddaLandPlots);
+          setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, ls.adLandPlots);
+          setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, ls.adLandPlots);
+          await loadAmenityIcons(map);
+          await attachOverlays(map);
+          await loadZaahiPlots(map);
+          void loadVaultShared(map);
+          setContextLost(false);
+        });
+      } catch (err) {
+        // Leave the overlay up — a failed rebuild is exactly the case where
+        // the user needs to be told to reload rather than shown a dead map.
+        console.error("[webgl] context restore failed:", err);
+      }
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost);
+    canvas.addEventListener("webglcontextrestored", onContextRestored);
+
     // ── deck.gl hero GLBs ──────────────────────────────────────────
     // MapboxOverlay in `interleaved: true` mode shares MapLibre's
     // WebGL context. Each ScenegraphLayer loads a hero GLB from
@@ -5018,6 +5072,8 @@ function ParcelsMapPageInner() {
           deckOverlayRef.current = null;
         }
       } catch { /* map already gone, nothing to detach */ }
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
       popup.remove();
       map.remove();
       mapRef.current = null;
@@ -5148,7 +5204,27 @@ function ParcelsMapPageInner() {
 
   // Theme swap → reload basemap, reattach overlays after styledata fires,
   // and re-tint the road colour to match.
+  //
+  // FIRST-MOUNT GUARD (perf-2026-08-21 item 1). React runs passive effects in
+  // hook-declaration order, and the map-init effect above assigns
+  // `mapRef.current = map` synchronously in its own body. So on the very first
+  // commit this effect already sees a non-null map and its `if (!map) return`
+  // guard cannot fire — it called setStyle on the freshly constructed map
+  // while that map's initial style was still loading. MapLibre has no
+  // style-equality shortcut, so `_diffStyle` → `setState` → `_checkLoaded()`
+  // threw "Style is not done loading.", which MapLibre caught and answered by
+  // rebuilding the style from scratch. Every loader below then ran a second
+  // time on top of the map-init pass: /api/parcels/map ×2, every enabled
+  // /api/layers/* ×2, and the 197-parcel / 456-extrusion feature build and GPU
+  // upload ×2, plus a blank canvas while the discarded style rebuilt.
+  // `baseMap` only ever changes via swapBaseMap (a user click), so skipping
+  // the mount run costs nothing and removes the whole duplicate pass.
+  const baseMapInitRef = useRef(true);
   useEffect(() => {
+    if (baseMapInitRef.current) {
+      baseMapInitRef.current = false;
+      return;
+    }
     const map = mapRef.current;
     if (!map) return;
     map.setStyle(STYLES[baseMap]);
@@ -5916,7 +5992,7 @@ function ParcelsMapPageInner() {
           pointerEvents: "none",
         }}
       >
-        {cursor.lat.toFixed(5)}, {cursor.lng.toFixed(5)} · z<MapZoomReadout mapRef={mapRef} />
+        <MapCoordsReadout mapRef={mapRef} /> · z<MapZoomReadout mapRef={mapRef} />
       </div>
 
       {/* ── LEFT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
@@ -6831,6 +6907,43 @@ function ParcelsMapPageInner() {
         width={panelWidth}
         onWidthChange={setPanelWidth}
       />
+      {/* WebGL context-loss overlay (perf-2026-08-21 item 5). Without this
+          the canvas simply goes blank under fully interactive chrome, which
+          is indistinguishable from a hang. zIndex clears every panel. */}
+      {contextLost && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            background: "rgba(10, 22, 40, 0.82)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            color: GOLD,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            letterSpacing: "0.08em",
+          }}
+          role="alert"
+          aria-live="assertive"
+        >
+          <div style={{ fontSize: 14, fontWeight: 700 }}>MAP INTERRUPTED</div>
+          <div
+            style={{
+              fontSize: 12,
+              opacity: 0.8,
+              fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+              letterSpacing: "normal",
+            }}
+          >
+            The graphics context was lost. Restoring…
+          </div>
+        </div>
+      )}
       <WelcomeTour />
       <ParcelsPortalPanel
         open={portalOpen}
