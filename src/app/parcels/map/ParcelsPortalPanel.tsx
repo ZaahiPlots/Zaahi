@@ -246,6 +246,10 @@ function PortalCard({ item, onClick }: { item: ParcelItem; onClick: () => void }
   return (
     <button
       type="button"
+      // Stable hook for the E2E smoke harness (tests/e2e/smoke.spec.ts) so
+      // check (a) can count rendered rows against the header count without
+      // depending on styling or copy.
+      data-testid="portal-card"
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

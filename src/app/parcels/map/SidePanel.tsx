@@ -482,6 +482,10 @@ export default function SidePanel({
       >
         <button
           onClick={onClose}
+          // The glyph is a bare "×", which a screen reader announces as
+          // "multiplication sign" or skips entirely. Naming it also gives the
+          // smoke harness a stable handle on the drawer's close control.
+          aria-label="Close parcel panel"
           style={{ color: SUBTLE, fontSize: 18, lineHeight: 1, background: "none", border: 0, cursor: "pointer" }}
         >
           ×

@@ -4607,7 +4607,12 @@ function ParcelsMapPageInner() {
 
   // Load all overlay layers onto a fresh style. Idempotent: won't re-add
   // sources that already exist (each call after setStyle attaches fresh).
-  async function attachOverlays(map: MLMap) {
+  /**
+   * @param opts.reattach  true when the style registry was just wiped (basemap
+   *   swap, WebGL context restore) and every source must be rebuilt from
+   *   scratch. false/absent on the initial attach.
+   */
+  async function attachOverlays(map: MLMap, opts: { reattach?: boolean } = {}) {
     // Eagerly load base layers (Communities + Roads) and any layer that
     // is currently toggled on. DDA districts are NOT loaded here — they
     // are lazy and only fetched on first toggle. Master plans are
@@ -4624,11 +4629,15 @@ function ParcelsMapPageInner() {
       // but the founder spec (2026-04-15) moved defaults to OFF so every
       // layer except ZAAHI listings is lazy now.
       if (wantOn || wasLoaded) {
-        // The basemap swap blew away the source registry, so we have to
-        // pretend nothing is loaded. The loader is idempotent on
-        // map.getSource so this is safe even if the source somehow
-        // survived.
-        loadedLayersRef.current.delete(def.key);
+        // Forget the load only when the style registry really was wiped.
+        // Clearing unconditionally made every enabled overlay fetch twice on
+        // a cold load: the [layers] effect runs on mount (mapRef.current is
+        // already set by then, same ordering that caused the [baseMap]
+        // duplicate) and loads the layer, then the map-init `load` handler
+        // reached here, deleted that record and fetched the same GeoJSON
+        // again. loadLayer's in-flight guard could not collapse them because
+        // the two are sequential, not concurrent.
+        if (opts.reattach) loadedLayersRef.current.delete(def.key);
         await loadLayer(map, def);
         await setLayerVisibility(map, def, wantOn);
       }
@@ -5354,7 +5363,7 @@ function ParcelsMapPageInner() {
           setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, ls.adLandPlots);
           setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, ls.adLandPlots);
           await loadAmenityIcons(map);
-          await attachOverlays(map);
+          await attachOverlays(map, { reattach: true });
           await loadZaahiPlots(map);
           void loadVaultShared(map);
           setContextLost(false);
@@ -5592,7 +5601,7 @@ function ParcelsMapPageInner() {
 
       // ── Then everything else (any of these can throw safely now) ──
       await loadAmenityIcons(map);
-      await attachOverlays(map);
+      await attachOverlays(map, { reattach: true });
       // ZAAHI plots also need to be re-attached after a basemap swap
       // (maplibre's source registry was wiped). The loader is idempotent
       // on map.getSource so it's safe to call.

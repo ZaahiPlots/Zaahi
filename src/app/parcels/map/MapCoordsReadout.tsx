@@ -39,19 +39,29 @@ export default function MapCoordsReadout({ mapRef }: Props) {
   const posRef = useRef({ lng: INITIAL_LNG, lat: INITIAL_LAT });
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
     const onMove = (e: maplibregl.MapMouseEvent) => {
       posRef.current.lng = e.lngLat.lng;
       posRef.current.lat = e.lngLat.lat;
     };
-    map.on("mousemove", onMove);
 
+    // The map does not exist yet when this effect first runs: React flushes
+    // child effects BEFORE the parent's, and ParcelsMapPageInner constructs the
+    // map inside its own effect. Subscribing eagerly here would read a null
+    // mapRef, bail, and — with a stable [mapRef] dep — never retry, leaving the
+    // readout frozen at its initial value. So the rAF loop, which is running
+    // anyway, also does the attach on the first frame the map exists. Same
+    // read-mapRef-live discipline as MapZoomReadout.
+    let attached: maplibregl.Map | null = null;
     let raf = 0;
     let prev = "";
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      const map = mapRef.current;
+      if (map && map !== attached) {
+        if (attached) attached.off("mousemove", onMove);
+        map.on("mousemove", onMove);
+        attached = map;
+      }
       const span = spanRef.current;
       if (!span) return;
       const { lng, lat } = posRef.current;
@@ -64,7 +74,7 @@ export default function MapCoordsReadout({ mapRef }: Props) {
     raf = requestAnimationFrame(tick);
 
     return () => {
-      map.off("mousemove", onMove);
+      if (attached) attached.off("mousemove", onMove);
       cancelAnimationFrame(raf);
     };
   }, [mapRef]);

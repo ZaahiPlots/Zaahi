@@ -86,3 +86,9 @@ docs/sessions/2026-05-21-resume.md
 
 # Supabase CLI temp files
 supabase/.temp/
+
+# Playwright smoke harness output (regenerated per run)
+/test-results/
+/playwright-report/
+/blob-report/
+.last-run.json
