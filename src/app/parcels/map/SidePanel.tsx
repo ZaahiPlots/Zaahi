@@ -400,12 +400,22 @@ export default function SidePanel({
   const effectiveWidth = width ?? PANEL_WIDTH_DEFAULT;
   // Width transition is normally 150 ms ease (smooth reset / breakpoint
   // crossings), but suppressed during drag so the cursor leads the
-  // panel pixel-for-pixel. transform stays on the existing 300 ms
-  // transition (slide-in animation) — we merge the two via inline
-  // style so they don't fight.
+  // panel pixel-for-pixel. The slide-in stays on its own 300 ms curve —
+  // we merge the two via inline style so they don't fight.
+  //
+  // `translate` must be named explicitly. Tailwind v4 compiles
+  // `translate-x-full` / `translate-y-full` to the standalone `translate`
+  // property, NOT to `transform`:
+  //   .sm\:translate-x-full{translate:var(--tw-translate-x) var(--tw-translate-y)}
+  // The `transition-transform` class covers that (it expands to
+  // `transform,translate,scale,rotate`), but this inline `transition`
+  // overrides the class outright. Listing only `transform` therefore
+  // animated a property that never changes and left the real slide
+  // un-transitioned, so the panel snapped between open and closed and
+  // getComputedStyle(...).transform read `none` in both states.
   const widthTransition = isResizing
-    ? "transform 300ms ease-out"
-    : "transform 300ms ease-out, width 150ms ease";
+    ? "transform 300ms ease-out, translate 300ms ease-out"
+    : "transform 300ms ease-out, translate 300ms ease-out, width 150ms ease";
 
   return (
     <Panel

@@ -32,11 +32,17 @@ type Props = {
   onSelectParcel: (id: string) => void;
 };
 
-const STATUS_ORDER = ["LISTED", "VERIFIED", "IN_DEAL"] as const;
+// Display order for the status groups. This is a PREFERRED order, not a
+// whitelist — see `grouped` below. /api/parcels/map returns LISTED /
+// VERIFIED / IN_DEAL *and* the caller's own VAULT_PRIVATE rows (route.ts
+// :52-57), so a hardcoded three-status list silently dropped every vault
+// parcel from the list body while the header still counted it.
+const STATUS_ORDER = ["LISTED", "VERIFIED", "IN_DEAL", "VAULT_PRIVATE"] as const;
 const STATUS_COLOR: Record<string, string> = {
   LISTED: GOLD,
   VERIFIED: "#1B4965",
   IN_DEAL: "#2D6A4F",
+  VAULT_PRIVATE: "#9B59B6",
 };
 
 export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParcel }: Props) {
@@ -77,13 +83,23 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
   const grouped = useMemo(() => {
     const m = new Map<string, ParcelItem[]>();
     for (const it of filtered) {
-      const arr = m.get(it.status) ?? [];
+      // Fall back to a visible bucket rather than dropping the row when a
+      // parcel arrives with no status at all.
+      const key = it.status || "OTHER";
+      const arr = m.get(key) ?? [];
       arr.push(it);
-      m.set(it.status, arr);
+      m.set(key, arr);
     }
-    return STATUS_ORDER
-      .map((s) => ({ status: s, items: m.get(s) ?? [] }))
-      .filter((g) => g.items.length > 0);
+    // Known statuses first, in STATUS_ORDER; anything else follows in
+    // encounter order. A parcel is never silently discarded because its
+    // status is missing from the display list — that was the root cause of
+    // "No parcels match." on a fully loaded list.
+    const known = STATUS_ORDER.filter((s) => (m.get(s)?.length ?? 0) > 0)
+      .map((s) => ({ status: s as string, items: m.get(s)! }));
+    const rest = [...m.keys()]
+      .filter((k) => !STATUS_ORDER.includes(k as (typeof STATUS_ORDER)[number]))
+      .map((k) => ({ status: k, items: m.get(k)! }));
+    return [...known, ...rest];
   }, [filtered]);
 
   function handleClick(it: ParcelItem) {
@@ -192,9 +208,14 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
             Loading…
           </div>
         )}
+        {/* Two distinct empty states — "loaded but nothing matches your
+            query" vs "loaded and there is genuinely nothing here". The
+            single "No parcels match." copy hid which one was happening. */}
         {!error && items !== null && grouped.length === 0 && (
           <div style={{ padding: "16px 14px", fontSize: 11, opacity: 0.55 }}>
-            No parcels match.
+            {search.trim()
+              ? `No parcels match “${search.trim()}”.`
+              : "No parcels available."}
           </div>
         )}
         {grouped.map((group) => (
