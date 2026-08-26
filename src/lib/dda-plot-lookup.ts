@@ -163,7 +163,7 @@ export async function fetchFullDdaData(
         const html = await fetchPlotInfoHtml(plotNumber);
         return parseAffectionPlan(html);
       } catch (e) {
-        console.warn("[dda-full-fetch] PlotInfo failed for", plotNumber, e);
+        console.error("[dda-full-fetch] PlotInfo failed for", plotNumber, e);
         return null;
       }
     })(),
@@ -171,7 +171,7 @@ export async function fetchFullDdaData(
       try {
         return await fetchBuildingLimit(plotNumber);
       } catch (e) {
-        console.warn("[dda-full-fetch] BuildingLimit failed for", plotNumber, e);
+        console.error("[dda-full-fetch] BuildingLimit failed for", plotNumber, e);
         return null;
       }
     })(),
@@ -198,11 +198,11 @@ export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotR
       signal: AbortSignal.timeout(10_000),
     });
   } catch (e) {
-    console.warn("[dda-plot-lookup] fetch failed for", plotNumber, e);
+    console.error("[dda-plot-lookup] fetch failed for", plotNumber, e);
     return null;
   }
   if (!res.ok) {
-    console.warn("[dda-plot-lookup] HTTP", res.status, "for", plotNumber);
+    console.error("[dda-plot-lookup] HTTP", res.status, "for", plotNumber);
     return null;
   }
 
@@ -210,7 +210,7 @@ export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotR
   try {
     json = await res.json();
   } catch (e) {
-    console.warn("[dda-plot-lookup] JSON parse failed for", plotNumber, e);
+    console.error("[dda-plot-lookup] JSON parse failed for", plotNumber, e);
     return null;
   }
 

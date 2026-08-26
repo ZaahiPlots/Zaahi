@@ -7,6 +7,7 @@ import { getApprovedUserId, getAdminUserId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 import { claimStatusForRole } from '@/lib/plot-claim';
 import { normalizeEmirate } from '@/lib/emirate';
+import { debugWarn } from '@/lib/debug';
 
 export const runtime = 'nodejs';
 
@@ -291,7 +292,7 @@ export async function POST(req: NextRequest) {
         // The parcel itself was successfully created/updated, so the
         // submit flow still returns 200 — the existing claim covers
         // ownership semantics. Logged for visibility.
-        console.warn('[parcels/submit] plotclaim duplicate (race) — parcel:', parcel.id);
+        debugWarn('[parcels/submit] plotclaim duplicate (race) — parcel:', parcel.id);
       } else {
         // Surface, but don't fail the whole submit — admin can verify
         // the parcel and add a manual claim if this races at scale.

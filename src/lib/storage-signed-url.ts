@@ -30,7 +30,7 @@ export async function signRegistrationDoc(
     .from(BUCKET)
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) {
-    console.warn(`[signRegistrationDoc] failed for ${path}:`, error?.message);
+    console.error(`[signRegistrationDoc] failed for ${path}:`, error?.message);
     return null;
   }
   return {

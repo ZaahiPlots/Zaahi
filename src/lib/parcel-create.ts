@@ -32,6 +32,7 @@ import { logActivity } from "./activity";
 import { supabase } from "./supabase";
 import { claimStatusForRole } from "./plot-claim";
 import { normalizeEmirate } from "./emirate";
+import { debugWarn } from "@/lib/debug";
 
 /** Best-effort DDA enrichment shape. */
 interface PolyFeature {
@@ -247,7 +248,7 @@ export async function createParcelFromSubmission(
         // Race-loser; caller already has a claim on this parcel. The
         // parcel itself was successfully created/updated. Return null
         // claimStatus so the caller knows we didn't insert.
-        console.warn(
+        debugWarn(
           "[parcel-create] plotclaim duplicate (race) — parcel:",
           parcel.id,
         );

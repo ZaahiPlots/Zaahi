@@ -9,6 +9,8 @@
 // strings. Callers that don't want the escaping dance can pass
 // parseMode: undefined to send plain text.
 
+import { debugWarn } from "@/lib/debug";
+
 export interface InlineKeyboardButton {
   text: string;
   url?: string;
@@ -56,7 +58,7 @@ export async function sendTelegramMessage(
   if (!token || token.trim() === "" || !chatId) {
     if (!warnedMissing) {
       warnedMissing = true;
-      console.warn(
+      debugWarn(
         "[telegram] TELEGRAM_BOT_TOKEN or TELEGRAM_ADMIN_CHAT_ID missing — skipping",
       );
     }

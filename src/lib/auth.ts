@@ -77,7 +77,7 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
       update: {}, // no-op on subsequent calls
     });
   } catch (e) {
-    console.warn(
+    console.error(
       "[auth] auto-sync User upsert failed:",
       e instanceof Error ? e.message : String(e),
     );

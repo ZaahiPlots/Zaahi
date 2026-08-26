@@ -54,7 +54,7 @@ export async function POST(
       options: { redirectTo: `${publicOrigin(req)}/` },
     });
     if (error || !data?.properties?.action_link) {
-      console.warn("[resend-verification] generateLink failed:", error?.message);
+      console.error("[resend-verification] generateLink failed:", error?.message);
       return jsonError(500, "link_generation_failed", "Could not generate a fresh verification link.");
     }
     actionLink = data.properties.action_link;

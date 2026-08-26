@@ -130,7 +130,7 @@ function capPayload(
   try {
     const serialised = JSON.stringify(payload);
     if (serialised.length > MAX_PAYLOAD_BYTES) {
-      console.warn(
+      console.error(
         `[vault-activity] payload size ${serialised.length}B exceeds ${MAX_PAYLOAD_BYTES}B cap — dropping`,
       );
       return null;

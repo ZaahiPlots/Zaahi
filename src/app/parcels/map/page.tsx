@@ -66,6 +66,7 @@ import ParcelsNav from "./ParcelsNav";
 // follow in the next commit after founder review.
 import { Panel } from "@/components/Panel";
 import { ChromeBtn } from "@/components/ChromeBtn";
+import { debugLog, debugWarn } from "@/lib/debug";
 import {
   PANEL_BG,
   PANEL_BLUR,
@@ -1640,11 +1641,31 @@ function ParcelsMapPageInner() {
   // Private Plot Vault — side panel state. Owner-side: set by the
   // ZAAHI_PLOTS_FILL click handler via the isVault branch (Phase 3
   // unification). Share-side: set by the VAULT_SHARED_3D click handler.
-  // Parallel to selectedParcelId (which drives the public SidePanel);
-  // both can be open at once via separate z-index layers.
+  //
+  // MUTUALLY EXCLUSIVE with selectedParcelId. Both drive a right-edge
+  // <aside> of the same (user-resizable) width. When both were non-null
+  // the two panels tiled side by side and covered ~85% of the viewport,
+  // and closing one left the other swallowing every pointer event over
+  // the map — recoverable only by reload. The map click handler already
+  // routed one XOR the other, but the carousel / parcels list / hover
+  // card / Archie tool entry points each set their own atom without
+  // clearing the sibling. Always go through openParcelPanel /
+  // openVaultPanel below rather than calling the setters directly.
   const [selectedVaultEntry, setSelectedVaultEntry] = useState<
     { id: string; mode: "owner" | "share" } | null
   >(null);
+  // Panel mutex. Opening either side panel closes the other.
+  const openParcelPanel = useCallback((id: string | null) => {
+    setSelectedParcelId(id);
+    if (id !== null) setSelectedVaultEntry(null);
+  }, []);
+  const openVaultPanel = useCallback(
+    (entry: { id: string; mode: "owner" | "share" } | null) => {
+      setSelectedVaultEntry(entry);
+      if (entry !== null) setSelectedParcelId(null);
+    },
+    [],
+  );
   // SidePanel drag-resize width (founder spec 2026-05-31). Lives in
   // page.tsx so the value survives open/close cycles and stays in
   // sync between SidePanel + VaultSidePanelAdapter. Initialised to
@@ -3436,7 +3457,7 @@ function ParcelsMapPageInner() {
         }
       }
 
-      console.log(
+      debugLog(
         "[ZAAHI]",
         "plotFeatures:", plotFeatures.length,
         "buildingFeatures:", buildingFeatures.length,
@@ -3540,7 +3561,7 @@ function ParcelsMapPageInner() {
       // tiers. Each feature carries its own `color` (hex string from
       // ZAAHI_LANDUSE_COLOR) and `height` (metres) so the paint can
       // use plain `["get", "color"]` and `["get", "height"]`.
-      console.log("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
+      debugLog("[ZAAHI]", "buildingFeatures count:", buildingFeatures.length);
       const buildingSrc = map.getSource(ZAAHI_BUILDINGS_SRC);
       if (buildingSrc) {
         (buildingSrc as maplibregl.GeoJSONSource).setData({
@@ -3548,13 +3569,13 @@ function ParcelsMapPageInner() {
           features: buildingFeatures,
         });
       } else {
-        console.log("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
+        debugLog("[ZAAHI]", "addSource:", ZAAHI_BUILDINGS_SRC);
         map.addSource(ZAAHI_BUILDINGS_SRC, {
           type: "geojson",
           data: { type: "FeatureCollection", features: buildingFeatures },
         });
         if (!map.getLayer(ZAAHI_BUILDINGS_3D)) {
-          console.log("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
+          debugLog("[ZAAHI]", "addLayer:", ZAAHI_BUILDINGS_3D, "fill-extrusion", "features:", buildingFeatures.length);
           map.addLayer({
             id: ZAAHI_BUILDINGS_3D,
             type: "fill-extrusion",
@@ -3753,7 +3774,7 @@ function ParcelsMapPageInner() {
     try {
       const r = await apiFetch("/api/vault/shared-with-me/map");
       if (!r.ok) {
-        if (r.status !== 401) console.warn("[vault-shared] fetch:", r.status);
+        if (r.status !== 401) console.error("[vault-shared] fetch:", r.status);
         return;
       }
       const data = (await r.json()) as GeoJSON.FeatureCollection;
@@ -4224,7 +4245,7 @@ function ParcelsMapPageInner() {
             resolve();
           };
           img.onerror = () => {
-            console.warn(`[amenity-icon] failed to load ${url}`);
+            debugWarn(`[amenity-icon] failed to load ${url}`);
             resolve();
           };
           img.src = url;
@@ -4586,7 +4607,7 @@ function ParcelsMapPageInner() {
         const ev = e as MapMouseEvent & { features?: GeoJSON.Feature[] };
         const f = ev.features?.[0];
         const id = f?.properties?.id as string | undefined;
-        if (id) setSelectedVaultEntry({ id, mode: "share" });
+        if (id) openVaultPanel({ id, mode: "share" });
       });
       // Hover popup parity with ZAAHI listings (founder spec 2026-05-30).
       // Mirrors the ZAAHI mousemove handler at ZAAHI_PLOTS_FILL: card
@@ -4783,10 +4804,10 @@ function ParcelsMapPageInner() {
           // pipeline / asking price / owner contact panel renders
           // instead of the public SidePanel.
           if (props.isVault === true && props.vaultEntryId) {
-            setSelectedVaultEntry({ id: props.vaultEntryId, mode: "owner" });
+            openVaultPanel({ id: props.vaultEntryId, mode: "owner" });
             return;
           }
-          setSelectedParcelId(props.id);
+          openParcelPanel(props.id);
         });
       }
 
@@ -5024,9 +5045,9 @@ function ParcelsMapPageInner() {
       map.addControl(overlay as unknown as maplibregl.IControl);
       deckOverlayRef.current = overlay;
       setOverlayReady(true);
-      console.log("[GLB] MapboxOverlay attached (deferred init)");
+      debugLog("[GLB] MapboxOverlay attached (deferred init)");
     } catch (e) {
-      console.warn("[deckgl-spike] overlay init failed:", e);
+      console.error("[deckgl-spike] overlay init failed:", e);
     }
   }, [mapStyleReady]);
 
@@ -5350,8 +5371,8 @@ function ParcelsMapPageInner() {
       if (!m) return;
       m.fitBounds(bounds, { padding: 80, duration: 1200, maxZoom: 17 });
     },
-    openParcel: (parcelId) => setSelectedParcelId(parcelId),
-    openVaultEntry: (entryId) => setSelectedVaultEntry({ id: entryId, mode: "owner" }),
+    openParcel: (parcelId) => openParcelPanel(parcelId),
+    openVaultEntry: (entryId) => openVaultPanel({ id: entryId, mode: "owner" }),
     highlightParcel: (parcelId) => {
       // Reuse the gold-glow filter pattern from the click-selection
       // path (page.tsx:307-312). Setting "__none__" hides the glow;
@@ -5520,7 +5541,9 @@ function ParcelsMapPageInner() {
       const c = EMIRATE_CENTERS[emirate];
       m.flyTo({ center: [c.lng, c.lat], zoom: c.zoom, duration: 1500, essential: true });
     },
-  }), []);
+    // openParcelPanel / openVaultPanel are useCallback([]) — stable for the
+    // lifetime of the component, so this memo still never recomputes.
+  }), [openParcelPanel, openVaultPanel]);
 
   // ── Wave 3c proactive Archie (founder spec 2026-06-10) ──
   // Watches camera dwell, parcel-open count, and filter-empty state.
@@ -5599,9 +5622,13 @@ function ParcelsMapPageInner() {
             zoom: 16,
             pitch: 45,
             duration: 2000,
+            // essential: true — without it MapLibre skips the animation
+            // entirely under prefers-reduced-motion, so Find plot appeared
+            // to do nothing. Every other flyTo in this file already sets it.
+            essential: true,
           })
         }
-        onSelectParcel={(id) => setSelectedParcelId(id)}
+        onSelectParcel={(id) => openParcelPanel(id)}
         onOpenAddModal={() => setAddFlow("chooser")}
         vaultOnlyMode={vaultOnlyMode}
         onToggleVaultOnly={() => setVaultOnlyMode((v) => !v)}
@@ -5624,7 +5651,7 @@ function ParcelsMapPageInner() {
           onSubmitted={(id) => {
             // Submitted parcels start in PENDING_REVIEW and don't show on the
             // public map until verified — so we can't fly to them yet, just close.
-            console.log("[zaahi] submitted parcel", id);
+            debugLog("[zaahi] submitted parcel", id);
             setAddFlow("none");
             setToast({
               kind: "success",
@@ -5644,7 +5671,7 @@ function ParcelsMapPageInner() {
             setAddPlotPrefill(null);
           }}
           onCreated={(id, coords) => {
-            console.log("[zaahi] vault entry created", id, coords);
+            debugLog("[zaahi] vault entry created", id, coords);
             setAddFlow("none");
             setAddPlotPrefill(null);
             // Phase 3 (2026-05-30): vault rows ride the unified ZAAHI
@@ -5673,7 +5700,7 @@ function ParcelsMapPageInner() {
             });
           }}
           onExistingFound={(id) => {
-            console.log("[zaahi] vault entry already exists", id);
+            debugLog("[zaahi] vault entry already exists", id);
             setAddFlow("none");
             setAddPlotPrefill(null);
             setToast({
@@ -6515,7 +6542,7 @@ function ParcelsMapPageInner() {
           // Mirror HeaderBar Find handshake (page.tsx ~6155) — open the
           // right SidePanel after the camera lands, not during flight.
           window.setTimeout(() => {
-            setSelectedParcelId(zaahiHover.id);
+            openParcelPanel(zaahiHover.id);
           }, 2000);
           setZaahiHover(null);
         };
@@ -6604,7 +6631,7 @@ function ParcelsMapPageInner() {
         if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(vaultHover.planDateIso);
         const handleOpen = () => {
-          if (vaultHover.id) setSelectedVaultEntry({ id: vaultHover.id, mode: vaultHover.mode });
+          if (vaultHover.id) openVaultPanel({ id: vaultHover.id, mode: vaultHover.mode });
           setVaultHover(null);
         };
         return (
@@ -6771,7 +6798,7 @@ function ParcelsMapPageInner() {
         <VaultSidePanelAdapter
           entryId={selectedVaultEntry.id}
           mode={selectedVaultEntry.mode}
-          onClose={() => setSelectedVaultEntry(null)}
+          onClose={() => openVaultPanel(null)}
           mapRef={mapRef}
           width={panelWidth}
           onWidthChange={setPanelWidth}
@@ -6790,7 +6817,7 @@ function ParcelsMapPageInner() {
         mapRef={mapRef}
         onClose={() => {
           sound.swooshClose();
-          setSelectedParcelId(null);
+          openParcelPanel(null);
         }}
         width={panelWidth}
         onWidthChange={setPanelWidth}
@@ -6800,7 +6827,7 @@ function ParcelsMapPageInner() {
         open={portalOpen}
         onClose={() => setPortalOpen(false)}
         mapRef={mapRef}
-        onSelectParcel={(id) => setSelectedParcelId(id)}
+        onSelectParcel={(id) => openParcelPanel(id)}
       />
       <ParcelsNav
         mapRef={mapRef}
@@ -6812,9 +6839,9 @@ function ParcelsMapPageInner() {
         selectedParcelId={selectedParcelId}
         selectedVaultEntryId={selectedVaultEntry?.id ?? null}
         vaultOnlyMode={vaultOnlyMode}
-        onSelectListing={(id) => setSelectedParcelId(id)}
+        onSelectListing={(id) => openParcelPanel(id)}
         onSelectVaultEntry={(entryId) =>
-          setSelectedVaultEntry({ id: entryId, mode: "owner" })
+          openVaultPanel({ id: entryId, mode: "owner" })
         }
       />
       {devModeHero && editingHeroId && (() => {
@@ -7448,12 +7475,26 @@ function HeaderBar({
     setFindBusy(true);
     try {
       const r = await apiFetch("/api/parcels/map");
+      // r.ok was previously unchecked: a 401/500 fell through to r.json(),
+      // `data.items` came back undefined and `.find` threw a TypeError that
+      // surfaced as the generic "Network error" — indistinguishable from a
+      // genuine miss.
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = (await r.json()) as {
-        items: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
+        items?: Array<{ id: string; plotNumber: string; geometry: GeoJSON.Polygon | null }>;
       };
-      const hit = data.items.find((it) => it.plotNumber === plotNumber);
-      if (!hit?.geometry) {
-        setFindError("Plot not found");
+      const items = data.items ?? [];
+      // Normalised compare — the field is free text and a stray space or a
+      // pasted number would miss under strict ===.
+      const needle = plotNumber.toLowerCase();
+      const hit = items.find((it) => (it.plotNumber ?? "").trim().toLowerCase() === needle);
+      if (!hit) {
+        setFindError(`No plot found for “${plotNumber}”`);
+      } else if (!hit.geometry) {
+        // Distinct from "not found": the plot exists but has no polygon, so
+        // there is nothing to fly to. Previously both produced the same
+        // "Plot not found".
+        setFindError(`Plot ${plotNumber} has no mapped boundary`);
       } else {
         const ring = hit.geometry.coordinates[0];
         const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;

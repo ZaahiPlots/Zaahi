@@ -25,6 +25,7 @@ import type {
   Map as MLMap,
 } from "maplibre-gl";
 import maplibregl from "maplibre-gl";
+import { debugLog } from "@/lib/debug";
 
 export interface BuildingGlbLayerParams {
   buildingId: string;
@@ -96,7 +97,7 @@ export function createBuildingGlbLayer(
           /* non-browser or malformed URL — fall through to DB value */
         }
       }
-      console.log(
+      debugLog(
         tag,
         "onAdd — creating scene, renderer, GLTFLoader · DB rotationDeg:",
         rotationDeg,
@@ -121,7 +122,7 @@ export function createBuildingGlbLayer(
       const wrapper = new THREE.Group();
       scene.add(wrapper);
 
-      console.log(tag, "GLTFLoader.load →", modelUrl);
+      debugLog(tag, "GLTFLoader.load →", modelUrl);
       const t0 = performance.now();
 
       new GLTFLoader().load(
@@ -149,7 +150,7 @@ export function createBuildingGlbLayer(
           const sizeY = bbox.max.y - bbox.min.y;
           const sizeZ = bbox.max.z - bbox.min.z;
 
-          console.log(
+          debugLog(
             tag,
             "GLB loaded in",
             Math.round(performance.now() - t0),
@@ -195,7 +196,7 @@ export function createBuildingGlbLayer(
           if (progress.lengthComputable) {
             const pct = Math.floor((progress.loaded / progress.total) * 100);
             if (pct === 25 || pct === 50 || pct === 75 || pct === 100) {
-              console.log(tag, "GLB download", pct, "%");
+              debugLog(tag, "GLB download", pct, "%");
             }
           }
         },
@@ -222,7 +223,7 @@ export function createBuildingGlbLayer(
         context: gl as WebGLRenderingContext,
       });
       renderer.autoClear = false;
-      console.log(tag, "WebGLRenderer ready (sharing MapLibre GL context · no-MSAA)");
+      debugLog(tag, "WebGLRenderer ready (sharing MapLibre GL context · no-MSAA)");
     },
 
     render(
@@ -233,7 +234,7 @@ export function createBuildingGlbLayer(
 
       if (!firstRenderLogged) {
         firstRenderLogged = true;
-        console.log(
+        debugLog(
           tag,
           "first render tick — gltfLoaded:",
           gltfLoaded,
@@ -327,7 +328,7 @@ export function createBuildingGlbLayer(
     },
 
     onRemove(): void {
-      console.log(tag, "onRemove — disposing");
+      debugLog(tag, "onRemove — disposing");
       scene.clear();
       renderer?.dispose();
       renderer = null;

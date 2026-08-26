@@ -193,7 +193,7 @@ export async function POST(
       recoveryLink = data.properties.action_link;
     }
   } catch (e) {
-    console.warn("[admin/approve] generateLink threw:", e);
+    console.error("[admin/approve] generateLink threw:", e);
   }
 
   // ── Notifications (best-effort) ──────────────────────────────────
@@ -218,7 +218,7 @@ export async function POST(
         },
       },
     })
-    .catch((e) => console.warn("[admin/approve] Notification.create failed:", e));
+    .catch((e) => console.error("[admin/approve] Notification.create failed:", e));
 
   void sendTelegramToAdmins({
     text: `✅ Approved ${roleLabel.split(" — ")[0]} application from ${row.nickname} (${id.slice(0, 8)}…)`,
