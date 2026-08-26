@@ -199,6 +199,22 @@ export function useBuildingsLayer({
       return;
     }
 
+    // Nothing to install: /api/buildings returns `items: 0` today, and
+    // standing up a source + fill/line layers + three delegated handlers
+    // for an empty FeatureCollection is pure overhead. It also leaves
+    // click/hover handlers on the map that can never match a feature —
+    // the `[BUILDINGS] footprint handlers installed` line that audit 1.17
+    // mistook for the ZAAHI plot handlers.
+    //
+    // Guarded on the source, NOT on activeBuildings: once buildings do
+    // exist, a later `enabled` / `statusFilter` change that empties
+    // activeBuildings must still fall through to setData([]) and the
+    // visibility toggle below, or stale footprints stay on screen.
+    if (buildings.length === 0 && !map.getSource(SRC_ID)) {
+      debugLog("[BUILDINGS] effect skipped — 0 buildings, nothing installed");
+      return;
+    }
+
     const activeBuildings = buildings.filter((b) => {
       if (!enabled) return false;
       if (statusFilter && statusFilter.length > 0) {
