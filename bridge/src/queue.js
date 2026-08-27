@@ -22,6 +22,8 @@ export const STATES = Object.freeze({
   MERGED: "merged",
   DISCARDED: "discarded",
   FAILED: "failed",
+  /** Branch is good and pushed, but the decision email could not be delivered. */
+  EMAIL_FAILED: "email_failed",
 });
 
 /** States that still need a human before anything else happens. */
@@ -131,12 +133,14 @@ export function taskPath(id) {
   return resolve(QUEUE_DIR, `${id}.json`);
 }
 
-export function createTask({ id, text, source, chatId, messageId, receivedAt }) {
+export function createTask({ id, text, source, chatId, channel, messageId, receivedAt }) {
   ensureDirs();
   const task = {
     id,
     state: STATES.TRIAGING,
     source,
+    /** "founder" | "public" — decided once, at intake, by config.channelFor(). */
+    channel,
     chatId: String(chatId),
     messageId: messageId ?? null,
     receivedAt: receivedAt ?? new Date().toISOString(),

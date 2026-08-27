@@ -9,7 +9,7 @@
 //   2. Implementation is serial. One session at a time, queued, so a burst of
 //      approvals cannot run concurrent sessions over the same working tree.
 
-import { config } from "./config.js";
+import { config, channelFor } from "./config.js";
 import { log } from "./log.js";
 import {
   STATES,
@@ -30,6 +30,7 @@ import { triagePrompt, triageSystemPrompt, implPrompt, implSystemPrompt } from "
 import { runTriage, runImplementation, extractResultText, extractJsonBlock } from "./claude.js";
 import { runGates, summariseGates } from "./gates.js";
 import * as git from "./git.js";
+import { sendDecisionEmail } from "./email.js";
 
 const esc = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -46,16 +47,14 @@ export function createPipeline({ transport, runners = {} } = {}) {
   const doImpl = runners.runImplementation ?? runImplementation;
   const doGates = runners.runGates ?? runGates;
   const vcs = runners.git ?? git;
+  const doEmail = runners.sendDecisionEmail ?? sendDecisionEmail;
 
   /** Serial implementation lock: a promise chain, never concurrent. */
   let implChain = Promise.resolve();
   let implBusy = false;
 
-  const notifyChat = () => config.notifyChatId ?? config.allowedChatIds[0];
-
-  function isAllowed(chatId) {
-    return config.allowedChatIds.includes(String(chatId));
-  }
+  const notifyChat = () =>
+    config.notifyChatId ?? config.founderChatIds[0] ?? config.publicChatIds[0];
 
   async function say(chatId, text, buttons) {
     return transport.sendMessage(chatId, text, buttons ? { buttons } : {});
@@ -103,6 +102,26 @@ export function createPipeline({ transport, runners = {} } = {}) {
       `<b>Triage recommends:</b> ${esc(t.recommend)}`,
     ];
 
+    // ── The one behavioural difference between the channels ─────────────────
+    // FOUNDER: the message is itself the authorisation, so GATE 1 is skipped and
+    // the plan is posted as an FYI with no buttons. This is a separate branch on
+    // task.channel — a value fixed at intake by channelFor() — not a relaxation
+    // of the public path, which is untouched below.
+    //
+    // Note what is NOT skipped: the report was still fenced as untrusted data, a
+    // suspicious classification already returned above (terminal on BOTH
+    // channels), the session still has no git tools, and GATE 2 still stands
+    // between this and main.
+    if (task.channel === "founder") {
+      lines.push("");
+      lines.push(`<i>Founder channel — proceeding to implementation without approval.</i>`);
+      await say(task.chatId, lines.join("\n"));
+      updateTask(task.id, { state: STATES.APPROVED }, "founder channel — gate 1 skipped");
+      log.audit(`[gate1] SKIPPED (founder channel) ${task.id}`, task.chatId);
+      enqueueImplementation(task.id);
+      return;
+    }
+
     const buttons = [
       [
         { text: "✅ Approve", callback_data: `a1:approve:${task.id}` },
@@ -117,6 +136,47 @@ export function createPipeline({ transport, runners = {} } = {}) {
       { state: STATES.AWAITING_PLAN_APPROVAL, gate1MessageId: sentMsg?.message_id ?? null },
       "awaiting gate 1",
     );
+  }
+
+  /**
+   * Emails the CTO and reports the outcome to chat. Called once a branch is
+   * pushed with green gates, and also when a session concludes DO NOT SHIP.
+   *
+   * A negative recommendation is never suppressed, and a delivery failure never
+   * loses it: after the retries in email.js, the full text is posted to chat and
+   * the task is marked email_failed.
+   */
+  async function emailDecision(taskId) {
+    const task = loadTask(taskId);
+    const res = await doEmail(task);
+
+    if (res.ok) {
+      updateTask(taskId, { email: { ok: true, verdict: res.rendered.verdict, at: new Date().toISOString() } });
+      await say(
+        task.chatId,
+        `📧 Decision request emailed to the CTO — <b>${esc(res.rendered.verdict)}</b>`,
+      );
+      return res;
+    }
+
+    log.error(`[email] falling back to chat for ${taskId}`, res.error);
+    updateTask(
+      taskId,
+      { email: { ok: false, error: res.error, verdict: res.rendered.verdict, at: new Date().toISOString() } },
+      "email delivery failed — posting full text to chat instead",
+    );
+    // Post the whole thing so the decision is not lost to a flaky mail server.
+    await say(
+      task.chatId,
+      [
+        `⚠️ <b>Could not email the CTO</b> (${esc(clip(res.error, 200))}).`,
+        `Full text below so nothing is lost — task marked <code>email_failed</code>.`,
+        ``,
+        `<b>${esc(res.rendered.subject)}</b>`,
+        `<pre>${esc(res.rendered.text)}</pre>`,
+      ].join("\n"),
+    );
+    return res;
   }
 
   // ── Triage ───────────────────────────────────────────────────────────────
@@ -194,13 +254,22 @@ export function createPipeline({ transport, runners = {} } = {}) {
       await vcs.checkoutMain();
       updateTask(
         taskId,
-        { state: STATES.FAILED, impl: implJson, error: implJson.stopped_reason ?? "session stopped" },
+        {
+          state: STATES.FAILED,
+          impl: implJson,
+          decision: implJson,
+          branch: null,
+          error: implJson.stopped_reason ?? "session stopped",
+        },
         "session stopped deliberately",
       );
       await say(
         task.chatId,
         `🛑 <code>${esc(taskId)}</code> stopped without changes: ${esc(clip(implJson.stopped_reason, 400))}`,
       );
+      // A deliberate "this should not ship" is a RESULT, not an error, and it is
+      // exactly the case where suppressing the email would be worst. Send it.
+      await emailDecision(taskId);
       return;
     }
 
@@ -245,6 +314,12 @@ export function createPipeline({ transport, runners = {} } = {}) {
 
     const stat = await vcs.statForBranch(branch);
 
+    // Branch is pushed and the gates are green: this is the moment the CTO gets
+    // a decision request. Both channels, same format. Done BEFORE gate 2 is
+    // offered so the email and the buttons describe the same state.
+    updateTask(taskId, { decision: implJson, diffStat: stat });
+    const emailed = await emailDecision(taskId);
+
     const buttons = [
       [
         { text: "🚀 Merge to main", callback_data: `a2:merge:${task.id}` },
@@ -260,6 +335,7 @@ export function createPipeline({ transport, runners = {} } = {}) {
         ``,
         `<b>Gates:</b> ${summariseGates(gates)}`,
         ``,
+        `<b>Recommendation:</b> ${esc(emailed.rendered.verdict)}`,
         `<b>What changed:</b> ${esc(clip(implJson.what_changed, 400))}`,
         ``,
         `<b>Diff stat:</b>`,
@@ -273,10 +349,19 @@ export function createPipeline({ transport, runners = {} } = {}) {
       buttons,
     );
 
+    // If the email could not be delivered the task STAYS email_failed, so the
+    // delivery problem is visible in /queue and /status rather than being
+    // papered over by the next state. GATE 2 is still offered and still works —
+    // see the callback guard, which accepts both states. The branch is fine; it
+    // is only the notification that failed.
     updateTask(
       taskId,
-      { state: STATES.AWAITING_MERGE_APPROVAL, commitSha: commit.sha, gate2MessageId: sentMsg?.message_id ?? null },
-      "awaiting gate 2",
+      {
+        state: emailed.ok ? STATES.AWAITING_MERGE_APPROVAL : STATES.EMAIL_FAILED,
+        commitSha: commit.sha,
+        gate2MessageId: sentMsg?.message_id ?? null,
+      },
+      emailed.ok ? "awaiting gate 2" : "awaiting gate 2 (email failed — full text posted to chat)",
     );
     await vcs.checkoutMain();
   }
@@ -351,15 +436,22 @@ export function createPipeline({ transport, runners = {} } = {}) {
     rateLimitRecord();
 
     const id = newTaskId();
+    // Channel is decided ONCE, here, from the chat id, and is then immutable on
+    // the task file. Nothing downstream re-derives it from message content.
+    const channel = channelFor(chatId);
     createTask({
       id,
       text,
       source: `telegram:${chatId}:${msg.from?.username ?? msg.from?.id ?? "unknown"}`,
       chatId,
+      channel,
       messageId: msg.message_id,
     });
-    log.info(`[pipeline] queued task ${id}`);
-    await say(chatId, `📥 Queued <code>${esc(id)}</code> — triaging…`);
+    log.info(`[pipeline] queued task ${id} on the ${channel} channel`);
+    await say(
+      chatId,
+      `📥 Queued <code>${esc(id)}</code> (${esc(channel)} channel) — triaging…`,
+    );
     await triageTask(id);
   }
 
@@ -371,7 +463,11 @@ export function createPipeline({ transport, runners = {} } = {}) {
         if (!tasks.length) return say(chatId, "Queue is empty.");
         const rows = tasks
           .slice(-20)
-          .map((t) => `• <code>${esc(t.id)}</code> — ${esc(t.state)}${t.branch ? ` (${esc(t.branch)})` : ""}`);
+          .map(
+            (t) =>
+              `• <code>${esc(t.id)}</code> [${esc(t.channel ?? "?")}] — ${esc(t.state)}` +
+              `${t.branch ? ` (${esc(t.branch)})` : ""}`,
+          );
         return say(chatId, [`<b>Queue</b> (${tasks.length} total, showing last ${rows.length})`, ...rows].join("\n"));
       }
       case "/status": {
@@ -382,6 +478,8 @@ export function createPipeline({ transport, runners = {} } = {}) {
           chatId,
           [
             `<b>${esc(t.id)}</b> — ${esc(t.state)}`,
+            `Channel: ${esc(t.channel ?? "unknown")}`,
+            t.email ? `Email: ${t.email.ok ? "sent" : "FAILED"} — ${esc(t.email.verdict ?? "?")}` : null,
             t.branch ? `Branch: <code>${esc(t.branch)}</code>` : null,
             t.triage ? `Type: ${esc(t.triage.classification)} · Risk: ${esc(t.triage.risk)}` : null,
             t.gates ? `Gates: ${summariseGates(t.gates)}` : null,
@@ -407,7 +505,8 @@ export function createPipeline({ transport, runners = {} } = {}) {
           chatId,
           [
             `Archie Bridge is listening.`,
-            `<b>This chat id is <code>${esc(chatId)}</code></b> — put it in <code>ALLOWED_CHAT_IDS</code>.`,
+            `<b>This chat id is <code>${esc(chatId)}</code></b>.`,
+            `Channel: <b>${esc(channelFor(chatId) ?? "not configured")}</b> — set it in <code>PUBLIC_CHAT_ID</code> or <code>FOUNDER_CHAT_ID</code>.`,
             ``,
             `Send a plain message to file a report. Commands: /queue /status &lt;id&gt; /pause /resume`,
           ].join("\n"),
@@ -462,7 +561,9 @@ export function createPipeline({ transport, runners = {} } = {}) {
     }
 
     if (gate === "a2") {
-      if (task.state !== STATES.AWAITING_MERGE_APPROVAL) {
+      // email_failed is a delivery problem, not a code problem: the branch is
+      // pushed and reviewable, so Merge and Discard must both still work.
+      if (task.state !== STATES.AWAITING_MERGE_APPROVAL && task.state !== STATES.EMAIL_FAILED) {
         await transport.answerCallbackQuery(cb.id, `Already ${task.state}.`);
         return;
       }
@@ -502,8 +603,12 @@ export function createPipeline({ transport, runners = {} } = {}) {
     const cb = update.callback_query;
     const chatId = String(msg?.chat?.id ?? cb?.message?.chat?.id ?? "");
 
-    // THE allowlist check. Both content and control paths pass through here.
-    if (!isAllowed(chatId)) {
+    // THE allowlist check. Both content and control paths pass through here, and
+    // channelFor() is the only thing that decides trust: "founder", "public", or
+    // null. A null is dropped without a reply — replying would confirm the bot
+    // exists. There is no path by which an unlisted id becomes either channel.
+    const channel = channelFor(chatId);
+    if (channel === null) {
       log.audit(
         `[security] ignored update from non-allowlisted chat`,
         JSON.stringify({ chatId, from: msg?.from?.id ?? cb?.from?.id, kind: msg ? "message" : "callback" }),

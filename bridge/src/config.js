@@ -40,6 +40,11 @@ const fileEnv = parseEnvFile(resolve(BRIDGE_DIR, ".env"));
 /** process.env wins over the file so systemd/CI can override without editing it. */
 const env = (key, fallback) => process.env[key] ?? fileEnv[key] ?? fallback;
 
+/** Comma-separated list → trimmed, de-duplicated, empties dropped. */
+function csv(raw) {
+  return [...new Set(String(raw ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
+}
+
 function intEnv(key, fallback) {
   const raw = env(key);
   if (raw === undefined || raw === "") return fallback;
@@ -54,15 +59,23 @@ export const config = {
   botToken: env("TELEGRAM_BOT_TOKEN", ""),
 
   /**
-   * Allowlist. Every message and every button press is checked against this.
-   * Anything else is ignored and logged — see pipeline.js. An empty allowlist
-   * means "trust nobody", which is the correct default: a misconfigured bridge
-   * must be inert, not open.
+   * PUBLIC channel — untrusted user reports relayed by Archie. Full pipeline:
+   * triage → GATE 1 (a human approves the plan) → implement → gates → GATE 2.
+   * ALLOWED_CHAT_IDS is accepted as the legacy name for this list.
    */
-  allowedChatIds: (env("ALLOWED_CHAT_IDS", "") || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean),
+  publicChatIds: csv(env("PUBLIC_CHAT_ID", "") || env("ALLOWED_CHAT_IDS", "")),
+
+  /**
+   * FOUNDER channel — messages here are authorised work requests, so GATE 1 is
+   * skipped and triage flows straight into implementation.
+   *
+   * This raises trust in ONE dimension only: who is allowed to authorise work.
+   * It does not lower any other defence. The report body is still fenced as
+   * untrusted data, the implementation session still has no git tools, a
+   * suspicious classification is still terminal, and GATE 2 still requires a
+   * human before anything reaches main. See channelFor().
+   */
+  founderChatIds: csv(env("FOUNDER_CHAT_ID", "")),
 
   /** Chat the bot posts plans and results into. Defaults to the first allowed id. */
   notifyChatId: env("NOTIFY_CHAT_ID", "") || null,
@@ -92,18 +105,75 @@ export const config = {
   mainBranch: env("MAIN_BRANCH", "main"),
 
   claudeBin: env("CLAUDE_BIN", "claude"),
+
+  /** Email hand-off to the CTO. See bridge/src/email.js. */
+  email: {
+    to: env("CTO_EMAIL", "") || null,
+    cc: env("FOUNDER_EMAIL", "") || null,
+    from: env("SMTP_FROM", "") || null,
+    host: env("SMTP_HOST", "") || null,
+    port: intEnv("SMTP_PORT", 587),
+    user: env("SMTP_USER", "") || null,
+    pass: env("SMTP_PASS", "") || null,
+    /** true → implicit TLS (465). false → plain connect then STARTTLS (587). */
+    secure: String(env("SMTP_SECURE", "false")).toLowerCase() === "true",
+    /**
+     * Escape hatch for the offline dry run's mock server ONLY. Honoured just
+     * for loopback hosts, so it can never be used to send real mail in clear.
+     */
+    allowInsecure: String(env("SMTP_ALLOW_INSECURE", "false")).toLowerCase() === "true",
+    retries: intEnv("SMTP_RETRIES", 2),
+  },
 };
+
+/** Union of both channels — this is the allowlist the poller enforces. */
+export function allowedChatIds() {
+  return [...new Set([...config.publicChatIds, ...config.founderChatIds])];
+}
+
+/**
+ * Sole classifier of trust. Returns "founder", "public", or null.
+ *
+ * Founder is checked FIRST and returns immediately, so a chat id can only take
+ * the founder path by literally appearing in FOUNDER_CHAT_ID. Everything else
+ * that is allowlisted is public; everything else at all is null and is dropped
+ * by the caller. There is no third outcome and no default-to-founder branch.
+ */
+export function channelFor(chatId) {
+  const id = String(chatId);
+  if (config.founderChatIds.includes(id)) return "founder";
+  if (config.publicChatIds.includes(id)) return "public";
+  return null;
+}
 
 /** Values that must never reach a log line or a Telegram message. */
 export function secrets() {
-  return [config.botToken].filter((s) => s && s.length >= 8);
+  return [config.botToken, config.email.pass].filter((s) => s && s.length >= 8);
 }
 
 export function assertRunnableConfig() {
   const problems = [];
   if (!config.botToken) problems.push("TELEGRAM_BOT_TOKEN is empty");
-  if (config.allowedChatIds.length === 0) {
-    problems.push("ALLOWED_CHAT_IDS is empty — the bridge would trust nobody and do nothing");
+  if (allowedChatIds().length === 0) {
+    problems.push(
+      "PUBLIC_CHAT_ID and FOUNDER_CHAT_ID are both empty — the bridge would trust nobody and do nothing",
+    );
+  }
+  // Fail closed on an ambiguous id. If the same chat were in both lists the
+  // channel would depend on lookup order, which is exactly the kind of quiet
+  // privilege escalation this config must never have.
+  const overlap = config.publicChatIds.filter((id) => config.founderChatIds.includes(id));
+  if (overlap.length) {
+    problems.push(
+      `chat id(s) ${overlap.join(", ")} appear in BOTH PUBLIC_CHAT_ID and FOUNDER_CHAT_ID — ` +
+        `a chat must belong to exactly one channel`,
+    );
+  }
+  if (config.founderChatIds.length && !config.email.host) {
+    problems.push("FOUNDER_CHAT_ID is set but SMTP_HOST is empty — the email hand-off would fail on every task");
+  }
+  if (config.email.host && !config.email.to) {
+    problems.push("SMTP_HOST is set but CTO_EMAIL is empty — there is nobody to send the decision request to");
   }
   if (problems.length) {
     throw new Error(

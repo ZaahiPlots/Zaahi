@@ -4,7 +4,7 @@
 // makes outbound HTTPS calls and nothing else. Run under systemd with
 // Restart=on-failure (see archie-bridge.service).
 
-import { config, assertRunnableConfig } from "./config.js";
+import { config, assertRunnableConfig, allowedChatIds } from "./config.js";
 import { log, initLogFile } from "./log.js";
 import { getOffset, setOffset } from "./queue.js";
 import { createTelegramTransport } from "./telegram.js";
@@ -17,8 +17,9 @@ async function main() {
   assertRunnableConfig();
 
   log.info(
-    `[bridge] starting — allowlist=${config.allowedChatIds.length} chat(s), ` +
-      `rate=${config.maxTasksPerHour}/h, poll=${config.pollTimeoutSec}s`,
+    `[bridge] starting — ${config.publicChatIds.length} public + ${config.founderChatIds.length} founder ` +
+      `chat(s) (${allowedChatIds().length} allowed), rate=${config.maxTasksPerHour}/h, ` +
+      `poll=${config.pollTimeoutSec}s, email=${config.email.host ? "on" : "OFF"}`,
   );
 
   const transport = createTelegramTransport();

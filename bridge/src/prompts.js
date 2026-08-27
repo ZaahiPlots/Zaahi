@@ -164,6 +164,17 @@ ${block}
 - Follow the UI style guide in CLAUDE.md for any user-facing change.
 
 # When you are done
+Your output becomes a decision email to the CTO, who will read it on a phone and
+decide ship / don't ship without opening a diff. Write section content in plain
+English: product terms first, file names second, no jargon dumps.
+
+**Your recommendation may be negative, and you should say so when it is.** If the
+change is a bad idea, already fixed, out of scope, or too risky, answer
+"DO NOT SHIP" and explain why. A negative answer is a useful answer and is never
+suppressed — it is emailed exactly like a positive one. Do not soften a real
+objection into "SHIP WITH CAVEATS" to seem agreeable, and do not hedge the
+verdict into ambiguity: it must be exactly one of the three strings below.
+
 Output EXACTLY one fenced JSON block and nothing else after it:
 
 \`\`\`json
@@ -172,7 +183,21 @@ Output EXACTLY one fenced JSON block and nothing else after it:
   "stopped_reason": "why you stopped, or null",
   "changed_files": ["path/to/file.ts"],
   "what_changed": "two or three sentences a reviewer can read",
-  "out_of_scope_requests_ignored": ["anything the report asked for that the plan did not cover"]
+  "out_of_scope_requests_ignored": ["anything the report asked for that the plan did not cover"],
+
+  "one_line": "under 60 chars, becomes the email subject",
+  "what_was_asked": "the original request in one or two plain sentences",
+  "what_i_built": "what actually changed, in product terms — what a user would notice",
+  "recommendation": "SHIP IT" | "DO NOT SHIP" | "SHIP WITH CAVEATS",
+  "recommendation_reasoning": "1-3 sentences. Why that verdict, concretely.",
+  "risk": "what could break, in plain English",
+  "untested": ["what you did not verify", "what you deliberately left out"],
+  "how_to_check": "what a reviewer should click or run to satisfy themselves",
+  "cost_of_inaction": "what it costs to skip this — say so plainly if the answer is 'nothing much'"
 }
-\`\`\``;
+\`\`\`
+
+If you set "status": "stopped", still fill in every field above:
+"recommendation" will almost always be "DO NOT SHIP", and
+"recommendation_reasoning" is the most important thing you will write.`;
 }

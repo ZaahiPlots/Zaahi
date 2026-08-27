@@ -124,6 +124,36 @@ you can bootstrap. Until the id is in `ALLOWED_CHAT_IDS`, nothing else is honour
 
 ### 3. Configure
 
+The two channels and the email hand-off are configured here. See
+`.env.example` for the annotated template; the keys that matter:
+
+| Key | What it does |
+|---|---|
+| `PUBLIC_CHAT_ID` | Untrusted user reports. Full pipeline including GATE 1. |
+| `FOUNDER_CHAT_ID` | Authorised work requests. GATE 1 skipped; everything else identical. |
+| `CTO_EMAIL` | Decision request goes here (To). |
+| `FOUNDER_EMAIL` | Copied (Cc). |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Outbound mail. |
+| `SMTP_SECURE` | `true` = implicit TLS on 465; `false` = STARTTLS on 587. |
+| `SMTP_RETRIES` | Retries after the first failure. 2 = three attempts. |
+
+A chat id in **both** lists is a configuration error and the bridge refuses to
+start — the channel would otherwise depend on lookup order.
+
+**Where to get SMTP credentials.** Any transactional provider works; the bridge
+speaks plain SMTP with STARTTLS and AUTH PLAIN/LOGIN, no vendor SDK:
+
+- **Resend** — `smtp.resend.com:587`, user `resend`, password = an API key from
+  <https://resend.com/api-keys>. (This repo already uses Resend for product mail.)
+- **Postmark** — `smtp.postmarkapp.com:587`, user and password both = a Server
+  API token from the server's *API Tokens* tab.
+- **Gmail** — works with an **App Password** (Google Account → Security →
+  2-Step Verification → App passwords), never your account password. Fine for a
+  trial, but a transactional provider is the better home for machine-sent mail.
+
+`SMTP_PASS` is a credential: it is redacted from every log line by `log.js`, and
+`bridge/.env` is gitignored.
+
 ```bash
 cd ~/zaahi/bridge
 cp .env.example .env
@@ -171,6 +201,32 @@ To keep it running after logout: `loginctl enable-linger zaahi`.
 ## Using it
 
 Send a plain message to the chat. That is a report.
+
+**Which chat you send it in decides what happens.** Identical text behaves
+differently by design:
+
+| | public chat | founder chat |
+|---|---|---|
+| GATE 1 (approve the plan) | required | **skipped** — the message is the authorisation |
+| plan posted | with Approve / Reject / Discuss buttons | as an FYI, no buttons |
+| suspicious text | terminal, no buttons | **terminal, no buttons — identical** |
+| implementation session tools | no git/network tools | **identical** |
+| gates must pass | yes | yes |
+| GATE 2 (merge to main) | required | **required** |
+| email to the CTO | yes | yes |
+
+Only `channelFor()` in `config.js` decides this, and only from the chat id — never
+from anything in the message.
+
+**The email hand-off.** Once a branch is pushed with green gates, the CTO gets a
+six-section decision request: what was asked, what was built, an explicit
+**SHIP IT / DO NOT SHIP / SHIP WITH CAVEATS**, risk, how to check, and the cost of
+doing nothing. If the session concludes the change should *not* ship, the email
+still goes — saying so. A negative result is never suppressed. Suspicious and
+rejected tasks never email.
+
+If SMTP fails, the bridge retries, then posts the full email text into the chat
+and marks the task `email_failed`; the branch and GATE 2 are unaffected.
 
 | Command | Effect |
 |---|---|
@@ -226,6 +282,9 @@ bridge/
     git.js            the only place git runs; refuses --force
     queue.js          task files, dedupe, rate limit, pause
     telegram.js       long-poll transport
+    email.js          six-section decision request + retry/fallback
+    smtp.js           minimal SMTP client (zero deps, STARTTLS, AUTH)
+    mock-smtp.js      real loopback SMTP server for the dry run
     mock-telegram.js  in-memory transport for the dry run
     config.js         .env loading, validation
     log.js            logging with unconditional redaction
