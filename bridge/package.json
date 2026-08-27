@@ -1,0 +1,17 @@
+{
+  "name": "archie-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Telegram-driven change-request pipeline for ZAAHI. Long-polling, no public endpoint.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dryrun": "node src/dryrun.js",
+    "check": "node --check src/index.js && node --check src/pipeline.js && node --check src/queue.js && node --check src/telegram.js && node --check src/claude.js && node --check src/gates.js && node --check src/git.js && node --check src/prompts.js && node --check src/config.js && node --check src/log.js && node --check src/mock-telegram.js && node --check src/dryrun.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

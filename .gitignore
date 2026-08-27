@@ -92,3 +92,7 @@ supabase/.temp/
 /playwright-report/
 /blob-report/
 .last-run.json
+
+# Archie Bridge runtime (see bridge/.gitignore for the detail)
+/bridge/.env
+/bridge/logs/
