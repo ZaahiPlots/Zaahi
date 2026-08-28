@@ -5396,8 +5396,53 @@ function ParcelsMapPageInner() {
         console.error("[webgl] context restore failed:", err);
       }
     };
-    canvas.addEventListener("webglcontextlost", onContextLost);
-    canvas.addEventListener("webglcontextrestored", onContextRestored);
+    // Capture phase, so this runs BEFORE MapLibre's own handler. preventDefault()
+    // is what permits the browser to fire webglcontextrestored at all, and if
+    // MapLibre handles the event first the opportunity can be missed. The
+    // reporter's Firefox session logged "WebGL context was lost" with no visible
+    // failure state, which is consistent with the notice never being reached.
+    canvas.addEventListener("webglcontextlost", onContextLost, { capture: true });
+    canvas.addEventListener("webglcontextrestored", onContextRestored, { capture: true });
+
+    // Belt and braces: if the context was already gone before the listener was
+    // attached (a race we cannot observe from here, and the most likely reading
+    // of a lost context that surfaced no notice), catch it on the next frame.
+    requestAnimationFrame(() => {
+      try {
+        const gl =
+          (canvas.getContext("webgl2") as WebGL2RenderingContext | null) ??
+          (canvas.getContext("webgl") as WebGLRenderingContext | null);
+        if (gl && gl.isContextLost()) {
+          console.error("[webgl] context was already lost when the handler attached");
+          setContextLost(true);
+        }
+      } catch { /* getContext can throw on a dead canvas — nothing to do */ }
+    });
+
+    // ── Post-paint re-measure (issue #10, defensive) ──────────────────────
+    // NOTE ON SCOPE, so nobody mistakes this for the reported fix: MapLibre
+    // 5.22 already ships its own ResizeObserver and trackResize defaults to
+    // true, so a container that CHANGES size is handled without us. I could not
+    // reproduce the reported "canvas never re-fits" defect in a browser, and a
+    // second ResizeObserver here would duplicate MapLibre's.
+    //
+    // The one gap that observer cannot close is structural: it fires on change,
+    // and this container is `position:absolute; inset:0`, so if the map measured
+    // wrong at construction the container's box never changes and no callback
+    // ever runs. A single resize once layout has settled closes exactly that,
+    // costs one frame, and is a no-op when the measurement was already right.
+    const settleRaf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          const c = map.getContainer();
+          const b = map.getCanvas();
+          if (Math.abs(c.clientHeight - b.clientHeight) > 1 || Math.abs(c.clientWidth - b.clientWidth) > 1) {
+            debugLog(`[map] post-paint re-measure ${b.clientWidth}x${b.clientHeight} -> ${c.clientWidth}x${c.clientHeight}`);
+            map.resize();
+          }
+        } catch { /* map may already be gone */ }
+      });
+    });
 
     // ── deck.gl hero GLBs ──────────────────────────────────────────
     // MapboxOverlay in `interleaved: true` mode shares MapLibre's
@@ -5445,8 +5490,9 @@ function ParcelsMapPageInner() {
           deckOverlayRef.current = null;
         }
       } catch { /* map already gone, nothing to detach */ }
-      canvas.removeEventListener("webglcontextlost", onContextLost);
-      canvas.removeEventListener("webglcontextrestored", onContextRestored);
+      cancelAnimationFrame(settleRaf);
+      canvas.removeEventListener("webglcontextlost", onContextLost, { capture: true });
+      canvas.removeEventListener("webglcontextrestored", onContextRestored, { capture: true });
       popup.remove();
       map.remove();
       mapRef.current = null;
@@ -7340,10 +7386,39 @@ function ParcelsMapPageInner() {
               opacity: 0.8,
               fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
               letterSpacing: "normal",
+              maxWidth: 380,
+              textAlign: "center",
             }}
           >
-            The graphics context was lost. Restoring…
+            The map failed to load — the browser dropped its graphics context.
+            Trying to restore it automatically.
           </div>
+          {/* A retry the user can actually press. Automatic restoration depends
+              on the browser firing webglcontextrestored, which it may never do:
+              on a GPU reset under memory pressure the context can stay dead. The
+              reported case was a blank map with every control live and nothing
+              to click, so the recovery path must not be invisible OR passive. */}
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: 4,
+              padding: "8px 18px",
+              borderRadius: 6,
+              border: `1px solid ${GOLD}`,
+              background: "rgba(200, 169, 110, 0.12)",
+              color: GOLD,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
+              transition: "background 150ms ease, border-color 150ms ease",
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
       <WelcomeTour />
