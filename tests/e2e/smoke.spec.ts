@@ -67,6 +67,35 @@ test.describe("ZAAHI /parcels/map smoke", () => {
     expect(diffWarn, "the duplicate setStyle would reintroduce this warning").toEqual([]);
   });
 
+  // ── (h) dark basemap is keyless ───────────────────────────────────────
+  test("(h) dark basemap loads from a keyless provider, no CARTO", async ({ page }) => {
+    // Reported 2026-08-27: Dark rendered CARTO tiles stamped "API KEY REQUIRED".
+    // The failure could not be reproduced here, so rather than diagnose someone
+    // else's quota the provider was changed. This asserts the change stuck: no
+    // request for a dark CARTO tile may leave the page, and the Esri canvas must
+    // actually serve tiles. It would fail on the pre-fix tree, which requested
+    // basemaps.cartocdn.com/dark_all.
+    const carto: string[] = [];
+    const esri: { status: number }[] = [];
+    page.on("request", (r) => {
+      if (/cartocdn\.com\/dark_all/.test(r.url())) carto.push(r.url());
+    });
+    page.on("response", (r) => {
+      if (/World_Dark_Gray/.test(r.url())) esri.push({ status: r.status() });
+    });
+
+    await installHarness(page);
+    await gotoMap(page);
+    await page.waitForTimeout(2500);
+
+    await page.getByRole("button", { name: /dark basemap/i }).click();
+    await page.waitForTimeout(6000);
+
+    expect(carto, `dark basemap must not request CARTO tiles: ${carto.slice(0, 2)}`).toEqual([]);
+    expect(esri.length, "Esri dark canvas tiles were requested").toBeGreaterThan(0);
+    expect(esri.filter((t) => t.status !== 200), "all Esri dark tiles return 200").toEqual([]);
+  });
+
   // ── (a) parcels list ──────────────────────────────────────────────────
   test("(a) list row count equals header count, incl. VAULT_PRIVATE", async ({ page }) => {
     await installHarness(page);
