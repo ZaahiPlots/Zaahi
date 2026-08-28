@@ -153,6 +153,7 @@ export function secrets() {
 
 export function assertRunnableConfig() {
   const problems = [];
+  const warnings = [];
   if (!config.botToken) problems.push("TELEGRAM_BOT_TOKEN is empty");
   if (allowedChatIds().length === 0) {
     problems.push(
@@ -169,12 +170,19 @@ export function assertRunnableConfig() {
         `a chat must belong to exactly one channel`,
     );
   }
-  if (config.founderChatIds.length && !config.email.host) {
-    problems.push("FOUNDER_CHAT_ID is set but SMTP_HOST is empty — the email hand-off would fail on every task");
-  }
-  if (config.email.host && !config.email.to) {
+  // Email is a notification path, not a trust boundary, and email.js already
+  // degrades safely: retry, then post the full text into the chat and mark the
+  // task email_failed. So an absent SMTP config warns rather than blocking —
+  // the pipeline still runs and no decision is lost.
+  if (!config.email.host) {
+    warnings.push(
+      "SMTP_HOST is empty — no decision emails will be sent. Every hand-off will fall back to " +
+        "posting the full email text into the chat, and tasks will be marked email_failed.",
+    );
+  } else if (!config.email.to) {
     problems.push("SMTP_HOST is set but CTO_EMAIL is empty — there is nobody to send the decision request to");
   }
+  for (const w of warnings) console.warn(`[config] WARNING: ${w}`);
   if (problems.length) {
     throw new Error(
       `[config] not runnable:\n  - ${problems.join("\n  - ")}\n` +

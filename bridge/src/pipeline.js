@@ -113,6 +113,28 @@ export function createPipeline({ transport, runners = {} } = {}) {
     // channels), the session still has no git tools, and GATE 2 still stands
     // between this and main.
     if (task.channel === "founder") {
+      // Skipping GATE 1 removes the human who would otherwise notice that a
+      // message is not a work request at all. Without this guard a "hello", a
+      // question, or spam in the founder chat would spawn a full implementation
+      // session against an empty plan — burning the hourly budget and opening a
+      // branch for nothing. Only an actionable classification proceeds; anything
+      // else is reported and parked for the human to restate.
+      const actionable =
+        t.recommend === "implement" && ["bug", "feature"].includes(t.classification);
+
+      if (!actionable) {
+        lines.push("");
+        lines.push(
+          `<i>Founder channel — but this is classified <b>${esc(t.classification)}</b> ` +
+            `(triage says “${esc(t.recommend)}”), so no implementation was started.</i>`,
+        );
+        lines.push(`<i>Rephrase it as a concrete change request to queue work.</i>`);
+        await say(task.chatId, lines.join("\n"));
+        updateTask(task.id, { state: STATES.DISCUSS }, `founder channel — not actionable (${t.classification})`);
+        log.audit(`[gate1] SKIPPED but NOT actionable ${task.id}`, t.classification);
+        return;
+      }
+
       lines.push("");
       lines.push(`<i>Founder channel — proceeding to implementation without approval.</i>`);
       await say(task.chatId, lines.join("\n"));

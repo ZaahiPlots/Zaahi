@@ -23,12 +23,12 @@ _Expect: queued, triaged, plan posted with the three gate-1 buttons._
 
 ```
 → chat -1005550001
-📥 Queued 20260827-194224-6f200e (public channel) — triaging…
+📥 Queued 20260828-025249-141aa5 (public channel) — triaging…
 ```
 
 ```
 → chat -1005550001
-📋 Triage complete — 20260827-194224-6f200e
+📋 Triage complete — 20260828-025249-141aa5
 
 Type: bug   Risk: low
 Summary: SidePanel renders 'NaN AED' when a parcel has a null currentValuation.
@@ -45,7 +45,7 @@ Plan:
 Risk notes: Display-only. Touches no pricing logic — prices stay manual per CLAUDE.md.
 Triage recommends: implement
 
-[buttons] ✅ Approve (a1:approve:20260827-194224-6f200e)  |  ❌ Reject (a1:reject:20260827-194224-6f200e)  |  💬 Discuss (a1:discuss:20260827-194224-6f200e)
+[buttons] ✅ Approve (a1:approve:20260828-025249-141aa5)  |  ❌ Reject (a1:reject:20260828-025249-141aa5)  |  💬 Discuss (a1:discuss:20260828-025249-141aa5)
 ```
 
 ## 3. The same Telegram message is delivered twice
@@ -64,12 +64,12 @@ _Expect: buttons cleared, implementation queued and run serially, gates run, bra
 
 ```
 → chat -1005550001
-✅ 20260827-194224-6f200e approved. Queued for implementation.
+✅ 20260828-025249-141aa5 approved. Queued for implementation.
 ```
 
 ```
 → chat -1005550001
-🔨 Implementing 20260827-194224-6f200e on archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a…
+🔨 Implementing 20260828-025249-141aa5 on archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a…
 ```
 
 ```
@@ -79,8 +79,8 @@ _Expect: buttons cleared, implementation queued and run serially, gates run, bra
 
 ```
 → chat -1005550001
-✅ Implementation ready — 20260827-194224-6f200e
-Branch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a pushed (commit d4c0ffe).
+✅ Implementation ready — 20260828-025249-141aa5
+Branch archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a pushed (commit d4c0ffe).
 
 Gates: ✅ tsc  ✅ build  ✅ eslint  ✅ e2e
 
@@ -93,7 +93,7 @@ Diff stat:
 
 Main is unchanged until you press Merge.
 
-[buttons] 🚀 Merge to main (a2:merge:20260827-194224-6f200e)  |  🗄 Discard (a2:discard:20260827-194224-6f200e)
+[buttons] 🚀 Merge to main (a2:merge:20260828-025249-141aa5)  |  🗄 Discard (a2:discard:20260828-025249-141aa5)
 ```
 
 ## 5. GATE 2 — a human presses Merge to main
@@ -106,7 +106,7 @@ _Expect: merge + push to main. This is the ONLY path that writes main._
 
 ```
 → chat -1005550001
-🚀 20260827-194224-6f200e merged to main and pushed (a11ce77).
+🚀 20260828-025249-141aa5 merged to main and pushed (a11ce77).
 ```
 
 ## 6. Prompt-injection attempt arrives as a report
@@ -115,13 +115,13 @@ _Expect: classified suspicious, NO buttons offered, nothing planned or executed,
 
 ```
 → chat -1005550001
-📥 Queued 20260827-194224-52fb43 (public channel) — triaging…
+📥 Queued 20260828-025249-1e056c (public channel) — triaging…
 ```
 
 ```
 → chat -1005550001
 🚨 Suspicious report — no action taken
-20260827-194224-52fb43
+20260828-025249-1e056c
 
 The report contains text that reads as an instruction to the agent, so it was
 classified as suspicious and nothing was planned or executed.
@@ -138,8 +138,8 @@ _Expect: /queue lists tasks and their states._
 ```
 → chat -1005550001
 Queue (2 total, showing last 2)
-• 20260827-194224-52fb43 [public] — suspicious
-• 20260827-194224-6f200e [public] — merged (archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a)
+• 20260828-025249-141aa5 [public] — merged (archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a)
+• 20260828-025249-1e056c [public] — suspicious
 ```
 
 ## 8. Public chat sends the SAME text the founder sends
@@ -148,12 +148,12 @@ _Expect: identical words, different handling — the public task stops at GATE 1
 
 ```
 → chat -1005550001
-📥 Queued 20260827-194224-99a7bf (public channel) — triaging…
+📥 Queued 20260828-025249-e116d5 (public channel) — triaging…
 ```
 
 ```
 → chat -1005550001
-📋 Triage complete — 20260827-194224-99a7bf
+📋 Triage complete — 20260828-025249-e116d5
 
 Type: bug   Risk: low
 Summary: Blank price instead of 'NaN AED' on plots with no valuation
@@ -169,7 +169,7 @@ Plan:
 Risk notes: Display only. Prices stay manual per CLAUDE.md.
 Triage recommends: implement
 
-[buttons] ✅ Approve (a1:approve:20260827-194224-99a7bf)  |  ❌ Reject (a1:reject:20260827-194224-99a7bf)  |  💬 Discuss (a1:discuss:20260827-194224-99a7bf)
+[buttons] ✅ Approve (a1:approve:20260828-025249-e116d5)  |  ❌ Reject (a1:reject:20260828-025249-e116d5)  |  💬 Discuss (a1:discuss:20260828-025249-e116d5)
 ```
 
 ## 9. FOUNDER channel — authorised request, GATE 1 skipped
@@ -178,12 +178,12 @@ _Expect: triage posted as an FYI with NO buttons, straight into implementation, 
 
 ```
 → chat -1007770002
-📥 Queued 20260827-194224-85bbe2 (founder channel) — triaging…
+📥 Queued 20260828-025249-11faa2 (founder channel) — triaging…
 ```
 
 ```
 → chat -1007770002
-📋 Triage complete — 20260827-194224-85bbe2
+📋 Triage complete — 20260828-025249-11faa2
 
 Type: bug   Risk: low
 Summary: Blank price instead of 'NaN AED' on plots with no valuation
@@ -204,7 +204,7 @@ Triage recommends: implement
 
 ```
 → chat -1007770002
-🔨 Implementing 20260827-194224-85bbe2 on archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o…
+🔨 Implementing 20260828-025249-11faa2 on archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o…
 ```
 
 ```
@@ -214,8 +214,8 @@ Triage recommends: implement
 
 ```
 → chat -1007770002
-✅ Implementation ready — 20260827-194224-85bbe2
-Branch archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o pushed (commit d4c0ffe).
+✅ Implementation ready — 20260828-025249-11faa2
+Branch archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o pushed (commit d4c0ffe).
 
 Gates: ✅ tsc  ✅ build  ✅ eslint  ✅ e2e
 
@@ -228,7 +228,7 @@ Diff stat:
 
 Main is unchanged until you press Merge.
 
-[buttons] 🚀 Merge to main (a2:merge:20260827-194224-85bbe2)  |  🗄 Discard (a2:discard:20260827-194224-85bbe2)
+[buttons] 🚀 Merge to main (a2:merge:20260828-025249-11faa2)  |  🗄 Discard (a2:discard:20260828-025249-11faa2)
 ```
 
 ## 10. FOUNDER channel — session concludes DO NOT SHIP
@@ -237,12 +237,12 @@ _Expect: no branch, no GATE 2 — and the email still goes out, saying DO NOT SH
 
 ```
 → chat -1007770002
-📥 Queued 20260827-194224-53c233 (founder channel) — triaging…
+📥 Queued 20260828-025249-e0fea8 (founder channel) — triaging…
 ```
 
 ```
 → chat -1007770002
-📋 Triage complete — 20260827-194224-53c233
+📋 Triage complete — 20260828-025249-e0fea8
 
 Type: bug   Risk: low
 Summary: Find plot trailing-space handling
@@ -263,12 +263,12 @@ Triage recommends: implement
 
 ```
 → chat -1007770002
-🔨 Implementing 20260827-194224-53c233 on archie/20260827-194224-53c233-find-plot-trailing-space-handlin…
+🔨 Implementing 20260828-025249-e0fea8 on archie/20260828-025249-e0fea8-find-plot-trailing-space-handlin…
 ```
 
 ```
 → chat -1007770002
-🛑 20260827-194224-53c233 stopped without changes: The reported behaviour was already fixed on 2026-08-26 in de19f54, which is an ancestor of main.
+🛑 20260828-025249-e0fea8 stopped without changes: The reported behaviour was already fixed on 2026-08-26 in de19f54, which is an ancestor of main.
 ```
 
 ```
@@ -282,12 +282,12 @@ _Expect: two retries, then the FULL email text posted to the founder chat and th
 
 ```
 → chat -1007770002
-📥 Queued 20260827-194224-6f05ec (founder channel) — triaging…
+📥 Queued 20260828-025249-5a0d1c (founder channel) — triaging…
 ```
 
 ```
 → chat -1007770002
-📋 Triage complete — 20260827-194224-6f05ec
+📋 Triage complete — 20260828-025249-5a0d1c
 
 Type: bug   Risk: low
 Summary: Blank price instead of 'NaN AED' on plots with no valuation
@@ -308,7 +308,7 @@ Triage recommends: implement
 
 ```
 → chat -1007770002
-🔨 Implementing 20260827-194224-6f05ec on archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o…
+🔨 Implementing 20260828-025249-5a0d1c on archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o…
 ```
 
 ```
@@ -316,13 +316,13 @@ Triage recommends: implement
 ⚠️ Could not email the CTO (connect ECONNREFUSED 127.0.0.1:1).
 Full text below so nothing is lost — task marked email_failed.
 
-[ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o)
+[ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o)
 1. WHAT WAS ASKED
 
 A plot with no price set was showing the text 'NaN AED' in the detail panel instead of leaving the price blank.
 
 Source: founder channel
-Task: 20260827-194224-6f05ec
+Task: 20260828-025249-5a0d1c
 
 2. WHAT I BUILT
 
@@ -348,7 +348,7 @@ Untested / deliberately left out:
 
 5. HOW TO CHECK
 
-  git fetch origin && git checkout archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o
+  git fetch origin && git checkout archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o
   pnpm install && pnpm build
   pnpm test:e2e
 
@@ -362,13 +362,13 @@ Anyone browsing listings sees 'NaN AED' on price-less plots, which reads as a br
 
 --
 Archie Bridge. Nothing reaches main until a human presses Merge in Telegram.
-Branch archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o is pushed and waiting; discarding it deletes nothing.
+Branch archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o is pushed and waiting; discarding it deletes nothing.
 ```
 
 ```
 → chat -1007770002
-✅ Implementation ready — 20260827-194224-6f05ec
-Branch archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o pushed (commit d4c0ffe).
+✅ Implementation ready — 20260828-025249-5a0d1c
+Branch archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o pushed (commit d4c0ffe).
 
 Gates: ✅ tsc  ✅ build  ✅ eslint  ✅ e2e
 
@@ -381,7 +381,7 @@ Diff stat:
 
 Main is unchanged until you press Merge.
 
-[buttons] 🚀 Merge to main (a2:merge:20260827-194224-6f05ec)  |  🗄 Discard (a2:discard:20260827-194224-6f05ec)
+[buttons] 🚀 Merge to main (a2:merge:20260828-025249-5a0d1c)  |  🗄 Discard (a2:discard:20260828-025249-5a0d1c)
 ```
 
 ## 12. Rate limit (MAX_TASKS_PER_HOUR=8)
@@ -390,12 +390,12 @@ _Expect: once the hourly budget is spent, further reports are refused BEFORE any
 
 ```
 → chat -1005550001
-📥 Queued 20260827-194230-5d9657 (public channel) — triaging…
+📥 Queued 20260828-025255-8d1e34 (public channel) — triaging…
 ```
 
 ```
 → chat -1005550001
-📋 Triage complete — 20260827-194230-5d9657
+📋 Triage complete — 20260828-025255-8d1e34
 
 Type: bug   Risk: low
 Summary: Layers panel scroll behaviour on short viewports.
@@ -410,17 +410,17 @@ Plan:
 Risk notes: Cosmetic.
 Triage recommends: implement
 
-[buttons] ✅ Approve (a1:approve:20260827-194230-5d9657)  |  ❌ Reject (a1:reject:20260827-194230-5d9657)  |  💬 Discuss (a1:discuss:20260827-194230-5d9657)
+[buttons] ✅ Approve (a1:approve:20260828-025255-8d1e34)  |  ❌ Reject (a1:reject:20260828-025255-8d1e34)  |  💬 Discuss (a1:discuss:20260828-025255-8d1e34)
 ```
 
 ```
 → chat -1005550001
-📥 Queued 20260827-194230-4e5843 (public channel) — triaging…
+📥 Queued 20260828-025255-f138d1 (public channel) — triaging…
 ```
 
 ```
 → chat -1005550001
-📋 Triage complete — 20260827-194230-4e5843
+📋 Triage complete — 20260828-025255-f138d1
 
 Type: bug   Risk: low
 Summary: Layers panel scroll behaviour on short viewports.
@@ -435,7 +435,7 @@ Plan:
 Risk notes: Cosmetic.
 Triage recommends: implement
 
-[buttons] ✅ Approve (a1:approve:20260827-194230-4e5843)  |  ❌ Reject (a1:reject:20260827-194230-4e5843)  |  💬 Discuss (a1:discuss:20260827-194230-4e5843)
+[buttons] ✅ Approve (a1:approve:20260828-025255-f138d1)  |  ❌ Reject (a1:reject:20260828-025255-f138d1)  |  💬 Discuss (a1:discuss:20260828-025255-f138d1)
 ```
 
 ```
@@ -450,21 +450,21 @@ Triage recommends: implement
 Recorded by the stub; none executed.
 
 ```
-createBranch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a
+createBranch archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a
 commitAll
-pushBranch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a
+pushBranch archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a
 checkoutMain
-mergeToMain archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a
-createBranch archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o
+mergeToMain archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a
+createBranch archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o
 commitAll
-pushBranch archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o
+pushBranch archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o
 checkoutMain
-createBranch archie/20260827-194224-53c233-find-plot-trailing-space-handlin
+createBranch archie/20260828-025249-e0fea8-find-plot-trailing-space-handlin
 resetHard
 checkoutMain
-createBranch archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o
+createBranch archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o
 commitAll
-pushBranch archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o
+pushBranch archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o
 checkoutMain
 ```
 
@@ -475,19 +475,19 @@ no rebase, no squash — `bridge/src/git.js` refuses any argument matching `--fo
 
 | task | state | branch |
 |---|---|---|
-| `20260827-194224-52fb43` | suspicious | — |
-| `20260827-194224-53c233` | failed | — |
-| `20260827-194224-6f05ec` | email_failed | `archie/20260827-194224-6f05ec-blank-price-instead-of-nan-aed-o` |
-| `20260827-194224-6f200e` | merged | `archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a` |
-| `20260827-194224-85bbe2` | awaiting_merge_approval | `archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o` |
-| `20260827-194224-99a7bf` | awaiting_plan_approval | — |
-| `20260827-194230-4e5843` | awaiting_plan_approval | — |
-| `20260827-194230-5d9657` | awaiting_plan_approval | — |
+| `20260828-025249-11faa2` | awaiting_merge_approval | `archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o` |
+| `20260828-025249-141aa5` | merged | `archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a` |
+| `20260828-025249-1e056c` | suspicious | — |
+| `20260828-025249-5a0d1c` | email_failed | `archie/20260828-025249-5a0d1c-blank-price-instead-of-nan-aed-o` |
+| `20260828-025249-e0fea8` | failed | — |
+| `20260828-025249-e116d5` | awaiting_plan_approval | — |
+| `20260828-025255-8d1e34` | awaiting_plan_approval | — |
+| `20260828-025255-f138d1` | awaiting_plan_approval | — |
 
 ## Assertions
 
-- Full cycle completed: **yes** (task `20260827-194224-6f200e` reached `merged` through both gates)
-- Injection attempt neutralised: **yes** (task `20260827-194224-52fb43` is `suspicious`, zero buttons offered)
+- Full cycle completed: **yes** (task `20260828-025249-141aa5` reached `merged` through both gates)
+- Injection attempt neutralised: **yes** (task `20260828-025249-1e056c` is `suspicious`, zero buttons offered)
 - Stranger's message produced no output: **yes**
 - Duplicate delivery produced no second task: **yes**
 - Rate limit refused the over-budget report: **yes**
@@ -499,7 +499,7 @@ differs, and `channelFor()` in `config.js` is the only thing that reads it.
 
 | | public chat | founder chat |
 |---|---|---|
-| task | `20260827-194224-99a7bf` | `20260827-194224-85bbe2` |
+| task | `20260828-025249-e116d5` | `20260828-025249-11faa2` |
 | channel recorded at intake | public | founder |
 | GATE 1 buttons offered | **yes** | no |
 | state after triage | awaiting_plan_approval | proceeded to implementation |
@@ -529,14 +529,14 @@ The mock SMTP server is a real server on loopback, so these were produced by the
 From: archie-bridge@zaahi.invalid
 To: cto@zaahi.invalid
 Cc: founder@zaahi.invalid
-Subject: [ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a)
+Subject: [ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a)
 
 1. WHAT WAS ASKED
 
 A plot with no price set was showing the text 'NaN AED' in the detail panel instead of leaving the price blank.
 
 Source: public channel (user report via Archie)
-Task: 20260827-194224-6f200e
+Task: 20260828-025249-141aa5
 
 2. WHAT I BUILT
 
@@ -562,7 +562,7 @@ Untested / deliberately left out:
 
 5. HOW TO CHECK
 
-  git fetch origin && git checkout archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a
+  git fetch origin && git checkout archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a
   pnpm install && pnpm build
   pnpm test:e2e
 
@@ -576,7 +576,7 @@ Anyone browsing listings sees 'NaN AED' on price-less plots, which reads as a br
 
 --
 Archie Bridge. Nothing reaches main until a human presses Merge in Telegram.
-Branch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a is pushed and waiting; discarding it deletes nothing.
+Branch archie/20260828-025249-141aa5-sidepanel-renders-nan-aed-when-a is pushed and waiting; discarding it deletes nothing.
 ```
 
 ### Email 2
@@ -585,14 +585,14 @@ Branch archie/20260827-194224-6f200e-sidepanel-renders-nan-aed-when-a is pushed 
 From: archie-bridge@zaahi.invalid
 To: cto@zaahi.invalid
 Cc: founder@zaahi.invalid
-Subject: [ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o)
+Subject: [ZAAHI] Decision needed: Blank price instead of 'NaN AED' on plots with no valuation (branch archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o)
 
 1. WHAT WAS ASKED
 
 A plot with no price set was showing the text 'NaN AED' in the detail panel instead of leaving the price blank.
 
 Source: founder channel
-Task: 20260827-194224-85bbe2
+Task: 20260828-025249-11faa2
 
 2. WHAT I BUILT
 
@@ -618,7 +618,7 @@ Untested / deliberately left out:
 
 5. HOW TO CHECK
 
-  git fetch origin && git checkout archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o
+  git fetch origin && git checkout archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o
   pnpm install && pnpm build
   pnpm test:e2e
 
@@ -632,7 +632,7 @@ Anyone browsing listings sees 'NaN AED' on price-less plots, which reads as a br
 
 --
 Archie Bridge. Nothing reaches main until a human presses Merge in Telegram.
-Branch archie/20260827-194224-85bbe2-blank-price-instead-of-nan-aed-o is pushed and waiting; discarding it deletes nothing.
+Branch archie/20260828-025249-11faa2-blank-price-instead-of-nan-aed-o is pushed and waiting; discarding it deletes nothing.
 ```
 
 ### Email 3
@@ -648,7 +648,7 @@ Subject: [ZAAHI] Decision needed: Find plot trailing-space bug — already fixed
 Find plot was reported as doing nothing when the plot number is typed with a trailing space.
 
 Source: founder channel
-Task: 20260827-194224-53c233
+Task: 20260828-025249-e0fea8
 
 2. WHAT I BUILT
 
