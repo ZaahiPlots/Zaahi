@@ -29,6 +29,47 @@ async function main() {
   let backoffMs = 1000;
   let stopping = false;
 
+  // ── Stale-backlog guard ───────────────────────────────────────────────────
+  // Telegram holds unfetched updates for ~24h. A bridge that has been down
+  // therefore starts with a queue of decisions taken in a context that no
+  // longer exists — and on 2026-08-28 that is exactly what happened: the first
+  // poll after enabling the unit drained a backlog of old Approve presses,
+  // auto-approved three tasks and launched an unsupervised implementation
+  // session, out of the agreed order. Telegram itself rejected the
+  // acknowledgements ("query is too old"), which is the tell.
+  //
+  // Buttons are decisions, and a decision made an hour ago against a plan
+  // someone has since re-prioritised is not consent to act now. So by default
+  // the poller fast-forwards past anything already queued at startup and says
+  // how much it skipped. Nothing is lost: the tasks keep their state and the
+  // buttons can be pressed again against the live bridge.
+  //
+  // ARCHIE_DRAIN_BACKLOG=1 opts back in, for the case where you genuinely do
+  // want the queue processed after a restart.
+  if (process.env.ARCHIE_DRAIN_BACKLOG === "1") {
+    log.warn("[bridge] ARCHIE_DRAIN_BACKLOG=1 — processing the existing backlog");
+  } else {
+    try {
+      const pending = await transport.getUpdates(offset);
+      if (pending.length) {
+        const maxId = Math.max(...pending.map((u) => u.update_id));
+        const messages = pending.filter((u) => u.message).length;
+        const callbacks = pending.filter((u) => u.callback_query).length;
+        offset = maxId + 1;
+        setOffset(offset);
+        log.audit(
+          `[bridge] skipped ${pending.length} stale update(s) queued while offline ` +
+            `(${messages} message(s), ${callbacks} button press(es)). They were NOT acted on. ` +
+            `Re-send or re-press anything still wanted. Set ARCHIE_DRAIN_BACKLOG=1 to process instead.`,
+        );
+      } else {
+        log.info("[bridge] no backlog — starting clean");
+      }
+    } catch (e) {
+      log.warn("[bridge] backlog check failed; continuing", String(e));
+    }
+  }
+
   for (const sig of ["SIGINT", "SIGTERM"]) {
     process.on(sig, () => {
       if (stopping) process.exit(1);
