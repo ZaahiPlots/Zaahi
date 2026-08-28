@@ -25,6 +25,9 @@ export const MOCK_PARCELS: MockParcel[] = [
     far: 1.8,
     gfaSqft: 26_100,
     plotPriceAed: 18_500_000,
+    // Every preview fixture is deliberately priced; the unpriced path is
+    // exercised by the e2e/unit cases, not by the showcase data.
+    landPriceKnown: true,
     maxFloors: 4,
     landUseMix: [{ category: 'RESIDENTIAL', sub: 'VILLA', areaSqm: 2426 }],
     notes: null,
@@ -42,6 +45,9 @@ export const MOCK_PARCELS: MockParcel[] = [
     far: 4.5,
     gfaSqft: 99_000,
     plotPriceAed: 62_000_000,
+    // Every preview fixture is deliberately priced; the unpriced path is
+    // exercised by the e2e/unit cases, not by the showcase data.
+    landPriceKnown: true,
     maxFloors: 28,
     landUseMix: [{ category: 'COMMERCIAL', sub: 'OFFICES', areaSqm: 2044 }],
     notes: null,
@@ -59,6 +65,9 @@ export const MOCK_PARCELS: MockParcel[] = [
     far: 5.0,
     gfaSqft: 175_000,
     plotPriceAed: 130_000_000,
+    // Every preview fixture is deliberately priced; the unpriced path is
+    // exercised by the e2e/unit cases, not by the showcase data.
+    landPriceKnown: true,
     maxFloors: 35,
     landUseMix: [
       { category: 'RESIDENTIAL', sub: 'APARTMENTS', areaSqm: 9000 },
@@ -80,6 +89,9 @@ export const MOCK_PARCELS: MockParcel[] = [
     far: 1.2,
     gfaSqft: 96_000,
     plotPriceAed: 28_000_000,
+    // Every preview fixture is deliberately priced; the unpriced path is
+    // exercised by the e2e/unit cases, not by the showcase data.
+    landPriceKnown: true,
     maxFloors: 2,
     landUseMix: [{ category: 'INDUSTRIAL', sub: 'WAREHOUSE', areaSqm: 7432 }],
     notes: null,
@@ -97,6 +109,9 @@ export const MOCK_PARCELS: MockParcel[] = [
     far: 2.4,
     gfaSqft: 144_000,
     plotPriceAed: 95_000_000,
+    // Every preview fixture is deliberately priced; the unpriced path is
+    // exercised by the e2e/unit cases, not by the showcase data.
+    landPriceKnown: true,
     maxFloors: 9,
     landUseMix: [{ category: 'HEALTHCARE', sub: 'HOSPITAL', areaSqm: 5574 }],
     notes: null,

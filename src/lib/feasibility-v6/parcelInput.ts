@@ -23,6 +23,15 @@ export interface ParcelInput {
   far: number;
   gfaSqft: number;
   plotPriceAed: number;
+  /**
+   * False when the parcel has no `currentValuation` at all. plotPriceAed is 0
+   * in that case, which is NOT the same statement as "this land is free" — and
+   * a model fed a zero land cost returns a healthy-looking ROI on a plot whose
+   * price nobody knows. Consumers must gate the verdict on this flag and make
+   * the user supply a land cost. Never auto-derive one: CLAUDE.md makes
+   * currentValuation a manual field.
+   */
+  landPriceKnown: boolean;
   maxFloors: number | null;
   // Mixed-use breakdown straight from the affection plan. Each entry has
   // a canonical category + DDA sub-classification. When the plot is
@@ -68,8 +77,9 @@ export function adaptParcelToInput(
   const plotAreaSqft = plan?.plotAreaSqft ?? parcel.area ?? 0;
   const far = plan?.far ?? 2.5;
   const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
-  const plotPriceAed =
-    parcel.currentValuation != null ? Number(parcel.currentValuation) / 100 : 0;
+  const landPriceKnown =
+    parcel.currentValuation != null && Number(parcel.currentValuation) > 0;
+  const plotPriceAed = landPriceKnown ? Number(parcel.currentValuation) / 100 : 0;
 
   // Land-use derivation. A plot is MIXED USE only when the affection
   // plan lists more than one DISTINCT category (founder 2026-06-08 —
@@ -101,6 +111,7 @@ export function adaptParcelToInput(
     far,
     gfaSqft,
     plotPriceAed,
+    landPriceKnown,
     maxFloors: plan?.maxFloors ?? null,
     landUseMix: mix,
     notes: plan?.notes ?? null,
@@ -138,8 +149,15 @@ interface SidePanelPlanLike {
 export function adaptSidePanelToInput(
   data: SidePanelDataLike,
   plan: SidePanelPlanLike | null,
-  plotPriceAed: number,
+  /**
+   * null / 0 means "no price on record". Callers used to pass `aed ?? 0`, which
+   * erased the difference between a free plot and an unpriced one before the
+   * calculator ever saw it.
+   */
+  plotPriceAedOrNull: number | null,
 ): ParcelInput {
+  const landPriceKnown = plotPriceAedOrNull != null && plotPriceAedOrNull > 0;
+  const plotPriceAed = landPriceKnown ? (plotPriceAedOrNull as number) : 0;
   const plotAreaSqft = plan?.plotAreaSqft ?? data.area ?? 0;
   const far = plan?.far ?? 2.5;
   const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
@@ -172,6 +190,7 @@ export function adaptSidePanelToInput(
     far,
     gfaSqft,
     plotPriceAed,
+    landPriceKnown,
     maxFloors: plan?.maxFloors ?? null,
     landUseMix: mix,
     notes: plan?.notes ?? null,
