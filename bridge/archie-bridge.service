@@ -1,0 +1,48 @@
+# Archie Bridge — systemd *user* unit.
+#
+# Install (do NOT let an agent enable this; start it yourself):
+#   mkdir -p ~/.config/systemd/user
+#   cp ~/zaahi/bridge/archie-bridge.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now archie-bridge
+#   journalctl --user -u archie-bridge -f
+#
+# To survive logout without an active session:
+#   loginctl enable-linger zaahi
+
+[Unit]
+Description=Archie Bridge — Telegram change-request pipeline for ZAAHI
+Documentation=file:///home/zaahi/zaahi/bridge/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/zaahi/zaahi/bridge
+ExecStart=/usr/bin/env node src/index.js
+
+Restart=on-failure
+RestartSec=10s
+# Do not thrash if it is failing to start (bad token, missing .env).
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# The bridge reads bridge/.env itself; nothing secret belongs in this unit.
+Environment=NODE_ENV=production
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=archie-bridge
+
+# Modest hardening. The service needs the repo writable (it commits there) and
+# outbound HTTPS, but nothing else.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/zaahi/zaahi
+ReadWritePaths=/home/zaahi/.claude
+ReadWritePaths=/home/zaahi/.cache
+
+[Install]
+WantedBy=default.target

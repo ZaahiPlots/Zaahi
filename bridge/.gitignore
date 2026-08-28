@@ -1,0 +1,12 @@
+# Secrets. The token is a credential — anyone holding it controls the bot.
+.env
+
+# ...but the template MUST be committed. The repo-root .gitignore has a blanket
+# `.env*` rule (line 45) which would otherwise swallow it, so re-include it here.
+!.env.example
+
+# Runtime state. Queue files contain verbatim user report text; state/ holds the
+# Telegram offset, dedupe keys and rate-limit window. Both are machine-local.
+queue/*.json
+state/
+logs/
