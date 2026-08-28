@@ -181,22 +181,44 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
     layers: [{ id: "carto", type: "raster", source: "carto" }],
   },
+  // Dark moved off CARTO 2026-08-28. Reported: the dark basemap rendered CARTO
+  // tiles stamped "API KEY REQUIRED - carto.com/basemaps/apikey" across the whole
+  // map. It could not be reproduced from here — direct fetches, fetches carrying
+  // a zaahi.io Referer, and a real Chromium switching to Dark all returned clean
+  // 200s (24 tiles, 0 failures) — which points at a CARTO free-tier quota that
+  // trips under sustained real-user load from one referrer rather than at
+  // anything in this code. Rather than keep diagnosing someone else's quota, the
+  // failure mode is removed: Esri's Dark Gray Canvas needs no key, has no
+  // per-referrer quota, and is the same free ArcGIS family as the satellite
+  // layer above, which has served this map without incident.
+  //
+  // Two sources, matching CARTO's dark_all: Base carries the geometry, Reference
+  // carries the labels. Both go to level 23, past the map's maxZoom of 18, so no
+  // maxzoom clamp is needed (verified against the service metadata).
   dark: {
     version: 8,
     sources: {
-      carto: {
+      esriDark: {
         type: "raster",
         tiles: [
-          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
         ],
         tileSize: 256,
-        attribution: "© CARTO © OpenStreetMap contributors",
+        attribution: "© Esri, HERE, Garmin, © OpenStreetMap contributors",
+      },
+      esriDarkLabels: {
+        type: "raster",
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
       },
     },
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-    layers: [{ id: "carto", type: "raster", source: "carto" }],
+    layers: [
+      { id: "esriDark", type: "raster", source: "esriDark" },
+      { id: "esriDarkLabels", type: "raster", source: "esriDarkLabels" },
+    ],
   },
 };
 
