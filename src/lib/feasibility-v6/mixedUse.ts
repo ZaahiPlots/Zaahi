@@ -29,8 +29,12 @@ import {
   type FinanceDerived,
   type BtSResult,
   type BtSRevenueDerived,
+  type LandPaymentMode,
 } from '@/lib/feasibility';
 import { ENGINES, type EngineId } from './engines';
+// Delegation, not duplication — see the note on MixedUseBtSResultV6.full.
+// results.ts does not import this module, so there is no cycle.
+import { computeBtSV6, type BtSResultV6 } from './results';
 
 export interface MixedUseShare {
   // One of the 10 ZAAHI canonical categories (or sub label).
@@ -59,6 +63,33 @@ export interface MixedUseBtSResultV6 {
   totalNetRevenueAed: number;
   shareSumPct: number; // for the UI validation banner — must equal 100
   shareValid: boolean;
+
+  /**
+   * Slices aggregated into one parcel-level construction and revenue figure.
+   * Present whenever slices were produced. This is what a complete model is
+   * built from — the mix splits cost and revenue by area share, and everything
+   * else (land, DLD, brokerage, finance) is a property of the parcel, not of a
+   * slice, so it is applied ONCE to this aggregate rather than divided up.
+   */
+  parentConstruction: ConstructionDerived;
+  parentRevenue: BtSRevenueDerived;
+
+  /**
+   * The complete feasibility for the mix — total investment, net profit, ROI,
+   * IRR, peak equity, cashflows — or null when the caller supplied no
+   * parcel-level land/finance inputs.
+   *
+   * null means "not modelled", NOT "zero". The same distinction the land-price
+   * guard draws: an absent input must never read as a free one.
+   *
+   * This is deliberately produced by delegating to computeBtSV6 — the SAME
+   * function the headline uses — rather than by reimplementing the investment
+   * and return maths here. Two independent implementations of one calculation
+   * is precisely what produced the contradiction this work exists to fix
+   * (composite construction 162.3M against a headline 195.6M on plot 6457790);
+   * a second copy would guarantee it recurs the moment either side changed.
+   */
+  full: BtSResultV6 | null;
 }
 
 // Routing per founder ratification 2026-06-06.
@@ -94,6 +125,26 @@ export function computeMixedUseBtSV6(args: {
   commissionPct: number;
   marketingPct: number;
   devServicesPct: number;
+
+  /**
+   * Parcel-level inputs. Supply these and `full` is a complete feasibility;
+   * omit them and `full` is null and the function behaves exactly as before.
+   * They are OPTIONAL so that adding a complete model changes no existing
+   * caller and no published number — switching the headline over is a separate,
+   * reviewable step.
+   *
+   * None of these is divided across slices. Land is bought once, DLD is paid
+   * once on that purchase, the broker is paid once, and the loan is taken
+   * against the project — not against a use-class.
+   */
+  land?: LandDerived;
+  finance?: FinanceDerived;
+  paymentMode?: LandPaymentMode;
+  brokerageOnLandPct?: number;
+  constructionMonths?: number;
+  loanAed?: number;
+  ratePct?: number;
+  financePeriodMonths?: number;
 }): MixedUseBtSResultV6 {
   const slices: MixedUseSlice[] = [];
   let shareSum = 0;
@@ -159,6 +210,59 @@ export function computeMixedUseBtSV6(args: {
     totalNet += s.revenue.netRevenueAed;
   }
 
+  // ── Aggregate the slices back into one parcel-level pair ────────────────
+  // Every field on both shapes is a plain sum, so the aggregate is exact
+  // rather than a re-derivation from a blended psf. The two per-sqft figures
+  // are recovered from the totals so they stay consistent with them.
+  const sum = <T extends object>(pick: (s: MixedUseSlice) => number) =>
+    slices.reduce((acc, sl) => acc + pick(sl), 0);
+
+  const parentBua = args.parentArea.bua;
+  const parentConstruction: ConstructionDerived = {
+    baseConstructionAed: sum((sl) => sl.construction.baseConstructionAed),
+    contingencyAed: sum((sl) => sl.construction.contingencyAed),
+    totalConstructionAed: sum((sl) => sl.construction.totalConstructionAed),
+    constructionAed: sum((sl) => sl.construction.constructionAed),
+    brandAed: sum((sl) => sl.construction.brandAed),
+    consultancyAed: sum((sl) => sl.construction.consultancyAed),
+    infrastructureAed: sum((sl) => sl.construction.infrastructureAed),
+    perSqftBuaTotal:
+      parentBua > 0 ? sum((sl) => sl.construction.baseConstructionAed) / parentBua : 0,
+    perSqftBuaWithContingency:
+      parentBua > 0 ? sum((sl) => sl.construction.totalConstructionAed) / parentBua : 0,
+  };
+
+  const parentRevenue: BtSRevenueDerived = {
+    grossRevenueAed: sum((sl) => sl.revenue.grossRevenueAed),
+    commissionAed: sum((sl) => sl.revenue.commissionAed),
+    marketingAed: sum((sl) => sl.revenue.marketingAed),
+    devServicesAed: sum((sl) => sl.revenue.devServicesAed),
+    salesCostsAed: sum((sl) => sl.revenue.salesCostsAed),
+    netRevenueAed: sum((sl) => sl.revenue.netRevenueAed),
+  };
+
+  // ── Complete model, by delegation ───────────────────────────────────────
+  // Only when the caller supplied parcel-level inputs. Otherwise null, which
+  // means "not modelled" and must never be read as zero.
+  const full: BtSResultV6 | null =
+    args.land && args.finance
+      ? computeBtSV6(
+          args.parentArea,
+          args.land,
+          parentConstruction,
+          args.finance,
+          parentRevenue,
+          args.paymentMode ?? 'full',
+          {
+            constructionMonths: args.constructionMonths,
+            loanAed: args.loanAed,
+            ratePct: args.ratePct,
+            financePeriodMonths: args.financePeriodMonths,
+            brokerageOnLandPct: args.brokerageOnLandPct ?? 0,
+          },
+        )
+      : null;
+
   return {
     slices,
     totalConstructionAed: totalConstruction,
@@ -166,6 +270,9 @@ export function computeMixedUseBtSV6(args: {
     totalNetRevenueAed: totalNet,
     shareSumPct: shareSum,
     shareValid,
+    parentConstruction,
+    parentRevenue,
+    full,
   };
 }
 
