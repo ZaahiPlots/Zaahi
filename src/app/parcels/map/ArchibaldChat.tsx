@@ -471,11 +471,17 @@ export default function ArchibaldChat({
     const cy = launcherPos!.y + LAUNCHER_SIZE / 2;
     const anchorLeft = cx < w / 2;
     const anchorTop = cy < h / 2;
+    const top = launcherPos!.y + LAUNCHER_SIZE + WINDOW_GAP;
+    const bottom = h - launcherPos!.y + WINDOW_GAP;
     windowStyle = {
       left: anchorLeft ? launcherPos!.x : "auto",
       right: anchorLeft ? "auto" : w - launcherPos!.x - LAUNCHER_SIZE,
-      top: anchorTop ? launcherPos!.y + LAUNCHER_SIZE + WINDOW_GAP : "auto",
-      bottom: anchorTop ? "auto" : h - launcherPos!.y + WINDOW_GAP,
+      top: anchorTop ? top : "auto",
+      bottom: anchorTop ? "auto" : bottom,
+      // The stylesheet's max-height cannot account for a top offset chosen at
+      // runtime, so clamp against the space actually left below the anchor.
+      // 16px keeps it off the viewport edge.
+      maxHeight: anchorTop ? Math.max(220, h - top - 16) : Math.max(220, h - bottom - 16),
     };
   }
 
@@ -844,7 +850,17 @@ export default function ArchibaldChat({
           right: 16px;
           bottom: ${16 + LAUNCHER_SIZE + WINDOW_GAP}px;
           width: 360px;
+          /* 520px is the design height, but it must never win over the viewport.
+             The window anchors to whichever quadrant the (draggable) launcher
+             sits in; anchored by its top on a short screen, a fixed height runs
+             straight off the bottom edge and takes the composer with it — a user
+             who cannot reach the input cannot report anything, including this.
+             dvh so the mobile URL bar collapsing does not re-break it; vh first
+             as the fallback for browsers without dvh. The subtrahend covers the
+             launcher, its gap and a margin. */
           height: 520px;
+          max-height: calc(100vh - 96px);
+          max-height: calc(100dvh - 96px);
           background: rgba(0, 0, 0, 0.3);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
@@ -921,6 +937,11 @@ export default function ArchibaldChat({
 
         .archibald-scroll {
           flex: 1;
+          /* Without this a flex item will not shrink below its content, so a long
+             conversation pushes the composer out of the window's overflow:hidden
+             box and it is clipped rather than scrolled. flex:1 alone is not
+             enough — min-height defaults to auto in a flex column. */
+          min-height: 0;
           overflow-y: auto;
           padding: 14px;
           display: flex;
