@@ -112,6 +112,33 @@ export function createPipeline({ transport, runners = {} } = {}) {
     // suspicious classification already returned above (terminal on BOTH
     // channels), the session still has no git tools, and GATE 2 still stands
     // between this and main.
+    // BACKFILL MODE (ARCHIE_BACKFILL=1). Bulk-importing a chat's history is the
+    // one case where the founder channel's "the message is the authorisation"
+    // assumption breaks: these reports were written for a human to read as a
+    // batch, not authorised one-by-one as they arrive. Auto-implementing twenty
+    // of them on ingest would open twenty branches before anyone had seen the
+    // list. So during backfill EVERY task stops at GATE 1 regardless of channel,
+    // which is strictly more conservative than normal operation — it adds a
+    // human checkpoint, it never removes one.
+    if (process.env.ARCHIE_BACKFILL === "1") {
+      lines.push("");
+      lines.push(`<i>Backfill — parked at GATE 1 for review with the rest of the batch.</i>`);
+      const backfillButtons = [
+        [
+          { text: "✅ Approve", callback_data: `a1:approve:${task.id}` },
+          { text: "❌ Reject", callback_data: `a1:reject:${task.id}` },
+          { text: "💬 Discuss", callback_data: `a1:discuss:${task.id}` },
+        ],
+      ];
+      const m = await say(task.chatId, lines.join("\n"), backfillButtons);
+      updateTask(
+        task.id,
+        { state: STATES.AWAITING_PLAN_APPROVAL, gate1MessageId: m?.message_id ?? null },
+        "backfill — parked at gate 1",
+      );
+      return;
+    }
+
     if (task.channel === "founder") {
       // Skipping GATE 1 removes the human who would otherwise notice that a
       // message is not a work request at all. Without this guard a "hello", a
