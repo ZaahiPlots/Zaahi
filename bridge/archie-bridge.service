@@ -19,7 +19,12 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/zaahi/zaahi/bridge
-ExecStart=/usr/bin/env node src/index.js
+# ABSOLUTE path on purpose. node here comes from nvm, which lives in the login
+# shell's PATH and is NOT on systemd's — `/usr/bin/env node` fails outright in a
+# clean environment ("node: No such file or directory") and the unit never
+# starts. Re-point this after an nvm upgrade:
+#   readlink -f "$(which node)"
+ExecStart=/home/zaahi/.nvm/versions/node/v22.23.2/bin/node src/index.js
 
 Restart=on-failure
 RestartSec=10s

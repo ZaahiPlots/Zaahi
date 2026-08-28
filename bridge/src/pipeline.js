@@ -497,10 +497,14 @@ export function createPipeline({ transport, runners = {} } = {}) {
       messageId: msg.message_id,
     });
     log.info(`[pipeline] queued task ${id} on the ${channel} channel`);
-    await say(
-      chatId,
-      `📥 Queued <code>${esc(id)}</code> (${esc(channel)} channel) — triaging…`,
-    );
+    // Bulk backfill skips the per-item ack: one plan message per report is
+    // signal, an extra "queued" line per report is just noise on a phone.
+    if (process.env.ARCHIE_BACKFILL !== "1") {
+      await say(
+        chatId,
+        `📥 Queued <code>${esc(id)}</code> (${esc(channel)} channel) — triaging…`,
+      );
+    }
     await triageTask(id);
   }
 
