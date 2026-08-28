@@ -1010,7 +1010,7 @@ export default function SidePanel({
                   <div style={{ marginTop: 8 }}>
                     {IS_FEASIBILITY_V6_ENABLED ? (
                       <FeasibilityV6Calculator
-                        parcel={adaptSidePanelToInput(data, plan, aed ?? 0)}
+                        parcel={adaptSidePanelToInput(data, plan, aed)}
                         banner="none"
                         mode="sidepanel"
                         // Sprint 2-fast (2026-05-06): all 13 engines unlocked.

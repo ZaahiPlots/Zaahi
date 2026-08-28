@@ -543,6 +543,19 @@ export default function FeasibilityV6Calculator({
   useEffect(() => {
     setLandCostAed(parcel.plotPriceAed);
   }, [parcel.plotPriceAed]);
+  // ── Unpriced-land guard ────────────────────────────────────────────────
+  // A parcel with no currentValuation arrives with plotPriceAed = 0. Feeding
+  // that to the model is not 'free land', it is 'we do not know', and the
+  // difference matters: with land at 0 the engine happily reports a healthy
+  // ROI/IRR on a plot whose price nobody has established (reported on 5310367
+  // and 3456896, both showing ROI 4.3% / IRR 6.1%). That is a number a buyer
+  // could act on, so the results are suppressed until a land cost exists.
+  //
+  // The user can clear it by typing a Land Cost — the input stays live. We do
+  // NOT derive a price from area or GFA: CLAUDE.md makes currentValuation a
+  // manual field and forbids the system computing it.
+  const landPriceMissing = !parcel.landPriceKnown && !(landCostAed > 0);
+
   const [paymentMode, setPaymentMode] = useState<LandPaymentMode>('full');
   // Brokerage on land purchase — default 0% (most users transact direct
   // with the developer). Separate from sales-side commission.
@@ -1705,6 +1718,7 @@ export default function FeasibilityV6Calculator({
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
+              disabled={landPriceMissing}
               type="button"
               onClick={downloadPDF}
               style={{
@@ -1721,7 +1735,7 @@ export default function FeasibilityV6Calculator({
                 transition: 'background 150ms ease, border-color 150ms ease',
               }}
             >
-              Export PDF
+              {landPriceMissing ? 'Export PDF — land price needed' : 'Export PDF'}
             </button>
           </div>
         </div>
@@ -3161,7 +3175,42 @@ export default function FeasibilityV6Calculator({
 
           {/* Results column */}
           <div style={shellStyle}>
-            {tab === 'bts' && (
+            {landPriceMissing && (
+              <div
+                role="status"
+                style={{
+                  padding: '16px 18px',
+                  border: `1px solid ${GOLD}`,
+                  borderRadius: 8,
+                  background: 'rgba(200, 169, 110, 0.08)',
+                  color: GOLD,
+                  fontSize: 12,
+                  lineHeight: 1.55,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
+                  }}
+                >
+                  Land price not set
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.82)' }}>
+                  This plot has no price on record, so there is nothing to base a
+                  return on. Enter a <b>Land Cost</b> on the left and the full
+                  result — Net Profit, ROI, IRR and the verdict — appears
+                  immediately.
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.55)', marginTop: 8, fontSize: 11 }}>
+                  Results are hidden rather than shown with land at AED 0, which
+                  would report a healthy return on a plot nobody has priced.
+                </div>
+              </div>
+            )}
+            {!landPriceMissing && tab === 'bts' && (
               <>
                 <SectionTitle>Build to Sell — Result</SectionTitle>
                 <ResultRow label="Total Investment" value={fmtAedExact(btsResult.totalInvestmentAed)} bold />
@@ -3209,7 +3258,7 @@ export default function FeasibilityV6Calculator({
               </>
             )}
 
-            {tab === 'btr' && (
+            {!landPriceMissing && tab === 'btr' && (
               <>
                 <SectionTitle>Build to Rent — Result</SectionTitle>
                 <ResultRow label="Total Investment" value={fmtAedExact(btrResult.totalInvestmentAed)} bold />
@@ -3252,7 +3301,7 @@ export default function FeasibilityV6Calculator({
               </>
             )}
 
-            {tab === 'jv' && (
+            {!landPriceMissing && tab === 'jv' && (
               <>
                 <SectionTitle>Joint Venture — Result</SectionTitle>
                 <ResultRow label="Total Investment" value={fmtAedExact(jv.totalInvestmentAed)} />
