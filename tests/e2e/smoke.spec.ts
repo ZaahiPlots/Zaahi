@@ -68,32 +68,68 @@ test.describe("ZAAHI /parcels/map smoke", () => {
   });
 
   // ── (h) dark basemap is keyless ───────────────────────────────────────
-  test("(h) dark basemap loads from a keyless provider, no CARTO", async ({ page }) => {
-    // Reported 2026-08-27: Dark rendered CARTO tiles stamped "API KEY REQUIRED".
-    // The failure could not be reproduced here, so rather than diagnose someone
-    // else's quota the provider was changed. This asserts the change stuck: no
-    // request for a dark CARTO tile may leave the page, and the Esri canvas must
-    // actually serve tiles. It would fail on the pre-fix tree, which requested
-    // basemaps.cartocdn.com/dark_all.
+  test("(h) no CARTO tile request leaves the page, on either basemap", async ({ page }) => {
+    // History this guards, in two parts.
+    //
+    // 2026-08-27: Dark rendered CARTO tiles stamped "API KEY REQUIRED". It could
+    // not be reproduced at the time and was read as a CARTO quota tripping under
+    // real-user load, so only Dark was moved to Esri and the original version of
+    // this check only ever looked at dark_all.
+    //
+    // 2026-09-03: the real cause was CARTO rolling out a blanket API-key
+    // requirement for raster basemaps. Light — the DEFAULT basemap — had been
+    // serving watermarked tiles to every signed-in user for six days, and the
+    // narrow assertion below was green throughout, because it only watched the
+    // one basemap that had already been fixed.
+    //
+    // So this no longer greps for a variant. ANY request to cartocdn.com fails
+    // it, on the default basemap and after switching, and each Esri canvas must
+    // actually serve. It fails on the pre-fix tree at the first assertion,
+    // before a single click, because light_all is requested on load.
     const carto: string[] = [];
-    const esri: { status: number }[] = [];
+    const esriLight: { status: number }[] = [];
+    const esriDark: { status: number }[] = [];
     page.on("request", (r) => {
-      if (/cartocdn\.com\/dark_all/.test(r.url())) carto.push(r.url());
+      if (/cartocdn\.com/.test(r.url())) carto.push(r.url());
     });
     page.on("response", (r) => {
-      if (/World_Dark_Gray/.test(r.url())) esri.push({ status: r.status() });
+      if (/World_Light_Gray/.test(r.url())) esriLight.push({ status: r.status() });
+      if (/World_Dark_Gray/.test(r.url())) esriDark.push({ status: r.status() });
     });
 
     await installHarness(page);
     await gotoMap(page);
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(6000);
+
+    // Default basemap is "light" — this is the assertion that was missing.
+    expect(
+      carto,
+      `default (light) basemap must not request CARTO tiles: ${carto.slice(0, 2)}`,
+    ).toEqual([]);
+    expect(esriLight.length, "Esri light canvas tiles were requested on load").toBeGreaterThan(0);
+    expect(
+      esriLight.filter((t) => t.status !== 200),
+      "all Esri light tiles return 200",
+    ).toEqual([]);
 
     await page.getByRole("button", { name: /dark basemap/i }).click();
     await page.waitForTimeout(6000);
 
-    expect(carto, `dark basemap must not request CARTO tiles: ${carto.slice(0, 2)}`).toEqual([]);
-    expect(esri.length, "Esri dark canvas tiles were requested").toBeGreaterThan(0);
-    expect(esri.filter((t) => t.status !== 200), "all Esri dark tiles return 200").toEqual([]);
+    expect(esriDark.length, "Esri dark canvas tiles were requested").toBeGreaterThan(0);
+    expect(
+      esriDark.filter((t) => t.status !== 200),
+      "all Esri dark tiles return 200",
+    ).toEqual([]);
+
+    // Switch back — the original report also said returning to Light did not
+    // clear the broken tiles without a reload.
+    await page.getByRole("button", { name: /light basemap/i }).click();
+    await page.waitForTimeout(4000);
+
+    expect(
+      carto,
+      `no CARTO tile may be requested on any basemap: ${carto.slice(0, 2)}`,
+    ).toEqual([]);
   });
 
   // ── (a) parcels list ──────────────────────────────────────────────────

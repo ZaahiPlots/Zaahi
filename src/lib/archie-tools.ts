@@ -91,8 +91,8 @@ export interface MapControls {
   } | null>;
 
   // ── Wave 2: chrome / camera / overlay controls ──
-  /** Cycle the basemap raster between Cartocdn light, Cartocdn dark,
-   *  and ArcGIS satellite. */
+  /** Cycle the basemap raster between Esri Light Gray Canvas, Esri Dark
+   *  Gray Canvas, and Esri World Imagery (satellite). */
   setBaseMap(theme: "light" | "dark" | "satellite"): void;
   /** Flip the camera between flat 2D and 45° pitch 3D. Re-uses the
    *  existing easeTo pitch transition from the rail button. */
