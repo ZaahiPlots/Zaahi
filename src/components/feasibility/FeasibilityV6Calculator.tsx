@@ -791,7 +791,10 @@ export default function FeasibilityV6Calculator({
     [effectiveSalesPsf, dComm, dMkt, dDev, area.sfa],
   );
 
-  const btsResult = useMemo(
+  // The single-engine result: one blended construction psf and one blended
+  // sales psf across the whole plot. For a single-use plot this IS the
+  // headline. For a mixed-use plot it is the fallback — see `btsResult` below.
+  const singleEngineBtS = useMemo(
     () =>
       computeBtSV6(area, land, construction, finance, btsRevenue, paymentMode, {
         loanAed: financeEnabled ? dLoan : 0,
@@ -913,10 +916,66 @@ export default function FeasibilityV6Calculator({
       commissionPct: dComm,
       marketingPct: dMkt,
       devServicesPct: dDev,
+      // ── Branch 2, 2026-09-04: the parcel-level inputs ────────────────────
+      // Supplying these is what makes `full` a complete feasibility instead
+      // of null. They are passed EXACTLY as the single-engine path passes
+      // them above, so the only difference between the two results is the
+      // construction/revenue split — never a difference in land, financing,
+      // brokerage or escrow terms.
+      land,
+      finance,
+      paymentMode,
+      brokerageOnLandPct: dBrokerage,
+      constructionMonths,
+      loanAed: financeEnabled ? dLoan : 0,
+      ratePct: financeEnabled ? dRate : 0,
+      financePeriodMonths: financeEnabled ? dFinPeriod : 0,
+      escrow: {
+        enabled: escrowEnabled,
+        salesAtLaunchPct,
+        salesAtHandoverPct,
+      },
     });
-  }, [showMixedUse, mixShares, area, dComm, dMkt, dDev]);
+  }, [
+    showMixedUse, mixShares, area, dComm, dMkt, dDev,
+    land, finance, paymentMode, dBrokerage, constructionMonths,
+    financeEnabled, dLoan, dRate, dFinPeriod,
+    escrowEnabled, salesAtLaunchPct, salesAtHandoverPct,
+  ]);
   const mixShareSum = mixShares ? mixShares.reduce((s, x) => s + x.pct, 0) : 0;
   const mixShareValid = !mixShares || Math.abs(mixShareSum - 100) < 0.5;
+
+  // ── THE HEADLINE ────────────────────────────────────────────────────────
+  // Reported 2026-08-27: "Mix Breakdown inputs have ZERO effect on headline
+  // numbers. On plot 5310367 I changed the use mix from 30/10/60 to 90/10/60
+  // and then to 0/100/0 and Net Profit stayed exactly AED 9,849,442, ROI 4.3%,
+  // IRR 6.1% every time."
+  //
+  // That was exactly right, and it stayed true after branch 1 shipped: the mix
+  // was computed and displayed, and then the headline ignored it and used a
+  // single blended engine psf across the whole plot. Two models, one screen.
+  //
+  // Here the mix becomes the source of truth. Every consumer below — the KPI
+  // hero, the results tables, and the PDF — reads `btsResult`, so screen and
+  // export cannot disagree by construction.
+  //
+  // Falls back to the single-engine result when the mix is not usable:
+  //   • not a MIXED USE plot, or fewer than 2 uses  (showMixedUse false)
+  //   • shares do not sum to 100 ± 0.5             (mixShareValid false)
+  //   • `full` is null                             (should not happen now
+  //     that land+finance are always supplied, but null means "not modelled"
+  //     and must never be read as zero)
+  const headlineIsMixedUse = !!(showMixedUse && mixShareValid && mixedResult?.full);
+  const btsResult = headlineIsMixedUse ? mixedResult!.full! : singleEngineBtS;
+
+  // Model provenance — rendered in the Mix Breakdown panel and stamped into
+  // the PDF header. Whoever reads a number must be able to see which model
+  // produced it without opening the calculator.
+  const modelStampLine = headlineIsMixedUse
+    ? `Model: Mixed-use composite v6 · ${mixShares!.length} uses — ${mixShares!
+        .map((s) => `${s.category}${s.sub ? ` (${s.sub})` : ''} ${s.pct}%`)
+        .join(' · ')}`
+    : `Model: Single-engine v6 · ${engine.label}`;
 
   // Founder-ratified 2026-06-08: IRR is the PRIMARY verdict band
   // (developer language); v5 ROI/yield bands stay as the secondary read.
@@ -1112,6 +1171,13 @@ export default function FeasibilityV6Calculator({
       M,
       y,
     );
+    y += 4;
+    // Model stamp. A PDF outlives the screen it was exported from and gets
+    // forwarded to people who will never see the calculator — so it has to say
+    // which model produced the numbers on it. Before 2026-09-04 a mixed-use
+    // plot exported single-engine numbers while showing a mix breakdown that
+    // disagreed with them, and nothing on the page said which was which.
+    doc.text(modelStampLine, M, y);
     y += 16;
 
     // Verdict block — large hero number.
@@ -1560,6 +1626,7 @@ export default function FeasibilityV6Calculator({
     ratePct,
     financePeriodMonths,
     btsResult,
+    modelStampLine,
     btsRevenue,
     salesPsf,
     commissionPct,
@@ -2172,8 +2239,28 @@ export default function FeasibilityV6Calculator({
                     }}
                   >
                     Share % must sum to 100. Current sum: {mixShareSum.toFixed(1)}%.
+                    Headline figures fall back to the single-engine model until
+                    the shares balance.
                   </div>
                 )}
+                {/* Which model is driving the headline. Before 2026-09-04 this
+                    panel was computed, displayed, and then ignored — the mix
+                    inputs moved nothing above. Saying so explicitly is what
+                    makes the inputs trustworthy again. */}
+                <div
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: headlineIsMixedUse ? GOLD : DIM,
+                    marginBottom: 8,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {headlineIsMixedUse
+                    ? 'Driving the headline — Net Profit, ROI and IRR above are computed from this mix'
+                    : 'Not driving the headline — shares must sum to 100%'}
+                </div>
                 {mixShares.map((share, i) => {
                   const engineId = shareToEngine(share);
                   const slice = mixedResult.slices[i];
@@ -3213,6 +3300,20 @@ export default function FeasibilityV6Calculator({
             {!landPriceMissing && tab === 'bts' && (
               <>
                 <SectionTitle>Build to Sell — Result</SectionTitle>
+                {/* Fullscreen has no Mix breakdown panel — that lives only in
+                    sidepanel mode. Without this line a mixed-use plot here
+                    would show numbers computed from the mix with nothing on
+                    screen saying so. Same stamp the PDF carries. */}
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: headlineIsMixedUse ? GOLD : SUBTLE,
+                    marginBottom: 8,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {modelStampLine}
+                </div>
                 <ResultRow label="Total Investment" value={fmtAedExact(btsResult.totalInvestmentAed)} bold />
                 <ResultRow label="Net Revenue" value={fmtAedExact(btsResult.netRevenueAed)} bold />
                 <ResultRow
