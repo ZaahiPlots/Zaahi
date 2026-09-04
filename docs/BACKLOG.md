@@ -1,6 +1,6 @@
 # ZAAHI — active backlog
 
-**Maintained from:** 2026-09-04 · **Reflects `main` @ `bea3fbe`**
+**Maintained from:** 2026-09-04 · **Reflects `main` @ `a76c452`+**
 
 This file exists because the product's priority order lived only in a Telegram
 thread. It is now in the repo, and it is updated as part of doing the work — not
@@ -55,6 +55,13 @@ Nothing was lost. One intake was refused by the bridge's 3/hour rate limit
 PART 24 and the text references a PART 21 that is not on disk. **Parts 2 and
 6–19, 21, 22 were never received by the bridge.** If they were sent, they are
 only in Telegram. This is the single biggest known gap in this file.
+
+**Backfill in progress (2026-09-04).** The founder is recovering what they can
+from the Archie conversations and forwarding it. Anything forwarded that way is
+**backfill, not a new report**: file it under its original PART number with the
+original 2026-08-27 timestamp, mark the source as `backfill/telegram`, and do
+NOT let it re-enter the bridge as a fresh task — the bridge would date it 2026-09
+and the sequence would lie a second time.
 
 ---
 
@@ -181,9 +188,16 @@ removes `fonts.openmaptiles.org` (R-3) and is already parked in the root backlog
 as "Vector basemap migration".
 
 **Trigger to act:** any Esri deprecation notice, any watermark or 4xx on an
-arcgisonline tile, or the vector-basemap migration being un-parked. The e2e
-check `(h)` catches a CARTO regression but **does not** catch Esri degrading —
-it asserts Esri tiles return 200, so a watermark would pass silently.
+arcgisonline tile, or the vector-basemap migration being un-parked.
+
+**Detection — closed 2026-09-04.** This used to read *"a watermark would pass
+silently"*, because `(h)` only asserted status codes. New check **`(h2)`** now
+decodes real tiles and fails on a watermarked 200. It reads the provider URLs
+from `src/lib/basemap-tiles.ts`, so it re-points itself if the provider
+changes, and it is provider-agnostic: it measures how much fixed artwork
+appears on every tile regardless of location. Measured separation — clean
+0.00–0.02%, CARTO keyless 0.43–1.38%, threshold 0.15%. Demonstrated by
+pointing the constant at CARTO and watching it fail.
 
 ### R-2 · Cloudflare `r2.dev` serving production PMTiles
 
@@ -214,21 +228,24 @@ glyph set is a one-off ~10 MB upload to the bucket already serving the tiles.
 
 ## 6 · Branches
 
-### Quarantined — decision needed
+### Quarantined — resolved 2026-09-04
 
-**`archie/20260828-044210-a79f3f-one-conversational-turn-with-arc` @ `ef1371f`**
-— **local only, never pushed.** 3 files, +120/−5. Gates never run, never
-reviewed. Produced when the poller drained a backlog of stale Approve presses on
-startup and began implementing **#25** sixth-out-of-order, then was killed
-mid-run. Root cause already fixed by `888f9ce`. **Re-run the task properly when
-#25 comes up, or delete the branch.** It is invisible to anyone else and cannot
-be merged by accident.
+**`archie/…-044210-a79f3f` @ `ef1371f` — DELETED** on founder instruction.
+Local only, never pushed. 3 files, +120/−5 across
+`api/archie/feedback/route.ts`, `ArchibaldChat.tsx`, `archie-tools.ts`. Gates
+never run, never reviewed; produced when the poller drained stale Approve
+presses and began **#25** sixth-out-of-order, then was killed mid-run. Root
+cause fixed by `888f9ce`.
+
+The commit object survives in the reflog for the usual ~90 days
+(`git show ef1371f`) but no branch points at it. **#25 is re-run from scratch
+when it comes up** — nothing from that session is carried forward.
 
 ### Unmerged, worth a decision
 
 | Branch | Head | What |
 |---|---|---|
-| `feat/backlog-batch-2` | `d36ecd4` | **Founder backlog #7, #10, #13, #33** — area 1:1 no rounding, Floors row, PMTiles search, UI sounds. Complete since 2026-06-12, never merged. **Assessment requested — pending** |
+| `feat/backlog-batch-2` | `d36ecd4` | **Assessed 2026-09-04 — see §6a. Recommendation: do NOT merge as a unit; split.** |
 | `research/landuse-archetypes` | `ecefe7f` | **FROZEN by founder** — merge-ready, deferred pending a 3D-method decision |
 | `fix/tsx-guard-2026-08-12` | `6392bb2` | Gates DB-writing scripts behind `ALLOW_PROD_WRITE`, adds a real typecheck |
 | `fix/plot-lookup-2026-08-19` | `085ab05` | Likely superseded by `84d7aae` — verify before deleting |
@@ -236,6 +253,88 @@ be merged by accident.
 | `docs/landuse-palette-2026-08-10` | `4181a6c` | Ratifies the in-code palette, supersedes the 2026-04-11 table |
 | `research/bug-consolidation-2026-08-10` | `cb5ab5f` | Consolidated master bug list — 33 open, 16 fixed, 4 stale |
 | `research/full-audit-2026-08-20` | `efdf2a3` | Full-surface audit of uncovered areas |
+
+### 6a · `feat/backlog-batch-2` — assessment, 2026-09-04
+
+**Recommendation: do not merge as a unit. Split it — take four items, re-author two.**
+
+**What it is.** `d36ecd4`, three commits, last touched **2026-06-12**. Cut from
+`40060d8`; `main` is now **58 commits ahead** of that base. It claims six
+founder-backlog items, not the four previously recorded — the extra two are
+**#9** and **#11**.
+
+| Item | What | On `main` today? |
+|---|---|---|
+| **#7** | Area 1:1 with source, no rounding | No — `area-unit.ts` still `Math.round` |
+| **#9** | Hover lights the gold outline; hover cards removed, panel on click | No — all three hover cards still present |
+| **#10** | Floors row in SidePanel | No |
+| **#11** | Status badge in SidePanel | No — no `StatusBadge` |
+| **#13** | Search falls through to PMTiles sources | No |
+| **#33** | Netflix-style UI click/tap sounds | No — no `uiClick`/`uiTap` |
+
+So the work is genuinely unmerged and none of it has been superseded on `main`.
+
+**But it does not merge cleanly, and the conflict is semantic.** A test merge
+into `main` @ `a76c452` produced **one conflicted file, three hunks**, all in
+`src/app/parcels/map/page.tsx`:
+
+| Hunk | `main` side | branch side | What it is |
+|---|---|---|---|
+| 1 | 123 lines | 124 lines | The ZAAHI plot mousemove/mouseleave/click handlers |
+| 2 | 272 lines | 7 lines | The three hover popup cards the branch deletes for #9 |
+| 3 | 13 lines | 2 lines | `doFind` PMTiles fallback for #13 |
+
+**Hunk 1 is the problem. Taking the branch side would revive two fixed P0s:**
+
+1. It reintroduces `if (map.getLayer(ZAAHI_PLOTS_FILL)) {` around the handler
+   binds — at the site where `552e708` deliberately removed it. That guard was
+   always false, so *"the cursor stayed `grab` and clicking a plot did nothing,
+   silently"* (audit 1.17).
+2. It calls `setSelectedVaultEntry(...)` / `setSelectedParcelId(...)` directly.
+   `main` routes 13 call sites through `openParcelPanel` / `openVaultPanel`,
+   the mutex added by the May-parity **P0 1.1** fix. Bypassing it brings back
+   two drawers open at once.
+
+Neither is a textual accident — the branch predates both fixes.
+
+**One item needs rework regardless of conflicts.** #7 as implemented is
+`n.toLocaleString("en-US", { maximumFractionDigits: 20 })`. Measured on the
+real sqm→sqft path:
+
+```
+4,500 sqm  ->  48,437.596875195006 sqft
+2,426 sqm  ->  26,113.24667093846 sqft
+```
+
+That is twelve digits of **binary float noise**, not source precision — the
+source carries one or two decimals at most. "1:1 with source, no rounding" is a
+reasonable ask; this implementation does not deliver it, and it violates the
+`CLAUDE.md` style rule that numbers are always formatted. Needs a decimal cap
+(2–3) or a round-trip through the source string.
+
+**Also worth knowing:** #9 and #11 have *rival* implementations on two other
+unmerged branches — `research/backlog-hover9` (`f1bcd9a`) and
+`research/backlog-wave1` (`36b9ea9`). Three branches, two of the same items.
+Whichever route is taken, the other two branches should be closed so this does
+not recur.
+
+**Proposed split**
+
+| Take | Items | Why |
+|---|---|---|
+| **Cherry-pick onto a fresh branch off `main`** | **#10**, **#11**, **#33** | `SidePanel.tsx`, `FilterPanel.tsx`, `sound.ts` all auto-merged with zero conflicts. Self-contained, low risk |
+| **Re-author against `main`** | **#9**, **#13** | Both live in the conflicted `page.tsx` hunks. The intent is fine; the code is written against a tree that no longer exists |
+| **Rework then take** | **#7** | Fix the float-noise formatter first. Founder-visible on every area figure in the product |
+| **Retire** | the branch itself | Once the above land, `feat/backlog-batch-2`, `research/backlog-hover9` and `research/backlog-wave1` all close |
+
+Effort: the cherry-pick is small. #9 and #13 are a fresh implementation each —
+#9 in particular deletes 272 lines of live UI and deserves its own review, since
+"remove the hover cards" is a founder UX decision, not a bug fix.
+
+**Founder decisions this raises:** confirm #9 is still wanted (it removes hover
+cards entirely); confirm the decimal precision for #7.
+
+---
 
 Merged and safe to delete: the five `archie/2026-08-28-*` branches, plus
 `fix/light-basemap-esri-2026-09-03`, `feat/mixeduse-headline-2026-09-04`,
@@ -321,6 +420,9 @@ Carried from `docs/HEALTH_2026-08-28.md`; the items closed today are removed.
 | D-12 | `feat/backlog-batch-2`: merge or retire |
 | D-13 | `MiniMap.tsx`: delete the dead component |
 | D-14 | Does `CLAUDE.md` point here as well as at the root backlog? |
+| D-15 | `feat/backlog-batch-2` (§6a): approve the split — cherry-pick #10/#11/#33, re-author #9/#13, rework #7 |
+| D-16 | **#9** — is removing the hover cards entirely still wanted? It deletes 272 lines of live UI |
+| D-17 | **#7** — what decimal precision for areas? "No rounding" as written produces float noise |
 
 ---
 

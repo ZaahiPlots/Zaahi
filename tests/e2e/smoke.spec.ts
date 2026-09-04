@@ -5,9 +5,121 @@
 // the browser, so no Next route handler runs and the production database is
 // never contacted. Non-GET requests are aborted and recorded as failures.
 
-import { test, expect, type ConsoleMessage } from "@playwright/test";
+import { test, expect, type ConsoleMessage, type Page } from "@playwright/test";
 import { installHarness, gotoMap } from "./harness";
 import { PARCELS, PLOT_FOUND, PLOT_NO_GEOMETRY, PLOT_MISSING } from "./fixtures";
+import {
+  ESRI_LIGHT_BASE,
+  ESRI_DARK_BASE,
+  ESRI_IMAGERY,
+} from "@/lib/basemap-tiles";
+
+// ── watermark detection ───────────────────────────────────────────────────
+//
+// A tile provider that wants an API key does not necessarily stop serving. It
+// serves HTTP 200 and stamps "API KEY REQUIRED" across the image. That is
+// exactly what CARTO did in late August 2026, and it is why the default
+// basemap shipped defaced for six days while every gate stayed green: (h)
+// only ever asserted status codes and request origins.
+//
+// docs/BACKLOG.md R-1 records that the same thing can happen to us again —
+// every basemap now serves from Esri's LEGACY arcgisonline endpoint, which
+// Esri lists in "mature status" and whose own guidance says applications
+// should have moved to keyed services by 2022-04-30.
+//
+// How this detects it, without OCR and without knowing the provider:
+//
+//   A key-required overlay is the SAME artwork on every tile, whatever the
+//   tile shows. Real map content is not. So: fetch the same zoom level over
+//   three continents, and count pixels that are (a) identical across all
+//   three AND (b) not that tile's own background colour. For genuine
+//   cartography that is essentially zero — roads and coastlines differ by
+//   location. For an overlay it is the overlay itself.
+//
+// Measured 2026-09-04 on real tiles, z12 over Dubai / London / Tokyo:
+//
+//   CARTO light_all (watermarked)   0.43%
+//   CARTO dark_all  (watermarked)   1.38%
+//   Esri Light Gray (clean)         0.02%
+//   Esri Dark Gray  (clean)         0.00%
+//   Esri World Imagery (clean)      0.00%
+//
+// A 20x-70x separation. The threshold sits between the two populations with
+// roughly 7x headroom on the clean side and 3x on the dirty side.
+//
+// Single-tile statistics were tried first and rejected: the CLEAN Esri Light
+// Gray tile is flatter (top colour 90.5%, entropy 0.59) than the WATERMARKED
+// CARTO tile (61.7%, 1.97), so uniformity and entropy both point the wrong
+// way. Only the cross-tile invariant separates them.
+//
+// Known limit: a fully translucent watermark blended over varying content
+// would lower the score. This catches the opaque-text kind that CARTO ships.
+
+const WATERMARK_THRESHOLD = 0.0015; // 0.15% — see the measurements above
+
+/** z12 tiles over Dubai, London and Tokyo — three continents, one zoom. */
+const PROBE_TILES = [
+  { z: 12, x: 2405, y: 1596 },
+  { z: 12, x: 2047, y: 1362 },
+  { z: 12, x: 3637, y: 1613 },
+] as const;
+
+/**
+ * Fraction of pixels that are identical across all probe tiles AND are not
+ * the tile's own background colour. Effectively "how much fixed artwork is
+ * painted on every tile regardless of location".
+ */
+async function overlayFraction(page: Page, template: string): Promise<number> {
+  const urls = PROBE_TILES.map((t) =>
+    template.replace("{z}", String(t.z)).replace("{x}", String(t.x)).replace("{y}", String(t.y)),
+  );
+  return page.evaluate(async (tileUrls: string[]) => {
+    const load = async (u: string) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = () => rej(new Error(`tile failed to load: ${u}`));
+        img.src = u;
+      });
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      return ctx.getImageData(0, 0, c.width, c.height).data;
+    };
+    const tiles = await Promise.all(tileUrls.map(load));
+    // Quantise to 5 bits per channel so JPEG ringing does not read as signal
+    // (Esri serves the Canvas base layers as JPEG).
+    const q = (d: Uint8ClampedArray, i: number) =>
+      ((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3);
+    const modal = tiles.map((d) => {
+      const m = new Map<number, number>();
+      for (let i = 0; i < d.length; i += 4) {
+        const k = q(d, i);
+        m.set(k, (m.get(k) ?? 0) + 1);
+      }
+      let bestK = 0;
+      let bestV = -1;
+      for (const [k, v] of m) if (v > bestV) { bestV = v; bestK = k; }
+      return bestK;
+    });
+    const n = tiles[0].length / 4;
+    let sameNonBg = 0;
+    for (let px = 0; px < n; px++) {
+      const i = px * 4;
+      const k0 = q(tiles[0], i);
+      let equal = true;
+      for (let t = 1; t < tiles.length; t++) if (q(tiles[t], i) !== k0) { equal = false; break; }
+      if (!equal) continue;
+      let isBackground = false;
+      for (let t = 0; t < tiles.length; t++) if (k0 === modal[t]) { isBackground = true; break; }
+      if (!isBackground) sameNonBg++;
+    }
+    return sameNonBg / n;
+  }, urls);
+}
 
 /** Collects console output so (f) can assert the production console is clean. */
 function captureConsole(page: import("@playwright/test").Page) {
@@ -130,6 +242,38 @@ test.describe("ZAAHI /parcels/map smoke", () => {
       carto,
       `no CARTO tile may be requested on any basemap: ${carto.slice(0, 2)}`,
     ).toEqual([]);
+  });
+
+  // ── (h2) the tiles we DO serve must not be watermarked ────────────────
+  test("(h2) no basemap serves a watermarked tile, even at HTTP 200", async ({ page }) => {
+    // (h) proves we ask the right provider. It cannot prove the provider is
+    // still giving us clean tiles: a 200 carrying "API KEY REQUIRED" passes
+    // every status assertion ever written. That is the precise failure that
+    // shipped to production for six days, and docs/BACKLOG.md R-1 records
+    // that our current provider can produce it too — Esri's arcgisonline
+    // endpoint is legacy and has required a key on paper since 2022.
+    //
+    // Reads the URLs from src/lib/basemap-tiles.ts rather than hard-coding
+    // them, so switching provider re-points this check automatically.
+    await installHarness(page);
+    await gotoMap(page);
+
+    const surfaces: Array<[string, string]> = [
+      ["Light (default)", ESRI_LIGHT_BASE],
+      ["Dark", ESRI_DARK_BASE],
+      ["Satellite", ESRI_IMAGERY],
+    ];
+
+    for (const [label, template] of surfaces) {
+      const fraction = await overlayFraction(page, template);
+      expect(
+        fraction,
+        `${label} basemap looks watermarked: ${(fraction * 100).toFixed(2)}% of pixels are ` +
+          `identical across three continents and are not background, against a ` +
+          `${(WATERMARK_THRESHOLD * 100).toFixed(2)}% threshold. A clean provider scores ~0.00-0.02%; ` +
+          `CARTO's keyless tiles scored 0.43-1.38%. Provider: ${template}`,
+      ).toBeLessThan(WATERMARK_THRESHOLD);
+    }
   });
 
   // ── (a) parcels list ──────────────────────────────────────────────────
