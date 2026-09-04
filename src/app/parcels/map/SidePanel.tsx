@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Map as MLMap } from "maplibre-gl";
+import { sound } from "@/lib/sound";
 import FeasibilityCalculator from "./FeasibilityCalculator";
 import FeasibilityV6Calculator from "@/components/feasibility/FeasibilityV6Calculator";
 import { IS_FEASIBILITY_V6_ENABLED } from "@/lib/feasibility-v6/featureFlag";
@@ -493,8 +494,18 @@ export default function SidePanel({
         <div className="flex-1 min-w-0">
           {data ? (
             <>
-              <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, lineHeight: 1.1 }} className="truncate">
-                Plot {data.plotNumber}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, lineHeight: 1.1 }} className="truncate">
+                  Plot {data.plotNumber}
+                </div>
+                {/* Status badge — founder backlog #11 (2026-06-12). For
+                    ZAAHI listings, data.status is the ParcelStatus enum
+                    (LISTED / VACANT / IN_DEAL / SOLD / VAULT_PRIVATE /
+                    PENDING_REVIEW / VERIFIED / REJECTED / DISPUTED / FROZEN).
+                    Only render when present and not the marketplace default
+                    "LISTED" (which is the implicit assumption already
+                    conveyed by the panel being open). */}
+                {data.status && <StatusBadge status={data.status} />}
               </div>
               <div style={{ color: SUBTLE, fontSize: 12 }} className="truncate">
                 {data.district} · {data.emirate}
@@ -592,6 +603,8 @@ export default function SidePanel({
               disabled={pdfBusy || !data}
               onClick={async () => {
                 if (!data) return;
+                // Bright blip on download CTA (founder backlog #33).
+                sound.uiClick();
                 setPdfBusy(true);
                 try {
                   await generateSitePlanPdf({
@@ -776,13 +789,20 @@ export default function SidePanel({
                   v={fmtA(plan.maxGfaSqft, plan.maxGfaSqm)}
                 />
                 <Row label="FAR" v={plan.far?.toString()} />
+                {/* Floors — founder backlog #10 (2026-06-12). Only render
+                    when the affection plan has the data; DDA/AD tile-sourced
+                    parcels don't have it baked into PMTiles, so we never
+                    fall back to "—" filler. ZAAHI listings come with this
+                    from the AffectionPlan.maxFloors column. */}
+                {plan.maxFloors != null && plan.maxFloors > 0 && (
+                  <Row label="Floors" v={`${plan.maxFloors}`} />
+                )}
                 <Row
                   label="Max Height"
                   v={
-                    plan.maxHeightCode || plan.maxFloors != null || plan.maxHeightMeters != null
+                    plan.maxHeightCode || plan.maxHeightMeters != null
                       ? [
                           plan.maxHeightCode,
-                          plan.maxFloors != null ? `${plan.maxFloors} floors` : null,
                           plan.maxHeightMeters != null ? `~${plan.maxHeightMeters} m` : null,
                         ]
                           .filter(Boolean)
@@ -1122,7 +1142,11 @@ export default function SidePanel({
           }}
         >
           <button
-            onClick={() => setOfferOpen(true)}
+            onClick={() => {
+              // Bright blip on the primary CTA (founder backlog #33).
+              sound.uiClick();
+              setOfferOpen(true);
+            }}
             style={{
               width: "100%",
               padding: "14px 16px",
@@ -1335,6 +1359,78 @@ function Row({ label, v }: { label: string; v: string | null | undefined }) {
       <span style={{ color: SUBTLE, fontSize: 12 }}>{label}</span>
       <span style={{ ...NUMBER_SMALL, color: TXT, textAlign: "right" }}>{v}</span>
     </div>
+  );
+}
+
+// Status pill — founder backlog #11 (2026-06-12). Compact uppercase
+// badge that lives next to the plot number in the SidePanel header.
+// Colour palette is keyed on the ParcelStatus enum semantics:
+//   LISTED        → green (revenue-ready)
+//   IN_DEAL       → gold (in motion)
+//   SOLD          → grey (closed, archived)
+//   VAULT_PRIVATE → gold-bordered, dim (owner-only)
+//   PENDING_REVIEW, VERIFIED, REJECTED, DISPUTED, FROZEN, VACANT → SUBTLE
+// Unknown free-form strings (PMTiles-sourced features rendered via
+// directData) pass through with the generic "neutral" palette and
+// title-case formatting.
+function StatusBadge({ status }: { status: string }) {
+  if (!status || !status.trim()) return null;
+  const raw = status.trim();
+  const upper = raw.toUpperCase();
+  // Map ParcelStatus enum + common DDA physical statuses to colour bands.
+  const palette: { fg: string; bg: string; border: string } = (() => {
+    switch (upper) {
+      case "LISTED":
+        return { fg: "#16A34A", bg: "rgba(22, 163, 74, 0.15)", border: "rgba(22, 163, 74, 0.45)" };
+      case "IN_DEAL":
+        return { fg: GOLD, bg: "rgba(200, 169, 110, 0.15)", border: "rgba(200, 169, 110, 0.45)" };
+      case "SOLD":
+        return { fg: "#9CA3AF", bg: "rgba(156, 163, 175, 0.12)", border: "rgba(156, 163, 175, 0.4)" };
+      case "VAULT_PRIVATE":
+        return { fg: GOLD, bg: "rgba(200, 169, 110, 0.06)", border: "rgba(200, 169, 110, 0.35)" };
+      case "REJECTED":
+      case "DISPUTED":
+      case "FROZEN":
+        return { fg: "#EF4444", bg: "rgba(239, 68, 68, 0.12)", border: "rgba(239, 68, 68, 0.4)" };
+      case "VERIFIED":
+        return { fg: "#16A34A", bg: "rgba(22, 163, 74, 0.10)", border: "rgba(22, 163, 74, 0.35)" };
+      // DDA/AD physical statuses (PMTiles "Construction_Status" etc.)
+      case "COMPLETED":
+      case "CONSTRUCTED":
+        return { fg: "#16A34A", bg: "rgba(22, 163, 74, 0.10)", border: "rgba(22, 163, 74, 0.35)" };
+      case "UNDER_CONSTRUCTION":
+      case "UNDER CONSTRUCTION":
+        return { fg: GOLD, bg: "rgba(200, 169, 110, 0.10)", border: "rgba(200, 169, 110, 0.4)" };
+      default:
+        return { fg: SUBTLE, bg: "rgba(255, 255, 255, 0.06)", border: "rgba(255, 255, 255, 0.18)" };
+    }
+  })();
+  // Format display: ALL-CAPS enums → title-with-spaces; free-form passes
+  // through with normalised whitespace.
+  const label = upper === raw
+    ? raw.replace(/_/g, " ")
+    : raw.replace(/\s+/g, " ");
+  return (
+    <span
+      style={{
+        flexShrink: 0,
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "1px 6px",
+        borderRadius: 4,
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: palette.fg,
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        fontFamily: "inherit",
+        lineHeight: 1.4,
+      }}
+    >
+      {label}
+    </span>
   );
 }
 
