@@ -2,25 +2,34 @@
 import { useEffect, useRef } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import {
+  ESRI_LIGHT_BASE,
+  ESRI_LIGHT_LABELS,
+  ESRI_CANVAS_ATTRIBUTION,
+} from "@/lib/basemap-tiles";
 
-// CARTO Positron (light_all) — unified basemap across the platform per
-// founder style audit 2026-05-23. Replaces the raw OSM tiles that
-// used to render here.
+// Esri Light Gray Canvas — unified basemap across the platform per founder
+// style audit 2026-05-23. Was CARTO Positron (light_all) until 2026-09-03;
+// see src/lib/basemap-tiles.ts for why every surface moved together.
 const RASTER_STYLE: StyleSpecification = {
   version: 8,
   sources: {
-    carto: {
+    esriLight: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      ],
+      tiles: [ESRI_LIGHT_BASE],
       tileSize: 256,
-      attribution: "© CARTO © OpenStreetMap contributors",
+      attribution: ESRI_CANVAS_ATTRIBUTION,
+    },
+    esriLightLabels: {
+      type: "raster",
+      tiles: [ESRI_LIGHT_LABELS],
+      tileSize: 256,
     },
   },
-  layers: [{ id: "carto", type: "raster", source: "carto" }],
+  layers: [
+    { id: "esriLight", type: "raster", source: "esriLight" },
+    { id: "esriLightLabels", type: "raster", source: "esriLightLabels" },
+  ],
 };
 
 export default function MapPreview({

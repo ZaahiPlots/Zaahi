@@ -377,7 +377,7 @@ const TOOLS = [
     function: {
       name: "change_basemap",
       description:
-        "Switch the basemap raster between Cartocdn Light, Cartocdn Dark, or ArcGIS Satellite.",
+        "Switch the basemap raster between Esri Light Gray Canvas, Esri Dark Gray Canvas, or Esri World Imagery (satellite).",
       parameters: {
         type: "object",
         properties: {

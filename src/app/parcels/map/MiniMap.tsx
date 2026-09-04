@@ -29,6 +29,7 @@ import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import maplibregl, { Map as MLMap, StyleSpecification } from "maplibre-gl";
 import { apiFetch } from "@/lib/api-fetch";
+import { ESRI_LIGHT_BASE, ESRI_LIGHT_LABELS } from "@/lib/basemap-tiles";
 // Phase 1: drop the local 0.12 border value in favour of the shared
 // PANEL_BORDER_COLOR (0.15) — single source of truth for panel edges.
 import { PANEL_BORDER_COLOR } from "@/lib/design-tokens";
@@ -64,27 +65,37 @@ const LANDUSE_COLOR: Record<string, string> = {
 const INITIAL_CENTER: [number, number] = [55.6, 24.3];
 const INITIAL_ZOOM = 5.9;
 
-// CARTO Positron (light_all) — unified basemap across the platform per
-// founder style audit 2026-05-23. Previously this mini used light_nolabels
-// so the viewport rectangle would stand out; the founder chose to keep
-// the same Positron basemap everywhere for a single visual language.
-// The 2 px red viewport rect plus the colored dots stay readable on
-// top of the label-bearing Positron tiles.
+// Esri Light Gray Canvas — unified basemap across the platform per founder
+// style audit 2026-05-23. Previously this mini used CARTO light_nolabels so
+// the viewport rectangle would stand out; the founder chose to keep the same
+// basemap everywhere for a single visual language. The 2 px red viewport rect
+// plus the colored dots stay readable on top of the label-bearing tiles.
+//
+// NOTE: this component is DEAD. The MiniMap dock was unmounted 2026-06-01 by
+// founder spec and has zero render sites (BUG-029 tracks the leftover file).
+// It is converted rather than left on CARTO only so that `grep cartocdn src/`
+// stays empty — a stale provider URL in dead code is exactly the trap that
+// src/lib/basemaps.ts turned out to be. Deleting the file is a separate call.
 const MINI_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     base: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      ],
+      tiles: [ESRI_LIGHT_BASE],
+      tileSize: 256,
+      attribution: "",
+    },
+    baseLabels: {
+      type: "raster",
+      tiles: [ESRI_LIGHT_LABELS],
       tileSize: 256,
       attribution: "",
     },
   },
-  layers: [{ id: "base", type: "raster", source: "base" }],
+  layers: [
+    { id: "base", type: "raster", source: "base" },
+    { id: "baseLabels", type: "raster", source: "baseLabels" },
+  ],
 };
 
 interface ParcelItem {

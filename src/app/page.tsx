@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import {
+  ESRI_LIGHT_BASE,
+  ESRI_LIGHT_LABELS,
+  ESRI_CANVAS_ATTRIBUTION,
+} from '@/lib/basemap-tiles';
 
 const GOLD = '#C8A96E';
 
@@ -41,11 +46,18 @@ export default function AuthPage() {
     };
   }, [router]);
 
-  // Initialize MapLibre — CARTO Positron (light_all). Unified basemap
-  // across the whole platform per founder style audit 2026-05-23. The
-  // login page used to render Esri satellite; we now match the rest
-  // of the product so the visual transition into /parcels/map is
-  // seamless (no abrupt basemap switch on sign-in).
+  // Initialize MapLibre — Esri Light Gray Canvas. Unified basemap across the
+  // whole platform per founder style audit 2026-05-23. The login page used to
+  // render Esri satellite; we match the rest of the product so the visual
+  // transition into /parcels/map is seamless (no abrupt basemap switch on
+  // sign-in).
+  //
+  // Was CARTO Positron (light_all) until 2026-09-03. CARTO now watermarks
+  // keyless raster tiles with "API KEY REQUIRED"; a cold load of this page was
+  // pulling 42 stamped tiles. Heavily blurred here, so it was not legible — but
+  // it was the same broken provider the map page was serving unblurred, and the
+  // unified-basemap decision above means these move together or not at all.
+  // See src/lib/basemap-tiles.ts.
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
     const map = new maplibregl.Map({
@@ -53,19 +65,23 @@ export default function AuthPage() {
       style: {
         version: 8,
         sources: {
-          carto: {
+          esriLight: {
             type: 'raster',
-            tiles: [
-              'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-              'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            ],
+            tiles: [ESRI_LIGHT_BASE],
             tileSize: 256,
-            attribution: '© CARTO © OpenStreetMap contributors',
+            attribution: ESRI_CANVAS_ATTRIBUTION,
+          },
+          esriLightLabels: {
+            type: 'raster',
+            tiles: [ESRI_LIGHT_LABELS],
+            tileSize: 256,
           },
         },
         glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
-        layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
+        layers: [
+          { id: 'esriLight', type: 'raster', source: 'esriLight' },
+          { id: 'esriLightLabels', type: 'raster', source: 'esriLightLabels' },
+        ],
       },
       center: [55.27, 25.20], // Dubai center
       zoom: 12,

@@ -17,6 +17,14 @@ import {
 } from "./sidepanel-width";
 import { useFormatArea } from "@/lib/area-unit";
 import { useFormatPriceShort } from "@/lib/currency";
+import {
+  ESRI_LIGHT_BASE,
+  ESRI_LIGHT_LABELS,
+  ESRI_DARK_BASE,
+  ESRI_DARK_LABELS,
+  ESRI_IMAGERY,
+  ESRI_CANVAS_ATTRIBUTION,
+} from "@/lib/basemap-tiles";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
 import { AddPlotChooser } from "./AddPlotChooser";
@@ -154,43 +162,64 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
     sources: {
       esri: {
         type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        ],
+        tiles: [ESRI_IMAGERY],
         tileSize: 256,
+        // NOTE: World_Imagery's own credit line is "Esri, Maxar, Earthstar
+        // Geographics". Left as-is here deliberately — correcting it is a
+        // separate item (health report C-4), not part of the Light move.
         attribution: "© Esri World Imagery",
       },
     },
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
     layers: [{ id: "esri", type: "raster", source: "esri" }],
   },
+  // Light moved off CARTO 2026-09-03, for the reason Dark moved on 2026-08-28
+  // and Light did not: CARTO now requires an API key for its raster basemaps
+  // and stamps every keyless tile with "API KEY REQUIRED".
+  //
+  // On 28 Aug this could not be reproduced — direct fetches, fetches carrying a
+  // zaahi.io Referer, and a real Chromium all came back clean — and it was read
+  // as a CARTO quota tripping under real-user load. That reading was wrong. On
+  // 2026-09-03 it reproduces every time, on light_all and dark_all alike, and a
+  // request carrying a production Referer returns a byte-identical watermarked
+  // tile (same md5) to one carrying none. CARTO's rollout simply completed
+  // after the 28th. Light is the DEFAULT basemap, so every signed-in user was
+  // looking at a competitor's nag screen. See docs/HEALTH_2026-08-28.md §1.1.
+  //
+  // Same shape as dark below: Base carries the geometry, Reference carries the
+  // labels, because Esri splits what CARTO's light_all bundled.
   light: {
     version: 8,
     sources: {
-      carto: {
+      esriLight: {
         type: "raster",
-        tiles: [
-          "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        ],
+        tiles: [ESRI_LIGHT_BASE],
         tileSize: 256,
-        attribution: "© CARTO © OpenStreetMap contributors",
+        attribution: ESRI_CANVAS_ATTRIBUTION,
+      },
+      esriLightLabels: {
+        type: "raster",
+        tiles: [ESRI_LIGHT_LABELS],
+        tileSize: 256,
       },
     },
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-    layers: [{ id: "carto", type: "raster", source: "carto" }],
+    layers: [
+      { id: "esriLight", type: "raster", source: "esriLight" },
+      { id: "esriLightLabels", type: "raster", source: "esriLightLabels" },
+    ],
   },
-  // Dark moved off CARTO 2026-08-28. Reported: the dark basemap rendered CARTO
-  // tiles stamped "API KEY REQUIRED - carto.com/basemaps/apikey" across the whole
-  // map. It could not be reproduced from here — direct fetches, fetches carrying
-  // a zaahi.io Referer, and a real Chromium switching to Dark all returned clean
-  // 200s (24 tiles, 0 failures) — which points at a CARTO free-tier quota that
-  // trips under sustained real-user load from one referrer rather than at
-  // anything in this code. Rather than keep diagnosing someone else's quota, the
-  // failure mode is removed: Esri's Dark Gray Canvas needs no key, has no
-  // per-referrer quota, and is the same free ArcGIS family as the satellite
-  // layer above, which has served this map without incident.
+  // Dark moved off CARTO 2026-08-28, for the reason given above. Reported: the
+  // dark basemap rendered CARTO tiles stamped "API KEY REQUIRED -
+  // carto.com/basemaps/apikey" across the whole map.
+  //
+  // CORRECTION 2026-09-03: this comment used to record that the failure "could
+  // not be reproduced from here" and blame a CARTO free-tier quota tripping
+  // under real-user load. That was an honest reading of what the evidence showed
+  // on the 28th and it was wrong — CARTO was mid-rollout of a blanket API-key
+  // requirement. The wrong diagnosis had a cost: it framed the problem as
+  // per-referrer quota rather than per-provider policy, so only the reported
+  // basemap was moved and the default one was left behind for six days.
   //
   // Two sources, matching CARTO's dark_all: Base carries the geometry, Reference
   // carries the labels. Both go to level 23, past the map's maxZoom of 18, so no
@@ -200,17 +229,13 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
     sources: {
       esriDark: {
         type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-        ],
+        tiles: [ESRI_DARK_BASE],
         tileSize: 256,
-        attribution: "© Esri, HERE, Garmin, © OpenStreetMap contributors",
+        attribution: ESRI_CANVAS_ATTRIBUTION,
       },
       esriDarkLabels: {
         type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
-        ],
+        tiles: [ESRI_DARK_LABELS],
         tileSize: 256,
       },
     },

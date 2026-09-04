@@ -30,29 +30,37 @@ import {
   type ProjectionKey,
 } from "@/lib/coords-projection";
 import { buildPolygon, type PolygonBuild } from "@/lib/polygon-validation";
+import { ESRI_LIGHT_BASE, ESRI_LIGHT_LABELS } from "@/lib/basemap-tiles";
 
 const GOLD = "#C8A96E";
 const TEXT_PRIMARY = "#f5f1e8";
 const TEXT_DIM = "rgba(245, 241, 232, 0.75)";
 const LINE = "rgba(200, 169, 110, 0.15)";
 
-// CARTO Positron — matches the rest of the platform's basemap
-// language (same MiniMap used to use this).
+// Esri Light Gray Canvas — matches the rest of the platform's basemap
+// language. Was CARTO Positron until 2026-09-03; see src/lib/basemap-tiles.ts.
+// This one is live: it renders inside the Add Plot wizard (Step1PlotLookup),
+// so it was serving watermarked tiles to anyone entering a plot by coordinates.
 const PREVIEW_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     base: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      ],
+      tiles: [ESRI_LIGHT_BASE],
+      tileSize: 256,
+      attribution: "",
+    },
+    baseLabels: {
+      type: "raster",
+      tiles: [ESRI_LIGHT_LABELS],
       tileSize: 256,
       attribution: "",
     },
   },
-  layers: [{ id: "base", type: "raster", source: "base" }],
+  layers: [
+    { id: "base", type: "raster", source: "base" },
+    { id: "baseLabels", type: "raster", source: "baseLabels" },
+  ],
 };
 
 const POLY_SRC = "coords-entry-poly";
