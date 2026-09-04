@@ -24,6 +24,8 @@ import {
   ESRI_DARK_LABELS,
   ESRI_IMAGERY,
   ESRI_CANVAS_ATTRIBUTION,
+  ESRI_CANVAS_MAXZOOM,
+  ESRI_IMAGERY_MAXZOOM,
 } from "@/lib/basemap-tiles";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
@@ -164,6 +166,7 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
         type: "raster",
         tiles: [ESRI_IMAGERY],
         tileSize: 256,
+        maxzoom: ESRI_IMAGERY_MAXZOOM,
         // NOTE: World_Imagery's own credit line is "Esri, Maxar, Earthstar
         // Geographics". Left as-is here deliberately — correcting it is a
         // separate item (health report C-4), not part of the Light move.
@@ -195,12 +198,14 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
         type: "raster",
         tiles: [ESRI_LIGHT_BASE],
         tileSize: 256,
+        maxzoom: ESRI_CANVAS_MAXZOOM,
         attribution: ESRI_CANVAS_ATTRIBUTION,
       },
       esriLightLabels: {
         type: "raster",
         tiles: [ESRI_LIGHT_LABELS],
         tileSize: 256,
+        maxzoom: ESRI_CANVAS_MAXZOOM,
       },
     },
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
@@ -222,8 +227,14 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
   // basemap was moved and the default one was left behind for six days.
   //
   // Two sources, matching CARTO's dark_all: Base carries the geometry, Reference
-  // carries the labels. Both go to level 23, past the map's maxZoom of 18, so no
-  // maxzoom clamp is needed (verified against the service metadata).
+  // carries the labels.
+  //
+  // CORRECTED 2026-09-04: this said "both go to level 23 ... no maxzoom clamp
+  // is needed (verified against the service metadata)". The metadata describes
+  // the tiling scheme, not coverage — real Canvas data over the UAE stops at
+  // z16 and Esri answers deeper requests with a "Map data not yet available"
+  // placeholder at HTTP 200. Both sources are now clamped; see
+  // src/lib/basemap-tiles.ts.
   dark: {
     version: 8,
     sources: {
@@ -231,12 +242,14 @@ const STYLES: Record<BaseMap, StyleSpecification> = {
         type: "raster",
         tiles: [ESRI_DARK_BASE],
         tileSize: 256,
+        maxzoom: ESRI_CANVAS_MAXZOOM,
         attribution: ESRI_CANVAS_ATTRIBUTION,
       },
       esriDarkLabels: {
         type: "raster",
         tiles: [ESRI_DARK_LABELS],
         tileSize: 256,
+        maxzoom: ESRI_CANVAS_MAXZOOM,
       },
     },
     glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",

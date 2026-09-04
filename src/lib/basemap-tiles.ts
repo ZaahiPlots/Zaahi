@@ -25,9 +25,43 @@
 //
 // About the provider
 // ------------------
-// Esri's Canvas services are keyless and need no account. Verified against the
-// live service metadata on 2026-09-03: all three go to LOD 23, past this map's
-// maxZoom of 18, so no maxzoom clamp is needed, and tileSize is 256.
+// Esri's Canvas services are keyless and need no account.
+//
+// MAXZOOM — CORRECTED 2026-09-04 after a production regression.
+//
+// On 2026-09-03 I read `tileInfo.lods` from each service's metadata, saw
+// maxLOD 23, and wrote "no maxzoom clamp is needed". That was wrong, and it
+// broke the map: at z16.15 in 3D every Canvas tile came back as Esri's
+// "Map data not yet available" placeholder.
+//
+// tileInfo.lods describes the TILING SCHEME — which levels the pyramid
+// defines — not which levels actually contain data. Esri answers a request
+// above its coverage with HTTP 200 and a placeholder image, so nothing about
+// the response signals the problem except the pixels.
+//
+// The only way to know is to fetch tiles and look. Probed over Dubai and Abu
+// Dhabi, six label-dense spots per level, on 2026-09-04:
+//
+//   Light Gray Base       real -> z16   placeholder from z17 (2,521 B, identical everywhere)
+//   Light Gray Reference  real -> z16   placeholder from z17 (875 B, transparent variant)
+//   Dark Gray Base        real -> z16   placeholder from z17
+//   Dark Gray Reference   real -> z16   placeholder from z17
+//   World Imagery         real -> z19   placeholder from z20
+//
+// Declaring maxzoom makes MapLibre stop requesting past coverage and overzoom
+// the deepest real tile instead — blurrier at z17-18, which is the honest
+// result, rather than a grey "not available" sheet.
+//
+// A single pair of tiles is NOT enough to detect this on the label layers: an
+// empty label tile is legitimate, so two empty tiles look identical for
+// perfectly good reasons. The six-spot probe is what separates "no labels
+// here" from "no data at all" — my first pass got Reference wrong by one level
+// for exactly that reason.
+
+/** Deepest level with real Canvas data over the UAE. Verified by probe. */
+export const ESRI_CANVAS_MAXZOOM = 16;
+/** Deepest level with real World Imagery over the UAE. Verified by probe. */
+export const ESRI_IMAGERY_MAXZOOM = 19;
 //
 // Esri splits what CARTO's *_all tiles bundled together: Base carries the
 // geometry, Reference carries the labels. Both are needed to match the previous

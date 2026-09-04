@@ -10,8 +10,12 @@ import { installHarness, gotoMap } from "./harness";
 import { PARCELS, PLOT_FOUND, PLOT_NO_GEOMETRY, PLOT_MISSING } from "./fixtures";
 import {
   ESRI_LIGHT_BASE,
+  ESRI_LIGHT_LABELS,
   ESRI_DARK_BASE,
+  ESRI_DARK_LABELS,
   ESRI_IMAGERY,
+  ESRI_CANVAS_MAXZOOM,
+  ESRI_IMAGERY_MAXZOOM,
 } from "@/lib/basemap-tiles";
 
 // ── watermark detection ───────────────────────────────────────────────────
@@ -36,7 +40,7 @@ import {
 //   cartography that is essentially zero — roads and coastlines differ by
 //   location. For an overlay it is the overlay itself.
 //
-// Measured 2026-09-04 on real tiles, z12 over Dubai / London / Tokyo:
+// Measured on the three CALIBRATED_PROBE_TILES at z12:
 //
 //   CARTO light_all (watermarked)   0.43%
 //   CARTO dark_all  (watermarked)   1.38%
@@ -44,8 +48,18 @@ import {
 //   Esri Dark Gray  (clean)         0.00%
 //   Esri World Imagery (clean)      0.00%
 //
-// A 20x-70x separation. The threshold sits between the two populations with
-// roughly 7x headroom on the clean side and 3x on the dirty side.
+// IMPORTANT — the metric is NOT zoom- or location-invariant, and the earlier
+// claim of a "20x-70x separation" only holds for these tiles. Re-measured
+// 2026-09-04 on dense city centres:
+//
+//   Esri Light Gray (clean)  z12 0.47%   z14 1.30%   z16 0.58%
+//
+// A clean tile over a city scores 0.47%, which is ABOVE the watermarked CARTO
+// figure of 0.43%. Dense cartography shares enough exact colours between
+// cities to look like a fixed overlay. So this check stays pinned to the
+// calibrated tiles at z12 and must not be pointed anywhere else without
+// re-deriving the threshold. Coverage at other zooms is the placeholder
+// check's job, which is exact rather than statistical.
 //
 // Single-tile statistics were tried first and rejected: the CLEAN Esri Light
 // Gray tile is flatter (top colour 90.5%, entropy 0.59) than the WATERMARKED
@@ -57,12 +71,48 @@ import {
 
 const WATERMARK_THRESHOLD = 0.0015; // 0.15% — see the measurements above
 
-/** z12 tiles over Dubai, London and Tokyo — three continents, one zoom. */
-const PROBE_TILES = [
+/** The map's own cap — src/app/parcels/map/page.tsx, `maxZoom: 18`. */
+const MAP_MAX_ZOOM = 18;
+
+const tileX = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
+const tileY = (lat: number, z: number) => {
+  const r = (lat * Math.PI) / 180;
+  return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
+};
+
+/**
+ * The tiles the watermark metric is CALIBRATED on. Fixed coordinates at z12,
+ * not derived — moving them invalidates the threshold. See WATERMARK_THRESHOLD.
+ *
+ * Antalya (36.88, 31.38) · London (51.51, -0.09) · Tokyo (35.68, 139.66).
+ *
+ * The comment here used to say "Dubai, London and Tokyo". Two of the three
+ * were right; the first is southern Turkey, carried over from the CARTO probe
+ * — the Turkish place names are visible in the watermarked sample that
+ * originally demonstrated this check. Corrected 2026-09-04.
+ */
+const CALIBRATED_PROBE_TILES = [
   { z: 12, x: 2405, y: 1596 },
   { z: 12, x: 2047, y: 1362 },
   { z: 12, x: 3637, y: 1613 },
 ] as const;
+
+/**
+ * Label-dense spots inside ONE city. Used for the placeholder check, which
+ * asks "does this level contain data at all" — a question that needs several
+ * populated tiles close together, because a single empty label tile is
+ * perfectly legitimate and two of them look identical for good reasons.
+ * Getting that wrong is what put Reference one level off on the first pass.
+ */
+function localTiles(z: number) {
+  return [
+    [25.1972, 55.2744], [25.0764, 55.1394], [25.2048, 55.2708],
+    [25.1124, 55.139], [24.4539, 54.3773], [25.2532, 55.3657],
+  ].map(([lat, lon]) => ({ z, x: tileX(lon, z), y: tileY(lat, z) }));
+}
+
+const fillTemplate = (t: string, tile: { z: number; x: number; y: number }) =>
+  t.replace("{z}", String(tile.z)).replace("{x}", String(tile.x)).replace("{y}", String(tile.y));
 
 /**
  * Fraction of pixels that are identical across all probe tiles AND are not
@@ -70,9 +120,7 @@ const PROBE_TILES = [
  * painted on every tile regardless of location".
  */
 async function overlayFraction(page: Page, template: string): Promise<number> {
-  const urls = PROBE_TILES.map((t) =>
-    template.replace("{z}", String(t.z)).replace("{x}", String(t.x)).replace("{y}", String(t.y)),
-  );
+  const urls = CALIBRATED_PROBE_TILES.map((t) => fillTemplate(template, t));
   return page.evaluate(async (tileUrls: string[]) => {
     const load = async (u: string) => {
       const img = new Image();
@@ -118,6 +166,35 @@ async function overlayFraction(page: Page, template: string): Promise<number> {
       if (!isBackground) sameNonBg++;
     }
     return sameNonBg / n;
+  }, urls);
+}
+
+/**
+ * True when every sampled tile at this zoom is byte-identical — the signature
+ * of a provider answering past its coverage with a filler image rather than a
+ * 404.
+ *
+ * This is the regression of 2026-09-04. Esri's Canvas layers carry real data
+ * over the UAE only to z16; above that they return HTTP 200 with a
+ * "Map data not yet available" placeholder. The map allowed z18, so at z16.15
+ * in 3D every basemap tile on production was that placeholder. Nothing in the
+ * status code, the content type or the byte length says so — only the fact
+ * that the same image comes back for every coordinate.
+ *
+ * Sampled inside one city, not across continents: the question here is "does
+ * this level have data", and a single empty label tile is legitimate.
+ */
+async function allTilesIdentical(page: Page, template: string, z: number): Promise<boolean> {
+  const urls = localTiles(z).map((t) => fillTemplate(template, t));
+  return page.evaluate(async (tileUrls: string[]) => {
+    const digests = await Promise.all(
+      tileUrls.map(async (u) => {
+        const buf = await (await fetch(u, { cache: "no-store" })).arrayBuffer();
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      }),
+    );
+    return new Set(digests).size === 1;
   }, urls);
 }
 
@@ -244,23 +321,68 @@ test.describe("ZAAHI /parcels/map smoke", () => {
     ).toEqual([]);
   });
 
-  // ── (h2) the tiles we DO serve must not be watermarked ────────────────
-  test("(h2) no basemap serves a watermarked tile, even at HTTP 200", async ({ page }) => {
-    // (h) proves we ask the right provider. It cannot prove the provider is
-    // still giving us clean tiles: a 200 carrying "API KEY REQUIRED" passes
-    // every status assertion ever written. That is the precise failure that
-    // shipped to production for six days, and docs/BACKLOG.md R-1 records
-    // that our current provider can produce it too — Esri's arcgisonline
-    // endpoint is legacy and has required a key on paper since 2022.
+  // ── (h2) the tiles we DO serve must be real ───────────────────────────
+  //
+  // (h) proves we ask the right provider. It cannot prove the provider is
+  // giving us usable tiles, and there are two distinct ways it can fail to.
+  // They need different detectors, and conflating them is how the second one
+  // reached production.
+  //
+  //   WATERMARK   — CARTO, Aug 2026. HTTP 200, real cartography, "API KEY
+  //                 REQUIRED" stamped over it. Tiles still differ from each
+  //                 other, so only a statistical test finds it.
+  //   PLACEHOLDER — Esri, found in production 2026-09-04. HTTP 200 with a
+  //                 "Map data not yet available" filler because the request
+  //                 was deeper than the layer's coverage. Every tile is the
+  //                 SAME image, so an exact test finds it — and an exact test
+  //                 is what this needed.
+  test("(h2) no basemap serves a placeholder at any zoom we request", async ({ page }) => {
+    // The regression this exists for: Esri Canvas carries real data over the
+    // UAE only to z16, the map allowed z18, and at z16.15 in 3D every basemap
+    // tile on production was the placeholder. The old (h2) probed z12 only —
+    // where every layer has data — so it stayed green throughout. A basemap
+    // check that looks at one zoom cannot see a coverage cliff.
     //
-    // Reads the URLs from src/lib/basemap-tiles.ts rather than hard-coding
-    // them, so switching provider re-points this check automatically.
+    // Each source is probed at z16 and at the deepest level the map will
+    // actually request it: min(map maxZoom, the source's declared maxzoom).
+    // That second value is the real subject — it asserts the maxzoom we
+    // declare is not deeper than the data behind it.
+    await installHarness(page);
+    await gotoMap(page);
+
+    const surfaces: Array<[string, string, number]> = [
+      ["Light base", ESRI_LIGHT_BASE, ESRI_CANVAS_MAXZOOM],
+      ["Light labels", ESRI_LIGHT_LABELS, ESRI_CANVAS_MAXZOOM],
+      ["Dark base", ESRI_DARK_BASE, ESRI_CANVAS_MAXZOOM],
+      ["Dark labels", ESRI_DARK_LABELS, ESRI_CANVAS_MAXZOOM],
+      ["Satellite", ESRI_IMAGERY, ESRI_IMAGERY_MAXZOOM],
+    ];
+
+    for (const [label, template, declaredMax] of surfaces) {
+      const deepest = Math.min(MAP_MAX_ZOOM, declaredMax);
+      for (const z of Array.from(new Set([16, deepest]))) {
+        expect(
+          await allTilesIdentical(page, template, z),
+          `${label} serves a placeholder at z${z} — every sampled tile is byte-identical. ` +
+            `Either the layer has no data at this level, or its declared maxzoom ` +
+            `(${declaredMax}) is deeper than its coverage.`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  // ── (h3) and it must not be watermarked ───────────────────────────────
+  test("(h3) no basemap serves a watermarked tile", async ({ page }) => {
+    // Pinned to CALIBRATED_PROBE_TILES at z12. This metric is statistical and
+    // neither zoom- nor location-invariant — a clean tile over a dense city
+    // scores 0.47%, above CARTO's watermarked 0.43% — so it must not be moved
+    // without re-deriving the threshold. See the note above WATERMARK_THRESHOLD.
     await installHarness(page);
     await gotoMap(page);
 
     const surfaces: Array<[string, string]> = [
-      ["Light (default)", ESRI_LIGHT_BASE],
-      ["Dark", ESRI_DARK_BASE],
+      ["Light base", ESRI_LIGHT_BASE],
+      ["Dark base", ESRI_DARK_BASE],
       ["Satellite", ESRI_IMAGERY],
     ];
 
@@ -268,10 +390,10 @@ test.describe("ZAAHI /parcels/map smoke", () => {
       const fraction = await overlayFraction(page, template);
       expect(
         fraction,
-        `${label} basemap looks watermarked: ${(fraction * 100).toFixed(2)}% of pixels are ` +
-          `identical across three continents and are not background, against a ` +
-          `${(WATERMARK_THRESHOLD * 100).toFixed(2)}% threshold. A clean provider scores ~0.00-0.02%; ` +
-          `CARTO's keyless tiles scored 0.43-1.38%. Provider: ${template}`,
+        `${label} looks watermarked: ${(fraction * 100).toFixed(2)}% of pixels are identical ` +
+          `across the three calibrated tiles and are not background, against a ` +
+          `${(WATERMARK_THRESHOLD * 100).toFixed(2)}% threshold. Clean scores ~0.00-0.02%; ` +
+          `CARTO's keyless tiles scored 0.43-1.38%.`,
       ).toBeLessThan(WATERMARK_THRESHOLD);
     }
   });

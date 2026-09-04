@@ -442,6 +442,77 @@ appears on every tile regardless of location. Measured separation — clean
 0.00–0.02%, CARTO keyless 0.43–1.38%, threshold 0.15%. Demonstrated by
 pointing the constant at CARTO and watching it fail.
 
+
+### R-1a · Esri coverage cliff — production regression, 2026-09-04
+
+**My change, my error, caught in production by the founder.** After the Light
+basemap moved to Esri, `/parcels/map` at z16.15 in 3D rendered every basemap
+tile as Esri's grey "Map data not yet available" placeholder.
+
+**Root cause — reading metadata instead of probing.** On 2026-09-03 I read
+`tileInfo.lods` from each service, saw `maxLOD: 23`, and wrote in the source
+that "all three go to level 23, past this map's maxZoom of 18, so no maxzoom
+clamp is needed (verified against the service metadata)."
+
+`tileInfo.lods` describes the **tiling scheme** — which levels the pyramid
+defines — not which levels hold data. Esri answers a request above its coverage
+with **HTTP 200 and a placeholder image**, so nothing but the pixels reveals it.
+"Verified against the service metadata" was the wrong verification, stated with
+more confidence than it earned.
+
+**Actual coverage over the UAE**, probed 2026-09-04 across six label-dense
+spots per level in Dubai and Abu Dhabi:
+
+| Source | Real data to | Placeholder from |
+|---|---|---|
+| Light Gray Base | **z16** | z17 — 2,521 B, byte-identical everywhere |
+| Light Gray Reference | **z16** | z17 — 875 B, transparent variant |
+| Dark Gray Base | **z16** | z17 |
+| Dark Gray Reference | **z16** | z17 |
+| World Imagery | **z19** | z20 |
+
+`maxzoom` is now declared on all five raster sources, so MapLibre overzooms the
+deepest real tile instead of requesting past coverage. z17–18 are blurrier —
+which is the honest result, and far better than a grey sheet.
+
+**A single tile pair is not enough on the label layers.** My first probe used
+two tiles and put Reference one level too low, because an empty label tile is
+legitimate and two of them look identical for perfectly good reasons. The
+six-spot probe separates "no labels here" from "no data at all".
+
+**Test gap this exposed, now closed.** Check (h2) probed **one zoom (z12)**,
+where every Esri layer has data — so it stayed green while production showed a
+placeholder. A basemap check that only ever looks at one zoom cannot see a
+coverage cliff. It is now split in two, because the two failure modes need
+different detectors:
+
+- **(h2)** placeholder — *exact*: sample six tiles in one city; byte-identical
+  means the level has no data. Runs at z16 and at
+  `min(map maxZoom, declared maxzoom)` for every source, so it also asserts
+  that the maxzoom we declare is not deeper than the data behind it.
+- **(h3)** watermark — *statistical*: the CARTO case, pinned to its calibrated
+  tiles at z12.
+
+**And a correction to the (h3) calibration record.** Re-measuring showed the
+overlay metric is neither zoom- nor location-invariant, and the "20×–70×
+separation" recorded on 2026-09-04 holds only for those three tiles:
+
+| | z12 calibrated tiles | dense city centre |
+|---|---|---|
+| Esri Light Gray (clean) | 0.02% | **0.47%** (z12), 1.30% (z14), 0.58% (z16) |
+| CARTO light_all (watermarked) | 0.43% | — |
+
+A clean tile over a city scores **above** watermarked CARTO. The check is now
+pinned to its calibrated tiles with that stated in the file. Separately, the
+comment describing those tiles as "Dubai, London and Tokyo" was wrong — the
+first is southern Turkey (36.88, 31.38), carried over from the CARTO probe.
+Two of three were right.
+
+**Bearing on R-1:** this is the second time the legacy `arcgisonline` endpoint
+has cost us something — first the ToU posture, now a coverage cliff no metadata
+announced. It does not change the R-1 recommendation, but it raises the case
+for the keyed Esri service or the vector-basemap migration.
+
 ### R-2 · Cloudflare `r2.dev` serving production PMTiles
 
 `NEXT_PUBLIC_TILES_BASE_URL` → `https://pub-eb193cdc5fe84cc6aac0373ef3dfa069.r2.dev`.
