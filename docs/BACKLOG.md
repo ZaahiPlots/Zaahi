@@ -395,6 +395,30 @@ decision, not a quiet edit. Related: the UI style guide's own card value,
 `rgba(10, 22, 40, 0.4)`, is what produced the 1.05 figure in item 3 — the
 guide's default is not legible over a light basemap.
 
+
+### 2g · D-20 — ratified surface tokens raised, 2026-09-04
+
+Founder-approved. Both values were only ever measured against the dark
+basemap, and both failed badly over the light one.
+
+| Token | Was | Now | Over LIGHT basemap |
+|---|---|---|---|
+| `PANEL_BG` | `rgba(10,22,40,0.45)` | `rgba(10,22,40,0.85)` | gold hero **1.45 → 5.36**, body 2.89 → 12.03 |
+| `CHROME_BTN_BG` | `rgba(0,0,0,0.35)` | `rgba(10,22,40,0.92)` | icon **2.20 → 14.93**, gold 1.10 → 6.65 |
+
+The brief for the buttons was "basemap-independent, ≥ 4.5 over both". The
+spread between backdrops — the number that actually encodes independence —
+went from **11.69 to 2.93**. The hue moved from black to ZAAHI navy so the
+button sits on the same hue as `PANEL_BG` and `BG_GRADIENT` rather than
+reading as a black overlay.
+
+`CLAUDE.md`'s palette section carries both new values, the measurements and
+the date, so the ratified record matches the code.
+
+`scripts/contrast-tokens.test.ts` asserts every ratified surface against
+**both** basemaps, plus the spread. A single-backdrop check is what let both
+of these ship; the fixture makes that impossible to repeat quietly.
+
 ### Quarantined
 
 | ID / Task | State | What |

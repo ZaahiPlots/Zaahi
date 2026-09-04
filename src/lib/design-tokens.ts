@@ -47,7 +47,19 @@ export const GOLD_TEXT_SOFT = "#e8d5a8";
 // through the glass) and Dark. Navy 0.45 sits at the same hue as
 // the BG_GRADIENT top stop (#0A1628), so the panel feels like part
 // of the app rather than a black overlay.
-export const PANEL_BG = "rgba(10, 22, 40, 0.45)";
+//
+// RAISED 0.45 -> 0.85, founder decision D-20, 2026-09-04. Measured with
+// TXT #f5f1e8 and GOLD #C8A96E composited over each basemap:
+//
+//            TXT@light  TXT@dark  GOLD@light
+//   0.45         2.89      14.26        1.45   <- gold headline invisible
+//   0.85        10.67      15.63        5.36
+//
+// The old value only ever worked over the dark basemap. Over the light one a
+// gold hero number sat at contrast 1.45 — the NET PROFIT figure in the
+// feasibility panel was literally unreadable, which is how PART 4 item 3 was
+// reported. Blur cannot fix it: blurring a bright map leaves it bright.
+export const PANEL_BG = "rgba(10, 22, 40, 0.85)";
 export const PANEL_BLUR = "blur(20px)";
 export const PANEL_BORDER = "1px solid rgba(255, 255, 255, 0.15)";
 export const PANEL_SHADOW = "0 16px 64px rgba(0, 0, 0, 0.4)";
@@ -89,9 +101,24 @@ export const INPUT_PLACEHOLDER = "rgba(255, 255, 255, 0.4)";
 // Phase 1 split (founder spec 2026-05-31): CHROME_BTN_BG is
 // intentionally NOT equal to PANEL_BG. Buttons-on-panel need
 // contrast — same bg + border-only would feel like a flat
-// affordance. 0.35 black-tint reads as "darker than the navy
-// panel" while still glassy.
-export const CHROME_BTN_BG = "rgba(0, 0, 0, 0.35)";
+// affordance.
+//
+// RAISED rgba(0,0,0,0.35) -> rgba(10,22,40,0.92), founder decision D-20,
+// 2026-09-04. The brief was "basemap-independent, contrast >= 4.5 over both".
+// Measured, icon colours over each basemap:
+//
+//   alpha   TXT@light  TXT@dark   GOLD@light  GOLD@dark   TXT spread
+//   0.35         2.20     13.89         1.10       6.98        11.69
+//   0.92        13.25     15.85         6.65       7.96         2.60
+//
+// At 0.35 the button was legible over the dark basemap and effectively
+// invisible over the light one — the same failure as the active state in PART
+// 4 item 4, and the reason the spread column matters: a control that floats
+// over arbitrary imagery must not depend on what the imagery happens to be.
+// 0.92 keeps a trace of glass while making the composite near-independent of
+// the backdrop. Hue moved from black to the ZAAHI navy so it sits on the same
+// hue as PANEL_BG and BG_GRADIENT rather than reading as a black overlay.
+export const CHROME_BTN_BG = "rgba(10, 22, 40, 0.92)";
 export const CHROME_BTN_BORDER = PANEL_BORDER;
 export const CHROME_BTN_BORDER_COLOR = PANEL_BORDER_COLOR;
 export const CHROME_BTN_HOVER_BG = GOLD_25_BG;
