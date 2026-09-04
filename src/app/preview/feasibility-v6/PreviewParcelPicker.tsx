@@ -19,6 +19,12 @@ const LINE_HARD = 'rgba(200, 169, 110, 0.30)';
 export default function PreviewParcelPicker() {
   const [parcelId, setParcelId] = useState<string>(MOCK_PARCELS[0].id);
   const parcel = MOCK_PARCELS.find((p) => p.id === parcelId) ?? MOCK_PARCELS[0];
+  // Layout density. The calculator defaults to 'fullscreen', but the canonical
+  // production mount is the /parcels/map SidePanel, which is 'sidepanel' — and
+  // several surfaces exist in one mode only (the Mix breakdown panel is
+  // sidepanel-only). Without a switch here the preview route could not
+  // exercise the layout most users actually see. Added 2026-09-04.
+  const [mode, setMode] = useState<'sidepanel' | 'fullscreen'>('fullscreen');
 
   return (
     <>
@@ -71,11 +77,47 @@ export default function PreviewParcelPicker() {
             </option>
           ))}
         </select>
+        <span
+          style={{
+            color: GOLD,
+            fontFamily: 'Georgia, serif',
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}
+        >
+          Layout
+        </span>
+        <select
+          aria-label="Layout mode"
+          value={mode}
+          onChange={(e) => setMode(e.target.value as 'sidepanel' | 'fullscreen')}
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${LINE_HARD}`,
+            borderRadius: 8,
+            color: TXT,
+            padding: '6px 10px',
+            fontSize: 12,
+            fontFamily: 'inherit',
+            appearance: 'none',
+          }}
+        >
+          <option value="fullscreen" style={{ background: NAVY }}>
+            fullscreen (/parcels/[id]/feasibility)
+          </option>
+          <option value="sidepanel" style={{ background: NAVY }}>
+            sidepanel (/parcels/map — production)
+          </option>
+        </select>
         <span style={{ color: SUBTLE, fontSize: 10, letterSpacing: '0.04em' }}>
           (preview only — production loads from URL `/parcels/[id]/feasibility`)
         </span>
       </div>
-      <FeasibilityV6Calculator parcel={parcel} banner="preview" />
+      <div style={mode === 'sidepanel' ? { maxWidth: 380, padding: '0 12px' } : undefined}>
+        <FeasibilityV6Calculator parcel={parcel} banner="preview" mode={mode} />
+      </div>
     </>
   );
 }

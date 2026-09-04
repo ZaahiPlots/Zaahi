@@ -11,6 +11,16 @@ import type { ParcelInput } from '@/lib/feasibility-v6/parcelInput';
 
 export type MockParcel = ParcelInput;
 
+// landUse is UPPERCASE here to match what production actually produces:
+// buildParcelInput sets 'MIXED USE' for a multi-category plan, otherwise the
+// raw DDA category (`parcelInput.ts:94-98`), and those are uppercase.
+//
+// These mocks used to be title case ('Mixed Use'), which meant the preview
+// route could never render the Mix breakdown panel at all — the component
+// gates it on `parcel.landUse === 'MIXED USE'`. So the one route that exists
+// to exercise the calculator was silently unable to exercise its mixed-use
+// path. Found 2026-09-04 while writing the headline-switch e2e.
+
 export const MOCK_PARCELS: MockParcel[] = [
   {
     id: 'mock-001',
@@ -20,7 +30,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     community: 'Hills Park',
     projectName: 'Park Villas',
     masterDeveloper: 'Emaar',
-    landUse: 'Residential',
+    landUse: 'RESIDENTIAL',
     plotAreaSqft: 14_500,
     far: 1.8,
     gfaSqft: 26_100,
@@ -40,7 +50,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     community: 'Bay Avenue',
     projectName: 'Bay Tower 12',
     masterDeveloper: 'Damac',
-    landUse: 'Commercial',
+    landUse: 'COMMERCIAL',
     plotAreaSqft: 22_000,
     far: 4.5,
     gfaSqft: 99_000,
@@ -60,7 +70,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     community: 'Cluster X',
     projectName: 'Mixed-use podium',
     masterDeveloper: 'DMCC',
-    landUse: 'Mixed Use',
+    landUse: 'MIXED USE',
     plotAreaSqft: 35_000,
     far: 5.0,
     gfaSqft: 175_000,
@@ -84,7 +94,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     community: 'Logistics District',
     projectName: 'Warehouse Block 4',
     masterDeveloper: 'JAFZA',
-    landUse: 'Industrial',
+    landUse: 'INDUSTRIAL',
     plotAreaSqft: 80_000,
     far: 1.2,
     gfaSqft: 96_000,
@@ -104,7 +114,7 @@ export const MOCK_PARCELS: MockParcel[] = [
     community: null,
     projectName: 'Specialty Hospital plot',
     masterDeveloper: 'DHCC',
-    landUse: 'Healthcare',
+    landUse: 'HEALTHCARE',
     plotAreaSqft: 60_000,
     far: 2.4,
     gfaSqft: 144_000,

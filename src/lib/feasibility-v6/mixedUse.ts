@@ -35,6 +35,18 @@ import { ENGINES, type EngineId } from './engines';
 // Delegation, not duplication — see the note on MixedUseBtSResultV6.full.
 // results.ts does not import this module, so there is no cycle.
 import { computeBtSV6, type BtSResultV6 } from './results';
+import { type EscrowDrawdownInputs } from './escrowDrawdown';
+
+/**
+ * Escrow options in the same shape computeBtSV6 takes them. Declared here so
+ * the mixed-use path cannot silently diverge from the single-engine path: if
+ * computeBtSV6 gains an escrow field, this fails to compile rather than
+ * quietly dropping it from every mixed-use headline.
+ */
+export type MixedUseEscrowInput = Omit<
+  EscrowDrawdownInputs,
+  'monthsToCompletion' | 'totalConstructionAed' | 'totalRevenueAed'
+>;
 
 export interface MixedUseShare {
   // One of the 10 ZAAHI canonical categories (or sub label).
@@ -145,6 +157,19 @@ export function computeMixedUseBtSV6(args: {
   loanAed?: number;
   ratePct?: number;
   financePeriodMonths?: number;
+
+  /**
+   * Escrow drawdown, forwarded verbatim to computeBtSV6.
+   *
+   * Added 2026-09-04 with the headline switch. Branch 1 delegated everything
+   * EXCEPT escrow, which was invisible while nothing consumed `full`. The
+   * moment the headline reads `full`, omitting it would have turned escrow off
+   * for every mixed-use plot — silently, because the escrow rows read
+   * `result.escrow` and would simply have rendered nothing while Net Profit,
+   * peak equity and IRR all moved. That is the same class of defect as the
+   * half-model this work exists to remove.
+   */
+  escrow?: MixedUseEscrowInput;
 }): MixedUseBtSResultV6 {
   const slices: MixedUseSlice[] = [];
   let shareSum = 0;
@@ -259,6 +284,7 @@ export function computeMixedUseBtSV6(args: {
             ratePct: args.ratePct,
             financePeriodMonths: args.financePeriodMonths,
             brokerageOnLandPct: args.brokerageOnLandPct ?? 0,
+            escrow: args.escrow,
           },
         )
       : null;
