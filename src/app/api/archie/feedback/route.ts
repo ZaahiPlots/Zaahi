@@ -29,6 +29,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { sendTelegramToAdmins } from "@/lib/telegram";
+import { summariseDelivery } from "@/lib/telegram-delivery";
 import { debugLog } from "@/lib/debug";
 
 export const runtime = "nodejs";
@@ -78,6 +79,34 @@ function dedupKey(userId: string, text: string): string {
   // through "BROKEN!" vs "broken !" etc.
   const norm = text.trim().toLowerCase().replace(/\s+/g, " ");
   return `${userId}::${norm}`;
+}
+
+/**
+ * Give back the rate-limit slot this request consumed.
+ *
+ * Called when delivery failed. A submission that never reached anyone must
+ * not spend the user's quota — otherwise three failed sends lock them out of
+ * a channel that was broken on our side, not theirs.
+ */
+function refundRateLimit(userId: string, now: number): void {
+  const list = rateBuckets.get(userId);
+  if (!list) return;
+  const i = list.lastIndexOf(now);
+  if (i >= 0) list.splice(i, 1);
+  if (list.length === 0) rateBuckets.delete(userId);
+  else rateBuckets.set(userId, list);
+}
+
+/**
+ * Forget the dedup entry recorded for this text.
+ *
+ * Same reasoning, and more important: isDuplicate() records on first sight,
+ * so a failed send would otherwise be treated as "already sent" for 24 hours
+ * and the user's retry would be answered with "I already sent this one
+ * earlier — the team has it." That is the false confirmation twice over.
+ */
+function forgetDuplicate(userId: string, text: string): void {
+  dedupCache.delete(dedupKey(userId, text));
 }
 
 function isDuplicate(userId: string, text: string, now: number): boolean {
@@ -175,18 +204,73 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     `\n\n${esc(text)}` +
     `\n\n<i>(via Archie · ${new Date(now).toISOString().slice(0, 16).replace("T", " ")} UTC)</i>`;
 
-  void sendTelegramToAdmins({
+  // Reported 2026-08-27 (PART 5): "'sent to founders' confirmations can be
+  // false". They could. This used to be `void sendTelegramToAdmins(...)` —
+  // fire-and-forget — followed unconditionally by "I've sent your note to the
+  // ZAAHI team". Every failure mode returned that same sentence:
+  //
+  //   • TELEGRAM_ADMIN_CHAT_IDS unset  -> chatIds is empty, nothing is sent
+  //     at all, and sendTelegramToAdmins returns [] without touching the network
+  //   • TELEGRAM_BOT_TOKEN unset       -> every result is { skipped: true }
+  //   • Telegram 4xx/5xx, network drop -> every result carries an error
+  //
+  // A feedback channel that cannot tell you whether it delivered is worse than
+  // no channel: the user stops reporting because they believe someone is
+  // reading, and nobody is.
+  const results = await sendTelegramToAdmins({
     text: html,
     parseMode: "HTML",
     disablePreview: true,
+  }).catch((e: unknown) => {
+    // sendTelegramToAdmins already catches per-chat; this guards the
+    // Promise.all itself so a throw cannot become a false success.
+    console.error("[archie/feedback] telegram fan-out threw:", e);
+    return [] as Awaited<ReturnType<typeof sendTelegramToAdmins>>;
   });
 
+  const summary = summariseDelivery(results);
+  const delivered = summary.delivered;
+
+  if (!summary.anyDelivered) {
+    // Nothing reached anyone. Say so, and hand back the throttle state this
+    // request consumed so the user can genuinely retry — otherwise the dedup
+    // cache would answer their second attempt with "I already sent this one".
+    forgetDuplicate(userId, text);
+    refundRateLimit(userId, now);
+
+    console.error(
+      `[archie/feedback] NOT DELIVERED category=${category} user=${userId.slice(0, 8)}… reason=${summary.reason}`,
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        delivered: 0,
+        category,
+        message:
+          "I couldn't reach the ZAAHI team just now — your note has NOT been sent. " +
+          "Nothing was saved, so please try again in a moment.",
+      },
+      { status: 502 },
+    );
+  }
+
+  if (summary.partial) {
+    // Partial fan-out: at least one founder has it, so this is a success for
+    // the user, but the gap must not be silent on our side.
+    console.error(
+      `[archie/feedback] partial delivery ${delivered}/${summary.total} — ${summary.reason}`,
+    );
+  }
+
   debugLog(
-    `[archie/feedback] sent category=${category} user=${userId.slice(0, 8)}… len=${text.length}`,
+    `[archie/feedback] sent category=${category} user=${userId.slice(0, 8)}… ` +
+      `len=${text.length} delivered=${delivered}/${summary.total}`,
   );
 
   return NextResponse.json({
     ok: true,
+    delivered,
     category,
     message: "Thanks — I've sent your note to the ZAAHI team. They'll see it on Telegram.",
   });

@@ -282,7 +282,15 @@ export default function ArchibaldChat({
 
         // Pure text reply → end loop, surface bubble.
         if ("reply" in data && typeof data.reply === "string") {
-          const reply = data.reply || "…";
+          // Defence in depth. The server no longer returns an empty reply
+          // (see /api/archie route.ts — PART 5), but this used to render a
+          // bare "…" for one, which is indistinguishable from a message that
+          // never arrived. If an empty string ever reaches here again, say
+          // something rather than nothing.
+          const reply =
+            data.reply && data.reply.trim().length > 0
+              ? data.reply
+              : "I didn't get an answer back for that one — try sending it again.";
           setMessages((m) => [...m, { role: "assistant", content: reply }]);
           wireHistory.push({ role: "assistant", content: reply });
           break;
