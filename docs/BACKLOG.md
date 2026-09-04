@@ -318,7 +318,29 @@ unmerged branches — `research/backlog-hover9` (`f1bcd9a`) and
 Whichever route is taken, the other two branches should be closed so this does
 not recur.
 
-**Proposed split**
+**Split executed 2026-09-04** on `feat/backlog-batch-2-split-2026-09-04`
+(founder-approved). Status per item:
+
+| Item | Status | Note |
+|---|---|---|
+| **#10** Floors row | **done** — cherry-picked | Verified rendering: `FAR 4 · Floors 12 · Max Height G+12 · ~42 m`. Floors moved out of the Max Height string into its own row |
+| **#11** Status badge | **done** — cherry-picked | Verified rendering: `Plot 3261253 LISTED` |
+| **#33** UI sounds | **done** — cherry-picked + re-wired | `sound.ts`, `SidePanel`, `FilterPanel` applied cleanly; the six `page.tsx` call sites were hand-wired against current `main`. The 2D/3D toggle's `sound.whoosh()` is replaced by `uiClick()` at that one site, per the branch's intent — the whooshes on panel open/close are untouched |
+| **#7** Area 1:1 | **done** — reworked | Rewritten by provenance rather than taken as-is. Source values untouched, converted values capped at 2 decimals. 25 assertions in `scripts/area-format.test.ts` |
+| **#13** PMTiles search | **done** — re-authored | Written fresh against current `main` as a parent callback (`findPlotInTiles`) passed to `HeaderBar`, rather than threading the map object into a presentational component |
+| **#9** Hover cards | **HELD** — founder reviewing | Removes 272 lines of live hover UI. Decision D-16 |
+
+**Not taken, and why:** `fmtInt` in `src/lib/feasibility.ts` is shared between
+areas and **AED amounts** (35 call sites, ~11 of them currency). The original
+branch reworked it, which would have changed money formatting across the
+feasibility calculator and the site-plan PDF. Left alone — the feasibility
+calculator's own GFA/SFA rounding is a separate decision, not part of #7.
+
+**Retire after merge:** `feat/backlog-batch-2`, `research/backlog-hover9`,
+`research/backlog-wave1` — but only once **#9** is resolved, since two of them
+carry the rival #9/#11 implementations.
+
+**Original proposal, for the record**
 
 | Take | Items | Why |
 |---|---|---|

@@ -342,6 +342,28 @@ class SoundManager {
   }
 
   /**
+   * UI button blip — Netflix-style subtle click (founder backlog #33,
+   * 2026-06-12). ~50 ms triangle blip with a quick attack-decay envelope.
+   * Two variants:
+   *   uiClick  — bright (900 Hz triangle) for primary / gold CTAs
+   *              (search submit, SidePanel "Start Negotiation", etc.)
+   *   uiTap    — duller (440 Hz sine) for neutral chrome buttons
+   *              (rail toggles, filter reset, panel close).
+   *
+   * Both go through the master gain so the sound toggle mutes them.
+   * Gain kept low (0.10–0.12) so successive clicks don't fatigue; tasteful
+   * over loud — same bus as music (30 % cap) means clicks blend in.
+   * NOT used for layer toggles (already have toggleSfx) or selecting a
+   * parcel (already have click()).
+   */
+  uiClick() {
+    this.blip({ freq: 900, durationMs: 50, type: "triangle", gain: 0.12 });
+  }
+  uiTap() {
+    this.blip({ freq: 440, durationMs: 50, type: "sine", gain: 0.10 });
+  }
+
+  /**
    * Cat purr — proactive Archie nudge cue (Wave 3c 2026-06-10).
    *
    * Web Audio synth, no MP3 asset. Layered through master so the sound

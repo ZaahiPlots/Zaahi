@@ -2142,6 +2142,62 @@ function ParcelsMapPageInner() {
   // tiles; bursting 3 swaps in 100 ms used to compound the leak before
   // bindLayerEvent ran.
   const [baseMapBusy, setBaseMapBusy] = useState(false);
+  // ── Founder backlog #13 — search beyond the ZAAHI listings ──────────
+  //
+  // "Find plot" only ever searched the rows behind /api/parcels/map. The map
+  // also renders the DDA + Abu Dhabi land registry from PMTiles, and typing
+  // one of those plot numbers returned "No plot found" — which was false: the
+  // plot is on screen.
+  //
+  // This is a VIEWPORT search, deliberately. querySourceFeatures only sees
+  // tiles MapLibre has already loaded, so it cannot answer for a whole
+  // emirate. The error message says so rather than implying a global index
+  // exists. A real global search needs a server-side plot_number -> centroid
+  // table over the registry; that is a separate task, in docs/BACKLOG.md.
+  //
+  // Returns a centroid, or null when nothing in the loaded tiles matches.
+  const findPlotInTiles = useCallback((plotNumber: string): { lng: number; lat: number } | null => {
+    const map = mapRef.current;
+    if (!map) return null;
+    const raw = plotNumber.trim();
+    const needle = raw.toLowerCase();
+    if (!needle) return null;
+    for (const srcId of [DDA_LAND_TILES_SRC, AD_ADM_TILES_SRC, AD_OTHER_TILES_SRC]) {
+      if (!map.getSource(srcId)) continue;
+      let feats: GeoJSON.Feature[] = [];
+      try {
+        feats = map.querySourceFeatures(srcId, {
+          sourceLayer: "plots",
+          filter: ["==", ["to-string", ["get", "plotNumber"]], raw],
+        }) as unknown as GeoJSON.Feature[];
+      } catch {
+        // querySourceFeatures throws mid-style-swap — same guard the
+        // ZAAHI-exclusion path uses. A miss here is not an error.
+        continue;
+      }
+      // The filter is exact; re-check normalised in case a tile carries
+      // padding or different case, which the free-text field allows.
+      const hit =
+        feats.find(
+          (f) => String(f.properties?.plotNumber ?? "").trim().toLowerCase() === needle,
+        ) ?? feats[0];
+      if (!hit) continue;
+      // Vector tiles fragment polygons at tile boundaries, so a feature may
+      // arrive as Polygon or MultiPolygon. Average the outer ring either way
+      // — precision beyond "fly here" is not needed.
+      const g = hit.geometry;
+      let ring: number[][] | null = null;
+      if (g?.type === "Polygon") ring = g.coordinates[0] as number[][];
+      else if (g?.type === "MultiPolygon") ring = (g.coordinates[0]?.[0] as number[][]) ?? null;
+      if (!ring || ring.length === 0) continue;
+      const lng = ring.reduce((acc, q) => acc + q[0], 0) / ring.length;
+      const lat = ring.reduce((acc, q) => acc + q[1], 0) / ring.length;
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+      return { lng, lat };
+    }
+    return null;
+  }, []);
+
   const swapBaseMap = useCallback((target: BaseMap) => {
     if (baseMapBusy) return;
     setBaseMap((current) => {
@@ -6147,6 +6203,7 @@ function ParcelsMapPageInner() {
       <HeaderBar
         c={c}
         isDark={isDark}
+        onFindInTiles={findPlotInTiles}
         onFly={(lng, lat) =>
           mapRef.current?.flyTo({
             center: [lng, lat],
@@ -6468,6 +6525,8 @@ function ParcelsMapPageInner() {
             title="Layers"
             active={layersOpen}
             onClick={() => {
+              // Neutral chrome tap (founder backlog #33).
+              sound.uiTap();
               setLayersOpen((o) => !o);
               setPortalOpen(false);
             }}
@@ -6564,7 +6623,10 @@ function ParcelsMapPageInner() {
           <ChromeBtn
             title="Legend"
             active={legendOpen}
-            onClick={() => setLegendOpen((o) => !o)}
+            onClick={() => {
+              sound.uiTap(); // neutral chrome (backlog #33)
+              setLegendOpen((o) => !o);
+            }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="8" y1="6" x2="21" y2="6" />
@@ -6577,9 +6639,9 @@ function ParcelsMapPageInner() {
           </ChromeBtn>
         </span>
         {/* 2. Zoom in */}
-        <ChromeBtn title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</ChromeBtn>
+        <ChromeBtn title="Zoom in" onClick={() => { sound.uiTap(); mapRef.current?.zoomIn(); }}>+</ChromeBtn>
         {/* 3. Zoom out */}
-        <ChromeBtn title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</ChromeBtn>
+        <ChromeBtn title="Zoom out" onClick={() => { sound.uiTap(); mapRef.current?.zoomOut(); }}>−</ChromeBtn>
         {/* 4. Reset bearing — compass icon rotates with current bearing. */}
         <ChromeBtn
           title="Reset bearing"
@@ -6596,7 +6658,11 @@ function ParcelsMapPageInner() {
             if (!map) return;
             const next = !is3D;
             setIs3D(next);
-            sound.whoosh();
+            // 2D/3D toggle gets the brighter uiClick — toggling perspective
+            // is a "primary" action, not neutral chrome (backlog #33).
+            // Replaces the previous whoosh at this one site; the whooshes on
+            // panel open/close are untouched.
+            sound.uiClick();
             map.easeTo({ pitch: next ? 45 : 0, duration: 400 });
           }}
         >
@@ -8036,6 +8102,7 @@ function HeaderBar({
   c,
   isDark,
   onFly,
+  onFindInTiles,
   onSelectParcel,
   onOpenAddModal,
   vaultOnlyMode,
@@ -8047,6 +8114,8 @@ function HeaderBar({
   c: ChromeTheme;
   isDark: boolean;
   onFly: (lng: number, lat: number) => void;
+  /** Backlog #13 — viewport search across the PMTiles land layers. */
+  onFindInTiles: (plotNumber: string) => { lng: number; lat: number } | null;
   onSelectParcel: (id: string) => void;
   onOpenAddModal: () => void;
   vaultOnlyMode: boolean;
@@ -8095,6 +8164,8 @@ function HeaderBar({
   async function doFind() {
     const plotNumber = find.trim();
     if (!plotNumber) return;
+    // Primary CTA (founder backlog #33).
+    sound.uiClick();
     setFindError(null);
     setFindBusy(true);
     try {
@@ -8113,7 +8184,21 @@ function HeaderBar({
       const needle = plotNumber.toLowerCase();
       const hit = items.find((it) => (it.plotNumber ?? "").trim().toLowerCase() === needle);
       if (!hit) {
-        setFindError(`No plot found for “${plotNumber}”`);
+        // Not one of ours — try the PMTiles land layers before declaring a
+        // miss (backlog #13). A hit there flies the camera but opens no
+        // panel: those parcels have no database row, so there is nothing to
+        // show. Saying "not found" for a plot visibly on screen was the bug.
+        const tileHit = onFindInTiles(plotNumber);
+        if (tileHit) {
+          onFly(tileHit.lng, tileHit.lat);
+          setFind("");
+          setFindOpen(false);
+        } else {
+          setFindError(
+            `No plot found for “${plotNumber}” — registry plots are searched only ` +
+              `within the loaded map area, so pan or zoom to it and try again`,
+          );
+        }
       } else if (!hit.geometry) {
         // Distinct from "not found": the plot exists but has no polygon, so
         // there is nothing to fly to. Previously both produced the same

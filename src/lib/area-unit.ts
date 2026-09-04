@@ -19,6 +19,65 @@ const CHANGE_EVENT = "zaahi-area-unit-changed";
 
 const SQFT_PER_SQM = 10.7639;
 
+// Founder backlog #7 — "area 1:1 with the source, no rounding".
+//
+// Areas used to be rendered with Math.round(), so a 2,426.5 sqm plot read as
+// "2,427 m²" and the half metre vanished. The first attempt at this (on
+// feat/backlog-batch-2, 2026-06-12) swung the other way: it formatted every
+// area with maximumFractionDigits: 20, which does not show source precision —
+// it shows IEEE-754 noise. Measured on the real conversion path:
+//
+//     4,500 sqm  ->  "48,437.596875195006 sqft"
+//     2,426 sqm  ->  "26,113.24667093846 sqft"
+//
+// Neither figure is a fact about the plot. Twelve of those digits are an
+// artefact of multiplying by a float.
+//
+// So the rule is now split by provenance, per founder decision 2026-09-04:
+//
+//   SOURCE value    — the number the DDA / database actually gave us for the
+//                     unit being displayed. Rendered untouched: every decimal
+//                     it carries, none invented. `String(n)` is JavaScript's
+//                     shortest round-trip representation, so counting its
+//                     decimals can neither add nor drop precision.
+//
+//   CONVERTED value — derived here by multiplying or dividing by
+//                     SQFT_PER_SQM. Capped at 2 decimals, because beyond that
+//                     the digits describe the conversion constant, not the
+//                     land.
+const CONVERTED_MAX_DECIMALS = 2;
+
+/**
+ * Decimal places actually present in a number's shortest round-trip form.
+ * Used so a source value is never padded and never truncated.
+ */
+function sourceDecimals(n: number): number {
+  const s = String(n);
+  // Exponential form (1e-7, 1.5e+21) carries no plain decimal tail to count.
+  if (s.includes("e") || s.includes("E")) return 0;
+  const dot = s.indexOf(".");
+  if (dot < 0) return 0;
+  // Intl caps maximumFractionDigits at 20; String() cannot exceed it either,
+  // but clamp rather than trust that.
+  return Math.min(s.length - dot - 1, 20);
+}
+
+/** Source value: grouped, with exactly the precision the source carried. */
+function fmtSourceArea(n: number): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: sourceDecimals(n),
+  });
+}
+
+/** Converted value: grouped, capped so float noise cannot reach the screen. */
+function fmtConvertedArea(n: number): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: CONVERTED_MAX_DECIMALS,
+  });
+}
+
 /** Read current unit from localStorage. Safe in SSR (returns default). */
 export function loadAreaUnit(): AreaUnit {
   if (typeof window === "undefined") return DEFAULT_AREA_UNIT;
@@ -83,14 +142,26 @@ export function formatArea(
   sqmValue: number | null | undefined,
   unit: AreaUnit,
 ): string | null {
+  // Prefer the source value for the requested unit; convert only as a
+  // fallback. The preference order is unchanged — what changed is that the
+  // two paths now format differently, because only one of them is a
+  // measurement (backlog #7).
   if (unit === "sqm") {
-    const sqm = sqmValue ?? (typeof sqftValue === "number" ? sqftValue / SQFT_PER_SQM : null);
-    if (sqm == null || !Number.isFinite(sqm)) return null;
-    return `${Math.round(sqm).toLocaleString()} m²`;
+    if (typeof sqmValue === "number" && Number.isFinite(sqmValue)) {
+      return `${fmtSourceArea(sqmValue)} m²`;
+    }
+    if (typeof sqftValue === "number" && Number.isFinite(sqftValue)) {
+      return `${fmtConvertedArea(sqftValue / SQFT_PER_SQM)} m²`;
+    }
+    return null;
   }
-  const sqft = sqftValue ?? (typeof sqmValue === "number" ? sqmValue * SQFT_PER_SQM : null);
-  if (sqft == null || !Number.isFinite(sqft)) return null;
-  return `${Math.round(sqft).toLocaleString()} sqft`;
+  if (typeof sqftValue === "number" && Number.isFinite(sqftValue)) {
+    return `${fmtSourceArea(sqftValue)} sqft`;
+  }
+  if (typeof sqmValue === "number" && Number.isFinite(sqmValue)) {
+    return `${fmtConvertedArea(sqmValue * SQFT_PER_SQM)} sqft`;
+  }
+  return null;
 }
 
 /**
