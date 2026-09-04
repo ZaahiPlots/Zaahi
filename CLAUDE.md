@@ -476,6 +476,15 @@ Footprint каждого верхнего яруса получается чер
 - Local dev: `pnpm dev` on `localhost:3000`; the long-running agent runs as a `systemd` unit (`zaahi-agent` service)
 
 ## AGENT RULES
+- **НИКОГДА не делай вывод из усечённого вывода команды.** Если список обрезан
+  `head`, `tail`, `| head -N`, лимитом страницы или любым другим капом — он
+  **по определению неполный**. Перезапусти без капа (или с `wc -l`, `grep -c`,
+  фильтром) ПРЕЖДЕ чем что-либо утверждать на его основе. Правило введено
+  founder'ом 2026-09-04 после двух ошибок подряд: (1) `grep cartocdn src/ | head -20`
+  скрыл 3 из 6 мест с CARTO-тайлами; (2) `grep -i estate src/ | head -8`
+  утонул в совпадениях `useState`, и на этом основании реальный баг
+  (орб перекрывает wordmark на карте) был закрыт как «невоспроизводимый».
+  Оба раза вывод был уверенным и неверным.
 - Before modifying ANY file, run `git status` and ensure no uncommitted changes from a previous session — never silently mix in someone else's work-in-progress
 - NEVER force push (`git push --force`, `git push -f`, `--force-with-lease`). Only normal `git push`
 - NEVER delete or overwrite files in the `data/` directory (GeoJSON, KML, PDF assets) — those are the source of truth for plot data and they are NOT regenerable from code
