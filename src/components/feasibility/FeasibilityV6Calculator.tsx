@@ -320,10 +320,15 @@ function EngineSelectorDisclosure({
   currentLabel,
   currentValidated,
   children,
+  inert = false,
 }: {
   currentLabel: string;
   currentValidated: boolean;
   children: React.ReactNode;
+  /** The engine cannot be changed here (mixed-use plot, D-18). The
+   *  disclosure still opens — the explanation is what is inside it — but the
+   *  affordance says "why" rather than "change". */
+  inert?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -360,7 +365,9 @@ function EngineSelectorDisclosure({
             </span>
           )}
         </span>
-        <span style={{ color: SUBTLE, fontSize: 11 }}>{open ? '▾ close' : '▸ change'}</span>
+        <span style={{ color: SUBTLE, fontSize: 11 }}>
+          {open ? '▾ close' : inert ? '▸ why' : '▸ change'}
+        </span>
       </button>
       {open && (
         <div style={{ marginTop: 8 }}>
@@ -971,6 +978,23 @@ export default function FeasibilityV6Calculator({
   // Model provenance — rendered in the Mix Breakdown panel and stamped into
   // the PDF header. Whoever reads a number must be able to see which model
   // produced it without opening the calculator.
+  // Founder decision D-18, 2026-09-04: on a MIXED USE plot the top-level
+  // engine selector is inert, so it is disabled and says why.
+  //
+  // Scope is deliberately `headlineIsMixedUse`, not "the plot is mixed use".
+  // The mixed-use model is Build-to-Sell only — Build-to-Rent and JV still run
+  // the single top-level engine, and the shares can be unbalanced, in which
+  // case the headline falls back to it too. Disabling on those would take away
+  // a control that genuinely drives the numbers. The selector is live exactly
+  // when it matters.
+  const engineSelectorInert = headlineIsMixedUse;
+  const engineSelectorNote = engineSelectorInert && mixShares
+    ? `This plot is mixed use, so each use runs its own engine — ` +
+      `${mixShares.map((sh) => `${ENGINES[shareToEngine(sh)].label} ${Math.round(sh.pct)}%`).join(', ')}` +
+      `. The mix drives the headline; this dropdown only seeds the single-engine ` +
+      `fallback, which is not in use. Edit the shares in Mix breakdown instead.`
+    : undefined;
+
   const modelStampLine = headlineIsMixedUse
     ? `Model: Mixed-use composite v6 · ${mixShares!.length} uses — ${mixShares!
         .map((s) => `${s.category}${s.sub ? ` (${s.sub})` : ''} ${s.pct}%`)
@@ -1870,10 +1894,17 @@ export default function FeasibilityV6Calculator({
                 picker. The current engine label stays visible so the user
                 always knows what's driving defaults. */}
             <EngineSelectorDisclosure
-              currentLabel={ENGINES[engineId].label}
-              currentValidated={ENGINES[engineId].validated}
+              currentLabel={engineSelectorInert ? 'per-slice (mixed use)' : ENGINES[engineId].label}
+              currentValidated={engineSelectorInert ? true : ENGINES[engineId].validated}
+              inert={engineSelectorInert}
             >
-              <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+              <EngineSelector
+                value={engineId}
+                onChange={setEngineId}
+                availableEngines={availableEngines}
+                disabled={engineSelectorInert}
+                disabledNote={engineSelectorNote}
+              />
             </EngineSelectorDisclosure>
           </div>
         ) : (
@@ -1906,7 +1937,13 @@ export default function FeasibilityV6Calculator({
                 <div>Listed: {fmtAedExact(parcel.plotPriceAed)}</div>
               </div>
             </div>
-            <EngineSelector value={engineId} onChange={setEngineId} availableEngines={availableEngines} />
+            <EngineSelector
+              value={engineId}
+              onChange={setEngineId}
+              availableEngines={availableEngines}
+              disabled={engineSelectorInert}
+              disabledNote={engineSelectorNote}
+            />
           </div>
         )}
 

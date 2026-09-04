@@ -204,6 +204,33 @@ that needs a database and a request context to exercise.
 **Note for §8:** this does NOT fix the in-memory rate limit being unenforceable
 across Vercel lambdas — that is a separate item and still open.
 
+
+### 2c · D-18 — the engine selector on a mixed-use plot, shipped 2026-09-04
+
+**Decision:** disable the top-level engine selector on a mixed-use plot, with a
+note that per-slice engines apply.
+
+**Implemented with one deliberate narrowing, stated because it departs from the
+literal instruction.** The gate is *"the mix is driving the headline"*, not
+*"the plot is mixed use"*. The mixed-use model is **Build-to-Sell only** — on
+Build-to-Rent and JV, and whenever the shares do not sum to 100, the headline
+falls back to the single top-level engine, which then genuinely drives every
+number. Disabling the control there would remove the only way to change
+figures the user is looking at. The selector is now live exactly when it
+matters and inert exactly when it does not.
+
+The note names the actual per-slice engines and their shares — e.g. *"each use
+runs its own engine — Residential 55%, Office 27%, Retail 17%"* — and points at
+the Mix breakdown as the real control. The collapsed affordance reads **"▸ why"**
+instead of "▸ change", so it does not offer something it cannot do.
+
+Three e2e cases: inert while driving, live again on unbalanced shares, live on
+a single-use plot.
+
+This closes the loop on the second half of `…-033112-e6366e` (§2a item 2): the
+founder saw an engine switch change nothing and reported it as staleness. The
+numbers were right; the control was lying.
+
 ### Quarantined
 
 | ID / Task | State | What |
@@ -566,7 +593,7 @@ Carried from `docs/HEALTH_2026-08-28.md`; the items closed today are removed.
 | D-15 | `feat/backlog-batch-2` (§6a): approve the split — cherry-pick #10/#11/#33, re-author #9/#13, rework #7 |
 | D-16 | **#9** — is removing the hover cards entirely still wanted? It deletes 272 lines of live UI |
 | D-17 | **#7** — what decimal precision for areas? "No rounding" as written produces float noise |
-| D-18 | On a MIXED USE plot, what should the top-level engine selector do? It currently seeds only the single-engine fallback that the mix overrides. Hide it, relabel it, or have it re-seed the mix and accept losing user edits (§2a) |
+| ~~D-18~~ | **ANSWERED 2026-09-04** — disable it with a note that per-slice engines apply. Shipped on `fix/mixeduse-engine-selector-2026-09-04`. Scoped to when the mix actually drives the headline, not to "the plot is mixed use" — see §2c |
 
 ---
 

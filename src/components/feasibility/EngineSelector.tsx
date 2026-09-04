@@ -30,9 +30,27 @@ export interface EngineSelectorProps {
   // undefined (full 13-engine catalogue with grouped optgroups). Kept for
   // future emergency fallback to a smaller set if a specific engine breaks.
   availableEngines?: EngineId[];
+  /**
+   * Render the dropdown inert.
+   *
+   * Used on MIXED USE plots, where the top-level engine does not drive the
+   * headline — each use slice runs its own engine via shareToEngine(), and the
+   * mix is the source of truth (founder decision D-18, 2026-09-04). A control
+   * that changes nothing is worse than no control: the founder's own QA read
+   * the unchanged numbers as a bug.
+   */
+  disabled?: boolean;
+  /** Sentence explaining WHY it is inert. Required whenever `disabled`. */
+  disabledNote?: string;
 }
 
-export default function EngineSelector({ value, onChange, availableEngines }: EngineSelectorProps) {
+export default function EngineSelector({
+  value,
+  onChange,
+  availableEngines,
+  disabled = false,
+  disabledNote,
+}: EngineSelectorProps) {
   const engine = ENGINES[value];
   const ids: EngineId[] = availableEngines ?? ENGINE_ORDER;
 
@@ -64,6 +82,9 @@ export default function EngineSelector({ value, onChange, availableEngines }: En
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as EngineId)}
+        disabled={disabled}
+        aria-disabled={disabled}
+        title={disabled ? disabledNote : undefined}
         style={{
           width: '100%',
           background: 'rgba(255,255,255,0.04)',
@@ -74,6 +95,8 @@ export default function EngineSelector({ value, onChange, availableEngines }: En
           fontSize: 13,
           fontFamily: 'inherit',
           appearance: 'none',
+          opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? 'not-allowed' : 'pointer',
         }}
       >
         {validatedIds.length > 0 && (
@@ -95,6 +118,23 @@ export default function EngineSelector({ value, onChange, availableEngines }: En
           </optgroup>
         )}
       </select>
+      {disabled && disabledNote && (
+        <div
+          role="note"
+          style={{
+            marginTop: 8,
+            padding: '8px 10px',
+            border: `1px solid ${LINE_HARD}`,
+            borderRadius: 8,
+            background: 'rgba(200, 169, 110, 0.06)',
+            color: GOLD,
+            fontSize: 11,
+            lineHeight: 1.5,
+          }}
+        >
+          {disabledNote}
+        </div>
+      )}
       <div style={{ color: SUBTLE, fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
         {engine.blurb}
         <div style={{ marginTop: 4, color: 'rgba(245,241,232,0.4)', fontSize: 10 }}>

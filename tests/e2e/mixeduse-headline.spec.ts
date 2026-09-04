@@ -137,3 +137,71 @@ test.describe("mixed-use headline", () => {
     expect(await netProfit(page)).toMatch(/AED/);
   });
 });
+
+// ── D-18: the top-level engine selector on a mixed-use plot ──────────────
+//
+// Founder decision 2026-09-04. On a mixed-use plot the top-level engine does
+// not drive anything — each use slice runs its own engine via shareToEngine()
+// and the mix is the source of truth. A dropdown that changes nothing is worse
+// than no dropdown: the founder's own QA read the unchanged numbers as a bug
+// ("after switching engines the MIX BREAKDOWN still shows the previous
+// engine's mix").
+//
+// Scope is deliberately narrower than "the plot is mixed use". The mixed-use
+// model is Build-to-Sell only, and the shares can be unbalanced — in both
+// cases the headline falls back to the single top-level engine, which then
+// genuinely drives the numbers and must stay changeable.
+test.describe("mixed-use engine selector (D-18)", () => {
+  const engineSelect = (page: Page) =>
+    page.locator('select:has(option[value="hospitality"])').first();
+
+  async function openEngineDisclosure(page: Page) {
+    const btn = page.getByRole("button", { name: /▸ (change|why)/ });
+    if (await btn.count()) {
+      await btn.click();
+      await page.waitForTimeout(300);
+    }
+  }
+
+  test("is disabled, and says why, while the mix drives the headline", async ({ page }) => {
+    await openPreview(page, MIXED_USE_PARCEL);
+    await expect(page.getByText(/Driving the headline/i)).toBeVisible();
+
+    // The collapsed affordance must not offer a change it cannot make.
+    await expect(
+      page.getByRole("button", { name: /▸ why/ }),
+      'the disclosure offers "why", not "change"',
+    ).toBeVisible();
+
+    await openEngineDisclosure(page);
+    await expect(engineSelect(page), "dropdown is inert").toBeDisabled();
+
+    const note = await page.evaluate(() => document.body.innerText);
+    expect(note, "explains that each use runs its own engine").toMatch(
+      /each use runs its own engine/i,
+    );
+    expect(note, "points the user at the real control").toMatch(/Mix breakdown/i);
+  });
+
+  test("stays live when the mix is NOT driving — unbalanced shares", async ({ page }) => {
+    await openPreview(page, MIXED_USE_PARCEL);
+
+    // Knock the shares off 100 so the headline falls back to the single
+    // engine. The selector now matters again and must be usable.
+    const firstShare = mixPanel(page).locator("input").first();
+    await firstShare.click();
+    await firstShare.fill("1");
+    await firstShare.blur();
+    await page.waitForTimeout(800);
+    await expect(page.getByText(/Not driving the headline/i)).toBeVisible();
+
+    await openEngineDisclosure(page);
+    await expect(engineSelect(page), "dropdown is usable again").toBeEnabled();
+  });
+
+  test("stays live on a single-use plot", async ({ page }) => {
+    await openPreview(page, SINGLE_USE_PARCEL);
+    await openEngineDisclosure(page);
+    await expect(engineSelect(page), "single-use plots are unaffected").toBeEnabled();
+  });
+});
