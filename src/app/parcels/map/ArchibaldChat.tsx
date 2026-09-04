@@ -114,12 +114,51 @@ function composeAcceptMessage(action: AcceptAction): string {
   }
 }
 
+/**
+ * Bottom edge of the map's header bar.
+ *
+ * Measured rather than hard-coded so the clamp follows the header if its
+ * height changes; the constant is only a fallback for SSR and for the frame
+ * before the header mounts.
+ */
+const HEADER_HEIGHT_FALLBACK = 44;
+function headerBottom(): number {
+  if (typeof document === "undefined") return HEADER_HEIGHT_FALLBACK;
+  const rect = document.querySelector("header")?.getBoundingClientRect();
+  return rect && rect.height > 0 ? rect.bottom : HEADER_HEIGHT_FALLBACK;
+}
+
+/**
+ * Keep the launcher inside the viewport AND out of the header bar.
+ *
+ * Founder backlog PART 4, item 2: "The Archie orb overlaps the 'REAL ESTATE
+ * OS' wordmark." It could, and nothing stopped it — the orb is draggable, its
+ * position persists in localStorage, and the only constraint was the viewport
+ * edge.
+ *
+ * The exclusion is the WHOLE header, not just the wordmark. The bar is
+ * full-width and also carries the search inputs and the right-hand controls,
+ * so an orb parked anywhere along it covers something. One rule, no special
+ * cases.
+ *
+ * This is the single choke point for launcher positioning — drag, window
+ * resize, and the read of the persisted value all route through it. That
+ * matters: a position saved BEFORE this clamp existed is migrated the next
+ * time the map loads, without a storage version or a one-off migration step.
+ */
 function clampPos(x: number, y: number): { x: number; y: number } {
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const maxY = h - LAUNCHER_SIZE - VIEWPORT_MARGIN;
+  const minY = headerBottom() + VIEWPORT_MARGIN;
   return {
     x: Math.max(VIEWPORT_MARGIN, Math.min(w - LAUNCHER_SIZE - VIEWPORT_MARGIN, x)),
-    y: Math.max(VIEWPORT_MARGIN, Math.min(h - LAUNCHER_SIZE - VIEWPORT_MARGIN, y)),
+    // On a viewport too short to hold both the header and the launcher, the
+    // bottom edge wins — an orb hidden under the fold is unreachable, whereas
+    // one overlapping the header is merely untidy.
+    y: maxY <= minY
+      ? Math.max(VIEWPORT_MARGIN, maxY)
+      : Math.max(minY, Math.min(maxY, y)),
   };
 }
 

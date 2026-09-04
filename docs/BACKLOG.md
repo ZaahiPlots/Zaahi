@@ -351,7 +351,7 @@ because map work landed after the 2026-08-28 triage. Two of the seven had moved.
 | # | Item | Outcome |
 |---|---|---|
 | 1 | Canvas never re-fits after resize | **Already fixed** by `92a94cc`. Its own comment records that the defect could not be reproduced — MapLibre 5.22 ships a ResizeObserver and `trackResize` defaults on — and that the post-paint re-measure closes the one structural gap an observer cannot see. Covered by `map-reflow.spec.ts (i)` |
-| 2 | Archie orb overlaps the `REAL ESTATE OS` wordmark | **Not reproducible.** That wordmark exists only on the **login page** (`src/app/page.tsx:267`), where the orb does not render — it lives inside `/parcels/map`, behind `AuthGuard`. The map header carries no text branding at all. Probably seen on an older build |
+| 2 | Archie orb overlaps the `REAL ESTATE OS` wordmark | **REAL — I was wrong on 2026-09-04, fixed 2026-09-04.** See §2h |
 | 3 | Sticky headers + NET PROFIT card bleed through | **Fixed** — and worse than reported |
 | 4 | Gold icon on gold active basemap button | **Fixed** |
 | 5 | Parcels list keeps `(215)` when filtered to 7 | **Fixed** |
@@ -418,6 +418,58 @@ the date, so the ratified record matches the code.
 `scripts/contrast-tokens.test.ts` asserts every ratified surface against
 **both** basemaps, plus the spread. A single-backdrop check is what let both
 of these ship; the fixture makes that impossible to repeat quietly.
+
+
+### 2h · PART 4 item 2 — I closed a real bug as "not reproducible"
+
+**The wrong call.** On 2026-09-04 I recorded item 2 as not reproducible, on the
+grounds that the `REAL ESTATE OS` wordmark "exists only on the login page,
+where the orb does not render". That went into a commit message and into this
+file.
+
+It is wrong. The wordmark is rendered by the map's own HeaderBar at
+`src/app/parcels/map/page.tsx:8306`, and the live DOM confirms it: `ZAAHI` at
+(12, 9) and `Real Estate OS` at (99, 20), uppercased by CSS.
+
+**How I got there.** I searched for `estate` and read a list capped by `head`.
+Every `useState` in those files matches "estate", and the real hit sat below
+the cutoff. I had made the same mistake days earlier — `grep cartocdn src/ |
+head -20` hid three of the six CARTO call sites — and did not learn from it.
+Both times the output was confident and wrong.
+
+Founder standing rule, now in `CLAUDE.md` AGENT RULES: **never draw a
+conclusion from truncated command output.** A list cut by a cap is incomplete
+by definition; re-run without it before asserting anything.
+
+**The fix.** The orb is draggable, its position persists in `localStorage`, and
+the only constraint was the viewport edge — so it could be parked anywhere,
+including on top of the header. `clampPos` now excludes the header bar as well.
+
+Two things that matter about where the fix sits:
+
+- `clampPos` is the **single choke point** for launcher positioning — drag,
+  window resize, and the read of the persisted value all route through it. A
+  position saved before this existed is therefore migrated the next time the
+  map loads, with no storage version and no one-off migration step. That
+  matters here: the founder's own orb was presumably still parked there.
+- The exclusion covers the **whole header**, not just the wordmark. The bar is
+  full-width and also carries the search inputs and right-hand controls, so an
+  orb anywhere along it covers something. One rule, no special cases.
+
+The header bottom is **measured** from the live element rather than
+hard-coded, with 44px as an SSR fallback, so the clamp follows the header if
+its height changes.
+
+Short-viewport behaviour is explicit: if the viewport cannot hold both the
+header and the launcher, the bottom edge wins. An orb hidden under the fold is
+unreachable; one overlapping the header is merely untidy.
+
+`tests/e2e/orb-header-clamp.spec.ts` — four cases, including one that asserts
+the wordmark really is on the map, so the premise I got wrong is now itself
+under test. Demonstrated failing without the clamp: *"orb {top:12,bottom:64,
+left:20,right:72} still overlaps header {top:0,bottom:44,...}"*.
+
+**PART 4 is now 6 of 7 fixed**, with item 1 already fixed by `92a94cc`.
 
 ### Quarantined
 
