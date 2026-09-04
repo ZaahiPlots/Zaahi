@@ -12,6 +12,7 @@
 "use strict";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 
 const GOLD = "#C8A96E";
@@ -80,6 +81,27 @@ function CheckPlotInner() {
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
+        {/* Founder backlog PART 4, item 7: "/parcels/check-plot has no way
+            back to the map." It did not — this page is reached from the map
+            and had no link, no breadcrumb and no back control, so the only
+            exit was the browser's own back button. A Link rather than
+            router.back() because the page is also reachable directly by URL,
+            where "back" would leave the product entirely. */}
+        <Link
+          href="/parcels/map"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 14,
+            color: "rgba(245, 241, 232, 0.75)",
+            fontSize: 12,
+            textDecoration: "none",
+            letterSpacing: "0.04em",
+          }}
+        >
+          <span aria-hidden="true">←</span> Back to map
+        </Link>
         <div style={tinyLabelStyle}>DUBAI LAND DEPARTMENT</div>
         <h1 style={titleStyle}>Check Plot Status</h1>
         <p style={subduedStyle}>

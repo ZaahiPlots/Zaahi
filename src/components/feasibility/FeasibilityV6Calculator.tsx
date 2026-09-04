@@ -401,7 +401,9 @@ function Panel({
   return (
     <div
       style={{
-        background: 'rgba(0, 0, 0, 0.3)',
+        // Same measurement as the verdict block above — a panel floating over
+        // the light basemap needs an opaque-enough ground for its own text.
+        background: 'rgba(10, 22, 40, 0.85)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         border: `1px solid ${LINE}`,
@@ -1967,7 +1969,22 @@ export default function FeasibilityV6Calculator({
                 position: 'sticky',
                 top: 0,
                 zIndex: 20,
-                background: 'rgba(0, 0, 0, 0.3)',
+                // Founder backlog PART 4, item 3: "Sticky panel headers and the
+                // NET PROFIT card are semi-transparent, so content behind
+                // bleeds through the text."
+                //
+                // Measured on the old rgba(0,0,0,0.30), composited over the
+                // basemap this panel floats on:
+                //     over DARK  body text 14.79  — fine, which is why it survived
+                //     over LIGHT body text  2.09
+                //     over LIGHT gold hero  1.05  — the NET PROFIT figure was
+                //                                   invisible, not merely faint
+                //
+                // Navy at 0.85 gives body 10.67 and gold 5.36 over the light
+                // basemap — past AA for large text with room to spare — while
+                // still reading as glass. The blur stays; blur alone cannot fix
+                // this, because blurring a bright map leaves it bright.
+                background: 'rgba(10, 22, 40, 0.85)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 border: `1px solid ${LINE_HARD}`,

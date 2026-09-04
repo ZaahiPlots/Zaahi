@@ -585,7 +585,8 @@ export default function FilterPanel({
               {fmtThousands(visibleCount.listings + visibleCount.pmtiles)} in view
               {" · "}
               <span style={{ opacity: 0.7 }}>
-                {visibleCount.listings} listings + {fmtThousands(visibleCount.pmtiles)} registry
+                {visibleCount.listings} listing{visibleCount.listings === 1 ? "" : "s"}{" "}
+                + {fmtThousands(visibleCount.pmtiles)} registry
               </span>
             </div>
           )}

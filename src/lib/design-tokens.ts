@@ -95,9 +95,30 @@ export const CHROME_BTN_BG = "rgba(0, 0, 0, 0.35)";
 export const CHROME_BTN_BORDER = PANEL_BORDER;
 export const CHROME_BTN_BORDER_COLOR = PANEL_BORDER_COLOR;
 export const CHROME_BTN_HOVER_BG = GOLD_25_BG;
+
+// ── Active chrome button (founder backlog PART 4, item 4) ───────────────
+//
+// Reported: "Active basemap buttons render a gold icon on a gold background,
+// making the icon invisible."
+//
+// Measured, gold #C8A96E on GOLD_25_BG composited over the basemap:
+//   over the DARK basemap   contrast 3.85  — marginal
+//   over the LIGHT basemap  contrast 1.71  — invisible, as reported
+//
+// The active state also looked identical to hover, so "which basemap am I on"
+// was unanswerable without clicking.
+//
+// Solid gold with a navy glyph is contrast 7.60 and, being opaque, is
+// INDEPENDENT of whatever the map happens to be showing underneath — which
+// matters for a control that floats over arbitrary imagery. Hover keeps the
+// translucent gold tint, so the two states are now clearly different.
 export const CHROME_BTN_HOVER_BORDER = `1px solid ${GOLD}`;
 export const CHROME_BTN_HOVER_BORDER_COLOR = GOLD;
-export const CHROME_BTN_ACTIVE_BG = GOLD_25_BG;
+// NOTE: this token existed with the value GOLD_25_BG and NO consumers —
+// ChromeBtn reused CHROME_BTN_HOVER_BG for its active state instead, which is
+// how active and hover came to look identical. Given a value and a consumer.
+export const CHROME_BTN_ACTIVE_BG = GOLD;
+export const CHROME_BTN_ACTIVE_FG = "#1A1A2E"; // ZAAHI navy — 7.60 on solid gold
 export const CHROME_BTN_ACTIVE_BORDER = `1px solid ${GOLD}`;
 export const CHROME_BTN_SHADOW = "0 8px 20px rgba(0, 0, 0, 0.3)";
 
