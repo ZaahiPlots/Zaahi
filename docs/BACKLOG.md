@@ -92,7 +92,7 @@ that order is in Telegram. Confirm or override it.
 |---|---|---|---|
 | 1 | `…-033112-e6366e` | **Partly shipped 2026-09-04** — see §2a. Sub-item (1) done; (2) needs a decision; (3) needs DB access | See §2a |
 | ~~2~~ | PART 5 · `…-032814-504144` | **SHIPPED 2026-09-04** — `fix/archie-silent-failures-2026-09-04`. Both halves: the empty-reply path and the false "sent to founders" confirmation. See §2b | — |
-| 3 | `…-032939-247114` | BtS Peak Equity (AED 236,767,174) below total investment (AED 247,635,831) with financing OFF; JV Project IRR computed on a monthly timeline while partner IRRs use a single t=0 contribution | Plan approval |
+| ~~3~~ | `…-032939-247114` | **SHIPPED 2026-09-04** — `fix/peak-equity-jv-irr-2026-09-04`. Both halves; one financed-JV inconsistency remains open, see §2d | — |
 | 4 | **#25** · PART 24 · `…-044210-a79f3f` | One conversational turn can fire two `POST /api/archie/feedback` calls — duplicate founder notifications, invisible in the UI | Plan approval. **See §6 — a quarantined branch exists** |
 | 5 | PART 4 · `…-032531-d9a679` | Seven layout items: canvas never re-fits after resize, Archie orb overlaps the wordmark, semi-transparent sticky headers + NET PROFIT card, gold-on-gold active basemap icons, stale `(215)` count when filtered to 7, `1 listings`, no way back from `/parcels/check-plot`. 6 of 7 confirmed in code | Plan approval |
 | 6 | `…-031806-ab77fb` | **Feature** — screenshot attachments in Archie chat / feedback | Plan approval |
@@ -230,6 +230,69 @@ a single-use plot.
 This closes the loop on the second half of `…-033112-e6366e` (§2a item 2): the
 founder saw an engine switch change nothing and reported it as staleness. The
 numbers were right; the control was lying.
+
+
+### 2d · Peak equity + JV IRR, shipped 2026-09-04
+
+Both reported numbers were right, and both were **convention** errors rather
+than arithmetic errors. Plot 6457790 is not reachable from here, so the numbers
+below are the project's existing reference deal (Dubai Hills mid-rise BtS,
+`scripts/feasibility-smoke.ts`), which reproduces the same two shapes.
+
+**(1) Peak equity, financing OFF — reference deal, before → after**
+
+| | |
+|---|---|
+| Total investment | AED 94,137,000 |
+| Peak equity **before** | AED 90,640,500 — short by **AED 3,496,500** |
+| Peak equity **after** | AED 94,137,000 |
+| One construction month | **AED 3,496,500** |
+
+The shortfall was exactly one month of construction. `peakEquity` bucketed a
+whole month and netted it, so the final construction draw was cancelled against
+the same month's sale proceeds — money you must spend before the building
+exists, hidden by money that only arrives once it does. With no debt, peak
+equity is by definition the whole investment. BtR reported it correctly because
+its rent starts a year later and nothing nets. **The two modes disagreed on a
+convention, and the convention was wrong.**
+
+Fixed by ordering within a month instead of netting: COST, then REVENUE, then
+DEBT service out of the proceeds (`CashflowEntry.seq`). This keeps the
+protection the 2026-06-06 netting was written for — the loan repayment must not
+appear to land before the sale that funds it — which is asserted separately.
+
+**(2) JV IRRs — reference deal, before → after**
+
+| | Project | Landowner | Developer |
+|---|---|---|---|
+| **before** | 14.27% | 10.07% | 8.77% |
+| **after** | 14.27% | 10.07% | **18.59%** |
+
+The project was never wrong; the *partners* were. Every contribution was booked
+at month 0 while the project spent construction month by month over the build.
+Money paid later earns a higher IRR for the same profit, so the project
+flattered itself against partners modelled as funding everything up front. The
+developer now draws down on the project's own schedule — DLD at month 0,
+construction spread over the build, interest at completion — and their IRR
+rises to 18.59%, above the project's. The hierarchy is no longer impossible.
+
+**The invariant, and the condition it depends on.** If the project cashflow is
+the sum of the partner cashflows then `NPV_project(r) = NPV_L(r) + NPV_D(r)`, so
+at `r = max(IRR_L, IRR_D)` both terms are ≤ 0 and the project IRR cannot exceed
+it. `scripts/jv-irr.test.ts` §4 sweeps 204 cases across share splits, build
+lengths, land values and financing:
+
+- **102 cases where contributions fund the project exactly — 0 violations.**
+- 102 cases with a funding gap — 1 violation, worst **+0.246 pts**.
+
+**Still open (D-19):** the financed JV double-counts interest. `developerCashAuto`
+includes it as equity while the project charges it again at exit, so
+`contributionGapAed` is non-zero by construction whenever financing is on, and
+the partner IRRs stop being a clean decomposition. The JV project cashflow also
+omits `loanAed` while charging its interest, and omits `brokerageOnLandAed`
+which BtS and BtR both include. The gap is now **surfaced in the JV panel** with
+an explicit notice rather than left silent, and bounded by the fixture — but the
+underlying model needs a decision about whether a JV carries project debt at all.
 
 ### Quarantined
 

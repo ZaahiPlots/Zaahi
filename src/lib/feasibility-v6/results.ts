@@ -52,6 +52,7 @@ import {
   npv,
   peakEquity,
   buildBtSCashflows,
+  projectFundingWeights,
   buildBtRCashflows,
   buildJvPartnerCashflows,
   type CashflowEntry,
@@ -413,6 +414,19 @@ export interface JvDerivedV6 extends JvDerived {
   developerRoePct: number;
   landownerCashflows: CashflowEntry[];
   developerCashflows: CashflowEntry[];
+  /**
+   * The developer's drawdown shape — the project's own spend schedule. Exposed
+   * so the JV panel can show WHEN the developer funds, not just how much;
+   * without it the partner IRRs are unauditable from the UI.
+   */
+  developerFundingWeights: Array<{ month: number; weight: number }>;
+  /**
+   * Committed capital minus what the project needs. Zero when the developer's
+   * cash is left on its auto value (construction + interest + DLD). Non-zero
+   * means the JV is under- or over-funded and the partner IRRs are no longer a
+   * clean decomposition of the project's.
+   */
+  contributionGapAed: number;
   constructionMonths: number;
   interestBasis: 'simple-v5' | 'drawn-monthly-v6';
   drawnInterestAed: number;
@@ -460,6 +474,25 @@ export function computeJvV6(
       : finance;
   const v5 = computeJv(jvInp, land, construction, correctedFinance, revenue);
 
+  // Put both partners on the project's clock (2026-09-04). Previously every
+  // contribution was booked at month 0 while the project spent construction
+  // month by month, which let Project IRR sit above BOTH partner IRRs — the
+  // reported 14.4% against 12.3% and 7.3%.
+  //
+  // Landowner: an in-kind land contribution is made once, at month 0. Any
+  // cash they add rides alongside it — a landowner does not fund the build.
+  //
+  // Developer: funds DLD, construction and the financing interest, so their
+  // drawdown mirrors the project's own spend schedule rather than landing up
+  // front. `projectFundingWeights` is built from the same components in the
+  // same order as buildBtSCashflows, so the two cannot drift apart.
+  const developerWeights = projectFundingWeights({
+    dldFeeAed: land.dldFeeAed,
+    totalConstructionAed: construction.totalConstructionAed,
+    interestAed: correctedFinance.totalInterestAed,
+    constructionMonths,
+  });
+
   const landownerCashflows = buildJvPartnerCashflows({
     partnerContributionAed: v5.landownerTotalContribution,
     partnerProfitAed: v5.landownerProfitAed,
@@ -469,7 +502,18 @@ export function computeJvV6(
     partnerContributionAed: v5.developerTotalContribution,
     partnerProfitAed: v5.developerProfitAed,
     constructionMonths,
+    fundingWeights: developerWeights,
   });
+
+  // Does the committed capital actually cover what the project needs?
+  //
+  // developerCashAuto in the UI is construction + interest + DLD, so by
+  // default the two match to the dirham and the partner cashflows sum exactly
+  // to the project's. The moment a user overrides the developer's cash the
+  // JV is under- or over-funded, and the partner IRRs stop being a clean
+  // decomposition of the project's. That is a real modelling condition, not a
+  // rounding issue, so it is surfaced rather than absorbed.
+  const contributionGapAed = v5.totalContribution - v5.totalInvestmentAed;
 
   // Project-level IRR uses the BtS-style timeline since JV produces a
   // single sale event.
@@ -496,6 +540,8 @@ export function computeJvV6(
     developerRoePct: v5.developerRoiPct,
     landownerCashflows,
     developerCashflows,
+    developerFundingWeights: developerWeights,
+    contributionGapAed,
     constructionMonths,
     interestBasis,
     drawnInterestAed,
