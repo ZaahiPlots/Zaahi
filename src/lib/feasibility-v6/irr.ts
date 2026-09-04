@@ -20,7 +20,34 @@
 export interface CashflowEntry {
   month: number;
   aed: number;
+  /**
+   * Order WITHIN a month. Only peakEquity reads it — IRR and NPV discount by
+   * month alone, so intra-month order cannot affect them.
+   *
+   * Several things land in the handover month at once: the final construction
+   * draw, the sale proceeds, and the repayment of loan principal + interest.
+   * They do not happen simultaneously in reality, and which order you assume
+   * changes the reported peak equity by millions.
+   *
+   *   COST    (0) — land, DLD, construction, loan DRAWS. Money that must be
+   *                 in place before the asset exists.
+   *   REVENUE (1) — the sale. Arrives only once the building is finished, so
+   *                 it can never fund the construction draw of the same month.
+   *   DEBT    (2) — principal + interest repayment, which in practice comes
+   *                 OUT of the sale proceeds and therefore after them.
+   *
+   * Defaults to COST when omitted, which is the conservative reading.
+   */
+  seq?: CashflowSeq;
 }
+
+/** Intra-month ordering for peak-equity measurement. See CashflowEntry.seq. */
+export const SEQ = {
+  COST: 0,
+  REVENUE: 1,
+  DEBT: 2,
+} as const;
+export type CashflowSeq = (typeof SEQ)[keyof typeof SEQ];
 
 // Net Present Value at a given annualised discount rate.
 // Monthly cashflows are discounted by (1+monthly)^month where
@@ -132,18 +159,18 @@ export function buildBtSCashflows(inp: BtSCashflowInputs): CashflowEntry[] {
     const dp = inp.downPaymentAed ?? 0;
     const monthly = inp.installmentPerMonthAed ?? 0;
     const months = Math.max(1, inp.installmentMonths ?? 24);
-    cf.push({ month: 0, aed: -dp - inp.dldFeeAed });
+    cf.push({ month: 0, aed: -dp - inp.dldFeeAed, seq: SEQ.COST });
     for (let m = 1; m <= months; m++) {
-      cf.push({ month: m, aed: -monthly });
+      cf.push({ month: m, aed: -monthly, seq: SEQ.COST });
     }
   } else {
-    cf.push({ month: 0, aed: -inp.landCostAed - inp.dldFeeAed });
+    cf.push({ month: 0, aed: -inp.landCostAed - inp.dldFeeAed, seq: SEQ.COST });
   }
 
   // Construction outflow (linear monthly from month 1 to N)
   const monthlyConstruction = inp.totalConstructionAed / N;
   for (let m = 1; m <= N; m++) {
-    cf.push({ month: m, aed: -monthlyConstruction });
+    cf.push({ month: m, aed: -monthlyConstruction, seq: SEQ.COST });
   }
 
   // Finance: loan is drawn LINEARLY over construction (one source of
@@ -156,16 +183,17 @@ export function buildBtSCashflows(inp: BtSCashflowInputs): CashflowEntry[] {
   if (inp.loanAed && inp.loanAed > 0) {
     const monthlyLoanDraw = inp.loanAed / N;
     for (let m = 1; m <= N; m++) {
-      cf.push({ month: m, aed: monthlyLoanDraw });
+      // A draw is funding, not a cost — it lands with the costs it pays for.
+      cf.push({ month: m, aed: monthlyLoanDraw, seq: SEQ.COST });
     }
-    cf.push({ month: N, aed: -inp.loanAed - (inp.totalFinanceInterestAed ?? 0) });
+    cf.push({ month: N, aed: -inp.loanAed - (inp.totalFinanceInterestAed ?? 0), seq: SEQ.DEBT });
   } else if (inp.totalFinanceInterestAed && inp.totalFinanceInterestAed > 0) {
     // No loan but interest is being modeled (rare); pay at exit.
-    cf.push({ month: N, aed: -inp.totalFinanceInterestAed });
+    cf.push({ month: N, aed: -inp.totalFinanceInterestAed, seq: SEQ.DEBT });
   }
 
   // Revenue inflow at completion (single lump sum)
-  cf.push({ month: N, aed: inp.netRevenueAed });
+  cf.push({ month: N, aed: inp.netRevenueAed, seq: SEQ.REVENUE });
 
   return cf.sort((a, b) => a.month - b.month);
 }
@@ -228,26 +256,99 @@ export function buildBtRCashflows(inp: BtRCashflowInputs): CashflowEntry[] {
 
 // ── JV cashflow builder (per-partner perspective) ─────────────────────
 //
-// Each partner sees -their contribution at t=0 and +their share of net
-// project profit at completion. JV is treated as BtS under the hood.
+// Reported 2026-08-27: "Joint Venture shows Project IRR 14.4% while Landowner
+// IRR is 12.3% and Developer IRR 7.3% — a project IRR cannot exceed both
+// partners."
+//
+// That is correct, and it was not a rounding artefact. The two sides were
+// measured on different clocks. Every partner's whole contribution was booked
+// at month 0, while the project spent its construction budget month by month
+// over the build. Money paid later earns a higher IRR for the same profit, so
+// the project flattered itself against partners who were modelled as funding
+// everything up front.
+//
+// The invariant that must hold: if the project cashflow is the sum of the
+// partner cashflows on one timeline, then for conventional flows
+//
+//     NPV_project(r) = NPV_landowner(r) + NPV_developer(r)
+//
+// so at r = max(IRR_L, IRR_D) both terms are <= 0, the project NPV is <= 0,
+// and therefore IRR_project <= max(IRR_L, IRR_D). Symmetrically it is >= the
+// lower one. The project IRR is BRACKETED by its partners; it can never
+// escape above both. scripts/jv-irr.test.ts asserts exactly this.
+//
+// `fundingWeights` is what puts a partner on the project's clock: the shape of
+// their drawdown over time. A landowner contributing land funds it once at
+// month 0 (the default). A developer funding DLD, construction and interest
+// pays on the project's own schedule, so their weights mirror it.
 export interface JvPartnerCashflowInputs {
   partnerContributionAed: number; // cash + (in-kind land valuation)
   partnerProfitAed: number;       // their share of net project profit
   constructionMonths: number;
+  /**
+   * How the contribution is drawn down, as {month, weight} with weights
+   * summing to 1. Omitted → the whole contribution at month 0, which is right
+   * for an in-kind land contribution and wrong for a cash developer.
+   */
+  fundingWeights?: Array<{ month: number; weight: number }>;
 }
 
 export function buildJvPartnerCashflows(
   inp: JvPartnerCashflowInputs,
 ): CashflowEntry[] {
   const N = Math.max(1, Math.round(inp.constructionMonths));
-  return [
-    { month: 0, aed: -inp.partnerContributionAed },
-    { month: N, aed: inp.partnerContributionAed + inp.partnerProfitAed },
-    // The partner gets their contribution back PLUS their profit share.
-    // Modeling as a single inflow at month N keeps the IRR formula clean.
-    // Under the hood this is what JV agreements specify in practice for
-    // simple 2-party JV at completion.
-  ];
+  const weights =
+    inp.fundingWeights && inp.fundingWeights.length > 0
+      ? inp.fundingWeights
+      : [{ month: 0, weight: 1 }];
+
+  // Normalise defensively: a caller that hands over weights summing to 0.98
+  // would otherwise silently understate the partner's outlay and overstate
+  // their IRR — the exact class of error this function exists to remove.
+  const totalWeight = weights.reduce((acc, w) => acc + w.weight, 0);
+  const norm = totalWeight > 0 ? totalWeight : 1;
+
+  const cf: CashflowEntry[] = weights.map((w) => ({
+    month: w.month,
+    aed: -inp.partnerContributionAed * (w.weight / norm),
+    seq: SEQ.COST,
+  }));
+
+  // The partner gets their contribution back PLUS their profit share, once,
+  // at completion — which is what a simple two-party JV agreement specifies.
+  cf.push({
+    month: N,
+    aed: inp.partnerContributionAed + inp.partnerProfitAed,
+    seq: SEQ.REVENUE,
+  });
+  return cf.sort((a, b) => a.month - b.month);
+}
+
+/**
+ * The shape of the project's cash needs over the build, as normalised weights.
+ *
+ * Used to put a cash-funding JV partner on the same clock as the project. The
+ * components mirror buildBtSCashflows exactly — DLD at month 0, construction
+ * spread linearly over the build, financing interest settled at completion —
+ * so a developer funding all three draws down exactly as the project spends.
+ */
+export function projectFundingWeights(inp: {
+  dldFeeAed: number;
+  totalConstructionAed: number;
+  interestAed: number;
+  constructionMonths: number;
+}): Array<{ month: number; weight: number }> {
+  const N = Math.max(1, Math.round(inp.constructionMonths));
+  const total = inp.dldFeeAed + inp.totalConstructionAed + inp.interestAed;
+  if (!(total > 0)) return [{ month: 0, weight: 1 }];
+  const out: Array<{ month: number; weight: number }> = [];
+  if (inp.dldFeeAed > 0) out.push({ month: 0, weight: inp.dldFeeAed / total });
+  if (inp.totalConstructionAed > 0) {
+    const per = inp.totalConstructionAed / N / total;
+    for (let m = 1; m <= N; m++) out.push({ month: m, weight: per });
+  }
+  if (inp.interestAed > 0) out.push({ month: N, weight: inp.interestAed / total });
+  return out.length > 0 ? out : [{ month: 0, weight: 1 }];
 }
 
 // ── Peak-equity helpers ───────────────────────────────────────────────
@@ -255,26 +356,47 @@ export function buildJvPartnerCashflows(
 // Peak equity = max cumulative net cashflow (in absolute terms). Used to
 // compute ROE — return ON equity, isolating leverage effect.
 //
-// Important: events within the same month are netted before the
-// cumulative is rolled forward. At handover (month N) construction's
-// last draw, loan principal + interest repayment, and sale revenue all
-// occur simultaneously — sequencing them inside one month would create
-// a phantom trough (e.g. the loan repayment appearing to land before
-// revenue arrives). Bucket-by-month avoids that artefact and makes the
-// reported peak match the real worst-case equity need (typically the
-// last construction month before handover).
+// Events within a month are ordered by CashflowEntry.seq, not netted.
 //
-// Founder fix 2026-06-06.
+// The 2026-06-06 version bucketed a whole month and netted it. The concern
+// behind that was real — sequencing naively would put the loan repayment
+// before the sale proceeds and invent a trough the developer never has to
+// fund. But netting everything solved it by erasing a difference that does
+// exist: the final construction draw is paid BEFORE the building is sold, and
+// netting it against the same month's sale proceeds hid one month of
+// construction from the peak.
+//
+// Reported 2026-08-27: "plot 6457790 Build-to-Sell shows Peak Equity AED
+// 236,767,174, below total investment 247,635,831, with financing OFF." With
+// no debt, peak equity is by definition the whole investment — you funded all
+// of it before you sold anything. The delta was exactly one month of
+// construction, and BtR (whose rent starts a year later, so nothing nets)
+// reported the correct figure. The two modes disagreed on a convention.
+//
+// The fix keeps the phantom-trough protection and drops the netting: within a
+// month, COST lands first, then REVENUE, then DEBT service out of the
+// proceeds. Peak is sampled after every step. See CashflowEntry.seq.
+//
+// Founder fix 2026-06-06, corrected 2026-09-04.
 export function peakEquity(cashflows: CashflowEntry[]): number {
-  const byMonth = new Map<number, number>();
+  // Bucket by (month, seq) so entries of the same kind in the same month still
+  // net against each other — a loan draw against the construction draw it
+  // funds, for instance — while different kinds stay ordered.
+  const buckets = new Map<string, { month: number; seq: number; aed: number }>();
   for (const cf of cashflows) {
-    byMonth.set(cf.month, (byMonth.get(cf.month) ?? 0) + cf.aed);
+    const seq = cf.seq ?? SEQ.COST;
+    const key = `${cf.month}:${seq}`;
+    const existing = buckets.get(key);
+    if (existing) existing.aed += cf.aed;
+    else buckets.set(key, { month: cf.month, seq, aed: cf.aed });
   }
-  const sortedMonths = Array.from(byMonth.keys()).sort((a, b) => a - b);
+  const ordered = Array.from(buckets.values()).sort(
+    (a, b) => a.month - b.month || a.seq - b.seq,
+  );
   let cumulative = 0;
   let peak = 0;
-  for (const m of sortedMonths) {
-    cumulative += byMonth.get(m)!;
+  for (const b of ordered) {
+    cumulative += b.aed;
     if (cumulative < peak) peak = cumulative; // most negative = max equity
   }
   return Math.abs(peak);

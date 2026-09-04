@@ -3111,6 +3111,34 @@ export default function FeasibilityV6Calculator({
                     label="Developer IRR"
                     value={Number.isFinite(jv.developerIrrPct) ? fmtPct(jv.developerIrrPct) : '—'}
                   />
+                  {/* The partner IRRs are only a clean decomposition of the
+                      project's when the committed capital funds the project
+                      exactly. On the auto developer-cash value it does, to the
+                      dirham. Override it — or finance the build, where the
+                      interest is currently counted both as developer equity
+                      and as a project charge — and the three numbers above
+                      stop reconciling. Say so rather than let them read as
+                      exact. See scripts/jv-irr.test.ts §4. */}
+                  {Math.abs(jv.contributionGapAed) > 1 && (
+                    <div
+                      role="note"
+                      style={{
+                        marginTop: 8,
+                        padding: '8px 10px',
+                        border: `1px solid ${AMBER}`,
+                        borderRadius: 8,
+                        background: 'rgba(230, 126, 34, 0.08)',
+                        color: AMBER,
+                        fontSize: 10,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Committed capital is {fmtAedExact(Math.abs(jv.contributionGapAed))}{' '}
+                      {jv.contributionGapAed > 0 ? 'above' : 'below'} what the project needs,
+                      so the partner IRRs no longer add up to the project IRR. Treat the
+                      three as indicative until the contributions balance.
+                    </div>
+                  )}
                 </>
               )}
             </Panel>
