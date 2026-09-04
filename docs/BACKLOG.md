@@ -94,7 +94,7 @@ that order is in Telegram. Confirm or override it.
 | ~~2~~ | PART 5 · `…-032814-504144` | **SHIPPED 2026-09-04** — `fix/archie-silent-failures-2026-09-04`. Both halves: the empty-reply path and the false "sent to founders" confirmation. See §2b | — |
 | ~~3~~ | `…-032939-247114` | **SHIPPED 2026-09-04** — `fix/peak-equity-jv-irr-2026-09-04`. Both halves; one financed-JV inconsistency remains open, see §2d | — |
 | ~~4~~ | **#25** · PART 24 · `…-044210-a79f3f` | **SHIPPED 2026-09-04** — `fix/feedback-idempotency-2026-09-04`, re-run from scratch after `ef1371f` was deleted. See §2e | — |
-| 5 | PART 4 · `…-032531-d9a679` | Seven layout items: canvas never re-fits after resize, Archie orb overlaps the wordmark, semi-transparent sticky headers + NET PROFIT card, gold-on-gold active basemap icons, stale `(215)` count when filtered to 7, `1 listings`, no way back from `/parcels/check-plot`. 6 of 7 confirmed in code | Plan approval |
+| ~~5~~ | PART 4 · `…-032531-d9a679` | **SHIPPED 2026-09-04** — `fix/layout-polish-2026-09-04`. 5 of 7 fixed, 1 already fixed, 1 not reproducible. See §2f | — |
 | 6 | `…-031806-ab77fb` | **Feature** — screenshot attachments in Archie chat / feedback | Plan approval |
 | 7 | `…-031715-8108e8` | **Feature** — microphone speech-to-text for notes and chat | **Decision ×2:** which surfaces, and whether the browser Web Speech API is acceptable — **in Chrome it streams the user's audio to a Google cloud service** |
 | 8 | `…-031541-e90352` | 3D model height wrong on plot 3450419 (Burj Khalifa District) | **Not blocked on approval — blocked on data.** No expected value, no screenshot, and 3450419 exists only in the database. Needs a resubmission or closure |
@@ -341,6 +341,59 @@ served by a single instance, which is where this duplicate is born.
 
 The related complaint in the same report — that the channel could not confirm
 delivery — was fixed separately in §2b.
+
+
+### 2f · PART 4 — layout & polish, shipped 2026-09-04
+
+Every item was re-verified against current `main` before any code was written,
+because map work landed after the 2026-08-28 triage. Two of the seven had moved.
+
+| # | Item | Outcome |
+|---|---|---|
+| 1 | Canvas never re-fits after resize | **Already fixed** by `92a94cc`. Its own comment records that the defect could not be reproduced — MapLibre 5.22 ships a ResizeObserver and `trackResize` defaults on — and that the post-paint re-measure closes the one structural gap an observer cannot see. Covered by `map-reflow.spec.ts (i)` |
+| 2 | Archie orb overlaps the `REAL ESTATE OS` wordmark | **Not reproducible.** That wordmark exists only on the **login page** (`src/app/page.tsx:267`), where the orb does not render — it lives inside `/parcels/map`, behind `AuthGuard`. The map header carries no text branding at all. Probably seen on an older build |
+| 3 | Sticky headers + NET PROFIT card bleed through | **Fixed** — and worse than reported |
+| 4 | Gold icon on gold active basemap button | **Fixed** |
+| 5 | Parcels list keeps `(215)` when filtered to 7 | **Fixed** |
+| 6 | `1 listings` | **Fixed** |
+| 7 | No way back from `/parcels/check-plot` | **Fixed** |
+
+**Item 3 was worse than the report said.** Measured on the old
+`rgba(0,0,0,0.30)`, composited over the basemap the panel floats on:
+
+| | over DARK | over LIGHT |
+|---|---|---|
+| body text | 14.79 | **2.09** |
+| gold NET PROFIT figure | — | **1.05** |
+
+At 1.05 the headline number was not faint, it was **invisible**. It survived
+because over the dark basemap it is 14.79. Now `rgba(10,22,40,0.85)` — body
+10.67, gold 5.36 over the light basemap, comfortably past AA for large text,
+and still reading as glass. Blur alone could never have fixed this: blurring a
+bright map leaves it bright.
+
+**Item 4, measured the same way.** Active was gold `#C8A96E` on `GOLD_25_BG`:
+3.85 over the dark basemap, **1.71** over the light one. It was also visually
+identical to hover, so "which basemap am I on" was unanswerable without
+clicking. Now a navy glyph on **solid** gold — contrast 7.60, and *independent
+of the map underneath*, which is what a control floating over arbitrary imagery
+needs. Found on the way: `CHROME_BTN_ACTIVE_BG` already existed with the value
+`GOLD_25_BG` and **no consumers** — `ChromeBtn` reused `CHROME_BTN_HOVER_BG`
+for its active state, which is exactly how the two states came to look the
+same. The token now has a value and a consumer.
+
+**Item 5** — the header read `items.length`, the *unfiltered* set, while the
+body rendered `filtered`. Smoke check (a) compares header to rows with an
+**empty search**, so it stayed green. Now reads `7 of 215`.
+
+**Open, found while measuring (D-20).** The idle chrome button is
+`#f5f1e8` on `rgba(0,0,0,0.35)` — **contrast 2.41 over the light basemap**.
+That is the same class of problem as item 4 and was not reported, but it
+affects every chrome button on the map. Not changed here: it is a global
+visual change to the ratified `CHROME_BTN_BG` token and wants a founder
+decision, not a quiet edit. Related: the UI style guide's own card value,
+`rgba(10, 22, 40, 0.4)`, is what produced the 1.05 figure in item 3 — the
+guide's default is not legible over a light basemap.
 
 ### Quarantined
 

@@ -42,6 +42,8 @@ import {
   CHROME_BTN_BORDER,
   CHROME_BTN_BORDER_COLOR,
   CHROME_BTN_HOVER_BG,
+  CHROME_BTN_ACTIVE_BG,
+  CHROME_BTN_ACTIVE_FG,
   CHROME_BTN_HOVER_BORDER,
   CHROME_BTN_SHADOW,
   CHROME_BTN_SIZE_DEFAULT,
@@ -140,10 +142,10 @@ export function ChromeBtn({
         height: size,
         borderRadius: CHROME_BTN_RADIUS,
         border: isActive ? CHROME_BTN_HOVER_BORDER : CHROME_BTN_BORDER,
-        background: isActive ? CHROME_BTN_HOVER_BG : CHROME_BTN_BG,
+        background: isActive ? CHROME_BTN_ACTIVE_BG : CHROME_BTN_BG,
         backdropFilter: PANEL_BLUR,
         WebkitBackdropFilter: PANEL_BLUR,
-        color: isActive ? GOLD : TXT,
+        color: isActive ? CHROME_BTN_ACTIVE_FG : TXT,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -167,9 +169,9 @@ export function ChromeBtn({
           ? GOLD
           : CHROME_BTN_BORDER_COLOR;
         e.currentTarget.style.background = isActive
-          ? CHROME_BTN_HOVER_BG
+          ? CHROME_BTN_ACTIVE_BG
           : CHROME_BTN_BG;
-        e.currentTarget.style.color = isActive ? GOLD : TXT;
+        e.currentTarget.style.color = isActive ? CHROME_BTN_ACTIVE_FG : TXT;
       }}
       {...tagProps}
     >

@@ -157,7 +157,18 @@ export default function ParcelsPortalPanel({ open, onClose, mapRef, onSelectParc
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
         }}>
-          Parcels ({items?.length ?? "—"})
+          {/* Founder backlog PART 4, item 5: "The parcels list keeps its
+              '(215)' count when filtered down to 7." The header read
+              items.length — the UNFILTERED set — while the body rendered
+              `filtered`. Smoke check (a) compares header to rows with an
+              EMPTY search, so it was green throughout.
+              Showing both keeps the total available without lying about
+              what is on screen. */}
+          Parcels ({items == null
+            ? "—"
+            : filtered.length === items.length
+              ? items.length
+              : `${filtered.length} of ${items.length}`})
         </span>
         <button
           onClick={onClose}
