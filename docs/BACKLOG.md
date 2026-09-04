@@ -91,7 +91,7 @@ that order is in Telegram. Confirm or override it.
 | # | ID / Task | What | Blocked on |
 |---|---|---|---|
 | 1 | `…-033112-e6366e` | **Partly shipped 2026-09-04** — see §2a. Sub-item (1) done; (2) needs a decision; (3) needs DB access | See §2a |
-| 2 | PART 5 · `…-032814-504144` | Long Archie messages return HTTP 200 with an empty reply — the user believes the message was lost. `/api/archie/feedback` fires Telegram with `void` and reports success regardless | Plan approval |
+| ~~2~~ | PART 5 · `…-032814-504144` | **SHIPPED 2026-09-04** — `fix/archie-silent-failures-2026-09-04`. Both halves: the empty-reply path and the false "sent to founders" confirmation. See §2b | — |
 | 3 | `…-032939-247114` | BtS Peak Equity (AED 236,767,174) below total investment (AED 247,635,831) with financing OFF; JV Project IRR computed on a monthly timeline while partner IRRs use a single t=0 contribution | Plan approval |
 | 4 | **#25** · PART 24 · `…-044210-a79f3f` | One conversational turn can fire two `POST /api/archie/feedback` calls — duplicate founder notifications, invisible in the UI | Plan approval. **See §6 — a quarantined branch exists** |
 | 5 | PART 4 · `…-032531-d9a679` | Seven layout items: canvas never re-fits after resize, Archie orb overlaps the wordmark, semi-transparent sticky headers + NET PROFIT card, gold-on-gold active basemap icons, stale `(215)` count when filtered to 7, `1 listings`, no way back from `/parcels/check-plot`. 6 of 7 confirmed in code | Plan approval |
@@ -149,6 +149,60 @@ session; the SQL is written and waiting.
 disable unsupported engines for the active tab or auto-switch the tab. The
 gate above makes the current state honest either way, so D-6 is now a
 polish decision rather than a correctness one.
+
+
+### 2b · PART 5 — Archie's two silent failures, shipped 2026-09-04
+
+Both halves of `…-032814-504144`. The common thread: the product reported
+success it had not earned.
+
+**(a) A 200 with an empty reply.** `/api/archie` shipped
+`{ reply: content ?? "" }`, and the client rendered `data.reply || "…"` — a
+bare ellipsis, indistinguishable from a message that never arrived.
+
+The cause is structural, not a typo: `gpt-5-nano` is a **reasoning** model, so
+reasoning tokens are billed against `max_completion_tokens` (2000). A long
+prompt can spend the entire budget thinking and return `finish_reason:
+"length"` with empty content. That is a legitimate outcome — it just must
+never reach a user as silence.
+
+Fixed on both ends. The server now returns an explicit sentence, distinguishing
+"ran out of room, send it in smaller pieces" from a generic failure, plus
+`empty: true` and `finishReason` for logs and future client styling. It stays
+HTTP 200 deliberately: nothing is broken, so an error toast would be the wrong
+signal — what the user needs is a next step. The client keeps a belt-and-braces
+guard, which is what the e2e exercises.
+
+**Open, related:** `max_completion_tokens: 2000` is the reason this happens at
+all. Raising it costs money per turn and is a tuning decision, not a bug fix —
+not changed here.
+
+**(b) "Sent to founders" could be false.** The feedback route fired the
+Telegram fan-out with `void` and answered "I've sent your note to the ZAAHI
+team" unconditionally. Three failure modes produced that same sentence:
+`TELEGRAM_ADMIN_CHAT_IDS` unset (returns `[]` without touching the network),
+`TELEGRAM_BOT_TOKEN` unset (every result `skipped`), and any Telegram or
+network error.
+
+The route now awaits the fan-out and tells the truth. Two details that matter
+more than the await:
+
+- **Throttle state is refunded when nothing was delivered.** `isDuplicate()`
+  records on first sight, so a failed send would otherwise be treated as
+  "already sent" for 24 hours and the user's retry answered with *"I already
+  sent this one earlier — the team has it."* That is the false confirmation
+  twice over. The rate-limit slot is refunded for the same reason: a
+  submission that reached nobody must not spend the user's quota.
+- **Partial delivery is a success for the user, a problem for us.** If one of
+  two admin chats got it, a human has the message — so the user is not told it
+  failed — but the gap is logged rather than swallowed.
+
+The decision that governs whether we lie now lives in
+`src/lib/telegram-delivery.ts` with 24 fixtures, rather than inline in a route
+that needs a database and a request context to exercise.
+
+**Note for §8:** this does NOT fix the in-memory rate limit being unenforceable
+across Vercel lambdas — that is a separate item and still open.
 
 ### Quarantined
 

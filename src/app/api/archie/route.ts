@@ -808,7 +808,39 @@ Use this only to decide whether the FEEDBACK proactive offer applies.`;
     }
 
     // Plain text reply.
-    return NextResponse.json({ reply: choice.message.content ?? "" });
+    //
+    // Reported 2026-08-27 (PART 5): "long messages to Archie get a 200 from
+    // /api/archie but render no reply at all, so users think the message was
+    // lost." They were right, and this line was the cause — it shipped
+    // `content ?? ""` and the client rendered the empty string as a bare "…".
+    //
+    // gpt-5-nano is a REASONING model: reasoning tokens are billed against
+    // max_completion_tokens (2000 here), so a long or knotty prompt can spend
+    // the entire budget thinking and return finish_reason:"length" with an
+    // empty content string. That is a real, expected outcome — it just must
+    // never reach the user as silence.
+    const content = (choice.message.content ?? "").trim();
+    if (content.length === 0) {
+      // Not a 4xx/5xx: nothing is broken, the model simply ran out of room.
+      // An error status would surface as a failure toast; what the user needs
+      // is a sentence telling them what to do next.
+      console.error(
+        `[archie] empty reply finish=${choice.finish_reason} — returning an explicit message`,
+      );
+      const message =
+        choice.finish_reason === "length"
+          ? "That one was long enough that I ran out of room to answer it. " +
+            "Send it again in a couple of smaller pieces and I'll get through it."
+          : "I didn't manage an answer to that one — try rephrasing it and I'll have another go.";
+      return NextResponse.json({
+        reply: message,
+        // Machine-readable so the client can mark it as a system note rather
+        // than a normal answer, and so this is greppable in logs.
+        empty: true,
+        finishReason: choice.finish_reason,
+      });
+    }
+    return NextResponse.json({ reply: content });
   } catch (e) {
     console.error("[archie] failed:", e);
     return NextResponse.json({ error: "upstream_failed" }, { status: 502 });
