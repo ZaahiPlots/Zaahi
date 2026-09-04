@@ -93,7 +93,7 @@ that order is in Telegram. Confirm or override it.
 | 1 | `…-033112-e6366e` | **Partly shipped 2026-09-04** — see §2a. Sub-item (1) done; (2) needs a decision; (3) needs DB access | See §2a |
 | ~~2~~ | PART 5 · `…-032814-504144` | **SHIPPED 2026-09-04** — `fix/archie-silent-failures-2026-09-04`. Both halves: the empty-reply path and the false "sent to founders" confirmation. See §2b | — |
 | ~~3~~ | `…-032939-247114` | **SHIPPED 2026-09-04** — `fix/peak-equity-jv-irr-2026-09-04`. Both halves; one financed-JV inconsistency remains open, see §2d | — |
-| 4 | **#25** · PART 24 · `…-044210-a79f3f` | One conversational turn can fire two `POST /api/archie/feedback` calls — duplicate founder notifications, invisible in the UI | Plan approval. **See §6 — a quarantined branch exists** |
+| ~~4~~ | **#25** · PART 24 · `…-044210-a79f3f` | **SHIPPED 2026-09-04** — `fix/feedback-idempotency-2026-09-04`, re-run from scratch after `ef1371f` was deleted. See §2e | — |
 | 5 | PART 4 · `…-032531-d9a679` | Seven layout items: canvas never re-fits after resize, Archie orb overlaps the wordmark, semi-transparent sticky headers + NET PROFIT card, gold-on-gold active basemap icons, stale `(215)` count when filtered to 7, `1 listings`, no way back from `/parcels/check-plot`. 6 of 7 confirmed in code | Plan approval |
 | 6 | `…-031806-ab77fb` | **Feature** — screenshot attachments in Archie chat / feedback | Plan approval |
 | 7 | `…-031715-8108e8` | **Feature** — microphone speech-to-text for notes and chat | **Decision ×2:** which surfaces, and whether the browser Web Speech API is acceptable — **in Chrome it streams the user's audio to a Google cloud service** |
@@ -293,6 +293,54 @@ omits `loanAed` while charging its interest, and omits `brokerageOnLandAed`
 which BtS and BtR both include. The gap is now **surfaced in the JV panel** with
 an explicit notice rather than left silent, and bounded by the fixture — but the
 underlying model needs a decision about whether a JV carries project debt at all.
+
+
+### 2e · #25 / PART 24 — duplicate feedback submissions, shipped 2026-09-04
+
+Re-run from scratch, as agreed when `ef1371f` was deleted. Nothing from that
+unreviewed session was carried forward.
+
+**The mechanism**, confirmed in code: the dispatch loop in `ArchibaldChat`
+re-queries `/api/archie` after each tool batch, so the model can emit
+`submit_feedback` again on a later iteration of the **same** user turn. The
+server's only guard was an exact-text 24h dedup — and a model rarely rewords
+itself identically, so the second call sailed through. The founder saw two
+POSTs, both 200, from one message, with nothing in the UI to show it.
+
+**Two guards, because either alone leaks:**
+
+- **Client per-turn latch.** Stops the second call being made at all. This is
+  the only one that keeps the founders' Telegram clean — a request already in
+  flight cannot be un-sent.
+- **`submissionId` idempotency key**, one per *user message* rather than per
+  tool call, so the two calls of one turn share a key. Lets the server collapse
+  anything that still arrives: a retry, a double-mounted client, a future
+  caller that forgets the latch. Checked **before** the text dedup and the rate
+  limit, so a collapsed duplicate never consumes quota, and released again if
+  delivery fails so a genuine retry still works.
+
+**Test coverage, stated precisely.** `tests/e2e/feedback-idempotency.spec.ts`
+drives the real client against a scripted server that emits `submit_feedback`
+twice in one turn with *different wording* — the case the text dedup missed.
+Demonstrated failing on the pre-fix tree with `got 2`. Three cases: one POST
+per turn, the key is present and long enough for the server schema, and a
+second user message gets its own key so the cap is per turn rather than per
+session.
+
+The **server-side** collapse is verified by reading, not by an automated test:
+it sits behind `getApprovedUserId` and Prisma, so exercising it needs a request
+context. It is six lines of map lookup with the same TTL and lazy GC as the
+existing dedup cache. Not extracted into a testable module the way
+`summariseDelivery` was — that one had six branches worth isolating, this has
+one, and extracting for symmetry alone would not be better engineering.
+
+**Carries the §8 caveat:** like every other in-memory guard in this route, the
+id map resets on a cold start and is not shared across lambdas. That weakens it
+*across* instances but not *within* a turn — and a single conversational turn is
+served by a single instance, which is where this duplicate is born.
+
+The related complaint in the same report — that the channel could not confirm
+delivery — was fixed separately in §2b.
 
 ### Quarantined
 

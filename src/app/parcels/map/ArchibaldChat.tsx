@@ -248,6 +248,32 @@ export default function ArchibaldChat({
     const uiNext: UiMsg[] = [...messages, { role: "user", content: text }];
     setMessages(uiNext);
     setThinking(true);
+
+    // ── PART 24: one user message, one feedback submission ───────────────
+    //
+    // Reported 2026-08-27: "A single message from me, sent once with no retry
+    // and no rate-limit error, produced TWO separate POST calls to
+    // /api/archie/feedback, both returning 200, from one conversational turn.
+    // The chat rendered one user bubble and one assistant turn, so nothing in
+    // the UI indicated that the report had been filed twice."
+    //
+    // The loop below re-queries /api/archie after each tool batch, so the
+    // model can emit submit_feedback again on a later iteration of the SAME
+    // turn. Two independent guards, because either alone is leaky:
+    //
+    //   • this local latch stops the second call being made at all, which is
+    //     the only way the founders' Telegram stays clean when the network
+    //     round-trip would otherwise already be in flight;
+    //   • submissionId lets the server collapse anything that still arrives —
+    //     a retry, a double-mounted client, a future caller that forgets.
+    //
+    // The id is per USER MESSAGE, not per tool call: two calls in one turn are
+    // the duplicate we are removing, so they must share a key.
+    const submissionId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    let feedbackSentThisTurn = false;
     setPendingTool(null);
 
     // wireHistory accumulates server-shape turns across the dispatch
@@ -309,7 +335,21 @@ export default function ArchibaldChat({
             setPendingTool(`Archie is ${toolHumanLabel(tc.name, tc.arguments)}`);
             let result: unknown;
             try {
-              result = await executeArchieTool(tc, mapControls);
+              if (tc.name === "submit_feedback" && feedbackSentThisTurn) {
+                // Answer the model honestly rather than silently dropping the
+                // call: it needs to know the note is already filed, otherwise
+                // its follow-up text may promise a second send that never
+                // happened. Same shape the server returns for a collapse.
+                result = {
+                  ok: true,
+                  deduped: true,
+                  collapsedBy: "client-turn-cap",
+                  message: "Already sent that one in this turn — the team has it.",
+                };
+              } else {
+                result = await executeArchieTool(tc, mapControls, submissionId);
+                if (tc.name === "submit_feedback") feedbackSentThisTurn = true;
+              }
             } catch (e) {
               const msg = e instanceof Error ? e.message : "unknown";
               result = { error: "execution_failed", message: msg };
