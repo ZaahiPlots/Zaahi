@@ -41,6 +41,23 @@ const Body = z.object({
   category: z.enum(FEEDBACK_CATEGORIES),
   text: z.string().trim().min(3).max(2000),
   context: z.string().trim().max(1000).optional(),
+  /**
+   * Idempotency key, one per USER MESSAGE — see PART 24, 2026-08-27:
+   *
+   *   "A single message from me, sent once with no retry and no rate-limit
+   *    error, produced TWO separate POST calls to /api/archie/feedback, both
+   *    returning 200, from one conversational turn."
+   *
+   * The agent loop re-queries /api/archie after each tool batch, so the model
+   * can emit submit_feedback again on a later iteration of the same turn. The
+   * text-based dedup below does not catch that, because the model rarely
+   * phrases it identically the second time — and a re-worded duplicate is
+   * still a duplicate.
+   *
+   * Optional, so an older client is accepted rather than rejected. It simply
+   * falls back to the weaker text dedup.
+   */
+  submissionId: z.string().trim().min(8).max(64).optional(),
 });
 
 // ── In-memory throttle state ──────────────────────────────────────
@@ -53,6 +70,33 @@ const RATE_LIMIT_PER_HOUR = 3;
 const rateBuckets = new Map<string, number[]>();
 /** `${userId}::${hash(text)}` → timestamp of last identical submission. */
 const dedupCache = new Map<string, number>();
+/**
+ * `${userId}::${submissionId}` → timestamp. One entry per user message, so a
+ * second tool call from the same conversational turn collapses regardless of
+ * how the model reworded it. Same in-memory, lazily-GC'd pattern as
+ * dedupCache — and the same caveat: it resets on a cold start and is not
+ * shared across lambdas (docs/BACKLOG.md §8). That weakens it across
+ * instances but not within one turn, which is where the duplicate is born:
+ * a single turn is served by a single instance.
+ */
+const submissionIds = new Map<string, number>();
+
+function isRepeatSubmission(userId: string, submissionId: string, now: number): boolean {
+  const key = `${userId}::${submissionId}`;
+  const seen = submissionIds.get(key);
+  if (seen && now - seen < DAY_MS) return true;
+  submissionIds.set(key, now);
+  if (submissionIds.size > 1000) {
+    const stale = now - 2 * DAY_MS;
+    for (const [k, t] of submissionIds) if (t < stale) submissionIds.delete(k);
+  }
+  return false;
+}
+
+/** Undo isRepeatSubmission, so a failed delivery can genuinely be retried. */
+function forgetSubmission(userId: string, submissionId: string | undefined): void {
+  if (submissionId) submissionIds.delete(`${userId}::${submissionId}`);
+}
 
 function pruneOlderThan(now: number, list: number[], windowMs: number): number[] {
   // Drop entries older than the window. The list is append-only by
@@ -154,8 +198,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const { category, text, context } = parsed.data;
+  const { category, text, context, submissionId } = parsed.data;
   const now = Date.now();
+
+  // Idempotency first — before the text dedup and before the rate limit, so a
+  // duplicate from the same turn never consumes quota and never depends on the
+  // model having reworded itself identically.
+  if (submissionId && isRepeatSubmission(userId, submissionId, now)) {
+    debugLog(
+      `[archie/feedback] collapsed repeat submissionId user=${userId.slice(0, 8)}…`,
+    );
+    return NextResponse.json({
+      ok: true,
+      deduped: true,
+      collapsedBy: "submissionId",
+      message: "Already sent that one — the team has it.",
+    });
+  }
 
   // Dedup before rate-limit so a repeated submit doesn't count against
   // the per-hour quota — the user pressing "send again" is intent, not
@@ -236,6 +295,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // request consumed so the user can genuinely retry — otherwise the dedup
     // cache would answer their second attempt with "I already sent this one".
     forgetDuplicate(userId, text);
+    forgetSubmission(userId, submissionId);
     refundRateLimit(userId, now);
 
     console.error(

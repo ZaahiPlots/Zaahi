@@ -242,6 +242,16 @@ import { apiFetch } from "@/lib/api-fetch";
 export async function executeArchieTool(
   call: ToolCall,
   controls: MapControls,
+  /**
+   * Idempotency key for mutating tools, unique per USER MESSAGE (not per tool
+   * call). Threaded through to /api/archie/feedback so the server can collapse
+   * a second write from the same conversational turn.
+   *
+   * Optional so existing callers and tests keep working; when it is absent the
+   * server falls back to its text-based dedup, which is what shipped before
+   * 2026-09-04 and is what let a re-worded duplicate through.
+   */
+  submissionId?: string,
 ): Promise<unknown> {
   let args: Record<string, unknown> = {};
   try {
@@ -389,7 +399,7 @@ export async function executeArchieTool(
       const r = await apiFetch("/api/archie/feedback", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ category, text, context }),
+        body: JSON.stringify({ category, text, context, submissionId }),
       });
       if (r.status === 429) {
         const body = (await r.json().catch(() => ({}))) as { message?: string };
