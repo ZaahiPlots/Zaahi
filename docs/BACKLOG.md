@@ -90,7 +90,7 @@ that order is in Telegram. Confirm or override it.
 
 | # | ID / Task | What | Blocked on |
 |---|---|---|---|
-| 1 | `…-033112-e6366e` | Hospitality engine on Build-to-Rent zeroes every KPI (Yield 0.0%, Payback 0.0 yr) and leaks the raw string `NO IRR (CASHFLOWS DO NOT STRADDLE ZERO)`; mix breakdown shows the previous engine's mix after a switch; **plus the 215-row vault data integrity item** (§4) | **Decision:** disable unsupported engines in the selector, or auto-switch the tab. Changes navigation behaviour |
+| 1 | `…-033112-e6366e` | **Partly shipped 2026-09-04** — see §2a. Sub-item (1) done; (2) needs a decision; (3) needs DB access | See §2a |
 | 2 | PART 5 · `…-032814-504144` | Long Archie messages return HTTP 200 with an empty reply — the user believes the message was lost. `/api/archie/feedback` fires Telegram with `void` and reports success regardless | Plan approval |
 | 3 | `…-032939-247114` | BtS Peak Equity (AED 236,767,174) below total investment (AED 247,635,831) with financing OFF; JV Project IRR computed on a monthly timeline while partner IRRs use a single t=0 contribution | Plan approval |
 | 4 | **#25** · PART 24 · `…-044210-a79f3f` | One conversational turn can fire two `POST /api/archie/feedback` calls — duplicate founder notifications, invisible in the UI | Plan approval. **See §6 — a quarantined branch exists** |
@@ -98,6 +98,57 @@ that order is in Telegram. Confirm or override it.
 | 6 | `…-031806-ab77fb` | **Feature** — screenshot attachments in Archie chat / feedback | Plan approval |
 | 7 | `…-031715-8108e8` | **Feature** — microphone speech-to-text for notes and chat | **Decision ×2:** which surfaces, and whether the browser Web Speech API is acceptable — **in Chrome it streams the user's audio to a Google cloud service** |
 | 8 | `…-031541-e90352` | 3D model height wrong on plot 3450419 (Burj Khalifa District) | **Not blocked on approval — blocked on data.** No expected value, no screenshot, and 3450419 exists only in the database. Needs a resubmission or closure |
+
+
+### 2a · `…-033112-e6366e` — status, 2026-09-04
+
+Three sub-items in one report. One shipped, one turned out to need a decision
+rather than a fix, one is blocked on database access.
+
+**(1) Unsupported engine/mode — SHIPPED** (`fix/engine-mode-gate-2026-09-04`).
+Hospitality is `modes: ['bts']`, so on Build-to-Rent every KPI rendered as a
+zero — Yield 0.0%, Payback 0.0 yr, Monthly AED 0 — with the raw internal
+string `No IRR (cashflows do not straddle zero)` underneath. A "Mode not
+supported" panel existed but sat *below* the hero, so the first thing on
+screen was a confident set of zeros.
+
+The gate now replaces the hero, the result rows and the PDF hero, in both
+layouts. Nothing numeric renders for a mode the engine does not model —
+**a zero is a measurement, and nothing distinguished "this engine has no
+rental model" from "this asset yields nothing"**, only one of which is a
+reason not to buy a plot. Total Investment is deliberately kept: land and
+construction are modelled correctly, it is only revenue and returns that do
+not exist.
+
+**(2) "Mix breakdown shows the previous engine's mix" — NOT a fix; needs a
+decision (D-18).** The observation is accurate, the proposed fix is not, and
+after the branch-2 headline switch it would now be actively harmful.
+
+Verified in source: **nothing engine-level feeds the Mix breakdown.** Every
+input to `computeMixedUseBtSV6` is parcel-level or user-level —
+`parentArea`, `shares`, `commissionPct` / `marketingPct` / `devServicesPct`
+(a fixed 8.5 / … default, *not* engine-seeded and *not* re-seeded on engine
+change), `land`, `finance`. Per-slice construction and sales psf come from
+`shareToEngine(share)` — each slice's own engine, never the selected one.
+
+So switching the top-level engine correctly changes nothing in the panel.
+The triage proposed re-seeding `mixShares` on engine change. Since
+2026-09-04 those shares **drive the headline**, so re-seeding would silently
+discard a user's inputs and move every published number on an engine switch.
+
+**The real question is a product one:** on a MIXED USE plot, should the
+top-level engine selector do anything at all? Today it seeds the
+single-engine model, which is the fallback the mix overrides. Options: hide
+the selector on mixed-use plots; or keep it and label it as the fallback; or
+make it re-seed the mix and accept losing edits. Founder call — D-18.
+
+**(3) The 215-row vault — unchanged**, still §4. Needs a read-only DB
+session; the SQL is written and waiting.
+
+**Still open on this task:** the EngineSelector behaviour (D-6) — whether to
+disable unsupported engines for the active tab or auto-switch the tab. The
+gate above makes the current state honest either way, so D-6 is now a
+polish decision rather than a correctness one.
 
 ### Quarantined
 
@@ -461,6 +512,7 @@ Carried from `docs/HEALTH_2026-08-28.md`; the items closed today are removed.
 | D-15 | `feat/backlog-batch-2` (§6a): approve the split — cherry-pick #10/#11/#33, re-author #9/#13, rework #7 |
 | D-16 | **#9** — is removing the hover cards entirely still wanted? It deletes 272 lines of live UI |
 | D-17 | **#7** — what decimal precision for areas? "No rounding" as written produces float noise |
+| D-18 | On a MIXED USE plot, what should the top-level engine selector do? It currently seeds only the single-engine fallback that the mix overrides. Hide it, relabel it, or have it re-seed the mix and accept losing user edits (§2a) |
 
 ---
 

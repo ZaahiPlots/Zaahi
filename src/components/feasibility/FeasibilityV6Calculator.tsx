@@ -985,6 +985,25 @@ export default function FeasibilityV6Calculator({
   const btrYieldV = btrVerdict(btrResult.yieldPct);
   const jvIrrV = jvProjectIrrVerdict(jv.projectIrrPct);
 
+  // ── Does this engine actually model the active tab? ─────────────────────
+  //
+  // Reported 2026-08-27: "Selecting the Hospitality engine while in
+  // Build-to-Rent zeroes every KPI — Yield 0.0%, Payback 0.0 yr, Monthly
+  // AED 0 — and leaks raw text 'NO IRR (CASHFLOWS DO NOT STRADDLE ZERO)'.
+  // The unsupported-mode notice is hidden in an explainer instead of
+  // blocking the mode."
+  //
+  // Exactly right. A "Mode not supported" Panel already existed, but it sat
+  // BELOW the KPI hero in the input column, so the first thing on screen was
+  // a full set of confident-looking zeros. Zeros are a number. A reader has
+  // no way to tell "this engine has no rental model" from "this asset yields
+  // nothing" — and the second reading is a reason not to buy a plot.
+  //
+  // hospitality is modes:['bts']; senior and landhold are ['btr'];
+  // infrastructure and offplan-exit are [] — see engines.ts. JV is not an
+  // engine mode, so it is never gated here.
+  const modeSupported = tab === 'jv' || engine.modes.includes(tab as 'bts' | 'btr');
+
   // ── PDF export — Sprint 9d branded layout
   // Six-page A4 portrait: Cover · Inputs · Results breakdown · Glossary ·
   // Optimization recommendations · Disclaimer + sources. Per founder
@@ -1115,8 +1134,22 @@ export default function FeasibilityV6Calculator({
     // Pull mode-specific headline metrics. verdictColor is a hex string for
     // consistency with btsVerdict / btrVerdict (which return string colors).
     const goldHex = '#C8A96E';
+    const amberHex = AMBER; // unsupported-mode hero, matches the on-screen alert
+    // The exported hero mirrors the on-screen one, including the
+    // unsupported-mode case. A PDF is forwarded to people who never saw the
+    // calculator, so printing "YIELD 0.0%" with a verdict band under it for
+    // an engine that has no rental model would travel further and last
+    // longer than the same mistake on screen.
     const modeHero: { label: string; value: string; positive: boolean; verdictColor: string; verdictLabel: string } =
-      tab === 'bts'
+      !modeSupported
+        ? {
+            label: `${tab === 'bts' ? 'BUILD TO SELL' : 'BUILD TO RENT'} — NOT MODELLED`,
+            value: '—',
+            positive: false,
+            verdictColor: amberHex,
+            verdictLabel: `${engine.label} has no ${tab === 'bts' ? 'build-to-sell' : 'build-to-rent'} revenue model`,
+          }
+        : tab === 'bts'
         ? { label: 'NET PROFIT', value: fmtAedExact(btsResult.netProfitAed), positive: btsResult.netProfitAed >= 0, verdictColor: btsV.color, verdictLabel: btsV.label }
         : tab === 'btr'
           ? { label: 'YIELD', value: fmtPct(btrResult.yieldPct), positive: btrResult.yieldPct >= 5, verdictColor: btrV.color, verdictLabel: btrV.label }
@@ -1907,7 +1940,60 @@ export default function FeasibilityV6Calculator({
                 boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
               }}
             >
-              {tab === 'bts' && (
+              {/* Unsupported mode takes the hero slot outright, rather than
+                  letting zeroed KPIs occupy it with an explainer buried
+                  further down. Nothing numeric is rendered here — a zero
+                  would be read as a measurement. */}
+              {!modeSupported && (
+                <div role="alert">
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 10,
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {tab === 'bts' ? 'Build to Sell' : 'Build to Rent'} — not modelled
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Georgia, serif',
+                      fontSize: 22,
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      color: AMBER,
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {engine.label}
+                  </div>
+                  <div
+                    style={{
+                      color: DIM,
+                      fontSize: 11,
+                      marginTop: 6,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    This engine has no{' '}
+                    {tab === 'bts' ? 'build-to-sell' : 'build-to-rent'} revenue model,
+                    so there is no yield, payback or IRR to report. Investment cost
+                    below is still valid.{' '}
+                    {engine.modes.length > 0 && (
+                      <>
+                        Switch to{' '}
+                        <strong style={{ color: TXT }}>
+                          {engine.modes.includes('bts') ? 'Build to Sell' : 'Build to Rent'}
+                        </strong>{' '}
+                        for this engine.
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              {tab === 'bts' && modeSupported && (
                 <>
                   <div
                     style={{
@@ -2004,7 +2090,7 @@ export default function FeasibilityV6Calculator({
                   </div>
                 </>
               )}
-              {tab === 'btr' && (
+              {tab === 'btr' && modeSupported && (
                 <>
                   <div
                     style={{
@@ -2884,7 +2970,7 @@ export default function FeasibilityV6Calculator({
                     : `Total inv ${fmtAedExact(jv.totalInvestmentAed)}`
               }
             >
-              {tab === 'bts' && (
+              {tab === 'bts' && modeSupported && (
                 <>
                   <ResultRow label="Total Investment" value={fmtAedExact(btsResult.totalInvestmentAed)} bold />
                   <ResultRow label="Net Revenue" value={fmtAedExact(btsResult.netRevenueAed)} />
@@ -2922,7 +3008,19 @@ export default function FeasibilityV6Calculator({
                   )}
                 </>
               )}
-              {tab === 'btr' && (
+              {/* Investment survives an unsupported mode. The engine models
+                  land and construction perfectly well — it is only the
+                  revenue and return side that does not exist. Hiding the
+                  cost too would contradict the notice above, which tells the
+                  reader the investment figure is still valid. */}
+              {!modeSupported && (
+                <ResultRow
+                  label="Total Investment"
+                  value={fmtAedExact(tab === 'btr' ? btrResult.totalInvestmentAed : btsResult.totalInvestmentAed)}
+                  bold
+                />
+              )}
+              {tab === 'btr' && modeSupported && (
                 <>
                   <ResultRow label="Total Investment" value={fmtAedExact(btrResult.totalInvestmentAed)} bold />
                   <ResultRow label="Gross Annual" value={fmtAedExact(btrRental.grossAnnualAed)} />
@@ -3297,7 +3395,50 @@ export default function FeasibilityV6Calculator({
                 </div>
               </div>
             )}
-            {!landPriceMissing && tab === 'bts' && (
+            {/* Fullscreen counterpart of the sidepanel hero gate — the
+                results column would otherwise be simply empty, which reads
+                as "still loading" rather than "not applicable". */}
+            {/* `tab` is already narrowed to 'bts' | 'btr' in this branch. */}
+            {!landPriceMissing && !modeSupported && (
+              <>
+                <SectionTitle>
+                  {tab === 'bts' ? 'Build to Sell' : 'Build to Rent'} — not modelled
+                </SectionTitle>
+                <div
+                  role="alert"
+                  style={{
+                    color: AMBER,
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                    padding: '10px 12px',
+                    background: 'rgba(230, 126, 34, 0.08)',
+                    border: `1px solid ${AMBER}`,
+                    borderRadius: 8,
+                    marginBottom: 12,
+                  }}
+                >
+                  The <strong>{engine.label}</strong> engine has no{' '}
+                  {tab === 'bts' ? 'build-to-sell' : 'build-to-rent'} revenue model, so
+                  no yield, payback, ROI or IRR is reported for this tab. Investment
+                  cost is unaffected.
+                  {engine.modes.length > 0 && (
+                    <>
+                      {' '}Switch to{' '}
+                      <strong>
+                        {engine.modes.includes('bts') ? 'Build to Sell' : 'Build to Rent'}
+                      </strong>{' '}
+                      for this engine.
+                    </>
+                  )}
+                </div>
+                <ResultRow
+                  label="Total Investment"
+                  value={fmtAedExact(tab === 'btr' ? btrResult.totalInvestmentAed : btsResult.totalInvestmentAed)}
+                  bold
+                />
+              </>
+            )}
+            {!landPriceMissing && tab === 'bts' && modeSupported && (
               <>
                 <SectionTitle>Build to Sell — Result</SectionTitle>
                 {/* Fullscreen has no Mix breakdown panel — that lives only in
@@ -3359,7 +3500,7 @@ export default function FeasibilityV6Calculator({
               </>
             )}
 
-            {!landPriceMissing && tab === 'btr' && (
+            {!landPriceMissing && tab === 'btr' && modeSupported && (
               <>
                 <SectionTitle>Build to Rent — Result</SectionTitle>
                 <ResultRow label="Total Investment" value={fmtAedExact(btrResult.totalInvestmentAed)} bold />
