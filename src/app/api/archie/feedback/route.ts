@@ -60,111 +60,39 @@ const Body = z.object({
   submissionId: z.string().trim().min(8).max(64).optional(),
 });
 
-// ── In-memory throttle state ──────────────────────────────────────
+// ── Shared throttle state ─────────────────────────────────────────
+//
+// These three guards — the hourly rate limit, the 24h text dedup and the
+// per-message idempotency key — used to be module-scope Maps. On Vercel that
+// meant they reset on every cold start AND were invisible to every other
+// concurrent lambda, so none of them actually held. The 429s the founder hit
+// during QA were instance affinity, not policy (docs/BACKLOG.md §8).
+//
+// They now live in one Postgres table, reached through the existing Prisma
+// client. The decision logic is in src/lib/feedback-throttle.ts, which has no
+// database in it and is covered by scripts/feedback-throttle.test.ts; this
+// route only wires it up.
+import {
+  FeedbackThrottle,
+  RATE_LIMIT_PER_HOUR,
+} from "@/lib/feedback-throttle";
+import { prismaThrottleStore } from "@/lib/feedback-throttle-prisma";
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
-const RATE_LIMIT_PER_HOUR = 3;
-
-/** userId → ascending list of send-timestamps within the last hour. */
-const rateBuckets = new Map<string, number[]>();
-/** `${userId}::${hash(text)}` → timestamp of last identical submission. */
-const dedupCache = new Map<string, number>();
-/**
- * `${userId}::${submissionId}` → timestamp. One entry per user message, so a
- * second tool call from the same conversational turn collapses regardless of
- * how the model reworded it. Same in-memory, lazily-GC'd pattern as
- * dedupCache — and the same caveat: it resets on a cold start and is not
- * shared across lambdas (docs/BACKLOG.md §8). That weakens it across
- * instances but not within one turn, which is where the duplicate is born:
- * a single turn is served by a single instance.
- */
-const submissionIds = new Map<string, number>();
-
-function isRepeatSubmission(userId: string, submissionId: string, now: number): boolean {
-  const key = `${userId}::${submissionId}`;
-  const seen = submissionIds.get(key);
-  if (seen && now - seen < DAY_MS) return true;
-  submissionIds.set(key, now);
-  if (submissionIds.size > 1000) {
-    const stale = now - 2 * DAY_MS;
-    for (const [k, t] of submissionIds) if (t < stale) submissionIds.delete(k);
-  }
-  return false;
-}
-
-/** Undo isRepeatSubmission, so a failed delivery can genuinely be retried. */
-function forgetSubmission(userId: string, submissionId: string | undefined): void {
-  if (submissionId) submissionIds.delete(`${userId}::${submissionId}`);
-}
-
-function pruneOlderThan(now: number, list: number[], windowMs: number): number[] {
-  // Drop entries older than the window. The list is append-only by
-  // construction, so the cutoff is monotonic and a simple findIndex is fine.
-  const cutoff = now - windowMs;
-  let i = 0;
-  while (i < list.length && list[i] < cutoff) i++;
-  return i === 0 ? list : list.slice(i);
-}
-
-function withinRateLimit(userId: string, now: number): boolean {
-  const list = pruneOlderThan(now, rateBuckets.get(userId) ?? [], HOUR_MS);
-  if (list.length >= RATE_LIMIT_PER_HOUR) {
-    rateBuckets.set(userId, list);
-    return false;
-  }
-  list.push(now);
-  rateBuckets.set(userId, list);
-  return true;
-}
-
-function dedupKey(userId: string, text: string): string {
-  // Lowercase + collapse whitespace — same paraphrase shouldn't slip
-  // through "BROKEN!" vs "broken !" etc.
-  const norm = text.trim().toLowerCase().replace(/\s+/g, " ");
-  return `${userId}::${norm}`;
-}
+const throttle = new FeedbackThrottle(prismaThrottleStore);
 
 /**
- * Give back the rate-limit slot this request consumed.
- *
- * Called when delivery failed. A submission that never reached anyone must
- * not spend the user's quota — otherwise three failed sends lock them out of
- * a channel that was broken on our side, not theirs.
+ * Housekeeping, run opportunistically rather than on a schedule — there is no
+ * cron in this deployment and a table that only grows is a slow leak. Roughly
+ * one request in twenty pays for it, and never on the path that matters: it is
+ * fired after the response is decided and its failure is swallowed, because a
+ * failed sweep must never turn into a failed submission.
  */
-function refundRateLimit(userId: string, now: number): void {
-  const list = rateBuckets.get(userId);
-  if (!list) return;
-  const i = list.lastIndexOf(now);
-  if (i >= 0) list.splice(i, 1);
-  if (list.length === 0) rateBuckets.delete(userId);
-  else rateBuckets.set(userId, list);
-}
-
-/**
- * Forget the dedup entry recorded for this text.
- *
- * Same reasoning, and more important: isDuplicate() records on first sight,
- * so a failed send would otherwise be treated as "already sent" for 24 hours
- * and the user's retry would be answered with "I already sent this one
- * earlier — the team has it." That is the false confirmation twice over.
- */
-function forgetDuplicate(userId: string, text: string): void {
-  dedupCache.delete(dedupKey(userId, text));
-}
-
-function isDuplicate(userId: string, text: string, now: number): boolean {
-  const key = dedupKey(userId, text);
-  const last = dedupCache.get(key);
-  if (last && now - last < DAY_MS) return true;
-  dedupCache.set(key, now);
-  // Lazy GC: drop anything older than 2 days at insert time so the
-  // cache doesn't grow unbounded.
-  if (dedupCache.size > 1000) {
-    const stale = now - 2 * DAY_MS;
-    for (const [k, t] of dedupCache) if (t < stale) dedupCache.delete(k);
-  }
-  return false;
+function maybeSweep(): void {
+  if (Math.random() > 0.05) return;
+  void throttle
+    .sweep()
+    .then((n) => { if (n > 0) debugLog(`[archie/feedback] swept ${n} expired throttle rows`); })
+    .catch((e) => console.error("[archie/feedback] throttle sweep failed:", e));
 }
 
 // ── HTML escape for Telegram parse_mode=HTML ──────────────────────
@@ -201,13 +129,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { category, text, context, submissionId } = parsed.data;
   const now = Date.now();
 
-  // Idempotency first — before the text dedup and before the rate limit, so a
-  // duplicate from the same turn never consumes quota and never depends on the
-  // model having reworded itself identically.
-  if (submissionId && isRepeatSubmission(userId, submissionId, now)) {
-    debugLog(
-      `[archie/feedback] collapsed repeat submissionId user=${userId.slice(0, 8)}…`,
+  // One call decides all three guards, against state every instance shares.
+  // Order is unchanged: idempotency key first, so a duplicate turn never
+  // spends the user's hourly quota; then the text dedup; then the rate limit.
+  let decision;
+  try {
+    decision = await throttle.admit({ userId, text, submissionId });
+  } catch (e) {
+    // The throttle is now a database call, so it can fail in ways a Map could
+    // not. Fail CLOSED: a feedback note is not worth sending if we cannot tell
+    // whether it is a duplicate or whether the user is over quota — and the
+    // user is told plainly rather than given a false confirmation.
+    console.error("[archie/feedback] throttle unavailable:", e);
+    return NextResponse.json(
+      {
+        ok: false,
+        message:
+          "I couldn't reach the ZAAHI team just now — your note has NOT been sent. " +
+          "Please try again in a moment.",
+      },
+      { status: 503 },
     );
+  }
+
+  if (decision.kind === "collapsed") {
+    debugLog(`[archie/feedback] collapsed repeat submissionId user=${userId.slice(0, 8)}…`);
+    maybeSweep();
     return NextResponse.json({
       ok: true,
       deduped: true,
@@ -215,29 +162,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       message: "Already sent that one — the team has it.",
     });
   }
-
-  // Dedup before rate-limit so a repeated submit doesn't count against
-  // the per-hour quota — the user pressing "send again" is intent, not
-  // abuse, but the message itself is noise.
-  if (isDuplicate(userId, text, now)) {
+  if (decision.kind === "deduped") {
     debugLog(`[archie/feedback] dedup user=${userId.slice(0, 8)}…`);
+    maybeSweep();
     return NextResponse.json({
       ok: true,
       deduped: true,
       message: "I already sent this one earlier — the team has it.",
     });
   }
-  if (!withinRateLimit(userId, now)) {
+  if (decision.kind === "rateLimited") {
     debugLog(`[archie/feedback] rate-limited user=${userId.slice(0, 8)}…`);
+    maybeSweep();
     return NextResponse.json(
       {
         ok: false,
         rateLimited: true,
-        message: "You've sent a lot of feedback in the last hour — give the team a moment to read it.",
+        limitPerHour: RATE_LIMIT_PER_HOUR,
+        message:
+          "You've sent a lot of feedback in the last hour — give the team a moment to read it.",
       },
       { status: 429 },
     );
   }
+  const throttleRowId = decision.rowId;
 
   // Pull user identity for the Telegram message — best-effort. If the
   // User row is missing (a stale auth session beat /api/users/sync) we
@@ -294,9 +242,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Nothing reached anyone. Say so, and hand back the throttle state this
     // request consumed so the user can genuinely retry — otherwise the dedup
     // cache would answer their second attempt with "I already sent this one".
-    forgetDuplicate(userId, text);
-    forgetSubmission(userId, submissionId);
-    refundRateLimit(userId, now);
+    // Give back everything this submission consumed. Without it the retry is
+    // answered with "I already sent this one earlier" — the false confirmation
+    // twice over — and three failures on our side would lock the user out of
+    // the channel entirely.
+    await throttle.refund(throttleRowId).catch((e) =>
+      console.error("[archie/feedback] refund failed:", e),
+    );
 
     console.error(
       `[archie/feedback] NOT DELIVERED category=${category} user=${userId.slice(0, 8)}… reason=${summary.reason}`,

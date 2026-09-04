@@ -895,3 +895,39 @@ model VaultPriceHistory {
 
   @@index([vaultEntryId, createdAt])
 }
+
+// Feedback throttle state, shared across serverless instances.
+//
+// Added 2026-09-04 on explicit founder instruction (docs/BACKLOG.md §8).
+// CLAUDE.md forbids touching schema.prisma without that instruction; this is
+// a new table only — no existing model is altered.
+//
+// Why it exists: /api/archie/feedback kept its rate limit, its 24h text dedup
+// and its per-message idempotency key in module-scope Maps. On Vercel those
+// reset on every cold start and are not shared between concurrent lambdas, so
+// none of the three guards actually held. The 429s the founder hit during QA
+// were instance affinity, not policy.
+//
+// One row per ACCEPTED submission. Deleted again if delivery fails, so a note
+// that reached nobody consumes neither quota nor a dedup slot.
+model FeedbackSubmission {
+  id           String   @id @default(cuid())
+  userId       String
+  // Idempotency key, one per user MESSAGE (not per tool call). Nullable so an
+  // older client without the key is still accepted; Postgres allows many NULLs
+  // under a unique constraint, which is exactly the behaviour wanted here.
+  submissionId String?
+  // SHA-256 of the normalised feedback text. Hashed rather than stored raw:
+  // this table is throttle state, not a copy of user content.
+  textHash     String
+  createdAt    DateTime @default(now())
+
+  // Collapse a repeat of the same conversational turn atomically — the insert
+  // races cleanly instead of a check-then-insert that two lambdas can both win.
+  @@unique([userId, submissionId])
+  // Rate-limit counting and TTL cleanup.
+  @@index([userId, createdAt])
+  // 24h text dedup.
+  @@index([userId, textHash, createdAt])
+  @@index([createdAt])
+}

@@ -471,6 +471,68 @@ left:20,right:72} still overlaps header {top:0,bottom:44,...}"*.
 
 **PART 4 is now 6 of 7 fixed**, with item 1 already fixed by `92a94cc`.
 
+
+### 2i · §8 — the feedback guards moved out of lambda memory, 2026-09-04
+
+The rate limit, the 24h text dedup and the per-message idempotency key all
+lived in module-scope `Map`s. The route's own header admitted they "reset on
+cold start"; on Vercel the worse half is that each was invisible to every
+**other** concurrent lambda, so none of the three actually held. The 429s hit
+during QA were instance affinity, not policy.
+
+**One Postgres table** — `FeedbackSubmission`, reached through the existing
+Prisma client. No new provider, per founder instruction.
+
+**Schema change made under explicit instruction.** `CLAUDE.md` forbids touching
+`prisma/schema.prisma` without it. This adds one new model and alters nothing
+existing.
+
+**The migration is handwritten.** `prisma migrate dev` was NOT run: on this box
+`DATABASE_URL` points at the **production** Supabase instance, and `migrate dev`
+may reset the database it connects to. Handwriting it also keeps the
+pre-existing FK/default drift recorded in `/BACKLOG.md` out of the diff, which
+a generated migration would otherwise sweep in. It is additive only — one
+`CREATE TABLE` and four indexes — so `prisma migrate deploy` is safe.
+
+**Ordering, which is where the subtlety is.** Text dedup runs *before* the
+insert; the idempotency key is enforced *by* the insert, via the unique
+constraint rather than a preceding read, so two lambdas racing the same
+conversational turn cannot both win; the rate limit runs *after* and discounts
+the row just written, rolling it back on rejection. A refused submission must
+not hold a key it never used, or the retry is answered with "already sent".
+
+**My first draft had this wrong** — it checked the text dedup after the insert,
+so every submission deduped against itself. The fixtures caught it on the first
+run. That is the argument for the store port: the policy is exercisable without
+a database.
+
+**Failure mode chosen deliberately: closed.** The throttle is now a database
+call and can fail in ways a `Map` could not. If it does, the note is not sent
+and the user is told so. A feedback channel that cannot tell whether a message
+is a duplicate should not guess — and this route's whole history is about not
+issuing confirmations it has not earned.
+
+**TTL** — rows past 2 days are swept opportunistically (~1 request in 20),
+after the response is decided, with failures swallowed. There is no cron in
+this deployment, and a table that only grows is a slow leak.
+
+**Coverage, stated precisely.** `scripts/feedback-throttle.test.ts` — 22
+assertions, every one driving **two independent policy objects over one shared
+store**, which is the property the `Map`s lacked. Against the old code each
+would fail, because the second instance would start empty and admit everything.
+
+The Postgres binding itself is **not** covered: it needs a real database, and
+this box has no Postgres, no Docker and no Supabase CLI. It is deliberately
+thin for that reason. Four things to confirm against a real database before
+trusting it, also listed at the foot of the fixture:
+
+1. The unique constraint on `(userId, submissionId)` raises `P2002`, and
+   `insert` returns `null` rather than throwing.
+2. Postgres permits **many** NULL `submissionId`s under that constraint, so a
+   client without the key is never wrongly collapsed.
+3. `deleteMany` on an already-deleted row is a no-op — that is the refund path.
+4. The three indexes are actually used by `countSince` and `hasText` at volume.
+
 ### Quarantined
 
 | ID / Task | State | What |
@@ -871,7 +933,7 @@ Carried from `docs/HEALTH_2026-08-28.md`; the items closed today are removed.
 |---|---|---|
 | **GitHub Pages fails on every push** | repo settings | 402 consecutive failed runs on a **public** repo. No workflow was ever committed — it is GitHub's dynamic Pages workflow, created by the Pages *setting*, and it gets no repo secrets. **Fix: Settings → Pages → Source: None.** One setting, zero value lost |
 | **Bridge CTO email has never delivered** | `bridge/.env` | `SMTP_HOST` unset. All five merged tasks carry `email: {ok:false, "SMTP host is not configured"}`. The Telegram fallback works, so nothing was lost — but a channel named "email hand-off to the CTO" should either work or stop being described that way |
-| **`/api/archie/feedback` rate limit is not enforced** | `route.ts:49-92` | `RATE_LIMIT_PER_HOUR = 3` and the 24h dedup both live in module-scope `Map`s. On Vercel they reset on every cold start and are not shared across lambdas. The 429s seen during QA were instance affinity, not policy. Either move the counter to Postgres — the `createdAt`+`userId` rows the code's own comment calls "authoritative" already exist — or drop the pretence |
+| ~~`/api/archie/feedback` rate limit is not enforced~~ | — | **SHIPPED 2026-09-04** — `feat/feedback-throttle-store-2026-09-04`. All three guards moved to one Postgres table. See §2i |
 | **Bridge intake rate limit drops founder reports** | `bridge/.env` | `MAX_TASKS_PER_HOUR=3` refused an intake during the QA sweep. Logged and auditable, but the report does not resurface on its own. Consider queueing over refusing |
 | **12 eslint warnings** | — | 5 are stale `eslint-disable` directives (`--fix` clears them, zero risk) and camouflage the other 7. 1 is `mapRef.current` read in an effect cleanup (`useBuildingsLayer.ts:431`) — the shape that removes a layer from the wrong map after a basemap swap. 6 are `exhaustive-deps`; the four in `page.tsx` are deliberate mount-once effects — **do not auto-fix** |
 | **`FeasibilityV6Calculator.tsx:808 / :1543`** | — | Missing-dependency warnings on a `useMemo` and a `useCallback`, in the component where inputs were reported as inert. Pre-existing (`ac7ce70`), almost certainly unrelated — cheap to rule out |
