@@ -336,9 +336,25 @@ branch reworked it, which would have changed money formatting across the
 feasibility calculator and the site-plan PDF. Left alone — the feasibility
 calculator's own GFA/SFA rounding is a separate decision, not part of #7.
 
-**Retire after merge:** `feat/backlog-batch-2`, `research/backlog-hover9`,
-`research/backlog-wave1` — but only once **#9** is resolved, since two of them
-carry the rival #9/#11 implementations.
+**Retirement — inventoried 2026-09-04, NOT deleted.** The split merged as
+`7dd9717`, so the "after the new branch is merged" condition is met. The
+"nothing else unique lives on them" condition is **not** — all three still
+carry unlanded work, and all three of them are coupled to the held **#9**:
+
+| Branch | Still unique on it |
+|---|---|
+| `feat/backlog-batch-2` | The **#9** implementation. The `fmtInt` / `feasibility.ts` / `generate-site-plan-pdf.ts` area-rounding changes, deliberately not taken because `fmtInt` is shared with AED. `docs/research/handoff-2026-06-12.md` — 144 lines of June session context, the only handoff doc not on `main`, now largely superseded by §6a above |
+| `research/backlog-hover9` | A **second, more aggressive #9** — `page.tsx` +152/−474, removing more than `feat/backlog-batch-2` does. Nothing else |
+| `research/backlog-wave1` | A **Status row on the ZAAHI hover card**. `main` has no status there. Its SidePanel half is superseded by the richer `StatusBadge` that landed on 2026-09-04. Whether this survives depends on #9 — if the hover cards go, it goes with them |
+
+**All three are tagged on origin so nothing is at risk:**
+`archive/backlog-batch-2`, `archive/backlog-hover9`, `archive/backlog-wave1`.
+The tag messages carry the same inventory. `git checkout archive/…` restores
+any of them; deleting the branches later loses nothing.
+
+**Recommendation:** delete all three **after** #9 is decided — the two rival
+implementations are the material for that decision, and `wave1`'s hover-card
+row is moot if the cards are removed.
 
 **Original proposal, for the record**
 
