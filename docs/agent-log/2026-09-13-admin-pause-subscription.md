@@ -146,3 +146,31 @@ review + the non-admin 403 + the disabled-row UI. Founder smoke below exercises 
 3. `git push https://github.com/ZaahiPlots/Zaahi.git main` (SSH key is still refused).
 Order matters: the code reads `User.accessStatus`; deploying code before the migration would
 500 every `getApprovedUserId` call (Prisma unknown column) — migrate first.
+
+## Deploy sequence — outcome
+
+1. **Migration**: applied to production by the founder (`prisma migrate deploy`, outside the agent).
+2. **Merge** (approved): local `main` was at `e5300af`, fast-forwarded to the fetched `5561a9f`;
+   annotated tag `pre-merge-2026-09-13` → `5561a9f` (tag object `918b255`);
+   `git merge --no-ff feat/admin-pause-subscription` → **`d3ac718`** (parents `5561a9f`, `babea5e`).
+3. **Push** (approved), first attempt: both `git push https://github.com/ZaahiPlots/Zaahi.git main`
+   and the tag push → **403** `Permission to ZaahiPlots/Zaahi.git denied to dtsvyk-del`
+   (`gh api repos/ZaahiPlots/Zaahi --jq .permissions` → `push: false`, pull only). Stopped and reported.
+4. **Unblock** (`PROMPT_push_main_unblock.md`, pre-approved):
+   - `gh api user/repository_invitations` → **no pending invitation** (the founder had granted
+     access directly).
+   - permissions → `{"admin":false,"maintain":false,"pull":true,"push":true,"triage":true}` →
+     step 3 (`gh auth refresh`) skipped.
+   - `git push … main` → `5561a9f..d3ac718  main -> main` ✔
+   - `git push … pre-merge-2026-09-13` → `[new tag]` ✔
+   - remote `commits/main` sha = `d3ac718af3b15f60d2dad6c9608f5b2bf70ce749` = local HEAD ✔;
+     remote tag ref → `918b255…` = local ✔
+   - `gh run list --limit 3`: no `.github/workflows` in the repo; the only runs are GitHub's
+     automatic "pages build and deployment" (one in progress for `d3ac718`, the two earlier ones
+     on 2026-09-04 failed — pre-existing, unrelated to this feature). Production deploy is Vercel,
+     automatic from `main`.
+5. This log entry is a docs-only commit on local `main` after the push; **not pushed** (only the
+   two pushes above were approved).
+
+Founder smoke (from the Phase 2 report) is now runnable on zaahi.io once the Vercel build for
+`d3ac718` is live.
