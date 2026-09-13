@@ -34,6 +34,21 @@ enum UserRole {
   INVESTOR // pre-cohort; auto-migrate to BUYER on next user touch
 }
 
+// Admin "pause subscription" (2026-09-13). PAUSED = access closed
+// completely: sign-in still succeeds (user_metadata.approved stays
+// true), every protected page shows the pause screen, every protected
+// API answers 401 because getApprovedUserId / getAdminUserId return
+// null. Account, data, listings, vault untouched. Resume = flip back.
+enum AccessStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum AccessAction {
+  PAUSE
+  RESUME
+}
+
 enum ParcelStatus {
   VACANT
   PENDING_REVIEW
@@ -142,6 +157,15 @@ model User {
   notificationPrefs   Json? // { inApp: {...}, email: {...}, push: {...} }
   onboardingCompleted Boolean   @default(false)
 
+  // ── Subscription pause (admin action, 2026-09-13) ──
+  // accessStatus is the single gate read by src/lib/auth.ts. The three
+  // paused* fields mirror the latest PAUSE event for the admin list;
+  // the full history lives in UserAccessEvent (append-only).
+  accessStatus AccessStatus @default(ACTIVE)
+  pausedAt     DateTime?
+  pausedById   String? // admin User.id (or founder auth uid)
+  pauseReason  String?
+
   parcels       Parcel[]      @relation("ParcelOwner")
   dealsAsSeller Deal[]        @relation("DealSeller")
   dealsAsBuyer  Deal[]        @relation("DealBuyer")
@@ -169,8 +193,28 @@ model User {
   vaultSharesReceived   VaultShare[]    @relation("VaultShareRecipient")
   vaultActivityAuthored VaultActivity[] @relation("VaultActivityActor")
 
+  accessEvents UserAccessEvent[] @relation("UserAccessEventUser")
+
   @@index([role])
   @@index([referredById])
+  @@index([accessStatus])
+}
+
+// Append-only audit trail for admin pause / resume. Never updated,
+// never deleted (the same rule as Commission rows). userId = the
+// affected user, actorId = the admin who acted.
+model UserAccessEvent {
+  id        String       @id @default(cuid())
+  userId    String
+  actorId   String
+  action    AccessAction
+  reason    String?
+  createdAt DateTime     @default(now())
+
+  user User @relation("UserAccessEventUser", fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model Parcel {

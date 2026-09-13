@@ -64,6 +64,29 @@ const FAKE_SESSION = {
   },
 };
 
+/**
+ * SESSION stub only — for pages other than the map (e.g. /admin/users, the
+ * pause screen) that need AuthGuard to release but bring their own network
+ * fixtures. Same Storage.prototype patch installHarness() uses; no camera
+ * pin, no localStorage seeding, no /api interception.
+ */
+export async function installSession(page: Page): Promise<void> {
+  await page.addInitScript((session) => {
+    const raw = JSON.stringify(session);
+    const realGet = Storage.prototype.getItem;
+    const realSet = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (key: string) {
+      if (/^sb-.+-auth-token$/.test(key)) return raw;
+      return realGet.call(this, key);
+    };
+    Storage.prototype.setItem = function (key: string, value: string) {
+      // Never let the app clobber the synthetic session.
+      if (/^sb-.+-auth-token$/.test(key)) return;
+      return realSet.call(this, key, value);
+    };
+  }, FAKE_SESSION);
+}
+
 export interface ApiLog {
   /** Every intercepted /api/** URL, in order, for request-count assertions. */
   calls: string[];
@@ -81,21 +104,13 @@ export async function installHarness(
 ): Promise<ApiLog> {
   const log: ApiLog = { calls: [], unexpected: [] };
 
-  // ── 1. Session + pinned camera, before any app script runs ──────────────
+  // ── 1. Session (shared stub) + pinned camera, before any app script runs ─
+  await installSession(page);
   await page.addInitScript(
-    ({ session, center, zoom, layers }) => {
-      const raw = JSON.stringify(session);
-      const realGet = Storage.prototype.getItem;
+    ({ center, zoom, layers }) => {
+      // installSession() runs first and guards only sb-*-auth-token keys;
+      // these seeds are ordinary keys and pass straight through.
       const realSet = Storage.prototype.setItem;
-      Storage.prototype.getItem = function (key: string) {
-        if (/^sb-.+-auth-token$/.test(key)) return raw;
-        return realGet.call(this, key);
-      };
-      Storage.prototype.setItem = function (key: string, value: string) {
-        // Never let the app clobber the synthetic session.
-        if (/^sb-.+-auth-token$/.test(key)) return;
-        return realSet.call(this, key, value);
-      };
       // Pin the camera so canvas-centre clicks land on a known fixture plot.
       realSet.call(
         window.localStorage,
@@ -115,7 +130,7 @@ export async function installHarness(
         realSet.call(window.localStorage, "zaahi-map-layers", JSON.stringify(layers));
       }
     },
-    { session: FAKE_SESSION, center: MAP_CENTER, zoom: MAP_ZOOM, layers: opts.layers ?? null },
+    { center: MAP_CENTER, zoom: MAP_ZOOM, layers: opts.layers ?? null },
   );
 
   // ── 2. Network ──────────────────────────────────────────────────────────
@@ -141,6 +156,9 @@ export async function installHarness(
     if (path === "/api/vault/shared-with-me/map") return json(route, { items: [] });
     if (path === "/api/vault/shared-with-me") return json(route, { items: [] });
     if (path.startsWith("/api/archie/")) return json(route, { ok: true, districts: [] });
+    // PauseGate (src/components/PauseGate.tsx) probes this once per guarded
+    // page load; the harness user is never paused.
+    if (path === "/api/me/access-status") return json(route, { status: "ACTIVE" });
     if (path === "/api/me") return json(route, { id: "e2e", nickname: "e2e" });
     if (path === "/api/admin/me") return json(route, { error: "forbidden" }, 403);
     if (path.startsWith("/api/layers/")) return json(route, EMPTY_FC);

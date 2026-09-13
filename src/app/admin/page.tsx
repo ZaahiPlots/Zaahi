@@ -20,6 +20,11 @@ const TOOLS: Tool[] = [
     desc: "Pending / Waitlist / Approved registrations · Title Deed · Plot Claim verification.",
   },
   {
+    href: "/admin/users",
+    title: "Users",
+    desc: "All platform users · Pause / Resume subscription access · who paused, when, why.",
+  },
+  {
     href: "/admin/dda-refresh",
     title: "Refresh DDA",
     desc: "Bulk re-pull DDA polygon + AffectionPlan for public ZAAHI listings (LISTED / VERIFIED / IN_DEAL).",
