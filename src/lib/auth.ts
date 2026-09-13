@@ -1,10 +1,15 @@
 import { headers } from 'next/headers';
 import { NextRequest } from 'next/server';
-import { UserRole } from '@prisma/client';
+import { AccessStatus, UserRole } from '@prisma/client';
 import { prisma } from './prisma';
 import { supabase } from './supabase';
 
 const FOUNDER_EMAILS = new Set(['zhanrysbayev@gmail.com', 'd.tsvyk@gmail.com']);
+
+/** Founder accounts — never pausable, always admin. */
+export function isFounderEmail(email: string | null | undefined): boolean {
+  return !!email && FOUNDER_EMAILS.has(email.toLowerCase());
+}
 
 async function readBearer(req?: NextRequest): Promise<string | null> {
   const authHeader = req
@@ -65,7 +70,7 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
     const name = rawName.length > 0
       ? rawName
       : (data.user.email ?? "User").split("@")[0];
-    await prisma.user.upsert({
+    const row = await prisma.user.upsert({
       where: { id: data.user.id },
       create: {
         id: data.user.id,
@@ -75,7 +80,15 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
         // nickname intentionally left null — @unique constraint, collision-risky
       },
       update: {}, // no-op on subsequent calls
+      select: { accessStatus: true },
     });
+    // Subscription pause (2026-09-13): the ONE shared gate. A PAUSED user
+    // keeps approved=true in Supabase, so sign-in and AuthGuard still
+    // pass; every protected route denies here on the very next request
+    // (this runs per request — no token-expiry wait). The pause screen
+    // reads its state through getAccessState() / /api/me/access-status,
+    // which deliberately does not go through this helper.
+    if (row.accessStatus === AccessStatus.PAUSED) return null;
   } catch (e) {
     console.error(
       "[auth] auto-sync User upsert failed:",
@@ -84,6 +97,42 @@ export async function getApprovedUserId(req?: NextRequest): Promise<string | nul
   }
 
   return data.user.id;
+}
+
+export type AccessState = {
+  userId: string;
+  email: string | null;
+  status: AccessStatus;
+  pausedAt: Date | null;
+};
+
+/**
+ * Session + approval + access status, WITHOUT the paused-denial that
+ * {@link getApprovedUserId} applies. Only for the two places a paused
+ * user is still allowed to reach: `/api/me/access-status` (the pause
+ * screen's own probe) and the client-side sign-out path. Every other
+ * route must keep using getApprovedUserId.
+ */
+export async function getAccessState(req?: NextRequest): Promise<AccessState | null> {
+  const token = await readBearer(req);
+  if (!token) return null;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return null;
+  if (data.user.user_metadata?.approved !== true) return null;
+
+  const row = await prisma.user.findUnique({
+    where: { id: data.user.id },
+    select: { accessStatus: true, pausedAt: true },
+  });
+  return {
+    userId: data.user.id,
+    email: data.user.email ?? null,
+    // No Prisma row yet (first request before the auto-sync upsert ran)
+    // → ACTIVE; getApprovedUserId creates the row as ACTIVE.
+    status: row?.accessStatus ?? AccessStatus.ACTIVE,
+    pausedAt: row?.pausedAt ?? null,
+  };
 }
 
 /**
@@ -104,13 +153,18 @@ export async function getAdminUserId(req?: NextRequest): Promise<string | null> 
   if (error || !data.user) return null;
   if (data.user.user_metadata?.approved !== true) return null;
 
+  const prismaUser = await prisma.user.findUnique({
+    where: { id: data.user.id },
+    select: { role: true, accessStatus: true },
+  });
+  // Paused admins lose the admin surface too (same single gate as
+  // getApprovedUserId). Founders cannot be paused through the API, but
+  // the check is uniform so a DB-side pause is honoured as well.
+  if (prismaUser?.accessStatus === AccessStatus.PAUSED) return null;
+
   const email = data.user.email?.toLowerCase() ?? '';
   if (FOUNDER_EMAILS.has(email)) return data.user.id;
 
-  const prismaUser = await prisma.user.findUnique({
-    where: { id: data.user.id },
-    select: { role: true },
-  });
   if (prismaUser?.role === UserRole.ADMIN) return data.user.id;
   return null;
 }

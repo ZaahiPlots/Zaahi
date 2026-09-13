@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import PauseGate from './PauseGate';
 
 /**
  * Client-side guard for protected pages.
@@ -61,5 +62,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  return <>{children}</>;
+  // Subscription pause (2026-09-13): sibling gate. Session + approval
+  // passed above; PauseGate asks /api/me/access-status once and renders
+  // the pause screen instead of the page when the account is PAUSED.
+  return <PauseGate>{children}</PauseGate>;
 }
