@@ -12,8 +12,83 @@
 // server components would see no auth header on SPA navigations.
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-fetch";
+import { GOLD, TEXT, TEXT_FADE } from "./queue/styles";
+
+// ── Shared admin nav (2026-09-13) ────────────────────────────────────
+// The map's Admin button deep-links to /admin/queue, so the /admin
+// landing (and its Users card) was never seen. This bar is rendered by
+// the layout on every /admin/* page: exactly two entries, same chrome
+// as the queue Tabs (gold tint + gold text when active, 150 ms).
+const ADMIN_NAV: Array<{ href: string; label: string }> = [
+  { href: "/admin/queue", label: "Queue" },
+  { href: "/admin/users", label: "Users" },
+];
+
+function AdminNav() {
+  const pathname = usePathname() ?? "";
+  return (
+    <nav
+      aria-label="Admin"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "10px 24px",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(0, 0, 0, 0.3)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: 11,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: TEXT_FADE,
+          marginRight: 12,
+        }}
+      >
+        Admin
+      </span>
+      {ADMIN_NAV.map((item) => {
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={isActive ? "page" : undefined}
+            style={{
+              padding: "8px 12px",
+              background: isActive ? "rgba(200,169,110,0.12)" : "transparent",
+              border: isActive ? `1px solid ${GOLD}55` : "1px solid transparent",
+              borderRadius: 6,
+              color: isActive ? GOLD : TEXT,
+              fontSize: 11,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontWeight: isActive ? 700 : 500,
+              textDecoration: "none",
+              transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) e.currentTarget.style.background = "rgba(200,169,110,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) e.currentTarget.style.background = "transparent";
+            }}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 export default function AdminLayout({
   children,
@@ -73,6 +148,7 @@ export default function AdminLayout({
         fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
       }}
     >
+      <AdminNav />
       {children}
     </div>
   );
