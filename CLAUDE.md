@@ -54,134 +54,22 @@ L — Operations (monitoring, CI/CD, data privacy, accessibility)
 7. **НЕ строй "на будущее"** без конкретной задачи.
 8. **Думай о 1000+ объектах** с первой строки (пагинация, индексы, кеш).
 9. **Plugin-система:** код для новой страны НЕ меняет core.
-10. **UI STYLE GUIDE — ОБЯЗАТЕЛЬНО** (см. секцию ниже). Любой новый/переработанный компонент должен следовать стилю landing page (Apple-like glassmorphism). Это не рекомендация — это требование.
+10. **UI STYLE GUIDE — ОБЯЗАТЕЛЬНО** для любого нового/переработанного компонента (Apple-like glassmorphism, как на landing page). Полная спецификация авто-загружается при работе с `src/**/*.tsx`: `.claude/rules/ui-style-guide.md`. Это не рекомендация — это требование.
 
-## UI STYLE GUIDE — ОБЯЗАТЕЛЬНО ДЛЯ ВСЕХ КОМПОНЕНТОВ
+## RESPONSE PROTOCOL — token discipline
 
-Единый визуальный язык платформы ZAAHI. Landing page (`src/app/page.tsx`) —
-эталон. Любой новый компонент должен выглядеть как часть landing page.
-
-**Эстетика:** Apple-like glassmorphism поверх тёмной навигационной подложки. Высокий contrast для чисел и действий, минимум chrome, плавные переходы.
-
-### Обязательные элементы
-
-**Карточки / панели:**
-- `background: rgba(10, 22, 40, 0.85)` (полупрозрачный navy) — **поднято с 0.4
-  решением founder'а D-20, 2026-09-04.** Замер контраста текста над картой:
-  при 0.4 золотая цифра (`#C8A96E`) над светлой подложкой давала **1.45** —
-  цифра NET PROFIT была нечитаемой (баг PART 4, п.3). При 0.85 — **5.36**
-  (золото) и **10.67** (текст `#f5f1e8`). Blur проблему не решает: размытие
-  светлой карты оставляет её светлой.
-  Источник истины в коде: `PANEL_BG` в `src/lib/design-tokens.ts`
-- `backdrop-filter: blur(16px)` (glassmorphism — `backdrop-blur-xl` в Tailwind)
-- `border: 1px solid rgba(255, 255, 255, 0.1)` (едва видимая окантовка)
-- `border-radius: 12px`
-- Мягкая тень: `box-shadow: 0 6px 20px rgba(0,0,0,0.2)`
-- На светлых контекстах (dashboard в режиме light) — заменяй navy на `rgba(255,255,255,0.6)` с тем же blur
-
-**Кнопки:**
-- Background: `rgba(10, 22, 40, 0.92)` над картой (`CHROME_BTN_BG`) — **поднято
-  с `rgba(0,0,0,0.35)` решением founder'а D-20, 2026-09-04.** Требование:
-  фон не должен зависеть от подложки, контраст ≥ 4.5 над обеими.
-  Замер: при 0.35 текст над светлой картой давал **2.20**, над тёмной — 13.89
-  (разброс 11.69). При 0.92 — **13.25 / 15.85** (разброс 2.60), золото
-  **6.65 / 7.96**. На тёмном фоне панелей — `rgba(255,255,255,0.06)`
-- Border: `1px solid rgba(200, 169, 110, 0.3)` (gold tint)
-- `color: #C8A96E` (gold text/icons)
-- Hover: `background: rgba(200, 169, 110, 0.25)`, `border-color: #C8A96E`
-- Transition: `all 150ms ease` — не `transition: all`, укажи конкретные свойства (`border-color, background, transform`)
-- Никаких native browser стилей
-
-**Инпуты / селекты:**
-- Background: `rgba(255, 255, 255, 0.04)` (еле заметный)
-- Border: `1px solid rgba(255, 255, 255, 0.1)`
-- Focus: `border-color: #C8A96E`, `outline: none`
-- Типографика: inherit от родителя, не system default
-- Никогда не использовать browser default `<input>` выглядящих по-разному на iOS/Android/desktop
-
-**Слайдеры:**
-- `accent-color: #C8A96E` (gold thumb)
-- Track: `rgba(255, 255, 255, 0.1)`
-- Smooth drag — не step-by-step
-
-**Анимации:**
-- `ease-in-out` или `cubic-bezier(0.4, 0, 0.2, 1)`
-- Duration: 150-300ms (не больше)
-- Плавные `fade-in`, `slide-in`, `scale` — не резкие toggles
-- Предпочитай `transform` и `opacity` (GPU-accelerated) вместо `width/height/top/left`
-
-**Числа / суммы:**
-- Большие: `font-weight: 800`, `font-size: 22-32px`, `letter-spacing: -0.02em`
-- Thousands separator: `toLocaleString("en-US")` или `.toFixed()` + regex для запятых
-- AED префикс: отдельный меньший span с `opacity: 0.6`
-- Никогда не рендерить raw bigint/number без форматирования
-
-**Иконки:**
-- Inline SVG или unicode-символы (◯ ⌄ × ↓)
-- Минималистичные, монохромные, тонкий stroke
-- Gold (#C8A96E) или textDim в зависимости от контекста
-- Никаких emoji в production UI (кроме landing/dashboard hero-элементов где уместно)
-
-**Типографика:**
-- Georgia serif для заголовков (H1, H2, H3)
-- `-apple-system, Segoe UI, Roboto, sans-serif` для body
-- `letter-spacing: 0.04-0.08em` для секционных label'ов ("TOTAL REVENUE")
-- `text-transform: uppercase` для category/status
-- Size scale: 9 (micro), 10 (small label), 11 (label), 12 (body), 14 (emphasized), 18-32 (numbers/titles)
-
-### Палитра ZAAHI (единая)
-
-| Имя | Hex | Использование |
-|---|---|---|
-| GOLD | `#C8A96E` | Accent, hover, CTAs, active state |
-| NAVY | `#1A1A2E` | Primary text, dark background |
-| TEAL | `#1B4965` | Secondary accent (Total Investment, teal hover) |
-| GREEN | `#2D6A4F` | Profitable, positive, PAID |
-| RED | `#E63946` | Loss, negative, REVERSED |
-| AMBER | `#E67E22` | Marginal, pending, warnings |
-| SUBTLE | `#6B7280` | Secondary text, labels |
-| LINE | `#E5E7EB` | Border subtle |
-| BG | `#FAFAF9` | Light background |
-
-**Не использовать:** чистый чёрный `#000`, чистый белый `#FFF` на больших поверхностях, нейтральный серый `#888` (используй `#6B7280`).
-
-### Чеклист для каждого нового компонента
-
-Перед commit проверь:
-- [ ] Карточки имеют `backdrop-filter: blur(16px)` + полупрозрачный background
-- [ ] Кнопки полупрозрачные с gold hover + border transition 150ms
-- [ ] Инпуты не выглядят как browser default (кастомный border, padding, focus)
-- [ ] Числа форматированы (AED prefix, thousands separator, bold, правильный size)
-- [ ] Заголовки секций Georgia serif, uppercase, letter-spaced
-- [ ] Нет резких появлений/исчезновений — плавные ease-in-out transitions
-- [ ] Цвета из палитры выше — никаких custom hex
-- [ ] Минималистичные иконки, не emoji (кроме dashboard hero)
-- [ ] Responsive: работает на 320px (mobile) и 1440px (desktop)
-
-### Примеры эталонов в коде
-
-- **Landing page:** `src/app/page.tsx` — основной эталон
-- **SidePanel над картой:** glassmorphism navy (прозрачный blur)
-- **HeaderBar карты:** transparent, gold icons, gold hover
-- **Кнопки карты (ChromeBtn):** см. `src/app/parcels/map/page.tsx` — `rgba(10,22,40,0.4)` bg, gold border, hover background change
-- **Dashboard карточки (profile/deals):** белая версия glassmorphism на светлом фоне
-
-### Что запрещено
-
-- ❌ Browser default стили для `<input>` / `<button>` / `<select>`
-- ❌ Яркие plain colors (`#FF0000`, `#00FF00`) — только из палитры
-- ❌ `transition: all` — всегда конкретные свойства
-- ❌ Резкие `display: none` → `display: block` toggles — используй opacity/transform + animation
-- ❌ Emoji вместо иконок в кнопках действий
-- ❌ Native `<select>` dropdown с system chrome — кастомизируй appearance
-- ❌ Разные стили в разных частях UI — единство важнее вариативности
-
-Когда сомневаешься — открой `src/app/page.tsx` и скопируй там стиль.
+- Chat-вывод: по умолчанию коротко. Не пересказывай задачу, не расписывай план перед стартом, не давай пошаговую нарацию ("сейчас я..."). Веди себя по формату `outputStyle: Concise` (см. `~/.claude/settings.json`) — результат вперёд, обоснование только если меняет следующий шаг.
+- Файлы читай прицельно: `rg -n 'pattern'` вместо `cat`, читай только нужный диапазон строк, не перечитывай файл повторно в той же сессии, не читай файл >500 строк целиком без grep.
+- Большой вывод команды (тесты, логи, билд) → не вставляй в чат целиком, укажи путь/что важно.
+- Ответы и решения по сессии уже зеркалятся автоматически (Stop hook → `~/agent-responses/zaahi.md`, плюс founder-инструкция сохранять в `~/Downloads/Zaahi responces.txt`) — не создавай третий параллельный механизм сохранения ответов.
+- Ресёрч/эксплорейшн, который затрагивает больше ~3 файлов и не нужен тебе в контексте дальше — отправляй в subagent (fork для связанного контекста, general-purpose/Explore для независимого поиска), получай выводы, а не сырые дампы файлов.
+- Один вопрос за раз, и только если он реально блокирует работу (см. «Когда спрашивать founder» ниже) — иначе бери разумное решение сам и продолжай.
 
 ## Деплой — точные команды
 
 # Production deploys automatically on push to main (Vercel pipeline).
-# Local validation before pushing:
+# Local validation before pushing: смотри `.claude/commands/smoke-test.md` (полный чеклист) —
+# обязателен перед каждым push, отдельно от `pnpm build`.
 pnpm build                       # must pass clean — никогда не пушим красный билд
 git add . && git commit -m "feat: [описание]" && git push
 
@@ -270,143 +158,18 @@ P5 — NICE TO HAVE: не берёшь без явного решения
 - Писать PII в логи
 - Менять схему Prisma без задания
 - Деплоить в main без PR
-- **Отступать от UI STYLE GUIDE** (см. выше). Browser default стили, emoji в кнопках действий, `transition: all`, резкие toggles, custom hex вне палитры — НЕТ.
+- **Отступать от UI STYLE GUIDE** (`.claude/rules/ui-style-guide.md`). Browser default стили, emoji в кнопках действий, `transition: all`, резкие toggles, custom hex вне палитры — НЕТ.
 
-## Правила добавления участков на продажу
+## Правила по областям (загружаются автоматически по path)
 
-### Источники данных
-- DDA участки (7-значные номера типа 6457940): автоматический парсинг полигона, affection plan, building limit через DDA API
-- Не-DDA участки (9-значные номера типа 91415109): placeholder polygon по координатам, данные вводятся вручную
+Ниже — детальные, часто founder-approved с датой правила, которые раньше жили целиком в этом файле. Они не удалены — они переехали в `.claude/rules/*.md` и подгружаются в контекст только когда ты реально трогаешь соответствующие файлы, чтобы не пересылать их на каждый ход:
 
-### Цвета по Land Use — APPROVED 10 категорий (палитра пересмотрена; 1-в-1 с кодом 2026-06-15)
-**НЕ менять без явного согласия основателя.** Это финальный список.
+- **Участки на карте, land-use цвета, ZAAHI Signature 3D (setbacks, podium/body/crown), слои по умолчанию, keyboard nav** → `.claude/rules/map-landuse-3d.md` (grep-триггер: `src/app/parcels/map/**`, `scripts/prepare-tiles.ts`, `src/lib/filter-state.ts`, `src/lib/keyboard-nav.ts`)
+- **Цена участка вручную, never-delete/never-duplicate parcels, Cohort Pilot v1, LOCK-8/CORR-1 (`ownerId` vs `verifiedOwnerUserId`)** → `.claude/rules/parcels-data.md` (`src/app/api/parcels/**`, `src/app/register/**`, `src/app/admin/**`, `prisma/**`, `scripts/**`)
+- **SECURITY RULES — auth flow, AuthGuard, getApprovedUserId, PUBLIC_API allow-list, layers API public exception, PII** → `.claude/rules/security.md` (`src/app/api/**`, `src/middleware.ts`, `src/app/page.tsx`, `src/lib/auth.ts`, `src/lib/api-fetch.ts`)
+- **UI STYLE GUIDE полная спека** → `.claude/rules/ui-style-guide.md` (`src/**/*.tsx`)
 
-Эти hex приведены 1-в-1 к живому коду `ZAAHI_LANDUSE_COLOR` (`src/app/parcels/map/page.tsx`)
-2026-06-15 (founder-санкция). Прежняя таблица (Residential `#FFD700` жёлтый и т.д.,
-палитра 2026-04-11) была устаревшей — код перекрасили, а CLAUDE.md не обновили.
-
-| # | Category | Hex | Цвет |
-|---|---|---|---|
-| 1 | Residential | `#2D6A4F` | зелёный |
-| 2 | Commercial | `#1B3A5C` | тёмно-синий (navy) |
-| 3 | Mixed Use | `#6B4C9A` | фиолетовый |
-| 4 | Hotel / Hospitality | `#E8732A` | морковный оранжевый (founder 2026-06-15, был бордовый `#7B1E2B`) |
-| 5 | Industrial / Warehouse | `#495057` | серый |
-| 6 | Educational | `#0077B6` | небесно-синий |
-| 7 | Healthcare | `#E63946` | красный |
-| 8 | Agricultural / Farm | `#606C38` | оливковый |
-| 9 | Future Development | `#A8926E` | песчаник (warm earth · отличается от бренд-золота) |
-| 10 | Investment | `#14B8A6` | бирюзовый-teal (AD off-plan) |
-
-DDA district / master-plan outlines on the map use the brand gold `#C8A96E` (NOT a land-use category — it's the layer-outline colour). Future Development = `#A8926E` намеренно ОТЛИЧАЕТСЯ от бренд-золота `#C8A96E`, чтобы участки под застройку не сливались с контурами районов.
-
-**⚠️ Дрейф цвета FutureDev в коде (2026-06-15, частично закрыто):** `ZAAHI_LANDUSE_COLOR` + `LAND_USE_LEGEND` приведены к `#A8926E`. НЕ синхронизированы (хвост): `SidePanel.tsx` (`#C8A96E`), `filter-state.ts` (`#84CC16` — старый лайм), `scripts/prepare-tiles.ts` (`#C8A96E`, tile-build — менять только при ребилде тайлов). Привести при следующем заходе.
-
-**Маппинг из DDA land use строк в категории** (case-insensitive `contains`, реализован в `deriveLandUse` в `src/app/parcels/map/page.tsx`):
-- `residential`, `villa`, `townhouse`, `apartment` → Residential
-- `commercial`, `office`, `retail`, `showroom`, `cbd` → Commercial
-- `mixed`, `mixed use`, `mixed-use` → Mixed Use
-- `hotel`, `hospitality`, `resort`, `serviced apartment` → Hotel/Hospitality
-- `industrial`, `warehouse`, `factory`, `logistics`, `storage` → Industrial
-- `education`, `school`, `university`, `academy`, `nursery` → Educational
-- `health`, `hospital`, `clinic`, `medical` → Healthcare
-- `agriculture`, `farm`, `agricultural` → Agricultural
-- `future development` → Future Development
-- AD `primaryUse="Investment"` без другого devCategory mapping → Investment (strategy B — added 2026-06-03; plots already classified via devCategory keep their existing category)
-- Несколько разных категорий в `landUseMix` → Mixed Use
-- Пустое или неизвестное → `null` → участок рендерится только как контур (outline), без 3D модели, до того как DDA присвоит категорию
-
-**Source-of-truth in code:** `ZAAHI_LANDUSE_COLOR` in `src/app/parcels/map/page.tsx` AND `scripts/prepare-tiles.ts` (tile-build mirror — both must stay in sync). The 3D `fill-extrusion-color` match expression in `loadZaahiPlots`, the `LANDUSE_COLORS` map in `src/app/parcels/map/SidePanel.tsx`, the `LAND_USE_LEGEND` array in the map page, and `LAND_USE_OPTIONS` in `src/lib/filter-state.ts` MUST stay in sync. CLAUDE.md is the human-readable source of truth — code is the machine-readable one.
-
-**Land Use легенда (10 категорий) — 9 утверждены основателем 2026-04-11, INVESTMENT добавлен 2026-06-03. НЕ менять без явного согласия.**
-
-### 3D модели — ZAAHI Signature стиль
-Opacity зафиксирован: fill 0.35-0.45, outline 0.8. НЕ менять без согласования.
-Для каждого land use свой 3D стиль (цвета — секция выше "Цвета по Land Use").
-
-**3D buildings opacity — два разных значения по типу слоя (founder spec 2026-04-15):**
-- **ZAAHI listings 3D buildings (`ZAAHI_BUILDINGS_3D`, source `zaahi-plots-buildings`, наши 114 участков): `fill-extrusion-opacity: 1` — SOLID.** Это наши участки, должны выделяться на карте как сплошные объекты.
-- **PMTiles 3D buildings (DDA / AD / Oman через `addLandTileSource`): `fill-extrusion-opacity: 0.35` — TRANSPARENT.** Это фоновые данные, не должны доминировать над листингами.
-- `fill-extrusion-opacity` ДОЛЖЕН быть литеральное число, MapLibre не принимает data expressions. Любое выделение выбранного здания делается через `fill-extrusion-color` (brightness) или glow outline на plot layer, НЕ через opacity.
-
-FUTURE DEVELOPMENT (земля без зданий) — только fill polygon, без 3D extrusion.
-
-### Правила 3D моделей (ZAAHI Signature) — НАВСЕГДА
-Утверждено основателем 2026-04-11. Реализация: `loadZaahiPlots` →
-`computeSetbackM` + `insetRingByMeters` в `src/app/parcels/map/page.tsx`.
-
-Каждая 3D модель состоит из трёх слоёв:
-1. **PLOT BOUNDARY** — polygon из DDA, рендерится как `ZAAHI_PLOTS_FILL` + `ZAAHI_PLOTS_LINE`. Fill-opacity 0.35-0.45 (когда есть land use), 0 (outline-only когда нет).
-2. **BUILDING FOOTPRINT** — polygon с отступами (setbacks) от границ участка. НЕ виден на карте напрямую, используется как основание для extrusion.
-3. **FILL-EXTRUSION** — 3D здание, поднимается от building footprint, **НЕ от plot boundary**. Между зданием и границей участка видна "земля" — это setback.
-
-#### Источник setbacks (по приоритету)
-1. **`affectionPlan.buildingLimitGeometry`** — если DDA отдаёт явный полигон building limit, используем его как footprint as-is.
-2. **`affectionPlan.setbacks[]`** — если есть массив сторон с `building` / `podium`, берём среднее ненулевое значение в метрах и инсетим plot polygon на эту дельту.
-3. **Land-use defaults** — если в affection plan нет setback данных:
-   - Residential **villa / townhouse**: 3 м со всех сторон
-   - Residential **apartment** (всё остальное residential): ~4 м (5 м от дороги + 3 м от соседей, усреднённо)
-   - Commercial / Office / Retail: **0 м** (строят от края до края)
-   - Hotel / Hospitality: 3 м
-   - Industrial / Warehouse: 4 м
-   - Educational / Healthcare: 5 м
-   - Agricultural / Farm: 10 м
-   - Mixed Use: 4 м
-
-#### Bypass для маленьких участков
-Если `plotAreaSqft < 5000` — building footprint **=** plot boundary (без отступов). Здание занимает весь участок, чтобы тонкий villa-plot не превратился в коробку посреди земли.
-
-#### Что не делать
-- НЕ строить extrusion прямо от plot polygon (без setback) на нормальных участках. Без отступов 3D выглядит как лего-блок, который занимает весь участок — это противоречит ZAAHI Signature.
-- НЕ строить extrusion за пределами plot polygon. Все ярусы (podium / body / crown) должны быть **внутри** building footprint.
-- НЕ менять дефолтные setbacks по land use без явного согласия основателя.
-- НЕ менять `computeSetbackM` или `insetRingByMeters` без явного согласия основателя.
-
-#### Ступенчатый 3D — podium / body / crown (founder spec 2026-04-12)
-**Каждое здание состоит из 1, 2 или 3 ярусов** в зависимости от количества этажей. Все ярусы — features в **одном** GeoJSON source и **одном** fill-extrusion layer (`ZAAHI_BUILDINGS_3D`). Без фильтров по `kind`. Цвет одинаковый для всех ярусов одного здания (по легенде land use). Opacity 0.4 единая на весь layer. Ступенчатость видна через **разницу в ширине**, не через цвет или прозрачность.
-
-| Этажей | Что рисуется | Footprint scale | base → top |
-|---|---|---|---|
-| ≤ 4 | **podium only** | 1.00 (100%) | 0 → totalH |
-| 5–10 | podium + **body** | 1.00 / 0.70 (70%) | 0 → 14 / 14 → totalH |
-| > 10 | podium + body + **crown** | 1.00 / 0.70 / 0.50 (50%) | 0 → 14 / 14 → totalH−7 / totalH−7 → totalH |
-
-Константы:
-- `FLOOR_H = 3.5` метра на этаж
-- `PODIUM_TOP = 14` метра (4 этажа подиума)
-- `CROWN_H = 7` метра (последние 2 этажа)
-- `floors = round(totalH / FLOOR_H)` — определяет, сколько ярусов рисовать
-
-Footprint каждого верхнего яруса получается через `scaleRingFromCentroid(footprintRing, scale)` — равномерное центрированное сужение к центроиду исходного footprint. Все ярусы остаются внутри plot polygon потому что они геометрически вложены в footprint, а footprint уже учитывает setback.
-
-Реализация: внутри `loadZaahiPlots` в `src/app/parcels/map/page.tsx`, прямо после блока вычисления `totalH` и `buildingHex`. **НЕ менять без явного согласия основателя.**
-
-**Все будущие участки (новые seed-ы, ручные добавления, импорт из Excel) автоматически получают этот стиль через тот же loadZaahiPlots — отдельные hardcoded override-ы для конкретных участков ЗАПРЕЩЕНЫ.**
-
-### Слои по умолчанию
-- ВСЕГДА включены: ZAAHI Plots (полигоны участков + 3D Signature здания)
-- ВЫКЛЮЧЕНЫ по умолчанию: все DDA районы, мастер-планы, Communities, Major Roads, Metro и прочие overlays. Пользователь сам включает через Layers panel.
-
-### Навигация по карте
-- **Always-on keyboard nav** — без режимов, без UI-переключателя. W/A/S/D (через `e.code`, layout-independent) — движение в направлении камеры, Q/E — поворот bearing, Space/C — выше/ниже, R/F — pitch, Shift — ускорение. Работает всегда, параллельно со стандартной MapLibre-навигацией мышью.
-  - Ignore keys когда фокус в input/textarea/contenteditable.
-  - Реализация: `src/lib/keyboard-nav.ts` (controller pattern: `{ destroy }`), install в map-init useEffect. MapLibre собственный keyboard-handler отключён при конструировании карты (`keyboard: false`), чтобы стрелки / +/- не конфликтовали.
-
-> **Drone mode удалён 2026-06-11.** FPS free-flight режим (`3bac358`) был
-> отреверчен в тот же день (`6e87fd4`) и затем удалён целиком (`6d02f28`):
-> `DroneHUD.tsx` и `src/lib/drone-controls.ts` больше не существуют, ключ
-> `localStorage["zaahi-drone-mode"]` не читается. Замена — always-on
-> keyboard nav выше (`be1bac2`). Постмортем:
-> `docs/research/drone-fps-postmortem-2026-06-11.md`. Не восстанавливать
-> без явного решения основателя.
-
-### UI
-- Hover на участок: мини-карточка (plotNumber | район | sqft | цена | landUse)
-- Клик на участок: side panel 350px с ценой, project, dimensions, land use, documents
-- Карточка компактная, без пустых мест
-
-### Вопросы и предложения
-Если не уверен в данных или архитектурном решении — пиши founder Zhan (`zhanrysbayev@gmail.com`) с копией co-founder Dymo (`d.tsvyk@gmail.com`) на стратегические вопросы. См. секцию `FOUNDER CONTACTS` ниже.
+Если задача трогает несколько из этих областей одновременно — соответствующие файлы подгрузятся все разом, никакого ручного выбора не требуется.
 
 ## Sovereignty Readiness Rules
 - Minimize Vercel lock-in. Production currently runs on Vercel, but the codebase MUST stay portable: keep the ability to self-host via `docker-compose up`. Avoid Vercel-only APIs (Edge Config, KV, Blob, Vercel Postgres). Use standard Next.js features only.
@@ -418,51 +181,9 @@ Footprint каждого верхнего яруса получается чер
 - Docker-ready: проект должен запускаться через `docker-compose up` без Vercel
 - Все данные (KML, GeoJSON, PDF) хранятся локально в `data/` — не в облаке
 
-## Правило добавления участков (batch)
-- Все участки из DDA (7-значные номера)
-- Для каждого: запроси полигон, affection plan, building limit из DDA API
-- 3D модель ZAAHI Signature по land use автоматически
-- После добавления жди подтверждение "yes" перед следующим
+## SECURITY RULES
 
-### Цена участка — ТОЛЬКО ВРУЧНУЮ
-Общая цена участка (`currentValuation` в `Parcel`, хранится в fils как `BigInt`) устанавливается **ТОЛЬКО вручную**. Источники цены:
-1. **Excel файл от основателя** (batch загрузка через `scripts/update-prices-from-excel.ts`-style скрипты — общая цена в формате `50M` / `1.2B` парсится в fils).
-2. **Пользователь, добавляющий участок через Add Plot** — устанавливает цену в форме при добавлении.
-3. **Собственник участка** может изменить цену через свой профиль (`/api/parcels/[id]` PATCH с проверкой `ownerId === userId`).
-
-**Автоматически рассчитывать или менять общую цену системой ЗАПРЕЩЕНО.** Никаких "GFA × per-sqft" вычислений на стороне сервера или скриптов, никаких автоматических переоценок при обновлении affection plan. `currentValuation` меняется только когда явная инструкция от founder/owner.
-
-`Price per sqft GFA` и `Price per sqft Plot` рассчитываются автоматически из общей цены **только для отображения в карточке** (в `SidePanel.tsx`). Эти производные значения никогда не записываются обратно в БД.
-
-### NEVER delete parcels — ever
-- A parcel row in `Parcel` table is **never** deleted by the agent. Not even VACANT stubs, not even rows the agent itself created in a previous batch, not even rows that "look broken".
-- The only acceptable mutations on an existing parcel are: update `currentValuation`, update `status`, refresh the `affectionPlans` history (which appends a new row, never removes the old one).
-- "Reseed" a parcel = a literal `prisma.parcel.delete` followed by a fresh `create`. This is a destructive operation. **NEVER** do it without an explicit, plot-number-specific instruction from the founder in the current conversation. A blanket "fix the database" is not enough.
-- If a parcel needs to be removed for any reason (e.g. wrong plot number, bad data, accidentally added), the agent MUST stop and ask the founder explicitly, listing the row's id / plotNumber / district / status / currentValuation / createdAt before proceeding.
-- The same rule applies to `affectionPlans`: never `deleteMany`, only `create`.
-
-### NEVER add duplicate parcels
-- **Before adding ANY parcel**, ALWAYS check if `plotNumber` already exists in the `Parcel` table.
-- Duplicates are **permanently forbidden** — not "skipped quietly", not "overwritten silently". If a row with that `plotNumber` already exists, abort the add for that plot, log the existing `id` / `district` / `status`, and surface it in the batch report.
-- The check is by `plotNumber` alone (not by the composite `(emirate, district, plotNumber)` key) — the same plot must never appear twice, even under a different district label.
-- If the founder wants to **update** an existing parcel (price change, status change, affection plan refresh), that is a different operation and requires an explicit "update plot X" instruction — never a "batch add".
-- A batch seeder MUST run a pre-flight duplicate check, list all duplicates with current state (status, $/sqft), and only add the plots that are genuinely new.
-
-## SECURITY RULES - DO NOT MODIFY
-- Sign Up is allowed but every new account is created with `user_metadata.approved = false`
-- After signup the client is signed out immediately and the "REQUEST SUBMITTED" pending screen is shown
-- A user can only enter the app after an admin sets `user_metadata.approved = true` (Supabase dashboard)
-- The auth page at `src/app/page.tsx` MUST keep both tabs as `(['signin', 'signup'] as Mode[]).map(...)` — no extra brackets, no JSX-text glitches
-- NEVER modify `src/app/page.tsx` auth flow without explicit permission from the founder
-- All protected pages MUST be wrapped in `<AuthGuard>` from `src/components/AuthGuard.tsx`
-- NEVER remove `<AuthGuard>` from a protected page
-- All sensitive API routes MUST call `getApprovedUserId(req)` from `src/lib/auth.ts` (NOT plain `getSessionUserId`)
-- All NEW API routes MUST use `getApprovedUserId(req)` by default. The only exception is a route explicitly marked as public (e.g. `/api/notify-admin`) — and that requires a written justification in the route file's top comment
-- Browser code MUST call protected APIs through `apiFetch` from `src/lib/api-fetch.ts` so the Bearer token is attached automatically
-- Middleware `PUBLIC_API` allow-list is intentionally tiny: only `/api/auth` and `/api/notify-admin`. Do NOT add to it without a written reason
-- Layers API (`/api/layers/*`) MUST remain public (no auth required). GET / HEAD requests to `/api/layers/*` are public-domain geographic data — community boundaries, road network, master plans, all 206 DDA districts. NEVER add auth checks to layer route handlers. NEVER remove the `/api/layers/` exception from `src/middleware.ts`
-- NEVER expose user emails, phone numbers, or other personal data in API responses to non-admin users. Strip PII fields server-side before returning. Admin endpoints must be explicitly gated by a role check, not just by approval
-- Do NOT modify auth pages without explicit permission
+Полная спецификация в `.claude/rules/security.md` (загружается автоматически при работе с auth/API/middleware). Инвариант, который держи в голове всегда: approve-gate на регистрации, `AuthGuard` на всех защищённых страницах, `getApprovedUserId` на всех sensitive API, `/api/layers/*` остаётся публичным. Не меняй auth-флоу без явного разрешения founder'а.
 
 ## DEPLOYMENT
 - Platform deployed on Vercel: `zaahi.vercel.app` / `zaahi.io`
@@ -496,110 +217,7 @@ Footprint каждого верхнего яруса получается чер
 - If the build fails — fix the underlying error. Do NOT skip TypeScript errors with `@ts-ignore` / `@ts-expect-error`, do NOT disable ESLint rules, do NOT add `// eslint-disable` lines just to pass the build
 - If you discover unfamiliar files, branches, or in-progress changes — investigate first, never delete or overwrite as a shortcut
 - Risky / hard-to-reverse actions (destructive git, schema changes, infra edits) require explicit founder approval before execution
-
-## SMOKE TEST — ОБЯЗАТЕЛЬНО ПОСЛЕ КАЖДОГО ИЗМЕНЕНИЯ
-После ЛЮБОГО изменения кода ПЕРЕД `git push` выполни этот чеклист.
-
-### Билд
-- [ ] `pnpm build` проходит без ошибок
-
-### Карта (`/parcels/map`)
-- [ ] Карта загружается
-- [ ] Участки (ZAAHI Plots) видны как 3D здания на карте
-- [ ] Цвета 3D зданий соответствуют land use
-- [ ] Клик на участок открывает side panel с данными
-- [ ] Слои (Layers) панель открывается
-- [ ] Панель сгруппирована по country → category (Dubai/Abu Dhabi/Other UAE/Saudi/Oman)
-- [ ] Только страна, в которой находится пользователь по map center, раскрыта по умолчанию (на первом открытии)
-- [ ] Lock badges (🔒 GOLD / 🔒 PLATINUM) видны рядом с master plans + DDA 99K + AD PMTiles + Oman PMTiles + Riyadh Zones; click на badge открывает /join#gold (Phase 3 сделает их actually disabled)
-- [ ] Search в top панели фильтрует все страны, force-expand при наличии матчей
-- [ ] "ZAAHI Listings (114) — ALWAYS ON" индикатор в топе панели
-- [ ] По умолчанию видны ТОЛЬКО ZAAHI Plots (остальные слои off)
-- [ ] DDA Districts, мастер-планы, Communities, Roads НЕ загружаются автоматически
-- [ ] Keyboard nav работает всегда: W/A/S/D движение, Q/E поворот, Space/C высота, R/F pitch, Shift ускорение; клавиши игнорируются когда фокус в input/textarea
-- [ ] Toggle отдельного слоя работает (вкл/выкл)
-- [ ] Чекбокс секции (ALL) работает
-- [ ] Archibald (кот) иконка видна
-
-### Auth (`/`)
-- [ ] Страница входа отображается
-- [ ] Sign In работает для approved пользователей
-- [ ] Sign Up показывает REQUEST SUBMITTED после регистрации
-- [ ] Неавторизованный пользователь не видит карту
-
-### API
-- [ ] `GET /api/layers/dda/dubai-hills` → 200 (без auth)
-- [ ] `GET /api/parcels/map` → 401 (без auth, это правильно)
-
-### Правила smoke-теста (в дополнение к AGENT RULES выше)
-- **ПРАВИЛО:** Если ЛЮБОЙ пункт чеклиста не проходит — НЕ пушить. Исправить сначала.
-- **ПРАВИЛО:** НИКОГДА не удалять функционал при рефакторинге. Оптимизировать — да. Удалять рабочий код — нет.
-- **ПРАВИЛО:** При рефакторинге крупных файлов (>500 строк) — сначала составь список ВСЕХ функций в файле, после рефакторинга проверь что ВСЕ функции сохранены. Это правило существует потому, что на одном из коммитов агент случайно удалил `loadZaahiPlots` (~270 строк) внутри bulk-replace `attachOverlays`, и на проде пропали все участки на карте. Список функций ДО рефакторинга — единственная защита от такой регрессии.
-
-## COHORT PILOT v1 — APPROVED 2026-05-07 (replaces Ambassador program)
-
-Paid-tier Ambassador program (SILVER / GOLD / PLATINUM USDT-funded
-referral system) was **retired** during Phase C, Step 2. Spec
-`docs/specs/phase-1/spec-05-cohort-pilot-v1.md` v1.1 §13 is the
-source-of-truth for that retirement and the cohort-pilot replacement.
-
-The cohort pilot operates on a **soft cap** of 100 users — 10 per
-each of the 10 cohort roles (`OWNER`, `BROKER`, `DEVELOPER`,
-`BUYER`, `ARCHITECT`, `POA`, `INTERMEDIARY`, `RELATIVE`, `REFERRAL`,
-`OTHER`). Public registration runs at `/register`; admin approval
-runs at `/admin/queue`.
-
-### What stays dormant (NOT deleted)
-
-Per spec §13.4 — preserved as historical / blockchain Phase B data:
-
-- Prisma tables: `Commission`, `AmbassadorApplication`, `ReferralClick`
-- Prisma columns on `User`: `referralCode`, `referredById`,
-  `referredAt`, `ambassadorActive`
-
-**No new rows are written to these tables.** `/api/users/sync` keeps
-a small auto-link helper for any pre-cohort APPROVED `AmbassadorApplication`
-that signs in for the first time after retirement (legacy bridge,
-no-op for cohort users).
-
-### Source of truth (cohort pilot v1)
-
-- **Spec:** `docs/specs/phase-1/spec-05-cohort-pilot-v1.md` v1.1
-- **Prisma models:** `RegistrationApplication`, `PlotClaim`,
-  + `Parcel.verifiedOwnerUserId` / `verifiedAt` / `verifiedById`
-- **Helpers:** `src/lib/registration-validation.ts`,
-  `src/lib/registration-cap.ts`, `src/lib/registration-doc-requirements.ts`,
-  `src/lib/plot-claim.ts`, `src/lib/plot-claim-doc-requirements.ts`,
-  `src/lib/plot-claim-docs.ts`, `src/lib/storage-signed-url.ts`
-- **Registration flow:** `/register` (3-step) → `/api/registration/submit`
-- **Admin operations:** `/admin/queue` — Pending / Waitlist / Approved /
-  Rejected / Title Deed / Plot Claim tabs
-- **Multi-claim Add Plot:** `AddPlotModal` (Path A / B / C) +
-  `/api/parcels/[id]/claim` + `/api/parcels/[id]/claims` +
-  `/api/parcels/by-plot-number/[plotNumber]`
-- **Verification flow:** `/api/admin/title-deeds/*` +
-  `/api/admin/plot-claims/*`
-- **PDPL:** `serializeUserPublic` (`src/lib/serialize.ts`); private
-  `registration-docs` Supabase Storage bucket; signed URLs TTL 7d.
-- **Phase C audit trail:** `docs/audits/add-plot-cohort-audit.md`,
-  `docs/audits/pdpl-step11-audit.md`,
-  `docs/audits/phase-c-final-audit.md`
-
-### LOCK-8 / CORR-1 invariant — `ownerId` vs `verifiedOwnerUserId`
-
-- `Parcel.ownerId` is the **immutable creator** (set at parcel-row
-  creation time, never updated). Used for canonical id, audit history,
-  and as the seller fallback when no verified owner exists yet.
-- `Parcel.verifiedOwnerUserId` is the **current verified owner**
-  (set when an OWNER `PlotClaim` transitions to VERIFIED via the
-  admin Title Deed flow). Used for the public "Owner: X" surface,
-  `Deal.sellerId`, and dashboard "My Properties" filter.
-- Authorisation gates that need to admit the live owner accept
-  **either** id (e.g. `/api/parcels/[id]` PATCH, `/api/me/plots`).
-- The two MAY diverge — when a user other than the creator has
-  their Title Deed verified, the creator gets the
-  `ownership-transferred-notice` email and their claim row remains
-  active; only the public "Owner" row flips.
+- **Перед каждым push прогони `.claude/commands/smoke-test.md`.** Полный чеклист (карта, auth, API) — отдельно от `pnpm build`. Если пункт не проходит — не пушить, сначала исправить.
 
 ## FOUNDER CONTACTS
 - **Founder & CEO/CTO:** Zharkyn (Zhan) Ryspayev — `zhanrysbayev@gmail.com` — 17 лет в недвижимости, Full-stack инженер, построил всю платформу ZAAHI
@@ -610,29 +228,7 @@ no-op for cohort users).
 ## Future work / backlog
 
 Отложенные задачи — в `BACKLOG.md`. Не брать без явного решения founder'а.
-Текущий backlog:
-- Vector basemap migration (MapTiler / Protomaps) — после Phase 1 Dashboards + Abu Dhabi migration
 
-## SESSION STATUS — 2026-04-15
+## Session history
 
-### База данных
-- **Parcels:** 114 total (111 LISTED, 3 VACANT) — все в эмирате Dubai
-- Все участки рендерятся как ZAAHI Signature 3D buildings (podium / body / crown по числу этажей)
-
-### Сделано сегодня
-1. **FOUNDER CONTACTS** — Zhan = Founder/CEO/CTO, Dymo = Co-founder/Ambassador (commit `a265cfc`)
-2. **Land Use Legend (9 категорий)** утверждена и зафиксирована в коде + CLAUDE.md (commit `ad0819a`)
-3. **Полная диагностика и polish платформы** — auth, signup pending screen, layers, lazy load (commits `47683d6`, `eb361ad`, `3f16c63`, `59336ed`)
-4. **3D model setback rules** — building inside plot boundary, защита от lego-block эффекта (commit `b88e75e`)
-5. **3D extrusion bug fixed (4-я попытка)** — single-layer architecture, single feature per parcel (commit `dfa6387`)
-6. **Hospital plot 6854566** — после 6 итераций откат к стандартному single-building пути (commit `00b8416`)
-7. **Prices from Excel** — `update-prices-from-excel.ts` стиль скриптов (commit `d734c4d`)
-8. **ZAAHI Signature 3-tier buildings** — podium (≤4 этажей), +body (5-10), +crown (>10). Footprint scale 1.00 / 0.70 / 0.50 через `scaleRingFromCentroid` (commit `3091fe3`)
-9. **Download Plot Details PDF из DDA** — новый proxy `/api/parcels/[id]/plot-guidelines`, поле `plotGuidelinesUrl` на `AffectionPlan`, миграция применена через raw SQL (commit `94eb15a`)
-10. **Background music + cyberpunk UI sounds** — playlist (2 MP3s), 30% volume, click sweep+noise, hover blip, layer toggle blip, кнопка в HeaderBar рядом с Profile (commit `62cdf98`)
-
-### Что осталось / открытые вопросы
-- **Audio файлы отсутствуют:** `public/audio/ambient.mp3` = 0 bytes, `public/audio/ambient2.mp3` не существует. Playlist код gracefully скипает broken/missing tracks (через `error` event), но **музыка не заиграет** пока founder не положит реальные MP3s в `public/audio/`. SFX (click/hover/toggle) работают сразу — синтезируются через Web Audio API без файлов.
-- **Hospital plot 6854566** оставлен на стандартном single-building рендере. Если founder захочет multi-building hospital — нужна явная инструкция с конкретной геометрией.
-- Production: `zaahi.io` — все коммиты сегодня задеплоены через Vercel auto-deploy from `main`.
-
+Текущий running-лог решений — `DECISIONS.md`. Снапшоты статуса сессий (что сделано / что открыто на конкретную дату) — `docs/sessions/*.md`, самый свежий файл = актуальное состояние. Более старый контент CLAUDE.md по состоянию на 2026-04-15 архивирован в `docs/sessions/2026-04-15-status.md` — там же список известных на тот момент открытых вопросов (audio-файлы, hospital plot 6854566).
