@@ -482,26 +482,6 @@ function bindLayerEvent(
   });
 }
 
-function bindGlobalMapEvent(
-  map: MLMap,
-  /** Unique name within the type — multiple global handlers for the
-   *  same MapLibre event coexist (e.g. zoomend has scheduleSave AND
-   *  cityAmbient). Without a name we'd clobber siblings. */
-  name: string,
-  type: string,
-  handler: (e: unknown) => void,
-): void {
-  const key = `_global::${type}::${name}`;
-  const prevOff = _layerEventRegistry.get(key);
-  if (prevOff) {
-    try { prevOff(); } catch { /* ignore */ }
-  }
-  map.on(type as never, handler as never);
-  _layerEventRegistry.set(key, () => {
-    try { map.off(type as never, handler as never); } catch { /* ignore */ }
-  });
-}
-
 // Apply / clear selection highlight on the ZAAHI plot + building layers.
 function applySelectionPaint(map: MLMap, selectedId: string | null) {
   if (!map.getLayer(ZAAHI_PLOTS_FILL)) return;
@@ -674,577 +654,386 @@ const DHCC2_SRC = "dda-dhcc-phase2";
 const DHCC2_LINE = "dda-dhcc-phase2-line";
 const BARSHA_HEIGHTS_SRC = "dda-barsha-heights";
 const BARSHA_HEIGHTS_LINE = "dda-barsha-heights-line";
-const BARSHA_HEIGHTS_FILL = "dda-barsha-heights-fill";
 const DIFC_ZABEEL_SRC = "dda-difc-zabeel";
 const DIFC_ZABEEL_LINE = "dda-difc-zabeel-line";
-const DIFC_ZABEEL_FILL = "dda-difc-zabeel-fill";
 const JADDAF_WF_SRC = "dda-jaddaf-waterfront";
 const JADDAF_WF_LINE = "dda-jaddaf-waterfront-line";
-const JADDAF_WF_FILL = "dda-jaddaf-waterfront-fill";
 const DHCC1_SRC = "dda-dhcc-phase1";
 const DHCC1_LINE = "dda-dhcc-phase1-line";
-const DHCC1_FILL = "dda-dhcc-phase1-fill";
 const DIFC_SRC = "dda-difc";
 const DIFC_LINE = "dda-difc-line";
-const DIFC_FILL = "dda-difc-fill";
 const TILAL_AL_GHAF_SRC = "dda-tilal-al-ghaf";
 const TILAL_AL_GHAF_LINE = "dda-tilal-al-ghaf-line";
-const TILAL_AL_GHAF_FILL = "dda-tilal-al-ghaf-fill";
 const AR2_SRC = "dda-arabian-ranches-2";
 const AR2_LINE = "dda-arabian-ranches-2-line";
-const AR2_FILL = "dda-arabian-ranches-2-fill";
 const THE_VILLA_SRC = "dda-the-villa";
 const THE_VILLA_LINE = "dda-the-villa-line";
-const THE_VILLA_FILL = "dda-the-villa-fill";
 const AR3_SRC = "dda-arabian-ranches-3";
 const AR3_LINE = "dda-arabian-ranches-3-line";
-const AR3_FILL = "dda-arabian-ranches-3-fill";
 const DSC_SRC = "dda-dubai-sports-city";
 const DSC_LINE = "dda-dubai-sports-city-line";
-const DSC_FILL = "dda-dubai-sports-city-fill";
 const VILLANOVA_SRC = "dda-villanova";
 const VILLANOVA_LINE = "dda-villanova-line";
-const VILLANOVA_FILL = "dda-villanova-fill";
 const ACRES_SRC = "dda-the-acres";
 const ACRES_LINE = "dda-the-acres-line";
-const ACRES_FILL = "dda-the-acres-fill";
 const FALCON_SRC = "dda-falcon-city";
 const FALCON_LINE = "dda-falcon-city-line";
-const FALCON_FILL = "dda-falcon-city-fill";
 const AL_ARYAM_SRC = "dda-al-aryam";
 const AL_ARYAM_LINE = "dda-al-aryam-line";
-const AL_ARYAM_FILL = "dda-al-aryam-fill";
 const DIC_SRC = "dda-dubai-industrial-city";
 const DIC_LINE = "dda-dubai-industrial-city-line";
-const DIC_FILL = "dda-dubai-industrial-city-fill";
 const DI2_SRC = "dda-damac-islands-2";
 const DI2_LINE = "dda-damac-islands-2-line";
-const DI2_FILL = "dda-damac-islands-2-fill";
 const WILDS_SRC = "dda-wilds";
 const WILDS_LINE = "dda-wilds-line";
-const WILDS_FILL = "dda-wilds-fill";
 const TOWN_SQ_SRC = "dda-town-square";
 const TOWN_SQ_LINE = "dda-town-square-line";
-const TOWN_SQ_FILL = "dda-town-square-fill";
 const ATHLON_SRC = "dda-athlon";
 const ATHLON_LINE = "dda-athlon-line";
-const ATHLON_FILL = "dda-athlon-fill";
 const CHERRY_SRC = "dda-cherrywoods";
 const CHERRY_LINE = "dda-cherrywoods-line";
-const CHERRY_FILL = "dda-cherrywoods-fill";
 const PORTOFINO_SRC = "dda-portofino";
 const PORTOFINO_LINE = "dda-portofino-line";
-const PORTOFINO_FILL = "dda-portofino-fill";
 const HAVEN_SRC = "dda-haven";
 const HAVEN_LINE = "dda-haven-line";
-const HAVEN_FILL = "dda-haven-fill";
 const AL_BARARI_SRC = "dda-al-barari";
 const AL_BARARI_LINE = "dda-al-barari-line";
-const AL_BARARI_FILL = "dda-al-barari-fill";
 const JAI_SRC = "dda-jabal-ali-industrial";
 const JAI_LINE = "dda-jabal-ali-industrial-line";
-const JAI_FILL = "dda-jabal-ali-industrial-fill";
 const LL_SRC = "dda-living-legends";
 const LL_LINE = "dda-living-legends-line";
-const LL_FILL = "dda-living-legends-fill";
 const SHOROOQ_SRC = "dda-shorooq";
 const SHOROOQ_LINE = "dda-shorooq-line";
-const SHOROOQ_FILL = "dda-shorooq-fill";
 const COA_SRC = "dda-city-of-arabia";
 const COA_LINE = "dda-city-of-arabia-line";
-const COA_FILL = "dda-city-of-arabia-fill";
 const SERENA_SRC = "dda-serena";
 const SERENA_LINE = "dda-serena-line";
-const SERENA_FILL = "dda-serena-fill";
 const DCH_SRC = "dda-dubai-creek-harbour";
 const DCH_LINE = "dda-dubai-creek-harbour-line";
-const DCH_FILL = "dda-dubai-creek-harbour-fill";
 const DPC_SRC = "dda-dubai-production-city";
 const DPC_LINE = "dda-dubai-production-city-line";
-const DPC_FILL = "dda-dubai-production-city-fill";
 const SOBHA_R_SRC = "dda-sobha-reserve";
 const SOBHA_R_LINE = "dda-sobha-reserve-line";
-const SOBHA_R_FILL = "dda-sobha-reserve-fill";
 const JGC_SRC = "dda-jumeirah-garden-city";
 const JGC_LINE = "dda-jumeirah-garden-city-line";
-const JGC_FILL = "dda-jumeirah-garden-city-fill";
 const SOBHA_E_SRC = "dda-sobha-elwood";
 const SOBHA_E_LINE = "dda-sobha-elwood-line";
-const SOBHA_E_FILL = "dda-sobha-elwood-fill";
 const DLRC_SRC = "dda-dlrc";
 const DLRC_LINE = "dda-dlrc-line";
-const DLRC_FILL = "dda-dlrc-fill";
 const PEARL_J_SRC = "dda-pearl-jumeira";
 const PEARL_J_LINE = "dda-pearl-jumeira-line";
-const PEARL_J_FILL = "dda-pearl-jumeira-fill";
 const KHAWANEEJ_SRC = "dda-al-khawaneej";
 const KHAWANEEJ_LINE = "dda-al-khawaneej-line";
-const KHAWANEEJ_FILL = "dda-al-khawaneej-fill";
 const MAJAN_SRC = "dda-majan";
 const MAJAN_LINE = "dda-majan-line";
-const MAJAN_FILL = "dda-majan-fill";
 const LA_MER_SRC = "dda-la-mer";
 const LA_MER_LINE = "dda-la-mer-line";
-const LA_MER_FILL = "dda-la-mer-fill";
 const DUBAI_LAND_SRC = "dda-dubai-land";
 const DUBAI_LAND_LINE = "dda-dubai-land-line";
-const DUBAI_LAND_FILL = "dda-dubai-land-fill";
 const DGC_SRC = "dda-dubai-golf-city";
 const DGC_LINE = "dda-dubai-golf-city-line";
-const DGC_FILL = "dda-dubai-golf-city-fill";
 const MERAAS_UAS_SRC = "dda-meraas-umm-al-sheif";
 const MERAAS_UAS_LINE = "dda-meraas-umm-al-sheif-line";
-const MERAAS_UAS_FILL = "dda-meraas-umm-al-sheif-fill";
 const MAMZAR_SRC = "dda-al-mamzar-front";
 const MAMZAR_LINE = "dda-al-mamzar-front-line";
-const MAMZAR_FILL = "dda-al-mamzar-front-fill";
 const ASMARAN_SRC = "dda-asmaran";
 const ASMARAN_LINE = "dda-asmaran-line";
-const ASMARAN_FILL = "dda-asmaran-fill";
 const JBAY_SRC = "dda-jumeirah-bay";
 const JBAY_LINE = "dda-jumeirah-bay-line";
-const JBAY_FILL = "dda-jumeirah-bay-fill";
 const REPORTAGE_SRC = "dda-reportage-village";
 const REPORTAGE_LINE = "dda-reportage-village-line";
-const REPORTAGE_FILL = "dda-reportage-village-fill";
 const LIWAN_SRC = "dda-liwan";
 const LIWAN_LINE = "dda-liwan-line";
-const LIWAN_FILL = "dda-liwan-fill";
 const DSTUDIO_SRC = "dda-dubai-studio-city";
 const DSTUDIO_LINE = "dda-dubai-studio-city-line";
-const DSTUDIO_FILL = "dda-dubai-studio-city-fill";
 const LIWAN2_SRC = "dda-liwan-2";
 const LIWAN2_LINE = "dda-liwan-2-line";
-const LIWAN2_FILL = "dda-liwan-2-fill";
 const NAIA_SRC = "dda-naia-island";
 const NAIA_LINE = "dda-naia-island-line";
-const NAIA_FILL = "dda-naia-island-fill";
 const ARDH_SRC = "dda-ardh-community";
 const ARDH_LINE = "dda-ardh-community-line";
-const ARDH_FILL = "dda-ardh-community-fill";
 const TIJARA_SRC = "dda-tijara-town";
 const TIJARA_LINE = "dda-tijara-town-line";
-const TIJARA_FILL = "dda-tijara-town-fill";
 const WARSAN_SRC = "dda-warsan-first";
 const WARSAN_LINE = "dda-warsan-first-line";
-const WARSAN_FILL = "dda-warsan-first-fill";
 const MERAAS_MIRDIF_SRC = "dda-meraas-mirdif";
 const MERAAS_MIRDIF_LINE = "dda-meraas-mirdif-line";
-const MERAAS_MIRDIF_FILL = "dda-meraas-mirdif-fill";
 const HABTOOR_SRC = "dda-al-habtoor-polo";
 const HABTOOR_LINE = "dda-al-habtoor-polo-line";
-const HABTOOR_FILL = "dda-al-habtoor-polo-fill";
 const MERAAS_UMA_SRC = "dda-meraas-umm-amaraa";
 const MERAAS_UMA_LINE = "dda-meraas-umm-amaraa-line";
-const MERAAS_UMA_FILL = "dda-meraas-umm-amaraa-fill";
 const D3_DDA_SRC = "dda-d3";
 const D3_DDA_LINE = "dda-d3-line";
-const D3_DDA_FILL = "dda-d3-fill";
 const KHAIL_SRC = "dda-al-khail-gate";
 const KHAIL_LINE = "dda-al-khail-gate-line";
-const KHAIL_FILL = "dda-al-khail-gate-fill";
 const SITE_A_SRC = "dda-site-a";
 const SITE_A_LINE = "dda-site-a-line";
-const SITE_A_FILL = "dda-site-a-fill";
 const RUKAN_SRC = "dda-rukan";
 const RUKAN_LINE = "dda-rukan-line";
-const RUKAN_FILL = "dda-rukan-fill";
 const CALI_SRC = "dda-california-residence";
 const CALI_LINE = "dda-california-residence-line";
-const CALI_FILL = "dda-california-residence-fill";
 const MERAAS_NAH_SRC = "dda-meraas-nadd-al-hamar";
 const MERAAS_NAH_LINE = "dda-meraas-nadd-al-hamar-line";
-const MERAAS_NAH_FILL = "dda-meraas-nadd-al-hamar-fill";
 const PALMAROSA_SRC = "dda-palmarosa";
 const PALMAROSA_LINE = "dda-palmarosa-line";
-const PALMAROSA_FILL = "dda-palmarosa-fill";
 const DIAC_SRC = "dda-diac";
 const DIAC_LINE = "dda-diac-line";
-const DIAC_FILL = "dda-diac-fill";
 const WAHA_SRC = "dda-al-waha";
 const WAHA_LINE = "dda-al-waha-line";
-const WAHA_FILL = "dda-al-waha-fill";
 const HARBOUR_SRC = "dda-dubai-harbour";
 const HARBOUR_LINE = "dda-dubai-harbour-line";
-const HARBOUR_FILL = "dda-dubai-harbour-fill";
 const KLABOUR_SRC = "dda-khawaneej-labour";
 const KLABOUR_LINE = "dda-khawaneej-labour-line";
-const KLABOUR_FILL = "dda-khawaneej-labour-fill";
 const WIND_SRC = "dda-warsan-industrial";
 const WIND_LINE = "dda-warsan-industrial-line";
-const WIND_FILL = "dda-warsan-industrial-fill";
 const DLC_SRC = "dda-dubai-lifestyle-city";
 const DLC_LINE = "dda-dubai-lifestyle-city-line";
-const DLC_FILL = "dda-dubai-lifestyle-city-fill";
 const SUFOUH_SRC = "dda-sufouh-gardens";
 const SUFOUH_LINE = "dda-sufouh-gardens-line";
-const SUFOUH_FILL = "dda-sufouh-gardens-fill";
 const MOTOR_SRC = "dda-motor-city";
 const MOTOR_LINE = "dda-motor-city-line";
-const MOTOR_FILL = "dda-motor-city-fill";
 const TAOR1_SRC = "dda-taormina-1";
 const TAOR1_LINE = "dda-taormina-1-line";
-const TAOR1_FILL = "dda-taormina-1-fill";
 const DPARKS_SRC = "dda-dubai-parks";
 const DPARKS_LINE = "dda-dubai-parks-line";
-const DPARKS_FILL = "dda-dubai-parks-fill";
 const CWALK_SRC = "dda-city-walk";
 const CWALK_LINE = "dda-city-walk-line";
-const CWALK_FILL = "dda-city-walk-fill";
 const ARPOLO_SRC = "dda-ar-polo";
 const ARPOLO_LINE = "dda-ar-polo-line";
-const ARPOLO_FILL = "dda-ar-polo-fill";
 const BARSHA3_SRC = "dda-barsha-third";
 const BARSHA3_LINE = "dda-barsha-third-line";
-const BARSHA3_FILL = "dda-barsha-third-fill";
 const MERAAS_B2_SRC = "dda-meraas-barsha-2";
 const MERAAS_B2_LINE = "dda-meraas-barsha-2-line";
-const MERAAS_B2_FILL = "dda-meraas-barsha-2-fill";
 const DOC_SRC = "dda-dubai-outsource-city";
 const DOC_LINE = "dda-dubai-outsource-city-line";
-const DOC_FILL = "dda-dubai-outsource-city-fill";
 const BURJ_SRC = "dda-burj-khalifa";
 const BURJ_LINE = "dda-burj-khalifa-line";
-const BURJ_FILL = "dda-burj-khalifa-fill";
 const GHAF_SRC = "dda-ghaf-woods";
 const GHAF_LINE = "dda-ghaf-woods-line";
-const GHAF_FILL = "dda-ghaf-woods-fill";
 const TAOR2_SRC = "dda-taormina-2";
 const TAOR2_LINE = "dda-taormina-2-line";
-const TAOR2_FILL = "dda-taormina-2-fill";
 const BIANCA_SRC = "dda-bianca";
 const BIANCA_LINE = "dda-bianca-line";
-const BIANCA_FILL = "dda-bianca-fill";
 const MJL_SRC = "dda-mjl";
 const MJL_LINE = "dda-mjl-line";
-const MJL_FILL = "dda-mjl-fill";
 const DHK1_SRC = "dda-dh-khawaneej-1";
 const DHK1_LINE = "dda-dh-khawaneej-1-line";
-const DHK1_FILL = "dda-dh-khawaneej-1-fill";
 const REMRAAM_SRC = "dda-remraam";
 const REMRAAM_LINE = "dda-remraam-line";
-const REMRAAM_FILL = "dda-remraam-fill";
 const ECHO_SRC = "dda-echo-plex";
 const ECHO_LINE = "dda-echo-plex-line";
-const ECHO_FILL = "dda-echo-plex-fill";
 const SUSCITY_SRC = "dda-sustainable-city";
 const SUSCITY_LINE = "dda-sustainable-city-line";
-const SUSCITY_FILL = "dda-sustainable-city-fill";
 const JBR_SRC = "dda-jbr";
 const JBR_LINE = "dda-jbr-line";
-const JBR_FILL = "dda-jbr-fill";
 const GHOROOB_SRC = "dda-ghoroob";
 const GHOROOB_LINE = "dda-ghoroob-line";
-const GHOROOB_FILL = "dda-ghoroob-fill";
 const DPB3_SRC = "dda-dp-barsha-south-3";
 const DPB3_LINE = "dda-dp-barsha-south-3-line";
-const DPB3_FILL = "dda-dp-barsha-south-3-fill";
 const MARSA_SRC = "dda-marsa-al-arab";
 const MARSA_LINE = "dda-marsa-al-arab-line";
-const MARSA_FILL = "dda-marsa-al-arab-fill";
 const BLUE_SRC = "dda-bluewaters";
 const BLUE_LINE = "dda-bluewaters-line";
-const BLUE_FILL = "dda-bluewaters-fill";
 const SITE_D_SRC = "dda-site-d";
 const SITE_D_LINE = "dda-site-d-line";
-const SITE_D_FILL = "dda-site-d-fill";
 const KHEIGHTS_SRC = "dda-khail-heights";
 const KHEIGHTS_LINE = "dda-khail-heights-line";
-const KHEIGHTS_FILL = "dda-khail-heights-fill";
 const MERAAS_UAD_SRC = "dda-meraas-umm-al-daman";
 const MERAAS_UAD_LINE = "dda-meraas-umm-al-daman-line";
-const MERAAS_UAD_FILL = "dda-meraas-umm-al-daman-fill";
 const DLAND673_SRC = "dda-dubai-land-673";
 const DLAND673_LINE = "dda-dubai-land-673-line";
-const DLAND673_FILL = "dda-dubai-land-673-fill";
 const SHAMAL_Y1_SRC = "dda-shamal-yalayis-1";
 const SHAMAL_Y1_LINE = "dda-shamal-yalayis-1-line";
-const SHAMAL_Y1_FILL = "dda-shamal-yalayis-1-fill";
 const TECOM_Q2_SRC = "dda-tecom-qouz-2";
 const TECOM_Q2_LINE = "dda-tecom-qouz-2-line";
-const TECOM_Q2_FILL = "dda-tecom-qouz-2-fill";
 const GV_SRC = "dda-global-village";
 const GV_LINE = "dda-global-village-line";
-const GV_FILL = "dda-global-village-fill";
 const LAYAN_SRC = "dda-layan";
 const LAYAN_LINE = "dda-layan-line";
-const LAYAN_FILL = "dda-layan-fill";
 const DPGMBR_SRC = "dda-dpg-mbr";
 const DPGMBR_LINE = "dda-dpg-mbr-line";
-const DPGMBR_FILL = "dda-dpg-mbr-fill";
 const DWC_SRC = "dda-dwc";
 const DWC_LINE = "dda-dwc-line";
-const DWC_FILL = "dda-dwc-fill";
 const LQUOZ_SRC = "dda-labour-quoz";
 const LQUOZ_LINE = "dda-labour-quoz-line";
-const LQUOZ_FILL = "dda-labour-quoz-fill";
 const SCHFZ_SRC = "dda-schools-fz";
 const SCHFZ_LINE = "dda-schools-fz-line";
-const SCHFZ_FILL = "dda-schools-fz-fill";
 const DWCNFZ_SRC = "dda-dwc-nfz";
 const DWCNFZ_LINE = "dda-dwc-nfz-line";
-const DWCNFZ_FILL = "dda-dwc-nfz-fill";
 const SHAMAL_JAI1_SRC = "dda-shamal-jai-1";
 const SHAMAL_JAI1_LINE = "dda-shamal-jai-1-line";
-const SHAMAL_JAI1_FILL = "dda-shamal-jai-1-fill";
 const JAI_STAFF_SRC = "dda-jai-staff";
 const JAI_STAFF_LINE = "dda-jai-staff-line";
-const JAI_STAFF_FILL = "dda-jai-staff-fill";
 const SHAMAL_TC2_SRC = "dda-shamal-tc-2";
 const SHAMAL_TC2_LINE = "dda-shamal-tc-2-line";
-const SHAMAL_TC2_FILL = "dda-shamal-tc-2-fill";
 const NUZUL_SRC = "dda-nuzul";
 const NUZUL_LINE = "dda-nuzul-line";
-const NUZUL_FILL = "dda-nuzul-fill";
 const KOA_SRC = "dda-koa";
 const KOA_LINE = "dda-koa-line";
-const KOA_FILL = "dda-koa-fill";
 const SOBHA_S_SRC = "dda-sobha-sanctuary";
 const SOBHA_S_LINE = "dda-sobha-sanctuary-line";
-const SOBHA_S_FILL = "dda-sobha-sanctuary-fill";
 const BOX_SRC = "dda-boxpark";
 const BOX_LINE = "dda-boxpark-line";
-const BOX_FILL = "dda-boxpark-fill";
 const SHAMAL_NAS1_SRC = "dda-shamal-nas-1";
 const SHAMAL_NAS1_LINE = "dda-shamal-nas-1-line";
-const SHAMAL_NAS1_FILL = "dda-shamal-nas-1-fill";
 const LASTEXIT_SRC = "dda-last-exit";
 const LASTEXIT_LINE = "dda-last-exit-line";
-const LASTEXIT_FILL = "dda-last-exit-fill";
 const SCARA_SRC = "dda-scaramanga";
 const SCARA_LINE = "dda-scaramanga-line";
-const SCARA_FILL = "dda-scaramanga-fill";
 const MERAAS_W3_SRC = "dda-meraas-warqa-3";
 const MERAAS_W3_LINE = "dda-meraas-warqa-3-line";
-const MERAAS_W3_FILL = "dda-meraas-warqa-3-fill";
 const JCENTRAL_SRC = "dda-jumeirah-central";
 const JCENTRAL_LINE = "dda-jumeirah-central-line";
-const JCENTRAL_FILL = "dda-jumeirah-central-fill";
 const OASIS_SRC = "dda-oasis-village";
 const OASIS_LINE = "dda-oasis-village-line";
-const OASIS_FILL = "dda-oasis-village-fill";
 const ETD_SRC = "dda-emirates-towers";
 const ETD_LINE = "dda-emirates-towers-line";
-const ETD_FILL = "dda-emirates-towers-fill";
 const MERAAS_Q3_SRC = "dda-meraas-quoz-3";
 const MERAAS_Q3_LINE = "dda-meraas-quoz-3-line";
-const MERAAS_Q3_FILL = "dda-meraas-quoz-3-fill";
 const MARSA_S_SRC = "dda-marsa-alseef";
 const MARSA_S_LINE = "dda-marsa-alseef-line";
-const MARSA_S_FILL = "dda-marsa-alseef-fill";
 const MERAAS_WAS_SRC = "dda-meraas-wadi-alshabak";
 const MERAAS_WAS_LINE = "dda-meraas-wadi-alshabak-line";
-const MERAAS_WAS_FILL = "dda-meraas-wadi-alshabak-fill";
 const SHAMAL_B2_SRC = "dda-shamal-barsha-2";
 const SHAMAL_B2_LINE = "dda-shamal-barsha-2-line";
-const SHAMAL_B2_FILL = "dda-shamal-barsha-2-fill";
 const SHAMAL_N2_SRC = "dda-shamal-nahda-2";
 const SHAMAL_N2_LINE = "dda-shamal-nahda-2-line";
-const SHAMAL_N2_FILL = "dda-shamal-nahda-2-fill";
 const MERAAS_SAIH1_SRC = "dda-meraas-saih-1";
 const MERAAS_SAIH1_LINE = "dda-meraas-saih-1-line";
-const MERAAS_SAIH1_FILL = "dda-meraas-saih-1-fill";
 const DPOL_UAD_SRC = "dda-dubai-police-uad";
 const DPOL_UAD_LINE = "dda-dubai-police-uad-line";
-const DPOL_UAD_FILL = "dda-dubai-police-uad-fill";
 const MERAAS_RAK3_SRC = "dda-meraas-rakhor-3";
 const MERAAS_RAK3_LINE = "dda-meraas-rakhor-3-line";
-const MERAAS_RAK3_FILL = "dda-meraas-rakhor-3-fill";
 const MERAAS_MD_SRC = "dda-meraas-marsa-dubai";
 const MERAAS_MD_LINE = "dda-meraas-marsa-dubai-line";
-const MERAAS_MD_FILL = "dda-meraas-marsa-dubai-fill";
 const SHAMAL_HAD_SRC = "dda-shamal-hadaeq";
 const SHAMAL_HAD_LINE = "dda-shamal-hadaeq-line";
-const SHAMAL_HAD_FILL = "dda-shamal-hadaeq-fill";
 const JBH_SRC = "dda-jbh";
 const JBH_LINE = "dda-jbh-line";
-const JBH_FILL = "dda-jbh-fill";
 const MJUM_SRC = "dda-madinat-jumeirah";
 const MJUM_LINE = "dda-madinat-jumeirah-line";
-const MJUM_FILL = "dda-madinat-jumeirah-fill";
 const TECOM_SAIH_SRC = "dda-tecom-saih";
 const TECOM_SAIH_LINE = "dda-tecom-saih-line";
-const TECOM_SAIH_FILL = "dda-tecom-saih-fill";
 const CV2_SRC = "dda-culture-village-2";
 const CV2_LINE = "dda-culture-village-2-line";
-const CV2_FILL = "dda-culture-village-2-fill";
 const MERAAS_BS2_SRC = "dda-meraas-bs-2";
 const MERAAS_BS2_LINE = "dda-meraas-bs-2-line";
-const MERAAS_BS2_FILL = "dda-meraas-bs-2-fill";
 const SHAMAL_MUH2_SRC = "dda-shamal-muhaisanah-2";
 const SHAMAL_MUH2_LINE = "dda-shamal-muhaisanah-2-line";
-const SHAMAL_MUH2_FILL = "dda-shamal-muhaisanah-2-fill";
 const SHAMAL_Q2_SRC = "dda-shamal-quoz-2";
 const SHAMAL_Q2_LINE = "dda-shamal-quoz-2-line";
-const SHAMAL_Q2_FILL = "dda-shamal-quoz-2-fill";
 const CV3_SRC = "dda-culture-village-3";
 const CV3_LINE = "dda-culture-village-3-line";
-const CV3_FILL = "dda-culture-village-3-fill";
 const MERAAS_SATWA_SRC = "dda-meraas-satwa";
 const MERAAS_SATWA_LINE = "dda-meraas-satwa-line";
-const MERAAS_SATWA_FILL = "dda-meraas-satwa-fill";
 const SHAMAL_MAMZAR_SRC = "dda-shamal-mamzar";
 const SHAMAL_MAMZAR_LINE = "dda-shamal-mamzar-line";
-const SHAMAL_MAMZAR_FILL = "dda-shamal-mamzar-fill";
 const SHAMAL_RAFFA_SRC = "dda-shamal-raffa";
 const SHAMAL_RAFFA_LINE = "dda-shamal-raffa-line";
-const SHAMAL_RAFFA_FILL = "dda-shamal-raffa-fill";
 const MERAAS_MAMZAR_SRC = "dda-meraas-mamzar";
 const MERAAS_MAMZAR_LINE = "dda-meraas-mamzar-line";
-const MERAAS_MAMZAR_FILL = "dda-meraas-mamzar-fill";
 const DH_SAFOUH1_SRC = "dda-dh-safouh-1";
 const DH_SAFOUH1_LINE = "dda-dh-safouh-1-line";
-const DH_SAFOUH1_FILL = "dda-dh-safouh-1-fill";
 const DL_B104_SRC = "dda-dubai-land-b1-04";
 const DL_B104_LINE = "dda-dubai-land-b1-04-line";
-const DL_B104_FILL = "dda-dubai-land-b1-04-fill";
 const DHAM_ROW1_SRC = "dda-dham-rowaiyah-1";
 const DHAM_ROW1_LINE = "dda-dham-rowaiyah-1-line";
-const DHAM_ROW1_FILL = "dda-dham-rowaiyah-1-fill";
 const DL_B208_SRC = "dda-dubai-land-b2-08";
 const DL_B208_LINE = "dda-dubai-land-b2-08-line";
-const DL_B208_FILL = "dda-dubai-land-b2-08-fill";
 const BEACH_SRC = "dda-the-beach";
 const BEACH_LINE = "dda-the-beach-line";
-const BEACH_FILL = "dda-the-beach-fill";
 const SHAMAL_US3_SRC = "dda-shamal-us-3";
 const SHAMAL_US3_LINE = "dda-shamal-us-3-line";
-const SHAMAL_US3_FILL = "dda-shamal-us-3-fill";
 const MERAAS_HEMAIRA_SRC = "dda-meraas-hemaira";
 const MERAAS_HEMAIRA_LINE = "dda-meraas-hemaira-line";
-const MERAAS_HEMAIRA_FILL = "dda-meraas-hemaira-fill";
 const DP_QUOZ2_SRC = "dda-dp-quoz-2";
 const DP_QUOZ2_LINE = "dda-dp-quoz-2-line";
-const DP_QUOZ2_FILL = "dda-dp-quoz-2-fill";
 const DL_B103_SRC = "dda-dubai-land-b1-03";
 const DL_B103_LINE = "dda-dubai-land-b1-03-line";
-const DL_B103_FILL = "dda-dubai-land-b1-03-fill";
 const JG_J2_SRC = "dda-jg-jumeira-2";
 const JG_J2_LINE = "dda-jg-jumeira-2-line";
-const JG_J2_FILL = "dda-jg-jumeira-2-fill";
 const DL_T15_SRC = "dda-dubai-land-t15";
 const DL_T15_LINE = "dda-dubai-land-t15-line";
-const DL_T15_FILL = "dda-dubai-land-t15-fill";
 const SHAMAL_WASL_SRC = "dda-shamal-wasl";
 const SHAMAL_WASL_LINE = "dda-shamal-wasl-line";
-const SHAMAL_WASL_FILL = "dda-shamal-wasl-fill";
 const DL_A304_SRC = "dda-dubai-land-a3-04";
 const DL_A304_LINE = "dda-dubai-land-a3-04-line";
-const DL_A304_FILL = "dda-dubai-land-a3-04-fill";
 const EAHM_SRC = "dda-eahm";
 const EAHM_LINE = "dda-eahm-line";
-const EAHM_FILL = "dda-eahm-fill";
 const MERAAS_ZABEEL2_SRC = "dda-meraas-zabeel-2";
 const MERAAS_ZABEEL2_LINE = "dda-meraas-zabeel-2-line";
-const MERAAS_ZABEEL2_FILL = "dda-meraas-zabeel-2-fill";
 const MERAAS_JAFILIYA_SRC = "dda-meraas-jafiliya";
 const MERAAS_JAFILIYA_LINE = "dda-meraas-jafiliya-line";
-const MERAAS_JAFILIYA_FILL = "dda-meraas-jafiliya-fill";
 const KITE_SRC = "dda-kite-beach";
 const KITE_LINE = "dda-kite-beach-line";
-const KITE_FILL = "dda-kite-beach-fill";
 const MERAAS_ALAMARDI_SRC = "dda-meraas-alamardi";
 const MERAAS_ALAMARDI_LINE = "dda-meraas-alamardi-line";
-const MERAAS_ALAMARDI_FILL = "dda-meraas-alamardi-fill";
 const MERAAS_PORTSAEED_SRC = "dda-meraas-port-saeed";
 const MERAAS_PORTSAEED_LINE = "dda-meraas-port-saeed-line";
-const MERAAS_PORTSAEED_FILL = "dda-meraas-port-saeed-fill";
 const DL_6461281_SRC = "dda-dl-6461281";
 const DL_6461281_LINE = "dda-dl-6461281-line";
-const DL_6461281_FILL = "dda-dl-6461281-fill";
 const SHAMAL_OUDM_SRC = "dda-shamal-oud-metha";
 const SHAMAL_OUDM_LINE = "dda-shamal-oud-metha-line";
-const SHAMAL_OUDM_FILL = "dda-shamal-oud-metha-fill";
 const SHAMAL_Q3_SRC = "dda-shamal-quoz-3";
 const SHAMAL_Q3_LINE = "dda-shamal-quoz-3-line";
-const SHAMAL_Q3_FILL = "dda-shamal-quoz-3-fill";
 const DL_A307_SRC = "dda-dubai-land-a3-07";
 const DL_A307_LINE = "dda-dubai-land-a3-07-line";
-const DL_A307_FILL = "dda-dubai-land-a3-07-fill";
 const WAS3_6456408_SRC = "dda-was3-6456408";
 const WAS3_6456408_LINE = "dda-was3-6456408-line";
-const WAS3_6456408_FILL = "dda-was3-6456408-fill";
 const SHAMAL_Q1_SRC = "dda-shamal-quoz-1";
 const SHAMAL_Q1_LINE = "dda-shamal-quoz-1-line";
-const SHAMAL_Q1_FILL = "dda-shamal-quoz-1-fill";
 const MERAAS_NAS4_SRC = "dda-meraas-nas-4";
 const MERAAS_NAS4_LINE = "dda-meraas-nas-4-line";
-const MERAAS_NAS4_FILL = "dda-meraas-nas-4-fill";
 const SHAMAL_MUH1_SRC = "dda-shamal-muhaisnah-1";
 const SHAMAL_MUH1_LINE = "dda-shamal-muhaisnah-1-line";
-const SHAMAL_MUH1_FILL = "dda-shamal-muhaisnah-1-fill";
 const SHAMAL_J1_SRC = "dda-shamal-jumeira-1";
 const SHAMAL_J1_LINE = "dda-shamal-jumeira-1-line";
-const SHAMAL_J1_FILL = "dda-shamal-jumeira-1-fill";
 const MERAAS_QUSAIS2_SRC = "dda-meraas-qusais-2";
 const MERAAS_QUSAIS2_LINE = "dda-meraas-qusais-2-line";
-const MERAAS_QUSAIS2_FILL = "dda-meraas-qusais-2-fill";
 const SHAMAL_MAHA_SRC = "dda-shamal-maha";
 const SHAMAL_MAHA_LINE = "dda-shamal-maha-line";
-const SHAMAL_MAHA_FILL = "dda-shamal-maha-fill";
 const LUNAYA_SRC = "dda-lunaya";
 const LUNAYA_LINE = "dda-lunaya-line";
-const LUNAYA_FILL = "dda-lunaya-fill";
 const MERAAS_US1_SRC = "dda-meraas-us-1";
 const MERAAS_US1_LINE = "dda-meraas-us-1-line";
-const MERAAS_US1_FILL = "dda-meraas-us-1-fill";
 const SHAMAL_NAHDA1_SRC = "dda-shamal-nahda-1";
 const SHAMAL_NAHDA1_LINE = "dda-shamal-nahda-1-line";
-const SHAMAL_NAHDA1_FILL = "dda-shamal-nahda-1-fill";
 const SHAMAL_SAFOUH1_SRC = "dda-shamal-safouh-1";
 const SHAMAL_SAFOUH1_LINE = "dda-shamal-safouh-1-line";
-const SHAMAL_SAFOUH1_FILL = "dda-shamal-safouh-1-fill";
 const SHAMAL_MARGHAM_SRC = "dda-shamal-margham";
 const SHAMAL_MARGHAM_LINE = "dda-shamal-margham-line";
-const SHAMAL_MARGHAM_FILL = "dda-shamal-margham-fill";
 const WILD_WADI_SRC = "dda-wild-wadi";
 const WILD_WADI_LINE = "dda-wild-wadi-line";
-const WILD_WADI_FILL = "dda-wild-wadi-fill";
 const MERAAS_BS1_SRC = "dda-meraas-bs-1";
 const MERAAS_BS1_LINE = "dda-meraas-bs-1-line";
-const MERAAS_BS1_FILL = "dda-meraas-bs-1-fill";
 const DL_A409_SRC = "dda-dubai-land-a4-09";
 const DL_A409_LINE = "dda-dubai-land-a4-09-line";
-const DL_A409_FILL = "dda-dubai-land-a4-09-fill";
 const ZABEEL1_SRC = "dda-zabeel-first";
 const ZABEEL1_LINE = "dda-zabeel-first-line";
-const ZABEEL1_FILL = "dda-zabeel-first-fill";
 const WAS3_6454931_SRC = "dda-was3-6454931";
 const WAS3_6454931_LINE = "dda-was3-6454931-line";
-const WAS3_6454931_FILL = "dda-was3-6454931-fill";
 const MERAAS_3460266_SRC = "dda-meraas-3460266";
 const MERAAS_3460266_LINE = "dda-meraas-3460266-line";
-const MERAAS_3460266_FILL = "dda-meraas-3460266-fill";
 const MUSEUM_FUTURE_SRC = "dda-museum-future";
 const MUSEUM_FUTURE_LINE = "dda-museum-future-line";
-const MUSEUM_FUTURE_FILL = "dda-museum-future-fill";
 const AL_JALILA_SRC = "dda-al-jalila";
 const AL_JALILA_LINE = "dda-al-jalila-line";
-const AL_JALILA_FILL = "dda-al-jalila-fill";
 const DL_A102_SRC = "dda-dubai-land-a1-02";
 const DL_A102_LINE = "dda-dubai-land-a1-02-line";
-const DL_A102_FILL = "dda-dubai-land-a1-02-fill";
 const MERAAS_WARQA2_SRC = "dda-meraas-warqa-2";
 const MERAAS_WARQA2_LINE = "dda-meraas-warqa-2-line";
-const MERAAS_WARQA2_FILL = "dda-meraas-warqa-2-fill";
 const MERAAS_J1_SRC = "dda-meraas-jumeira-1";
 const MERAAS_J1_LINE = "dda-meraas-jumeira-1-line";
-const MERAAS_J1_FILL = "dda-meraas-jumeira-1-fill";
 const DP_JAFILIYA_SRC = "dda-dp-jafiliya";
 const DP_JAFILIYA_LINE = "dda-dp-jafiliya-line";
-const DP_JAFILIYA_FILL = "dda-dp-jafiliya-fill";
 const BURJ_AA_SRC = "dda-burj-al-arab";
 const BURJ_AA_LINE = "dda-burj-al-arab-line";
-const BURJ_AA_FILL = "dda-burj-al-arab-fill";
 const SHAMAL_BS1_SRC = "dda-shamal-bs-1";
 const SHAMAL_BS1_LINE = "dda-shamal-bs-1-line";
-const SHAMAL_BS1_FILL = "dda-shamal-bs-1-fill";
 const DPA_SRC = "dda-dubai-police-academy";
 const DPA_LINE = "dda-dubai-police-academy-line";
-const DPA_FILL = "dda-dubai-police-academy-fill";
 const SHAMAL_MANKHOOL_SRC = "dda-shamal-mankhool";
 const SHAMAL_MANKHOOL_LINE = "dda-shamal-mankhool-line";
-const SHAMAL_MANKHOOL_FILL = "dda-shamal-mankhool-fill";
 
 type LayersState = {
   communities: boolean; roads: boolean; metro: boolean;
@@ -8065,55 +7854,6 @@ function SectionCheckbox({
   );
 }
 
-function GroupHeader({
-  title,
-  open,
-  onToggle,
-  c,
-}: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-  c: { textDim: string; borderSubtle: string };
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "8px 14px 6px",
-        borderTop: `1px solid ${c.borderSubtle}`,
-        background: "transparent",
-        border: "none",
-        borderTopStyle: "solid",
-        borderTopWidth: 1,
-        borderTopColor: c.borderSubtle,
-        cursor: "pointer",
-        fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: 12,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-        color: c.textDim,
-      }}
-    >
-      <span>{title}</span>
-      <span style={{ fontSize: 11 }}>{open ? "▾" : "▸"}</span>
-    </button>
-  );
-}
-
-function Stat({ label, value, dim, text }: { label: string; value: string; dim: string; text: string }) {
-  return (
-    <span>
-      <span style={{ color: dim, marginRight: 5 }}>{label}</span>
-      <span style={{ color: text }}>{value}</span>
-    </span>
-  );
-}
-
 // ── New unified header bar with Add / Find / Check / Profile ──
 type ChromeTheme = {
   bg: string;
@@ -8158,7 +7898,6 @@ function HeaderBar({
   const [findOpen, setFindOpen] = useState(false);
   const [findError, setFindError] = useState<string | null>(null);
   const [findBusy, setFindBusy] = useState(false);
-  const [check, setCheck] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
   // Music / SFX master switch — local subscription so the button icon
@@ -8185,11 +7924,6 @@ function HeaderBar({
     })();
     return () => { cancelled = true; };
   }, []);
-
-  const flash = (m: string) => {
-    setMsg(m);
-    setTimeout(() => setMsg(null), 3000);
-  };
 
   async function doFind() {
     const plotNumber = find.trim();
@@ -8249,24 +7983,6 @@ function HeaderBar({
     } finally {
       setFindBusy(false);
     }
-  }
-
-  function doCheck(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    const plotNumber = check.replace(/\s+/g, "").trim();
-    if (!/^\d{7}$/.test(plotNumber)) {
-      flash("Plot # must be exactly 7 digits");
-      return;
-    }
-    // Copy to clipboard so user can paste into the DLD form
-    navigator.clipboard?.writeText(plotNumber).catch(() => {});
-    window.open(
-      "https://dubailand.gov.ae/en/eservices/inquiry-about-a-property-status/",
-      "_blank",
-      "noopener",
-    );
-    flash(`→ DLD check ${plotNumber} (copied)`);
-    setCheck("");
   }
 
   return (
@@ -8635,84 +8351,6 @@ function FindLauncher({
         </div>
       )}
     </div>
-  );
-}
-
-function HdrField({
-  c, icon, label, placeholder, value, onChange, onKey, busy, tooltip,
-}: {
-  c: ChromeTheme;
-  icon: string;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  onKey: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  busy: boolean;
-  tooltip: string;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  if (!expanded && !value) {
-    return (
-      <ChromeBtn
-        title={tooltip}
-        onClick={() => setExpanded(true)}
-        size={CHROME_BTN_SIZE_COMPACT}
-      >
-        <span style={{ fontSize: 13, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
-      </ChromeBtn>
-    );
-  }
-
-  return (
-    <label
-      title={tooltip}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        height: 28,
-        padding: "0 4px 0 8px",
-        borderRadius: 6,
-        border: `1px solid rgba(200, 169, 110, 0.3)`,
-        background: "rgba(10, 22, 40, 0.5)",
-        color: c.text,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-        gap: 4,
-        transition: "border-color 150ms ease, background 150ms ease",
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = "rgba(200, 169, 110, 0.25)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(200, 169, 110, 0.3)"; e.currentTarget.style.background = "rgba(10, 22, 40, 0.5)"; }}
-    >
-      <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, lineHeight: 1 }}>{icon}</span>
-      {label && <span style={{ fontSize: 12, fontWeight: 600, color: c.text }}>{label}</span>}
-      <input
-        autoFocus
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            setExpanded(false);
-            onChange("");
-          }
-          onKey(e);
-        }}
-        onBlur={() => { if (!value) setExpanded(false); }}
-        placeholder={busy ? "…" : placeholder}
-        disabled={busy}
-        style={{
-          width: 70,
-          height: 22,
-          padding: "0 4px",
-          border: "none",
-          background: "transparent",
-          color: c.text,
-          fontSize: 12,
-          outline: "none",
-        }}
-      />
-    </label>
   );
 }
 

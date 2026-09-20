@@ -60,7 +60,7 @@ Each land use has its own 3D style (colors — see the section above "Colors by 
 
 **3D buildings opacity — two different values by layer type (founder spec 2026-04-15):**
 - **ZAAHI listings 3D buildings (`ZAAHI_BUILDINGS_3D`, source `zaahi-plots-buildings`, our 114 plots): `fill-extrusion-opacity: 1` — SOLID.** These are our plots, they must stand out on the map as solid objects.
-- **PMTiles 3D buildings (DDA / AD / Oman via `addLandTileSource`): `fill-extrusion-opacity: 0.35` — TRANSPARENT.** This is background data, it must not dominate the listings.
+- **PMTiles 3D buildings (DDA / AD / Oman via `addLandTileSource`): `fill-extrusion-opacity: 0.45` — TRANSPARENT.** This is background data, it must not dominate the listings.
 - `fill-extrusion-opacity` MUST be a literal number, MapLibre does not accept data expressions. Any highlighting of a selected building is done via `fill-extrusion-color` (brightness) or a glow outline on the plot layer, NOT via opacity.
 
 FUTURE DEVELOPMENT (land without buildings) — fill polygon only, no 3D extrusion.
