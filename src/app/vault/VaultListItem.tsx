@@ -11,8 +11,11 @@ import { apiFetch } from "@/lib/api-fetch";
 import { useFormatPrice } from "@/lib/currency";
 import { AttributionBadge } from "./AttributionBadge";
 import { PriceEditCell } from "./PriceEditCell";
-import { PriceHistoryDropdown } from "./PriceHistoryDropdown";
-import { VAULT_STAGE_LABELS, type VaultEntrySummary, type VaultEntryShareSummary } from "./types";
+import { StageCell } from "./StageCell";
+import { FollowUpCell } from "./FollowUpCell";
+import { VaultDetailsPanel } from "./VaultDetailsPanel";
+import { stagePillStyle } from "./stagePill";
+import { VAULT_STAGE_LABELS, type VaultEntrySummary, type VaultStage, type VaultEntryShareSummary } from "./types";
 
 const GOLD = "#C8A96E";
 const RED = "#E63946";
@@ -26,6 +29,8 @@ interface OwnedProps {
   entry: VaultEntrySummary;
   selfUserId: string;
   onPriceSaved: (id: string, newPriceFils: string | null) => void;
+  /** Optimistic patch of stage / follow-up after an inline edit. */
+  onEntryPatched?: (id: string, patch: Partial<VaultEntrySummary>) => void;
   /** Called after the row's entry is deleted server-side (HTTP 204) so
    *  the parent can refresh the list. */
   onDeleted: (entryId: string) => void;
@@ -51,7 +56,8 @@ export function VaultListItem(props: Props) {
           <div style={plotCellStyle}>
             <button
               onClick={() => setExpanded((v) => !v)}
-              title={expanded ? "Hide price history" : "Show price history"}
+              title={expanded ? "Hide details" : "Show details"}
+              aria-label={expanded ? "Hide details" : "Show details"}
               style={chevronStyle}
             >
               {expanded ? "▾" : "▸"}
@@ -62,7 +68,11 @@ export function VaultListItem(props: Props) {
             </div>
           </div>
           <div>
-            <span style={stagePillStyle(e.stage)}>{VAULT_STAGE_LABELS[e.stage]}</span>
+            <StageCell
+              entryId={e.id}
+              stage={e.stage}
+              onSaved={(stage: VaultStage) => props.onEntryPatched?.(e.id, { stage })}
+            />
           </div>
           <div>
             <PriceEditCell
@@ -71,8 +81,12 @@ export function VaultListItem(props: Props) {
               onSaved={(p) => props.onPriceSaved(e.id, p)}
             />
           </div>
-          <div style={{ color: TEXT_DIM, fontSize: 12 }}>
-            {e.nextFollowUpAt ? new Date(e.nextFollowUpAt).toLocaleDateString() : "—"}
+          <div>
+            <FollowUpCell
+              entryId={e.id}
+              nextFollowUpAt={e.nextFollowUpAt}
+              onSaved={(nextFollowUpAt) => props.onEntryPatched?.(e.id, { nextFollowUpAt })}
+            />
           </div>
           <div style={{ color: TEXT_DIM, fontSize: 12 }}>
             {e.shareCount > 0 ? `${e.shareCount} share${e.shareCount === 1 ? "" : "s"}` : "—"}
@@ -114,7 +128,7 @@ export function VaultListItem(props: Props) {
             </button>
           </div>
         </div>
-        {expanded && <PriceHistoryDropdown entryId={e.id} />}
+        {expanded && <VaultDetailsPanel entryId={e.id} />}
         {showDeleteConfirm && (
           <DeleteConfirmModal
             entry={e}
@@ -171,31 +185,6 @@ export function VaultListItem(props: Props) {
       </div>
     </div>
   );
-}
-
-function stagePillStyle(stage: string): React.CSSProperties {
-  const color = {
-    LEAD: "#1B4965",
-    CONTACTED: "#E67E22",
-    NEGOTIATING: "#C8A96E",
-    AGREEMENT_SIGNED: "#2D6A4F",
-    PROMOTED: "#9B2226",
-    LOST: "#6B7280",
-    CLOSED: "#1A1A2E",
-  }[stage] ?? "#888";
-  return {
-    display: "inline-block",
-    padding: "2px 8px",
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    borderRadius: 4,
-    background: `${color}22`,
-    color,
-    border: `1px solid ${color}55`,
-    whiteSpace: "nowrap",
-  };
 }
 
 const rowStyle: React.CSSProperties = {
