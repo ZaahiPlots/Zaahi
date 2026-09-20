@@ -79,6 +79,9 @@ export function ConflictsTab({ selfUserId, onPriceSaved, onDeleted }: Props) {
           entry={e}
           selfUserId={selfUserId}
           onPriceSaved={onPriceSaved}
+          onEntryPatched={(id, patch) =>
+            setItems((prev) => prev?.map((p) => (p.id === id ? { ...p, ...patch } : p)) ?? prev)
+          }
           onDeleted={(id) => {
             setItems((prev) => prev?.filter((p) => p.id !== id) ?? prev);
             onDeleted?.(id);

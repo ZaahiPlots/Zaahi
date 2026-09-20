@@ -216,6 +216,10 @@ function OwnedList({
     );
   }
 
+  function handleEntryPatched(id: string, patch: Partial<VaultEntrySummary>) {
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+
   // Optimistic remove — VaultListItem already called DELETE and got 204.
   function handleDeleted(id: string) {
     setItems((prev) => prev.filter((p) => p.id !== id));
@@ -243,6 +247,7 @@ function OwnedList({
           entry={e}
           selfUserId={selfUserId}
           onPriceSaved={handlePriceSaved}
+          onEntryPatched={handleEntryPatched}
           onDeleted={handleDeleted}
         />
       ))}
