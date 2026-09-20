@@ -131,3 +131,13 @@ export const PALETTE: Record<Theme, {
     headerShadow: "0 2px 12px rgba(0,0,0,0.6)",
   },
 };
+
+// ── New unified header bar with Add / Find / Check / Profile ──
+export type ChromeTheme = {
+  bg: string;
+  text: string;
+  textDim: string;
+  border: string;
+  borderSubtle: string;
+  headerShadow: string;
+};
