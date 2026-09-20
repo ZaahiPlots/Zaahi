@@ -2111,6 +2111,10 @@ function ParcelsMapPageInner() {
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
+  // Raised at the END of map.on("load"), once every overlay/land layer
+  // exists. mapStyleReady goes up at the top of the handler — too early
+  // for effects that write visibility onto layers.
+  const [overlaysReady, setOverlaysReady] = useState(false);
   const [completedVisible, setCompletedVisible] = useState(true);
   const [underConstructionVisible, setUnderConstructionVisible] = useState(true);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
@@ -5449,6 +5453,7 @@ function ParcelsMapPageInner() {
 // Hover handlers — the LAYER_REGISTRY loader registers per-layer
       // mouse listeners on demand when each layer is first loaded.
       // (See loadLayer in the helpers above.)
+      setOverlaysReady(true);
     });
 
     mapRef.current = map;
@@ -5792,21 +5797,21 @@ function ParcelsMapPageInner() {
   // Layer toggles
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !overlaysReady) return;
     const plotLabelsOn = layers.plotLabels;
     for (const def of LAYER_REGISTRY) {
       void setLayerVisibility(map, def, !!layers[def.key], plotLabelsOn);
     }
-  }, [layers]);
+  }, [layers, overlaysReady]);
 
   // PMTiles land toggles — single toggle per source (DDA / AD)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !overlaysReady) return;
     setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
     setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-  }, [layers.ddaLandPlots, layers.adLandPlots]);
+  }, [layers.ddaLandPlots, layers.adLandPlots, overlaysReady]);
 
   // District-name symbol layer visibility — direct toggle since this
   // layer lives outside LAYER_REGISTRY (custom centroid source, no
