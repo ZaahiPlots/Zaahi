@@ -2111,6 +2111,10 @@ function ParcelsMapPageInner() {
   // Digital-twin Buildings layer state — completely additive, isolated
   // from the ZAAHI Signature rendering for LISTED plots.
   const [mapStyleReady, setMapStyleReady] = useState(false);
+  // Raised at the END of map.on("load"), once every overlay/land layer
+  // exists. mapStyleReady goes up at the top of the handler — too early
+  // for effects that write visibility onto layers.
+  const [overlaysReady, setOverlaysReady] = useState(false);
   const [completedVisible, setCompletedVisible] = useState(true);
   const [underConstructionVisible, setUnderConstructionVisible] = useState(true);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
@@ -5160,6 +5164,12 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+      // Cold-load site must write the user's state too: addLandTileSource
+      // creates the layers hidden (as at the basemap-swap / WebGL-restore
+      // sites), and the [mapStyleReady] effect has already run by now.
+      setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layersRef.current.ddaLandPlots);
+      setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layersRef.current.adLandPlots);
+      setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layersRef.current.adLandPlots);
       // Oman PMTiles dropped 2026-05-24.
 
       // City-ambient white-noise → bandpass swap on zoom > 16 was removed
@@ -5443,9 +5453,16 @@ function ParcelsMapPageInner() {
 // Hover handlers — the LAYER_REGISTRY loader registers per-layer
       // mouse listeners on demand when each layer is first loaded.
       // (See loadLayer in the helpers above.)
+      setOverlaysReady(true);
     });
 
     mapRef.current = map;
+    // E2E test handle. Read-only reference so Playwright can inspect the
+    // live style registry (tests/e2e/layer-visibility.spec.ts). MapLibre
+    // exposes no container→Map back-pointer, and the alternative (asserting
+    // on canvas pixels) would depend on the remote glyph CDN. No behaviour
+    // change; nothing in the app reads this.
+    (window as unknown as { __zaahiMap?: MLMap }).__zaahiMap = map;
 
     // ── WebGL context loss / restore (perf-2026-08-21 item 5) ──────
     // There was no handling at all: a lost context left MapLibre's canvas
@@ -5780,21 +5797,21 @@ function ParcelsMapPageInner() {
   // Layer toggles
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !overlaysReady) return;
     const plotLabelsOn = layers.plotLabels;
     for (const def of LAYER_REGISTRY) {
       void setLayerVisibility(map, def, !!layers[def.key], plotLabelsOn);
     }
-  }, [layers]);
+  }, [layers, overlaysReady]);
 
   // PMTiles land toggles — single toggle per source (DDA / AD)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !overlaysReady) return;
     setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layers.ddaLandPlots);
     setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layers.adLandPlots);
     setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layers.adLandPlots);
-  }, [layers.ddaLandPlots, layers.adLandPlots]);
+  }, [layers.ddaLandPlots, layers.adLandPlots, overlaysReady]);
 
   // District-name symbol layer visibility — direct toggle since this
   // layer lives outside LAYER_REGISTRY (custom centroid source, no
