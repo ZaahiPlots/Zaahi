@@ -10,21 +10,21 @@ paths:
   - "scripts/**"
 ---
 
-## Правило добавления участков (batch)
-- Все участки из DDA (7-значные номера)
-- Для каждого: запроси полигон, affection plan, building limit из DDA API
-- 3D модель ZAAHI Signature по land use автоматически
-- После добавления жди подтверждение "yes" перед следующим
+## Rule for adding parcels (batch)
+- All parcels come from DDA (7-digit numbers)
+- For each one: request the polygon, affection plan and building limit from the DDA API
+- The ZAAHI Signature 3D model is generated automatically by land use
+- After adding, wait for a "yes" confirmation before the next one
 
-### Цена участка — ТОЛЬКО ВРУЧНУЮ
-Общая цена участка (`currentValuation` в `Parcel`, хранится в fils как `BigInt`) устанавливается **ТОЛЬКО вручную**. Источники цены:
-1. **Excel файл от основателя** (batch загрузка через `scripts/update-prices-from-excel.ts`-style скрипты — общая цена в формате `50M` / `1.2B` парсится в fils).
-2. **Пользователь, добавляющий участок через Add Plot** — устанавливает цену в форме при добавлении.
-3. **Собственник участка** может изменить цену через свой профиль (`/api/parcels/[id]` PATCH с проверкой `ownerId === userId`).
+### Parcel price — MANUAL ONLY
+The total parcel price (`currentValuation` in `Parcel`, stored in fils as `BigInt`) is set **ONLY manually**. Price sources:
+1. **Excel file from the founder** (batch upload via `scripts/update-prices-from-excel.ts`-style scripts — the total price in `50M` / `1.2B` format is parsed into fils).
+2. **A user adding a parcel via Add Plot** — sets the price in the form when adding.
+3. **The parcel owner** may change the price via their profile (`/api/parcels/[id]` PATCH with an `ownerId === userId` check).
 
-**Автоматически рассчитывать или менять общую цену системой ЗАПРЕЩЕНО.** Никаких "GFA × per-sqft" вычислений на стороне сервера или скриптов, никаких автоматических переоценок при обновлении affection plan. `currentValuation` меняется только когда явная инструкция от founder/owner.
+**It is FORBIDDEN for the system to automatically calculate or change the total price.** No "GFA × per-sqft" calculations on the server or in scripts, no automatic revaluations when the affection plan is updated. `currentValuation` changes only on an explicit instruction from the founder/owner.
 
-`Price per sqft GFA` и `Price per sqft Plot` рассчитываются автоматически из общей цены **только для отображения в карточке** (в `SidePanel.tsx`). Эти производные значения никогда не записываются обратно в БД.
+`Price per sqft GFA` and `Price per sqft Plot` are calculated automatically from the total price **for display in the card only** (in `SidePanel.tsx`). These derived values are never written back to the DB.
 
 ### NEVER delete parcels — ever
 - A parcel row in `Parcel` table is **never** deleted by the agent. Not even VACANT stubs, not even rows the agent itself created in a previous batch, not even rows that "look broken".
