@@ -5446,6 +5446,12 @@ function ParcelsMapPageInner() {
     });
 
     mapRef.current = map;
+    // E2E test handle. Read-only reference so Playwright can inspect the
+    // live style registry (tests/e2e/layer-visibility.spec.ts). MapLibre
+    // exposes no container→Map back-pointer, and the alternative (asserting
+    // on canvas pixels) would depend on the remote glyph CDN. No behaviour
+    // change; nothing in the app reads this.
+    (window as unknown as { __zaahiMap?: MLMap }).__zaahiMap = map;
 
     // ── WebGL context loss / restore (perf-2026-08-21 item 5) ──────
     // There was no handling at all: a lost context left MapLibre's canvas
