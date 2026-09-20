@@ -5160,6 +5160,12 @@ function ParcelsMapPageInner() {
       addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
+      // Cold-load site must write the user's state too: addLandTileSource
+      // creates the layers hidden (as at the basemap-swap / WebGL-restore
+      // sites), and the [mapStyleReady] effect has already run by now.
+      setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, layersRef.current.ddaLandPlots);
+      setLandTileVisibility(map, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, layersRef.current.adLandPlots);
+      setLandTileVisibility(map, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, layersRef.current.adLandPlots);
       // Oman PMTiles dropped 2026-05-24.
 
       // City-ambient white-noise → bandpass swap on zoom > 16 was removed
