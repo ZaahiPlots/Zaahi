@@ -27,7 +27,6 @@ import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import MapZoomReadout from "./MapZoomReadout";
 import MapCoordsReadout from "./MapCoordsReadout";
-import MapCompassIcon from "./MapCompassIcon";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
@@ -136,12 +135,14 @@ import ParcelsNav from "./ParcelsNav";
 // Other surfaces (HeaderBar, hover popups, MiniMap dock, SidePanel)
 // follow in the next commit after founder review.
 import { Panel } from "@/components/Panel";
-import { ChromeBtn } from "@/components/ChromeBtn";
 import { debugLog, debugWarn } from "@/lib/debug";
 import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL, RADIUS_CARD } from "@/lib/design-tokens";
 import { PmtilesHoverRow, VaultAddButton, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
 import { CountryGroup, LayerGroup, LayerToggle } from "./LayersPanelParts";
 import { HeaderBar } from "./HeaderBar";
+import { MapToast, Toast } from "./MapToast";
+import { AutoRotateHint, MapLeftRail, MapRightRail } from "./MapRails";
+import { ContextLostOverlay } from "./ContextLostOverlay";
 
 const GOLD = "#C8A96E";
 function ParcelsMapPageInner() {
@@ -583,7 +584,6 @@ function ParcelsMapPageInner() {
   // Lightweight toast for success / error feedback after wizard or listing
   // submit. Single slot — newer toast replaces older. Auto-dismiss after 4s,
   // user can dismiss manually via ×.
-  type Toast = { message: string; sub?: string; kind: "success" | "error" };
   const [toast, setToast] = useState<Toast | null>(null);
   useEffect(() => {
     if (!toast) return;
@@ -4516,30 +4516,7 @@ function ParcelsMapPageInner() {
           dedicated button). */}
       {sunSliderActive && <SunTimeSlider onChange={setSunTimeOverride} />}
 
-      {showAutoRotateHint && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(10,22,40,0.7)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.9)",
-            borderRadius: 12,
-            padding: "8px 16px",
-            fontSize: 13,
-            letterSpacing: "0.02em",
-            zIndex: 40,
-            pointerEvents: "none",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-          }}
-        >
-          Auto-rotate ON — touch the map to pause
-        </div>
-      )}
+      {showAutoRotateHint && <AutoRotateHint />}
 
       {/* Header */}
       <HeaderBar
@@ -4651,64 +4628,7 @@ function ParcelsMapPageInner() {
           }}
         />
       )}
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            top: 80,
-            right: 20,
-            zIndex: 60,
-            maxWidth: 320,
-            padding: "14px 16px",
-            borderRadius: 12,
-            background: "rgba(10, 22, 40, 0.92)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: `1px solid ${toast.kind === "error" ? "rgba(230, 57, 70, 0.55)" : "rgba(200, 169, 110, 0.45)"}`,
-            color: "rgba(255, 255, 255, 0.92)",
-            fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.55)",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontFamily: "Georgia, serif",
-              fontSize: 14,
-              fontWeight: 700,
-              color: toast.kind === "error" ? "#E63946" : "#C8A96E",
-              letterSpacing: "-0.01em",
-              marginBottom: toast.sub ? 4 : 0,
-            }}>
-              {toast.kind === "error" ? "✕" : "✓"} {toast.message}
-            </div>
-            {toast.sub && (
-              <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.65)", lineHeight: 1.4 }}>
-                {toast.sub}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={() => setToast(null)}
-            aria-label="Dismiss"
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "rgba(255, 255, 255, 0.55)",
-              cursor: "pointer",
-              fontSize: 16,
-              padding: 0,
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
+      {toast && <MapToast toast={toast} setToast={setToast} />}
 
       {/* Layers / Legend / basemap / auto-rotate triggers now live in
           the symmetric 5×5 big-map button stacks below (founder
@@ -4840,198 +4760,28 @@ function ParcelsMapPageInner() {
         <MapCoordsReadout mapRef={mapRef} /> · z<MapZoomReadout mapRef={mapRef} />
       </div>
 
-      {/* ── LEFT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
-          Top→bottom: Layers, Basemap Light, Basemap Dark, Basemap
-          Satellite, Auto-rotate. Mirrors the right stack horizontally —
-          both stacks are 5 buttons at top: 50% translateY(-50%), gap 6,
-          so button N on the left is at the same y as button N on the
-          right. All buttons use ChromeBtn glassmorphism gold; active
-          state shows GOLD-tinted fill. */}
-      <div
-        style={{
-          position: "absolute",
-          left: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          zIndex: 11,
-        }}
-      >
-        {/* 1. Layers — opens the Layers panel. panelBtnRef stays here so
-              the panel's click-outside handler still excludes this
-              button. */}
-        <span ref={panelBtnRef} style={{ display: "block" }}>
-          <ChromeBtn
-            title="Layers"
-            active={layersOpen}
-            onClick={() => {
-              // Neutral chrome tap (founder backlog #33).
-              sound.uiTap();
-              setLayersOpen((o) => !o);
-              setPortalOpen(false);
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </ChromeBtn>
-        </span>
-        {/* 2. Basemap Light */}
-        <ChromeBtn
-          title={baseMapBusy ? "Loading style…" : "Light basemap"}
-          active={baseMap === "light"}
-          onClick={() => swapBaseMap("light")}
-        >
-          {/* Sun — solid disc with rays. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
-        </ChromeBtn>
-        {/* 3. Basemap Dark */}
-        <ChromeBtn
-          title={baseMapBusy ? "Loading style…" : "Dark basemap"}
-          active={baseMap === "dark"}
-          onClick={() => swapBaseMap("dark")}
-        >
-          {/* Crescent moon. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-          </svg>
-        </ChromeBtn>
-        {/* 4. Basemap Satellite */}
-        <ChromeBtn
-          title={baseMapBusy ? "Loading style…" : "Satellite basemap"}
-          active={baseMap === "satellite"}
-          onClick={() => swapBaseMap("satellite")}
-        >
-          {/* Satellite dish — minimalist parabolic glyph. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 20l8-8" />
-            <path d="M14.5 13.5l-3-3" />
-            <path d="M9 7c4 0 8 4 8 8" />
-            <path d="M11.5 4.5C16 4.5 19.5 8 19.5 12.5" />
-            <circle cx="6" cy="18" r="1.6" />
-          </svg>
-        </ChromeBtn>
-        {/* 5. Auto-rotate. */}
-        <ChromeBtn
-          title={autoRotateEnabled ? "Disable auto-rotate" : "Enable auto-rotate camera"}
-          active={autoRotateEnabled}
-          onClick={() => {
-            sound.whoosh();
-            setAutoRotateEnabled((v) => !v);
-          }}
-        >
-          {/* Circular arrow — auto-rotate indicator. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-3.5-7.1" />
-            <polyline points="21 4 21 9 16 9" />
-          </svg>
-        </ChromeBtn>
-        {/* Filters button moved to the HeaderBar (founder spec
-            2026-06-03). The left rail now ends at 5 (Auto-rotate)
-            after the drone-mode button was removed 2026-06-11
-            (FPS-drone postmortem: режимы дрона убраны вообще,
-            клавиатурная навигация добавлена к обычной карте).
-            The Parcels portal toggle had previously moved to the
-            bottom-centre ParcelsNav pill (founder spec 2026-05-29). */}
-      </div>
+      <MapLeftRail
+        autoRotateEnabled={autoRotateEnabled}
+        baseMap={baseMap}
+        baseMapBusy={baseMapBusy}
+        layersOpen={layersOpen}
+        panelBtnRef={panelBtnRef}
+        setAutoRotateEnabled={setAutoRotateEnabled}
+        setLayersOpen={setLayersOpen}
+        setPortalOpen={setPortalOpen}
+        swapBaseMap={swapBaseMap}
+      />
 
-      {/* ── RIGHT vertical stack (5×5 symmetry, founder spec 2026-05-24) ──
-          Top→bottom: Legend, Zoom+, Zoom−, Reset bearing, 3D/2D.
-          Mirrors the LEFT stack horizontally — same y-positions for
-          buttons 1..5. */}
-      <div
-        style={{
-          position: "absolute",
-          right: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          zIndex: 11,
-        }}
-      >
-        {/* 1. Legend — mirrors Layers on the left. data-legend-trigger
-              keeps the click-outside handler from re-closing the panel
-              when the user clicks this trigger. */}
-        <span ref={legendBtnRef} data-legend-trigger style={{ display: "block" }}>
-          <ChromeBtn
-            title="Legend"
-            active={legendOpen}
-            onClick={() => {
-              sound.uiTap(); // neutral chrome (backlog #33)
-              setLegendOpen((o) => !o);
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <circle cx="4" cy="6" r="1.2" fill="currentColor" />
-              <circle cx="4" cy="12" r="1.2" fill="currentColor" />
-              <circle cx="4" cy="18" r="1.2" fill="currentColor" />
-            </svg>
-          </ChromeBtn>
-        </span>
-        {/* 2. Zoom in */}
-        <ChromeBtn title="Zoom in" onClick={() => { sound.uiTap(); mapRef.current?.zoomIn(); }}>+</ChromeBtn>
-        {/* 3. Zoom out */}
-        <ChromeBtn title="Zoom out" onClick={() => { sound.uiTap(); mapRef.current?.zoomOut(); }}>−</ChromeBtn>
-        {/* 4. Reset bearing — compass icon rotates with current bearing. */}
-        <ChromeBtn
-          title="Reset bearing"
-          onClick={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45, duration: 500 })}
-        >
-          <MapCompassIcon mapRef={mapRef} />
-        </ChromeBtn>
-        {/* 5. 2D/3D toggle */}
-        <ChromeBtn
-          title={is3D ? "Switch to 2D" : "Switch to 3D"}
-          active={is3D}
-          onClick={() => {
-            const map = mapRef.current;
-            if (!map) return;
-            const next = !is3D;
-            setIs3D(next);
-            // 2D/3D toggle gets the brighter uiClick — toggling perspective
-            // is a "primary" action, not neutral chrome (backlog #33).
-            // Replaces the previous whoosh at this one site; the whooshes on
-            // panel open/close are untouched.
-            sound.uiClick();
-            map.easeTo({ pitch: next ? 45 : 0, duration: 400 });
-          }}
-        >
-          <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 12 }}>
-            {is3D ? "3D" : "2D"}
-          </span>
-        </ChromeBtn>
-        {/* 6. Sun-time slider — promoted from the removed MiniMap
-            dock to the right rail (founder spec 2026-06-01). The
-            slider overlay itself stays rendered at page-level when
-            sunSliderActive is true (see L5059). */}
-        <ChromeBtn
-          title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
-          active={sunSliderActive}
-          onClick={() => {
-            sound.whoosh();
-            setSunSliderActive((v) => !v);
-          }}
-        >
-          {/* Sun — radiating rays around a centred disc. Same glyph
-              that lived in the mini-dock for visual continuity. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
-        </ChromeBtn>
-      </div>
+      <MapRightRail
+        is3D={is3D}
+        legendBtnRef={legendBtnRef}
+        legendOpen={legendOpen}
+        mapRef={mapRef}
+        setIs3D={setIs3D}
+        setLegendOpen={setLegendOpen}
+        setSunSliderActive={setSunSliderActive}
+        sunSliderActive={sunSliderActive}
+      />
 
       {/* Wave 2: Filter Panel — right-anchored side panel. Mounts on
           top of the map (zIndex 12 above other rails). Single source
@@ -5788,72 +5538,7 @@ function ParcelsMapPageInner() {
         width={panelWidth}
         onWidthChange={setPanelWidth}
       />
-      {/* WebGL context-loss overlay (perf-2026-08-21 item 5). Without this
-          the canvas simply goes blank under fully interactive chrome, which
-          is indistinguishable from a hang. zIndex clears every panel. */}
-      {contextLost && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            background: "rgba(10, 22, 40, 0.82)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            color: GOLD,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            letterSpacing: "0.08em",
-          }}
-          role="alert"
-          aria-live="assertive"
-        >
-          <div style={{ fontSize: 14, fontWeight: 700 }}>MAP INTERRUPTED</div>
-          <div
-            style={{
-              fontSize: 12,
-              opacity: 0.8,
-              fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-              letterSpacing: "normal",
-              maxWidth: 380,
-              textAlign: "center",
-            }}
-          >
-            The map failed to load — the browser dropped its graphics context.
-            Trying to restore it automatically.
-          </div>
-          {/* A retry the user can actually press. Automatic restoration depends
-              on the browser firing webglcontextrestored, which it may never do:
-              on a GPU reset under memory pressure the context can stay dead. The
-              reported case was a blank map with every control live and nothing
-              to click, so the recovery path must not be invisible OR passive. */}
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: 4,
-              padding: "8px 18px",
-              borderRadius: 6,
-              border: `1px solid ${GOLD}`,
-              background: "rgba(200, 169, 110, 0.12)",
-              color: GOLD,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
-              transition: "background 150ms ease, border-color 150ms ease",
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      )}
+      {contextLost && <ContextLostOverlay />}
       <WelcomeTour />
       <ParcelsPortalPanel
         open={portalOpen}
