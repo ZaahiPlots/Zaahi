@@ -2,11 +2,12 @@
 //
 // POST /api/me/vault/plot-lookup  body: { emirate, district, plotNumber }
 // → 200 {
-//     source: "dda" | "dda_unavailable" | "not_found",
+//     source: "dda" | "zaahi_stored" | "dda_unavailable" | "not_found",
 //     existing: VaultEntrySummary | null,
 //     ddaData?: {
 //       area, geometry, landUse, latitude, longitude, district,
 //       ddaSnapshot?,            // present only when sourced from live DDA
+//       snapshotDate?,           // present only when source is zaahi_stored
 //     }
 //   }
 //
@@ -16,17 +17,21 @@
 //   1. Does the caller already have a vault entry for this plot? Short-circuit
 //      to edit-mode.
 //   2. Is the plot in our local curated Parcel index? Hit → return cached.
-//   3. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). Hit → return live
+//   3. Is the plot in our own stored DDA data (99,126 Dubai plots, harvested
+//      before the 2026-09 token wall — no network call)? Hit → "zaahi_stored",
+//      dated. (2026-09-26, docs/agent-log/2026-09-26-vault-local-fallback.md)
+//   4. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). Hit → return live
 //      data + ddaSnapshot for storage on the entry. DDA erroring (token
 //      wall, HTTP failure) → "dda_unavailable", distinct from a genuine miss
 //      (2026-09-26, docs/agent-log/2026-09-26-dda-token-restore.md).
-//   4. Miss everything → "not_found"; wizard goes to manual entry.
+//   5. Miss everything → "not_found"; wizard goes to manual entry.
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
+import { lookupStoredDdaPlot, STORED_DDA_SNAPSHOT_DATE } from "@/lib/dda-stored-plot-lookup";
 import { emirateMatchVariants } from "@/lib/emirate";
 
 export const runtime = "nodejs";
@@ -152,11 +157,36 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 3) Live DDA fallback — call BASIC_LAND_BASE/2 + PlotInfo + BuildingLimit
-  //    for plots not in our curated index. Phase 2 of vault refactor
-  //    (founder spec 2026-05-30) brings parity with seed-dda by chaining
-  //    all three DDA fetches so the wizard surfaces the same affection
-  //    plan a public listing would. ~0.5–2s end-to-end; plan or
+  // 3) Our own stored DDA data (99,126 Dubai plots harvested before
+  //    BASIC_LAND_BASE's 2026-09 token wall — see
+  //    docs/agent-log/2026-09-26-vault-local-fallback.md). No network call.
+  //    Checked before live DDA so a walled/slow live call never blocks a
+  //    plot we already have on disk. Never a substitute for the Parcel
+  //    table (step 2) — that stays authoritative when both have the plot.
+  if (emirate === "DUBAI") {
+    const stored = lookupStoredDdaPlot(plotNumber);
+    if (stored) {
+      return NextResponse.json({
+        source: "zaahi_stored" as const,
+        existing: existingSummary,
+        ddaData: {
+          area: stored.area,
+          geometry: stored.geometry,
+          landUse: stored.landUse,
+          latitude: stored.latitude,
+          longitude: stored.longitude,
+          district: stored.district || district,
+          snapshotDate: STORED_DDA_SNAPSHOT_DATE,
+        },
+      });
+    }
+  }
+
+  // 4) Live DDA fallback — call BASIC_LAND_BASE/2 + PlotInfo + BuildingLimit
+  //    for plots not in our curated index or stored data. Phase 2 of vault
+  //    refactor (founder spec 2026-05-30) brings parity with seed-dda by
+  //    chaining all three DDA fetches so the wizard surfaces the same
+  //    affection plan a public listing would. ~0.5–2s end-to-end; plan or
   //    buildingLimit can come back null on master plots / missing layer 8.
   if (emirate === "DUBAI") {
     const live = await fetchFullDdaData(plotNumber);

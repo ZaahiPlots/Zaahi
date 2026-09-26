@@ -75,9 +75,11 @@ export const LAND_USE_LABELS: Record<LandUse, string> = {
 
 /** Result from POST /api/me/vault/plot-lookup. */
 export interface PlotLookupResponse {
-  /** "dda_unavailable" — DDA errored (token wall, HTTP failure); distinct
+  /** "zaahi_stored" — hit in our own stored DDA data (harvested before the
+   *  2026-09 token wall), not a live DDA answer — see `snapshotDate` below.
+   *  "dda_unavailable" — DDA errored (token wall, HTTP failure); distinct
    *  from a genuine "not_found" miss. 2026-09-26. */
-  source: "dda" | "dda_unavailable" | "not_found";
+  source: "dda" | "zaahi_stored" | "dda_unavailable" | "not_found";
   existing:
     | {
         id: string;
@@ -103,6 +105,9 @@ export interface PlotLookupResponse {
     plan?: unknown;
     /** Building-limit polygon (MapServer/8). Null when missing for the plot. */
     buildingLimit?: unknown;
+    /** ISO date of our stored-data snapshot. Present only when source is
+     *  "zaahi_stored" — shown to the user so it's never mistaken for live DDA. */
+    snapshotDate?: string;
   };
 }
 
