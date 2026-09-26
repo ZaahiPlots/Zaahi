@@ -50,7 +50,7 @@ export async function refreshDdaForParcel(
 
   try {
     const live = await fetchFullDdaData(plotNumber);
-    if (!live) {
+    if (live.status === "not_found") {
       return {
         ...base,
         ok: false,
@@ -58,6 +58,15 @@ export async function refreshDdaForParcel(
         durationMs: Date.now() - t0,
       };
     }
+    if (live.status === "unavailable") {
+      return {
+        ...base,
+        ok: false,
+        reason: `dda-unavailable: ${live.reason}`,
+        durationMs: Date.now() - t0,
+      };
+    }
+    const { basic, plan, buildingLimit } = live.data;
 
     // Refresh the polygon + centroid only. Founder spec is explicit:
     // ONLY geometry / latitude / longitude on Parcel. Area is left
@@ -67,9 +76,9 @@ export async function refreshDdaForParcel(
     await prisma.parcel.update({
       where: { id: parcelId },
       data: {
-        geometry: live.basic.geometry as unknown as Prisma.InputJsonValue,
-        latitude: live.basic.latitude,
-        longitude: live.basic.longitude,
+        geometry: basic.geometry as unknown as Prisma.InputJsonValue,
+        latitude: basic.latitude,
+        longitude: basic.longitude,
       },
     });
 
@@ -77,12 +86,12 @@ export async function refreshDdaForParcel(
     // The append is unconditional (not improvement-gated) because the
     // explicit purpose of bulk-refresh is to reset fetchedAt on every
     // public plot so the next staleness sweep can skip them.
-    if (live.plan) {
+    if (plan) {
       await writeAffectionPlan(
         parcelId,
         plotNumber,
-        live.plan,
-        live.buildingLimit,
+        plan,
+        buildingLimit,
       );
       return {
         ...base,

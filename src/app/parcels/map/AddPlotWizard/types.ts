@@ -75,7 +75,9 @@ export const LAND_USE_LABELS: Record<LandUse, string> = {
 
 /** Result from POST /api/me/vault/plot-lookup. */
 export interface PlotLookupResponse {
-  source: "dda" | "not_found";
+  /** "dda_unavailable" — DDA errored (token wall, HTTP failure); distinct
+   *  from a genuine "not_found" miss. 2026-09-26. */
+  source: "dda" | "dda_unavailable" | "not_found";
   existing:
     | {
         id: string;
