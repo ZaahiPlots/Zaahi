@@ -75,9 +75,9 @@ export async function maybeAppendAffectionPlan(
     let buildingLimit = args.clientBuildingLimit;
     if (!plan) {
       const live = await fetchFullDdaData(args.plotNumber);
-      if (live) {
-        plan = live.plan;
-        buildingLimit = buildingLimit ?? live.buildingLimit;
+      if (live.status === "hit") {
+        plan = live.data.plan;
+        buildingLimit = buildingLimit ?? live.data.buildingLimit;
       }
     }
     if (!plan) return { appended: false, reason: "no-plan-data" };

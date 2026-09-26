@@ -559,7 +559,7 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
         </div>
       )}
 
-      {lookupResult?.source === "not_found" && (
+      {(lookupResult?.source === "not_found" || lookupResult?.source === "dda_unavailable") && (
         <div style={resultBlockStyle}>
           {/* ── Document-first flow (founder spec 2026-06-02) ──
               Three sub-modes inside the not_found branch:
@@ -573,10 +573,9 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
           {mode === "init" && (
             <>
               <div style={{ color: TEXT_DIM, marginBottom: 12, fontSize: 12 }}>
-                This plot isn&apos;t in DDA. Upload the Affection Plan
-                (or DCR for Abu Dhabi) — we&apos;ll read the corners,
-                area, FAR and floor count from it, then you confirm
-                on the map before saving.
+                {lookupResult?.source === "dda_unavailable"
+                  ? "DDA lookup is unavailable right now. Upload the Affection Plan (or DCR for Abu Dhabi) — we’ll read the corners, area, FAR and floor count from it, then you confirm on the map before saving."
+                  : "This plot isn’t in DDA. Upload the Affection Plan (or DCR for Abu Dhabi) — we’ll read the corners, area, FAR and floor count from it, then you confirm on the map before saving."}
               </div>
 
               <Field label="Affection Plan PDF / image (required)">

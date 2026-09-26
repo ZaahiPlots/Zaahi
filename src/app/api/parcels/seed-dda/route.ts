@@ -44,8 +44,16 @@ export async function POST(req: NextRequest) {
     'https://gis.dda.gov.ae/server/rest/services/DDA/BASIC_LAND_BASE/MapServer/2/query' +
     `?where=PLOT_NUMBER%3D%27${plotNumber}%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson`;
   const polyRes = await fetch(polyUrl, { cache: 'no-store' });
-  if (!polyRes.ok) return NextResponse.json({ error: 'dda_polygon_failed' }, { status: 502 });
-  const polyJson = (await polyRes.json()) as { features?: PolyFeature[] };
+  if (!polyRes.ok) return NextResponse.json({ error: 'dda_unavailable' }, { status: 503 });
+  const polyJson = (await polyRes.json()) as { features?: PolyFeature[]; error?: { code?: number; message?: string } };
+  // ArcGIS errors (token walls, quota, bad query) come back as HTTP 200 with
+  // an {"error": {...}} body — polyRes.ok tells us nothing. Must check the
+  // body shape before treating an empty features[] as "plot doesn't exist".
+  // 2026-09-26: docs/agent-log/2026-09-26-dda-token-restore.md.
+  if (polyJson.error) {
+    console.error('[seed-dda] ArcGIS error for', plotNumber, polyJson.error.code, polyJson.error.message);
+    return NextResponse.json({ error: 'dda_unavailable' }, { status: 503 });
+  }
   const feat = polyJson.features?.[0];
   if (!feat?.geometry) return NextResponse.json({ error: 'plot_not_found_in_dda' }, { status: 404 });
 

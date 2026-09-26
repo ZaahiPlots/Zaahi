@@ -135,10 +135,37 @@ export function synthesizeAffectionPlanFromDdaSnapshot(
   };
 }
 
+/**
+ * Outcome of a live BASIC_LAND_BASE / full DDA lookup — three distinct
+ * shapes so callers never collapse "DDA is down" into "plot doesn't exist".
+ *
+ *   hit         — parsed a real feature.
+ *   not_found   — DDA answered cleanly (or the plot number is malformed)
+ *                 and there is genuinely no such plot.
+ *   unavailable — DDA errored (HTTP failure, network failure, or an ArcGIS
+ *                 error body like the 499 "Token Required" wall) — we don't
+ *                 know whether the plot exists. `reason` is for logs only,
+ *                 never shown to the user verbatim.
+ *
+ * 2026-09-26: BASIC_LAND_BASE started answering every query with HTTP 200 +
+ * `{"error":{"code":499,"message":"Token Required"}}`. The old code only
+ * checked `res.ok` (true — the error body IS a 200), then saw an empty
+ * `features[]` and returned null, which every caller read as "not in DDA".
+ * See docs/agent-log/2026-09-26-dda-token-restore.md for the full trace —
+ * no legitimate token path exists for this service, so this is an
+ * error-handling fix only, not a token workaround.
+ */
+export type DdaLookupResult<T> =
+  | { status: "hit"; data: T }
+  | { status: "not_found" }
+  | { status: "unavailable"; reason: string };
+
 /** Full vault-side DDA fetch — basic polygon + affection plan +
  *  building limit. Each child fetch is best-effort: PlotInfo can return
  *  "SEE NOTES" on master plots, and BuildingLimit is missing for many
- *  smaller parcels. Returns null only when the basic lookup misses.
+ *  smaller parcels. Only the basic BASIC_LAND_BASE lookup can produce
+ *  not_found / unavailable — plan and buildingLimit failures degrade to
+ *  null within a "hit".
  *
  *  Used by /api/me/vault/plot-lookup (to surface the plan in the wizard)
  *  and /api/me/vault/entries POST (to persist the AffectionPlan row).
@@ -151,9 +178,9 @@ export interface DdaFullData {
 
 export async function fetchFullDdaData(
   plotNumber: string,
-): Promise<DdaFullData | null> {
+): Promise<DdaLookupResult<DdaFullData>> {
   const basic = await fetchDdaPlotByNumber(plotNumber);
-  if (!basic) return null;
+  if (basic.status !== "hit") return basic;
 
   // Plan and building-limit run in parallel — neither blocks the basic
   // polygon, both are best-effort.
@@ -177,13 +204,16 @@ export async function fetchFullDdaData(
     })(),
   ]);
 
-  return { basic, plan, buildingLimit };
+  return { status: "hit", data: { basic: basic.data, plan, buildingLimit } };
 }
 
-/** Fetch + parse one plot from BASIC_LAND_BASE. Returns null on miss/error. */
-export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotResult | null> {
-  // Validate: BASIC_LAND_BASE expects plain numeric plot string.
-  if (!/^\d{5,10}$/.test(plotNumber)) return null;
+/** Fetch + parse one plot from BASIC_LAND_BASE. */
+export async function fetchDdaPlotByNumber(
+  plotNumber: string,
+): Promise<DdaLookupResult<DdaPlotResult>> {
+  // Validate: BASIC_LAND_BASE expects plain numeric plot string. A
+  // malformed plot number is never DDA's fault — not_found, not unavailable.
+  if (!/^\d{5,10}$/.test(plotNumber)) return { status: "not_found" };
 
   const url =
     `${BASIC_LAND_BASE}?where=PLOT_NUMBER%3D%27${encodeURIComponent(plotNumber)}%27` +
@@ -199,11 +229,11 @@ export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotR
     });
   } catch (e) {
     console.error("[dda-plot-lookup] fetch failed for", plotNumber, e);
-    return null;
+    return { status: "unavailable", reason: `fetch_failed: ${e instanceof Error ? e.message : String(e)}` };
   }
   if (!res.ok) {
     console.error("[dda-plot-lookup] HTTP", res.status, "for", plotNumber);
-    return null;
+    return { status: "unavailable", reason: `http_${res.status}` };
   }
 
   let json: unknown;
@@ -211,21 +241,36 @@ export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotR
     json = await res.json();
   } catch (e) {
     console.error("[dda-plot-lookup] JSON parse failed for", plotNumber, e);
-    return null;
+    return { status: "unavailable", reason: "invalid_json" };
+  }
+
+  // ArcGIS errors (token walls, quota, bad query) come back as HTTP 200
+  // with an {"error": {...}} body — res.ok tells us nothing. Must check
+  // the body shape before ever looking at features[].
+  const errorBody = json as { error?: { code?: number; message?: string } };
+  if (errorBody.error) {
+    console.error(
+      "[dda-plot-lookup] ArcGIS error for", plotNumber,
+      errorBody.error.code, errorBody.error.message,
+    );
+    return {
+      status: "unavailable",
+      reason: `dda_error_${errorBody.error.code ?? "unknown"}: ${errorBody.error.message ?? ""}`,
+    };
   }
 
   const collection = json as { features?: Array<{ geometry?: unknown; properties?: Record<string, unknown> }> };
   const features = Array.isArray(collection.features) ? collection.features : [];
-  if (features.length === 0) return null;
+  if (features.length === 0) return { status: "not_found" };
 
   const feat = features[0];
-  if (!feat.geometry || typeof feat.geometry !== "object") return null;
+  if (!feat.geometry || typeof feat.geometry !== "object") return { status: "not_found" };
   const geom = feat.geometry as { type?: string; coordinates?: number[][][] };
   if (geom.type !== "Polygon" || !Array.isArray(geom.coordinates) || geom.coordinates.length === 0) {
-    return null;
+    return { status: "not_found" };
   }
   const ring = geom.coordinates[0];
-  if (!Array.isArray(ring) || ring.length < 3) return null;
+  if (!Array.isArray(ring) || ring.length < 3) return { status: "not_found" };
 
   const props = feat.properties ?? {};
   const polygon: GeoJSON.Polygon = {
@@ -269,12 +314,15 @@ export async function fetchDdaPlotByNumber(plotNumber: string): Promise<DdaPlotR
   };
 
   return {
-    geometry: polygon,
-    area,
-    district,
-    landUse,
-    latitude,
-    longitude,
-    ddaSnapshot: snapshot,
+    status: "hit",
+    data: {
+      geometry: polygon,
+      area,
+      district,
+      landUse,
+      latitude,
+      longitude,
+      ddaSnapshot: snapshot,
+    },
   };
 }

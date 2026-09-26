@@ -2,7 +2,7 @@
 //
 // POST /api/me/vault/plot-lookup  body: { emirate, district, plotNumber }
 // → 200 {
-//     source: "dda" | "not_found",
+//     source: "dda" | "dda_unavailable" | "not_found",
 //     existing: VaultEntrySummary | null,
 //     ddaData?: {
 //       area, geometry, landUse, latitude, longitude, district,
@@ -16,8 +16,10 @@
 //   1. Does the caller already have a vault entry for this plot? Short-circuit
 //      to edit-mode.
 //   2. Is the plot in our local curated Parcel index? Hit → return cached.
-//   3. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). One fetch, no token,
-//      ~0.5s. Hit → return live data + ddaSnapshot for storage on the entry.
+//   3. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). Hit → return live
+//      data + ddaSnapshot for storage on the entry. DDA erroring (token
+//      wall, HTTP failure) → "dda_unavailable", distinct from a genuine miss
+//      (2026-09-26, docs/agent-log/2026-09-26-dda-token-restore.md).
 //   4. Miss everything → "not_found"; wizard goes to manual entry.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -158,25 +160,36 @@ export async function POST(req: NextRequest) {
   //    buildingLimit can come back null on master plots / missing layer 8.
   if (emirate === "DUBAI") {
     const live = await fetchFullDdaData(plotNumber);
-    if (live) {
+    if (live.status === "hit") {
+      const { basic, plan, buildingLimit } = live.data;
       return NextResponse.json({
         source: "dda" as const,
         existing: existingSummary,
         ddaData: {
-          area: live.basic.area,
-          geometry: live.basic.geometry,
-          landUse: live.basic.landUse,
-          latitude: live.basic.latitude,
-          longitude: live.basic.longitude,
-          district: live.basic.district || district,
-          ddaSnapshot: live.basic.ddaSnapshot,
+          area: basic.area,
+          geometry: basic.geometry,
+          landUse: basic.landUse,
+          latitude: basic.latitude,
+          longitude: basic.longitude,
+          district: basic.district || district,
+          ddaSnapshot: basic.ddaSnapshot,
           // Full affection plan + building limit polygon — Phase 2.
           // Either may be null on master plots / missing data.
-          plan: live.plan,
-          buildingLimit: live.buildingLimit,
+          plan,
+          buildingLimit,
         },
       });
     }
+    if (live.status === "unavailable") {
+      // DDA errored (token wall, HTTP failure, etc.) — this is an outage,
+      // not evidence the plot doesn't exist. Never collapse into not_found.
+      console.error("[plot-lookup] DDA unavailable for", plotNumber, live.reason);
+      return NextResponse.json({
+        source: "dda_unavailable" as const,
+        existing: existingSummary,
+      });
+    }
+    // live.status === "not_found" falls through to the not_found response below.
   }
 
   return NextResponse.json({

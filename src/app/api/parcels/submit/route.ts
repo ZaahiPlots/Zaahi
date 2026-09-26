@@ -123,7 +123,13 @@ export async function POST(req: NextRequest) {
       `?where=PLOT_NUMBER%3D%27${plotNumber}%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson`;
     const r = await fetch(polyUrl, { cache: 'no-store' });
     if (r.ok) {
-      const j = (await r.json()) as { features?: PolyFeature[] };
+      const j = (await r.json()) as { features?: PolyFeature[]; error?: { code?: number; message?: string } };
+      // ArcGIS errors (token walls, quota) return HTTP 200 + {"error": {...}}.
+      // Logged only — this fetch is best-effort, the parcel still creates
+      // without enrichment either way. 2026-09-26: docs/agent-log/2026-09-26-dda-token-restore.md.
+      if (j.error) {
+        console.error('[parcels/submit] DDA unavailable for', plotNumber, j.error.code, j.error.message);
+      }
       const feat = j.features?.[0];
       if (feat?.geometry) {
         geometry = feat.geometry;
