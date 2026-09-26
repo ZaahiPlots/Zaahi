@@ -18,6 +18,12 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  fetchPlotInfoHtml,
+  parseAffectionPlan,
+  fetchBuildingLimit,
+  type AffectionPlan,
+} from "@/lib/dda";
 
 const INDEX_PATH = join(process.cwd(), "data", "dda-plot-index.json");
 const DDA_DIR = join(process.cwd(), "data", "layers", "dda");
@@ -95,5 +101,126 @@ export function lookupStoredDdaPlot(plotNumber: string): StoredDdaPlot | null {
     landUse: entry.landUse,
     latitude: n > 0 ? cy / n : 0,
     longitude: n > 0 ? cx / n : 0,
+  };
+}
+
+// ─── Live enrichment of a stored hit (2026-09-26) ──────────────────────────
+//
+// BASIC_LAND_BASE (the endpoint fetchDdaPlotByNumber uses) is behind the
+// 2026-09 token wall, but PlotInfo (fetchPlotInfoHtml + parseAffectionPlan,
+// DIS/AGSToken flow) and BuildingLimit (MAIN_MAP layer 8, same token flow)
+// still answer normally — they're a different DDA subsystem. A stored hit
+// can therefore still get today's land use / floors / FAR / setbacks
+// instead of the April-2026 snapshot's, without ever touching
+// BASIC_LAND_BASE. See docs/agent-log/2026-09-26-vault-stored-live-plotinfo.md.
+
+export type StoredFieldSource = "live_dda" | "stored";
+
+export interface StoredHitEnrichment {
+  /** Merged land use — live PlotInfo category when present, else the
+   *  stored (possibly stale) value. */
+  landUse: string | null;
+  /** Full AffectionPlan from PlotInfo, or null if PlotInfo failed/timed out. */
+  plan: AffectionPlan | null;
+  /** Building-limit polygon, or null if it failed/timed out/is missing. */
+  buildingLimit: GeoJSON.Polygon | null;
+  /** Per-value provenance. "stored" also covers fields the stored index
+   *  never carried at all (floors/far/height/setbacks/buildingLimit) —
+   *  there it means "no live value was available", not "we had one on disk". */
+  fieldSources: {
+    landUse: StoredFieldSource;
+    floors: StoredFieldSource;
+    far: StoredFieldSource;
+    height: StoredFieldSource;
+    setbacks: StoredFieldSource;
+    buildingLimit: StoredFieldSource;
+  };
+}
+
+const ENRICH_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`timeout_${ms}ms`)), ms);
+    promise.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
+/** First landUseMix category, uppercased — the same "one representative
+ *  string" shape the live-DDA branch's `landUse` field already uses.
+ *
+ *  Defensive trim: on PlotInfo page layouts where parseAffectionPlan's
+ *  primary `<li><b>CATEGORY</b>` match finds nothing, it falls back to a
+ *  raw "Land use ... General Notes" text span (src/lib/dda.ts) — and on
+ *  plots where a Setbacks table sits between those two labels, that span
+ *  leaks the whole setbacks table into the category string. Confirmed
+ *  live on 6489099 (2026-09-26): category came back as
+ *  "HOSPITALITY : HOTEL Setbacks Side Building Podium Side 1 7.5 N/A …".
+ *  `plan.landUseMix` itself is left untouched — writeAffectionPlan still
+ *  persists whatever parseAffectionPlan produced, same as a live-DDA hit
+ *  would — this only cleans the short string this route surfaces as
+ *  `landUse`. Root cause is in dda.ts's fallback regex, out of this
+ *  task's edit scope; worth a follow-up.  */
+function firstLandUseCategory(plan: AffectionPlan | null): string | null {
+  const first = plan?.landUseMix?.[0];
+  if (!first?.category) return null;
+  const cleaned = first.category.split(/\s+Setbacks\s+Side\s+Building/i)[0].trim();
+  return cleaned.length > 0 ? cleaned.toUpperCase() : null;
+}
+
+/**
+ * Enrich a stored-DDA hit with today's PlotInfo + BuildingLimit. Best-effort,
+ * same pattern as fetchFullDdaData: each fetch is independent, a failure or
+ * >8s timeout degrades to null and never blocks the stored result.
+ *
+ * `deps` is injectable so tests can exercise the merge logic without a
+ * network call or the DIS token flow — production callers omit it.
+ */
+export async function enrichStoredHit(
+  plotNumber: string,
+  stored: { landUse: string | null },
+  deps: {
+    fetchPlotInfoHtml: (plotNumber: string) => Promise<string>;
+    parseAffectionPlan: (html: string) => AffectionPlan;
+    fetchBuildingLimit: (plotNumber: string) => Promise<GeoJSON.Polygon | null>;
+  } = { fetchPlotInfoHtml, parseAffectionPlan, fetchBuildingLimit },
+): Promise<StoredHitEnrichment> {
+  const [plan, buildingLimit] = await Promise.all([
+    (async (): Promise<AffectionPlan | null> => {
+      try {
+        const html = await withTimeout(deps.fetchPlotInfoHtml(plotNumber), ENRICH_TIMEOUT_MS);
+        return deps.parseAffectionPlan(html);
+      } catch (e) {
+        console.error("[dda-stored-plot-lookup] PlotInfo enrich failed for", plotNumber, e);
+        return null;
+      }
+    })(),
+    (async (): Promise<GeoJSON.Polygon | null> => {
+      try {
+        return await withTimeout(deps.fetchBuildingLimit(plotNumber), ENRICH_TIMEOUT_MS);
+      } catch (e) {
+        console.error("[dda-stored-plot-lookup] BuildingLimit enrich failed for", plotNumber, e);
+        return null;
+      }
+    })(),
+  ]);
+
+  const liveLandUse = firstLandUseCategory(plan);
+
+  return {
+    landUse: liveLandUse ?? stored.landUse,
+    plan,
+    buildingLimit,
+    fieldSources: {
+      landUse: liveLandUse ? "live_dda" : "stored",
+      floors: plan?.maxFloors != null ? "live_dda" : "stored",
+      far: plan?.far != null ? "live_dda" : "stored",
+      height: plan?.maxHeightMeters != null ? "live_dda" : "stored",
+      setbacks: plan != null && plan.setbacks.length > 0 ? "live_dda" : "stored",
+      buildingLimit: buildingLimit != null ? "live_dda" : "stored",
+    },
   };
 }
