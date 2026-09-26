@@ -127,7 +127,7 @@ the PR is the source of truth.
 
 ## PR
 
-<!-- filled in after push -->
+https://github.com/ZaahiPlots/Zaahi/pull/9 (not merged — founder tests locally first)
 
 ## Local URL for founder check
 
