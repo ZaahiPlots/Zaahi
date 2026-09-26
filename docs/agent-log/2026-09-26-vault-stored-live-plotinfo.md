@@ -131,8 +131,12 @@ https://github.com/ZaahiPlots/Zaahi/pull/9 (not merged — founder tests locally
 
 ## Local URL for founder check
 
-`pnpm dev` on this box already runs this checkout on **port 3111** (3000 is
-a different project). Vault wizard: `http://localhost:3111/parcels/map` →
-open the map → "+ Add to Vault" on any plot, or use the wizard's plot-number
-field directly with `6489099` / `DUBAI` / any district string to reproduce
-the before/after in the walkthrough above.
+Neither port 3000 nor 3111 on this box is this repo — 3000 is
+`~/Projects/afterward` and 3111 turned out to be an unrelated app ("Pam
+Pam's Island"), confirmed by curling their `<title>` before pointing the
+founder anywhere. Started this checkout's `pnpm dev` on **port 3200**
+instead (verified: `<title>ZAAHI — Real Estate OS</title>`, `/parcels/map`
+→ 200). Vault wizard: `http://localhost:3200/parcels/map` → open the map →
+"+ Add to Vault" on any plot, or use the wizard's plot-number field
+directly with `6489099` / `DUBAI` / any district string to reproduce the
+before/after in the walkthrough above.
