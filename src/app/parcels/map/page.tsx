@@ -127,6 +127,7 @@ import ParcelsNav from "./ParcelsNav";
 import { Panel } from "@/components/Panel";
 import { debugLog, debugWarn } from "@/lib/debug";
 import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL, RADIUS_CARD } from "@/lib/design-tokens";
+import { ZAAHI_HOVER, VAULT_SHARED_HOVER, landTilesHover, addHoverHighlight, setHoverHighlight, clearHoverHighlight } from "./hover-highlight";
 import { PmtilesHoverRow, VaultAddButton, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
 import { CountryGroup, LayerGroup, LayerToggle } from "./LayersPanelParts";
 import { HeaderBar } from "./HeaderBar";
@@ -2196,6 +2197,7 @@ function ParcelsMapPageInner() {
             paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
           });
         }
+        addHoverHighlight(map, ZAAHI_HOVER);
       }
 
       // ── 3D BUILDING EXTRUSION — single layer, single source ──
@@ -2654,6 +2656,7 @@ function ParcelsMapPageInner() {
           },
         });
       }
+      addHoverHighlight(map, VAULT_SHARED_HOVER);
     } catch (e) {
       console.error("[vault-shared] load failed:", e);
     }
@@ -2898,6 +2901,8 @@ function ParcelsMapPageInner() {
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.45,
     }});
+    const hoverHl = landTilesHover(srcId);
+    addHoverHighlight(map, hoverHl);
     // Hover — bindLayerEvent clears any previous binding for this
     // (event, layer) pair so style swaps don't pile up extra hover
     // callbacks. Same guard as the listeners in attachOverlays.
@@ -2917,9 +2922,11 @@ function ParcelsMapPageInner() {
         const upper = map.queryRenderedFeatures(e.point, { layers: blockingLayers });
         if (upper.length > 0) {
           setDdaLandHover(null);
+          clearHoverHighlight(map, hoverHl);
           return;
         }
       }
+      setHoverHighlight(map, hoverHl, (f.properties as Record<string, unknown>).plotNumber as string | undefined);
       // Re-hovering after a brief mouseleave cancels the pending close
       // so the popup stays alive through the keep-alive window.
       if (hoverCloseTimerRef.current != null) {
@@ -2963,6 +2970,7 @@ function ParcelsMapPageInner() {
     // cancellable by the popup's onMouseEnter.
     bindLayerEvent(map, "mouseleave", fillId, () => {
       map.getCanvas().style.cursor = "";
+      clearHoverHighlight(map, hoverHl);
       if (hoverCloseTimerRef.current != null) {
         window.clearTimeout(hoverCloseTimerRef.current);
       }
@@ -3394,9 +3402,11 @@ function ParcelsMapPageInner() {
             });
             if (upper.length > 0) {
               setVaultHover(null);
+              clearHoverHighlight(map, VAULT_SHARED_HOVER);
               return;
             }
           }
+          setHoverHighlight(map, VAULT_SHARED_HOVER, f.properties?.id as string | undefined);
           if (hoverCloseTimerRef.current != null) {
             window.clearTimeout(hoverCloseTimerRef.current);
             hoverCloseTimerRef.current = null;
@@ -3437,6 +3447,7 @@ function ParcelsMapPageInner() {
         };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
+        clearHoverHighlight(map, VAULT_SHARED_HOVER);
         if (hoverCloseTimerRef.current != null) {
           window.clearTimeout(hoverCloseTimerRef.current);
         }
@@ -3492,6 +3503,7 @@ function ParcelsMapPageInner() {
           hoverCloseTimerRef.current = null;
         }
         map.getCanvas().style.cursor = "pointer";
+        setHoverHighlight(map, ZAAHI_HOVER, f.properties?.id as string | undefined);
         const p = f.properties as {
           id?: string;
           plotNumber: string;
@@ -3558,6 +3570,7 @@ function ParcelsMapPageInner() {
       });
       bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
         map.getCanvas().style.cursor = "";
+        clearHoverHighlight(map, ZAAHI_HOVER);
         // Defer close ~220 ms so the cursor can transit onto the now
         // clickable card without it vanishing. Card's onMouseEnter
         // cancels the timer; onMouseLeave closes immediately.
