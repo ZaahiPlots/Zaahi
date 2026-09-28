@@ -18,8 +18,11 @@
 //      to edit-mode.
 //   2. Is the plot in our local curated Parcel index? Hit → return cached.
 //   3. Is the plot in our own stored DDA data (99,126 Dubai plots, harvested
-//      before the 2026-09 token wall — no network call)? Hit → "zaahi_stored",
-//      dated. (2026-09-26, docs/agent-log/2026-09-26-vault-local-fallback.md)
+//      before the 2026-09 token wall — no network call for polygon/area)?
+//      Hit → "zaahi_stored", dated, enriched with today's PlotInfo +
+//      BuildingLimit (best-effort — a different DDA subsystem, not behind
+//      the token wall). (2026-09-26, docs/agent-log/2026-09-26-vault-local-fallback.md,
+//      docs/agent-log/2026-09-26-vault-stored-live-plotinfo.md)
 //   4. Live DDA fallback (BASIC_LAND_BASE/MapServer/2). Hit → return live
 //      data + ddaSnapshot for storage on the entry. DDA erroring (token
 //      wall, HTTP failure) → "dda_unavailable", distinct from a genuine miss
@@ -31,7 +34,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { fetchFullDdaData } from "@/lib/dda-plot-lookup";
-import { lookupStoredDdaPlot, STORED_DDA_SNAPSHOT_DATE } from "@/lib/dda-stored-plot-lookup";
+import {
+  lookupStoredDdaPlot,
+  enrichStoredHit,
+  STORED_DDA_SNAPSHOT_DATE,
+} from "@/lib/dda-stored-plot-lookup";
 import { emirateMatchVariants } from "@/lib/emirate";
 
 export const runtime = "nodejs";
@@ -159,24 +166,42 @@ export async function POST(req: NextRequest) {
 
   // 3) Our own stored DDA data (99,126 Dubai plots harvested before
   //    BASIC_LAND_BASE's 2026-09 token wall — see
-  //    docs/agent-log/2026-09-26-vault-local-fallback.md). No network call.
-  //    Checked before live DDA so a walled/slow live call never blocks a
-  //    plot we already have on disk. Never a substitute for the Parcel
-  //    table (step 2) — that stays authoritative when both have the plot.
+  //    docs/agent-log/2026-09-26-vault-local-fallback.md). No network call
+  //    for the polygon/area/base land use. Checked before live DDA so a
+  //    walled/slow live call never blocks a plot we already have on disk.
+  //    Never a substitute for the Parcel table (step 2) — that stays
+  //    authoritative when both have the plot.
+  //
+  //    2026-09-26 (this task): a stored hit is enriched with today's
+  //    PlotInfo + BuildingLimit — a different DDA subsystem from
+  //    BASIC_LAND_BASE, still open. Polygon and area always stay from the
+  //    stored snapshot; land use, floors, FAR, height, setbacks and the
+  //    building-limit polygon come from PlotInfo/BuildingLimit when they
+  //    answer, otherwise fall back to the stored values (only land use has
+  //    one). Best-effort — see enrichStoredHit; a PlotInfo/BuildingLimit
+  //    failure never turns a stored hit into a miss.
   if (emirate === "DUBAI") {
     const stored = lookupStoredDdaPlot(plotNumber);
     if (stored) {
+      const enrichment = await enrichStoredHit(plotNumber, { landUse: stored.landUse });
       return NextResponse.json({
         source: "zaahi_stored" as const,
         existing: existingSummary,
         ddaData: {
           area: stored.area,
           geometry: stored.geometry,
-          landUse: stored.landUse,
+          landUse: enrichment.landUse,
           latitude: stored.latitude,
           longitude: stored.longitude,
           district: stored.district || district,
           snapshotDate: STORED_DDA_SNAPSHOT_DATE,
+          // Same shape the live-DDA branch below returns — lets the
+          // wizard/entries route treat a PlotInfo-enriched stored hit
+          // exactly like a live DDA hit (writeAffectionPlan, not the
+          // vault-manual synthesis).
+          plan: enrichment.plan,
+          buildingLimit: enrichment.buildingLimit,
+          fieldSources: enrichment.fieldSources,
         },
       });
     }

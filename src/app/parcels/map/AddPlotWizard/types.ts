@@ -108,6 +108,18 @@ export interface PlotLookupResponse {
     /** ISO date of our stored-data snapshot. Present only when source is
      *  "zaahi_stored" — shown to the user so it's never mistaken for live DDA. */
     snapshotDate?: string;
+    /** Per-value provenance — present only when source is "zaahi_stored".
+     *  "live_dda" when today's PlotInfo/BuildingLimit supplied the value,
+     *  "stored" otherwise (either the April-2026 stored value, for land
+     *  use, or simply no live value, for the rest). 2026-09-26. */
+    fieldSources?: {
+      landUse: "live_dda" | "stored";
+      floors: "live_dda" | "stored";
+      far: "live_dda" | "stored";
+      height: "live_dda" | "stored";
+      setbacks: "live_dda" | "stored";
+      buildingLimit: "live_dda" | "stored";
+    };
   };
 }
 

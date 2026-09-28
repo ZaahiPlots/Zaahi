@@ -550,8 +550,10 @@ export function Step1PlotLookup({ state, onComplete, onExistingFound }: Props) {
           <div style={{ color: GOLD, fontWeight: 600, marginBottom: 8 }}>✓ Found in DDA</div>
           {lookupResult.source === "zaahi_stored" && (
             <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 8 }}>
-              From ZAAHI stored DDA data, dated {lookupResult.ddaData.snapshotDate}. Not a live DDA lookup —
-              the affection plan and building limit aren&apos;t available for this plot yet.
+              {lookupResult.ddaData.plan
+                ? <>Plot shape from ZAAHI stored DDA data (dated {lookupResult.ddaData.snapshotDate}). Planning data live from DDA today.</>
+                : <>From ZAAHI stored DDA data, dated {lookupResult.ddaData.snapshotDate}. Not a live DDA lookup —
+                    the affection plan and building limit aren&apos;t available for this plot yet.</>}
             </div>
           )}
           <div style={{ fontSize: 13, color: TEXT_DIM, lineHeight: 1.6 }}>
