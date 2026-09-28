@@ -20,7 +20,6 @@ export function useMapControls({
   setLayers,
   setLayersOpen,
   setLegendOpen,
-  setSunSliderActive,
   setVaultOnlyMode,
 }: {
   mapRef: React.RefObject<MLMap | null>;
@@ -33,7 +32,6 @@ export function useMapControls({
   setLayers: React.Dispatch<React.SetStateAction<LayersState>>;
   setLayersOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setLegendOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSunSliderActive: React.Dispatch<React.SetStateAction<boolean>>;
   setVaultOnlyMode: React.Dispatch<React.SetStateAction<boolean>>;
 }): MapControls {
   // ── Archie mapControls bridge (Phase 2 archie client, 2026-05-30) ──
@@ -161,10 +159,6 @@ export function useMapControls({
       if (!m) return;
       if (direction === "in") m.zoomIn();
       else m.zoomOut();
-    },
-    setSunSlider: (enabled) => {
-      sound.whoosh();
-      setSunSliderActive(enabled);
     },
     setAutoRotate: (enabled) => {
       sound.whoosh();

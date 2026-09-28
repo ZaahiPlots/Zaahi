@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
           // Date the plan was issued by DDA (preferred) + fetchedAt as
           // a fallback for the hover-card "Affection Plan" row.
           sitePlanIssue: true,
+          sitePlanExpiry: true,
           fetchedAt: true,
         },
       },
@@ -118,6 +119,7 @@ export async function GET(req: NextRequest) {
             maxGfaSqm: plan.maxGfaSqm,
             maxGfaSqft: plan.maxGfaSqft,
             sitePlanIssue: plan.sitePlanIssue?.toISOString() ?? null,
+            sitePlanExpiry: plan.sitePlanExpiry?.toISOString() ?? null,
             fetchedAt: plan.fetchedAt?.toISOString() ?? null,
             far: plan.far,
             landUseMix: plan.landUseMix,

@@ -186,38 +186,56 @@ function DualRange({
   // 2026-06-03: no ceilings — plots reach 37M sqft and beyond, so
   // any fixed bound is misleading. Empty min text = 0, empty max
   // text = OPEN_MAX, both empty = null (filter not applied).
-  const minDisplay =
-    value && value.min > 0
-      ? Math.round(value.min).toLocaleString("en-US")
-      : "";
-  const maxDisplay =
-    value && value.max < OPEN_MAX
-      ? Math.round(value.max).toLocaleString("en-US")
-      : "";
+  // Decimals are kept (FAR is 2.5, not 3): rounding here would silently
+  // change the value the next time the text is re-parsed on commit.
+  const fmt = (n: number) =>
+    n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const minDisplay = value && value.min > 0 ? fmt(value.min) : "";
+  const maxDisplay = value && value.max < OPEN_MAX ? fmt(value.max) : "";
 
-  function applyTexts(rawMin: string, rawMax: string) {
-    const minParsed = parseRangeInput(rawMin);
-    const maxParsed = parseRangeInput(rawMax);
+  // Local text state: the fields are never rewritten while the user types.
+  // Parsing, validation and commit happen on blur / Enter only. The text is
+  // re-synced from the canonical value when that changes (Reset, Archie
+  // voice command, or our own commit re-formatting "16500" → "16,500").
+  const [minText, setMinText] = useState(minDisplay);
+  const [maxText, setMaxText] = useState(maxDisplay);
+  useEffect(() => {
+    setMinText(minDisplay);
+    setMaxText(maxDisplay);
+  }, [minDisplay, maxDisplay]);
+
+  const minParsed = parseRangeInput(minText);
+  const maxParsed = parseRangeInput(maxText);
+  const invalid =
+    minParsed !== null && maxParsed !== null && minParsed > maxParsed;
+
+  function commit() {
+    // Reversed range: no swap, no commit — the previously applied range
+    // stays on the map and both fields show the error until corrected.
+    if (invalid) return;
     if (minParsed === null && maxParsed === null) {
-      onChange(null);
+      if (value !== null) onChange(null);
       return;
     }
-    let minVal = minParsed ?? 0;
-    let maxVal = maxParsed ?? OPEN_MAX;
-    // min ≤ max invariant — swap on reversed entry so the filter
-    // never degenerates to an empty intersection.
-    if (minVal > maxVal) [minVal, maxVal] = [maxVal, minVal];
-    onChange({ min: minVal, max: maxVal });
+    const next = { min: minParsed ?? 0, max: maxParsed ?? OPEN_MAX };
+    if (value && value.min === next.min && value.max === next.max) {
+      // Unchanged value → the sync effect won't fire; re-format in place.
+      setMinText(minDisplay);
+      setMaxText(maxDisplay);
+      return;
+    }
+    onChange(next);
   }
 
-  const handleTextMin = (raw: string) => applyTexts(raw, maxDisplay);
-  const handleTextMax = (raw: string) => applyTexts(minDisplay, raw);
+  const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") commit();
+  };
 
   const inputStyle: React.CSSProperties = {
     flex: 1,
     minWidth: 0,
     background: "rgba(255, 255, 255, 0.04)",
-    border: `1px solid ${isActive ? "rgba(200, 169, 110, 0.45)" : "rgba(255, 255, 255, 0.1)"}`,
+    border: `1px solid ${invalid ? "#E63946" : isActive ? "rgba(200, 169, 110, 0.45)" : "rgba(255, 255, 255, 0.1)"}`,
     borderRadius: 6,
     padding: "6px 10px",
     fontSize: 12,
@@ -228,25 +246,41 @@ function DualRange({
   };
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={minDisplay}
-        onChange={(e) => handleTextMin(e.target.value)}
-        placeholder="min"
-        aria-label="Minimum"
-        style={inputStyle}
-      />
-      <input
-        type="text"
-        inputMode="decimal"
-        value={maxDisplay}
-        onChange={(e) => handleTextMax(e.target.value)}
-        placeholder="max (∞ if blank)"
-        aria-label="Maximum"
-        style={inputStyle}
-      />
+    <div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={minText}
+          onChange={(e) => setMinText(e.target.value)}
+          onBlur={commit}
+          onKeyDown={onEnter}
+          placeholder="min"
+          aria-label="Minimum"
+          aria-invalid={invalid || undefined}
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          inputMode="decimal"
+          value={maxText}
+          onChange={(e) => setMaxText(e.target.value)}
+          onBlur={commit}
+          onKeyDown={onEnter}
+          placeholder="max (∞ if blank)"
+          aria-label="Maximum"
+          aria-invalid={invalid || undefined}
+          style={inputStyle}
+        />
+      </div>
+      {invalid && (
+        <div
+          role="alert"
+          style={{ marginTop: 6, fontSize: 10, color: "#E63946" }}
+        >
+          Min is greater than max
+        </div>
+      )}
     </div>
   );
 }
@@ -454,6 +488,8 @@ export default function FilterPanel({
   // via onChange after COMMIT_DEBOUNCE_MS so we don't trigger
   // reapplyMapFilters() on every input tick.
   const [draft, setDraft] = useState<FilterState>(state);
+  // Bumped on Reset so DualRange drops any uncommitted (e.g. invalid) text.
+  const [resetCount, setResetCount] = useState(0);
 
   // Pull external state changes (Archie set a filter) into draft.
   useEffect(() => {
@@ -499,6 +535,7 @@ export default function FilterPanel({
     // Subtle bright blip on reset (founder backlog #33, 2026-06-12).
     sound.uiClick();
     setDraft(EMPTY_FILTER_STATE);
+    setResetCount((n) => n + 1);
     if (commitTimerRef.current !== null) {
       window.clearTimeout(commitTimerRef.current);
       commitTimerRef.current = null;
@@ -684,19 +721,19 @@ export default function FilterPanel({
         {/* PLOT AREA */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>Plot area · sqft</SectionLabel>
-          <DualRange value={draft.areaRange} onChange={setAreaRange} />
+          <DualRange key={resetCount} value={draft.areaRange} onChange={setAreaRange} />
         </div>
 
         {/* GFA */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>GFA · sqft</SectionLabel>
-          <DualRange value={draft.gfaRange} onChange={setGfaRange} />
+          <DualRange key={resetCount} value={draft.gfaRange} onChange={setGfaRange} />
         </div>
 
         {/* FAR */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>FAR</SectionLabel>
-          <DualRange value={draft.farRange} onChange={setFarRange} />
+          <DualRange key={resetCount} value={draft.farRange} onChange={setFarRange} />
           <div
             style={{
               fontSize: 10,
@@ -761,7 +798,7 @@ export default function FilterPanel({
         {/* PRICE */}
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>Price · AED</SectionLabel>
-          <DualRange value={draft.priceRange} onChange={setPriceRange} />
+          <DualRange key={resetCount} value={draft.priceRange} onChange={setPriceRange} />
         </div>
 
         {/* DISTRICT — Wave 2 follow-up: autocomplete instead of full

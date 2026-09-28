@@ -23,7 +23,6 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 // MiniMap dock unmounted 2026-06-01 (founder spec). The component
 // file is kept in place for the future panel-control overview;
 // no current consumer.
-import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import MapZoomReadout from "./MapZoomReadout";
 import MapCoordsReadout from "./MapCoordsReadout";
@@ -128,7 +127,8 @@ import ParcelsNav from "./ParcelsNav";
 import { Panel } from "@/components/Panel";
 import { debugLog, debugWarn } from "@/lib/debug";
 import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL, RADIUS_CARD } from "@/lib/design-tokens";
-import { PmtilesHoverRow, VaultAddButton, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
+import { ZAAHI_HOVER, VAULT_SHARED_HOVER, landTilesHover, addHoverHighlight, setHoverHighlight, clearHoverHighlight } from "./hover-highlight";
+import { PmtilesHoverRow, VaultAddButton, formatLandUseLine, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
 import { CountryGroup, LayerGroup, LayerToggle } from "./LayersPanelParts";
 import { HeaderBar } from "./HeaderBar";
 import { MapToast, Toast } from "./MapToast";
@@ -320,6 +320,8 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    planExpiryIso: string;
+    subLandUse: string;
   } | null>(null);
   // Vault hover popup — mirrors zaahiHover so a vault polygon reads
   // the same as a public listing on hover. Click → VaultSidePanelAdapter
@@ -341,12 +343,15 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    planExpiryIso: string;
+    subLandUse: string;
     mode: "owner" | "share";
   } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
     plotNumber: string;
     mainLandUse: string;
+    subLandUse: string;
     areaSqm: number; areaSqft: number;
     gfaSqm: number; gfaSqft: number;
     status: string;
@@ -583,37 +588,23 @@ function ParcelsMapPageInner() {
     const t = window.setTimeout(() => setToast(null), 4000);
     return () => window.clearTimeout(t);
   }, [toast]);
-  // Sun-time override — null means "use real wall-clock time" so the
-  // shadow direction tracks live; a Date overrides it to the slider's
-  // chosen hour-of-today. Passed straight into useSunLight which calls
-  // map.setLight() whenever this changes (or once per minute on the
-  // live path). Gate on mapStyleReady so the first setLight call lands
-  // *after* the style has loaded — otherwise it's a silent no-op.
-  //
-  // Founder spec 2026-05-23: default override at 08:15 (warm dawn-
-  // shadow look that reads best against Dubai glass). The ☀ button
-  // starts active so the slider is visible on first load.
-  const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(() => {
+  // Fixed sun time for the map light (founder spec 2026-05-23: 08:15, the
+  // warm dawn-shadow look). The sun-time slider was removed (parked until
+  // real heights + shadows exist); the light stays at this default so 3D
+  // colours look exactly as before. Gate on mapStyleReady so the first
+  // setLight call lands after the style has loaded.
+  const [sunTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(8, 15, 0, 0);
     return d;
   });
-  // Sun-time slider visibility — gated by the ☀ button in the right
-  // stack. The toggle controls UI visibility only; the directional
-  // light is always on via useSunLight below (gated solely on
-  // mapStyleReady). Default closed so users land on a clean map;
-  // the 08:15 sun is already lighting the scene, just without slider
-  // chrome on screen. Click ☀ to reveal the slider, click again
-  // to hide. Double-clicking the slider is the way to clear back to
-  // live wall-clock time.
-  const [sunSliderActive, setSunSliderActive] = useState(false);
-  useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
-  // Drive the archetype CustomLayer's directional sun from the SAME override the
-  // sun slider feeds MapLibre's native light → archetypes self-shadow + react to
+  useSunLight(mapRef, { overrideDate: sunTime, enabled: mapStyleReady });
+  // Drive the archetype CustomLayer's directional sun from the SAME time
+  // that feeds MapLibre's native light → archetypes self-shadow + react to
   // the sun toggle exactly like the fill-extrusion 3D (founder 2026-06-15).
   useEffect(() => {
-    archetypeCtrlRef.current?.setSun(sunTimeOverride);
-  }, [sunTimeOverride, mapStyleReady]);
+    archetypeCtrlRef.current?.setSun(sunTime);
+  }, [sunTime, mapStyleReady]);
 
   // 2026-06-10 (founder backlog follow-up): live count of vault entries
   // OTHER users have shared with the caller. Drives the "Shared with me"
@@ -1840,6 +1831,7 @@ function ParcelsMapPageInner() {
             maxGfaSqm?: number | null;
             maxGfaSqft?: number | null;
             sitePlanIssue?: string | null;
+            sitePlanExpiry?: string | null;
             fetchedAt?: string | null;
             far?: number | null;
             buildingLimitGeometry?: GeoJSON.Polygon | null;
@@ -1919,7 +1911,11 @@ function ParcelsMapPageInner() {
             maxHeightMeters: it.plan?.maxHeightMeters ?? 0,
             maxHeightCode: it.plan?.maxHeightCode ?? "",
             far: it.plan?.far ?? 0,
-            planDateIso: it.plan?.sitePlanIssue ?? it.plan?.fetchedAt ?? "",
+            // Issue date only — fetchedAt is when WE downloaded the plan, not
+            // an affection-plan date, so it must not stand in for one.
+            planDateIso: it.plan?.sitePlanIssue ?? "",
+            planExpiryIso: it.plan?.sitePlanExpiry ?? "",
+            subLandUse: it.plan?.landUseMix?.length === 1 ? (it.plan.landUseMix[0].sub ?? "") : "",
             // Vault branch (Phase 3) — drives click routing + vault-only
             // mode filter. The conflict marker no longer reads these off
             // this source; it gets its own Point feature below.
@@ -2211,6 +2207,7 @@ function ParcelsMapPageInner() {
             paint: { "line-color": "#FFD700", "line-width": 2, "line-opacity": 1 },
           });
         }
+        addHoverHighlight(map, ZAAHI_HOVER);
       }
 
       // ── 3D BUILDING EXTRUSION — single layer, single source ──
@@ -2576,6 +2573,7 @@ function ParcelsMapPageInner() {
           maxGfaSqft?: number | null;
           projectName?: string | null;
           sitePlanIssue?: string | null;
+          sitePlanExpiry?: string | null;
           buildingLimitGeometry?: GeoJSON.Polygon | null;
           setbacks?: SetbackEntry[] | null;
           landUseMix?: Array<{ category: string; sub?: string | null }> | null;
@@ -2603,6 +2601,8 @@ function ParcelsMapPageInner() {
           plotAreaSqft: plan?.plotAreaSqft ?? 0,
           maxGfaSqft: plan?.maxGfaSqft ?? 0,
           planDateIso: plan?.sitePlanIssue ?? "",
+          planExpiryIso: plan?.sitePlanExpiry ?? "",
+          subLandUse: plan?.landUseMix?.length === 1 ? (plan.landUseMix[0].sub ?? "") : "",
         };
 
         if (placeholder) {
@@ -2669,6 +2669,7 @@ function ParcelsMapPageInner() {
           },
         });
       }
+      addHoverHighlight(map, VAULT_SHARED_HOVER);
     } catch (e) {
       console.error("[vault-shared] load failed:", e);
     }
@@ -2913,6 +2914,8 @@ function ParcelsMapPageInner() {
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-opacity": 0.45,
     }});
+    const hoverHl = landTilesHover(srcId);
+    addHoverHighlight(map, hoverHl);
     // Hover — bindLayerEvent clears any previous binding for this
     // (event, layer) pair so style swaps don't pile up extra hover
     // callbacks. Same guard as the listeners in attachOverlays.
@@ -2932,9 +2935,11 @@ function ParcelsMapPageInner() {
         const upper = map.queryRenderedFeatures(e.point, { layers: blockingLayers });
         if (upper.length > 0) {
           setDdaLandHover(null);
+          clearHoverHighlight(map, hoverHl);
           return;
         }
       }
+      setHoverHighlight(map, hoverHl, (f.properties as Record<string, unknown>).plotNumber as string | undefined);
       // Re-hovering after a brief mouseleave cancels the pending close
       // so the popup stays alive through the keep-alive window.
       if (hoverCloseTimerRef.current != null) {
@@ -2963,6 +2968,7 @@ function ParcelsMapPageInner() {
         x: e.point.x, y: e.point.y,
         plotNumber: (pr.plotNumber as string) ?? "",
         mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
+        subLandUse: (pr.subLandUse as string) ?? "",
         areaSqm, areaSqft, gfaSqm, gfaSqft,
         status: (pr.status as string) ?? "",
         source: ((pr.source as string) ?? "") as "dda" | "ad" | "",
@@ -2978,6 +2984,7 @@ function ParcelsMapPageInner() {
     // cancellable by the popup's onMouseEnter.
     bindLayerEvent(map, "mouseleave", fillId, () => {
       map.getCanvas().style.cursor = "";
+      clearHoverHighlight(map, hoverHl);
       if (hoverCloseTimerRef.current != null) {
         window.clearTimeout(hoverCloseTimerRef.current);
       }
@@ -3409,9 +3416,11 @@ function ParcelsMapPageInner() {
             });
             if (upper.length > 0) {
               setVaultHover(null);
+              clearHoverHighlight(map, VAULT_SHARED_HOVER);
               return;
             }
           }
+          setHoverHighlight(map, VAULT_SHARED_HOVER, f.properties?.id as string | undefined);
           if (hoverCloseTimerRef.current != null) {
             window.clearTimeout(hoverCloseTimerRef.current);
             hoverCloseTimerRef.current = null;
@@ -3443,6 +3452,8 @@ function ParcelsMapPageInner() {
             maxHeightCode: typeof p.maxHeightCode === "string" ? p.maxHeightCode : "",
             far: typeof p.far === "number" ? p.far : 0,
             planDateIso: typeof p.planDateIso === "string" ? p.planDateIso : "",
+            planExpiryIso: typeof p.planExpiryIso === "string" ? p.planExpiryIso : "",
+            subLandUse: typeof p.subLandUse === "string" ? p.subLandUse : "",
             mode,
           });
           // Shared-vault popup wins over PMTiles for the same cursor frame.
@@ -3452,6 +3463,7 @@ function ParcelsMapPageInner() {
         };
       const vaultLeave = () => {
         map.getCanvas().style.cursor = "";
+        clearHoverHighlight(map, VAULT_SHARED_HOVER);
         if (hoverCloseTimerRef.current != null) {
           window.clearTimeout(hoverCloseTimerRef.current);
         }
@@ -3507,6 +3519,7 @@ function ParcelsMapPageInner() {
           hoverCloseTimerRef.current = null;
         }
         map.getCanvas().style.cursor = "pointer";
+        setHoverHighlight(map, ZAAHI_HOVER, f.properties?.id as string | undefined);
         const p = f.properties as {
           id?: string;
           plotNumber: string;
@@ -3525,6 +3538,8 @@ function ParcelsMapPageInner() {
           maxHeightCode?: string;
           far?: number;
           planDateIso?: string;
+          planExpiryIso?: string;
+          subLandUse?: string;
         };
         // Polygon centroid (mean of outer-ring vertices). Used for the
         // click-flyTo destination — falls back to the cursor lngLat
@@ -3559,6 +3574,8 @@ function ParcelsMapPageInner() {
           maxHeightCode: p.maxHeightCode ?? "",
           far: p.far ?? 0,
           planDateIso: p.planDateIso ?? "",
+          planExpiryIso: p.planExpiryIso ?? "",
+          subLandUse: p.subLandUse ?? "",
         });
         // ZAAHI listings take priority — drop any PMTiles / shared-vault
         // popup that fired for the same cursor frame so only one card
@@ -3573,6 +3590,7 @@ function ParcelsMapPageInner() {
       });
       bindLayerEvent(map, "mouseleave", ZAAHI_PLOTS_FILL, () => {
         map.getCanvas().style.cursor = "";
+        clearHoverHighlight(map, ZAAHI_HOVER);
         // Defer close ~220 ms so the cursor can transit onto the now
         // clickable card without it vanishing. Card's onMouseEnter
         // cancels the timer; onMouseLeave closes immediately.
@@ -4270,7 +4288,6 @@ function ParcelsMapPageInner() {
     setLayers,
     setLayersOpen,
     setLegendOpen,
-    setSunSliderActive,
     setVaultOnlyMode,
   });
 
@@ -4308,13 +4325,6 @@ function ParcelsMapPageInner() {
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-
-      {/* Sun-time override slider — visible only when the ☀ button in
-          the right stack is toggled on. Drives the directional-light
-          date that useSunLight feeds to map.setLight(). Double-click
-          on the slider also resets to real time (in addition to the
-          dedicated button). */}
-      {sunSliderActive && <SunTimeSlider onChange={setSunTimeOverride} />}
 
       {showAutoRotateHint && <AutoRotateHint />}
 
@@ -4477,8 +4487,6 @@ function ParcelsMapPageInner() {
         mapRef={mapRef}
         setIs3D={setIs3D}
         setLegendOpen={setLegendOpen}
-        setSunSliderActive={setSunSliderActive}
-        sunSliderActive={sunSliderActive}
       />
 
       {/* Wave 2: Filter Panel — right-anchored side panel. Mounts on
@@ -4941,6 +4949,8 @@ function ParcelsMapPageInner() {
         if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
         if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(zaahiHover.planDateIso);
+        const planExpiry = formatPlanDate(zaahiHover.planExpiryIso);
+        const landUseLine = formatLandUseLine(zaahiHover.landUse, zaahiHover.subLandUse);
         // Physical status (Under Construction / Completed / etc.) is not
         // stored on Parcel or AffectionPlan today — only Parcel.status
         // (ParcelStatus enum) which is the marketplace listing state, and
@@ -5009,6 +5019,9 @@ function ParcelsMapPageInner() {
                 )}
               </span>
             </div>
+            {landUseLine && (
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>{landUseLine}</div>
+            )}
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
                 value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />
@@ -5024,7 +5037,10 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
             )}
             {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+              <PmtilesHoverRow label="Plan Issued" value={planDate} />
+            )}
+            {planExpiry && (
+              <PmtilesHoverRow label="Plan Expires" value={planExpiry} />
             )}
             {/* Add-to-Vault button moved to the header row (top-right
                 "+" icon) as part of the founder spec 2026-05-31. The
@@ -5044,6 +5060,8 @@ function ParcelsMapPageInner() {
         if (vaultHover.maxFloors > 0) heightParts.push(`${vaultHover.maxFloors} floors`);
         if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(vaultHover.planDateIso);
+        const planExpiry = formatPlanDate(vaultHover.planExpiryIso);
+        const landUseLine = formatLandUseLine(vaultHover.landUse, vaultHover.subLandUse);
         const handleOpen = () => {
           if (vaultHover.id) openVaultPanel({ id: vaultHover.id, mode: vaultHover.mode });
           setVaultHover(null);
@@ -5087,6 +5105,9 @@ function ParcelsMapPageInner() {
                 {vaultHover.mode === "share" ? "SHARED" : "VAULT"}
               </span>
             </div>
+            {landUseLine && (
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>{landUseLine}</div>
+            )}
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
                 value={fmtA(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area, null) ?? "—"} />
@@ -5101,7 +5122,10 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
             )}
             {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+              <PmtilesHoverRow label="Plan Issued" value={planDate} />
+            )}
+            {planExpiry && (
+              <PmtilesHoverRow label="Plan Expires" value={planExpiry} />
             )}
             <PmtilesHoverRow
               label="Asking Price"
@@ -5177,9 +5201,11 @@ function ParcelsMapPageInner() {
               )}
               </span>
             </div>
-            {ddaLandHover.mainLandUse && (
+            {(ddaLandHover.mainLandUse || ddaLandHover.subLandUse) && (
               <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
-                {ddaLandHover.mainLandUse}
+                {ddaLandHover.subLandUse
+                  ? formatLandUseLine(ddaLandHover.mainLandUse, ddaLandHover.subLandUse)
+                  : ddaLandHover.mainLandUse}
               </div>
             )}
             <PmtilesHoverRow label="Plot Area"
@@ -5190,10 +5216,9 @@ function ParcelsMapPageInner() {
             )}
             {/* Max Height + Affection Plan rows intentionally omitted —
                 neither field is emitted by scripts/prepare-tiles.ts into
-                the PMTiles feature properties. To enable: add
-                MAX_HEIGHT_FLOORS + MAX_HEIGHT_METERS (read internally
-                already) and AFFECTION_PLAN_DATE to baseProps, then
-                rebuild via scripts/update-tiles.sh. */}
+                the PMTiles feature properties (needs a tile rebuild; see
+                docs/research/hover-card-fields.md). Subtype (`subLandUse`)
+                IS in the tiles and is shown on the land-use line above. */}
             {status && <PmtilesHoverRow label="Status" value={status} />}
           </Panel>
         );
