@@ -15,6 +15,7 @@ import {
   clampPanelWidth,
 } from "./sidepanel-width";
 import { useFormatArea } from "@/lib/area-unit";
+import { formatDdaMaxHeight } from "@/lib/dda-height";
 import { useFormatPriceShort } from "@/lib/currency";
 import WelcomeTour from "./WelcomeTour";
 import AddPlotModal from "./AddPlotModal";
@@ -358,6 +359,8 @@ function ParcelsMapPageInner() {
     source: "dda" | "ad" | "";
     municipality: string;
     district: string;
+    /** DDA only: regulated MAX_HEIGHT_FLOORS code ("G+17"); "" = not in tile. */
+    maxHeight: string;
   } | null>(null);
 
   // When either SidePanel opens, drop the residual hover card state +
@@ -2684,6 +2687,11 @@ function ParcelsMapPageInner() {
   const DDA_LAND_TILES_FILL = "dda-land-tiles-fill";
   const DDA_LAND_TILES_LINE = "dda-land-tiles-line";
   const DDA_LAND_TILES_3D = "dda-land-tiles-3d";
+  // The R2 object is overwritten in place and sends no Cache-Control, so
+  // browsers may keep serving the previous file. Bump `v` on every DDA tile
+  // re-upload (R2 ignores the query; the browser cache key changes).
+  // v=2: maxHeightFloors baked into the tiles.
+  const DDA_LAND_TILES_URL = "/tiles/dda-land.pmtiles?v=2";
   // AD split into two <100MB files (Vercel / GitHub 100MB limit, no LFS)
   const AD_ADM_TILES_SRC = "ad-adm-tiles";
   const AD_ADM_TILES_FILL = "ad-adm-tiles-fill";
@@ -2974,6 +2982,7 @@ function ParcelsMapPageInner() {
         source: ((pr.source as string) ?? "") as "dda" | "ad" | "",
         municipality: (pr.municipality as string) ?? "",
         district: (pr.district as string) ?? "",
+        maxHeight: pr.source === "dda" ? formatDdaMaxHeight(pr.maxHeightFloors) : "",
       });
       // Kill the shared boundary native popup too (see ZAAHI handler).
       popupRef.current?.remove();
@@ -3478,7 +3487,7 @@ function ParcelsMapPageInner() {
       bindLayerEvent(map, "mouseleave", VAULT_SHARED_3D, vaultLeave as (e: unknown) => void);
 
       // ── PMTiles land layers (DDA 99K + AD 362K + Oman 95K plots) ──
-      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, DDA_LAND_TILES_URL);
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
       // Cold-load site must write the user's state too: addLandTileSource
@@ -3812,7 +3821,7 @@ function ParcelsMapPageInner() {
         map.setStyle(STYLES[baseMapRef.current]);
         map.once("styledata", async () => {
           const ls = layersRef.current;
-          addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+          addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, DDA_LAND_TILES_URL);
           addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
           addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
           setLandTileVisibility(map, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, ls.ddaLandPlots);
@@ -4093,7 +4102,7 @@ function ParcelsMapPageInner() {
       // re-add must already have happened. Used to live after the
       // awaits and disappeared in dark/satellite mode whenever any
       // upstream loader hiccupped — founder fix 2026-05-23.
-      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, "/tiles/dda-land.pmtiles");
+      addLandTileSource(map, DDA_LAND_TILES_SRC, DDA_LAND_TILES_FILL, DDA_LAND_TILES_LINE, DDA_LAND_TILES_3D, DDA_LAND_TILES_URL);
       addLandTileSource(map, AD_ADM_TILES_SRC, AD_ADM_TILES_FILL, AD_ADM_TILES_LINE, AD_ADM_TILES_3D, "/tiles/ad-land-adm.pmtiles");
       addLandTileSource(map, AD_OTHER_TILES_SRC, AD_OTHER_TILES_FILL, AD_OTHER_TILES_LINE, AD_OTHER_TILES_3D, "/tiles/ad-land-other.pmtiles");
       // Oman PMTiles dropped 2026-05-24.
@@ -5214,11 +5223,14 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max GFA"
                 value={fmtA(ddaLandHover.gfaSqft, ddaLandHover.gfaSqm) ?? "—"} />
             )}
-            {/* Max Height + Affection Plan rows intentionally omitted —
-                neither field is emitted by scripts/prepare-tiles.ts into
-                the PMTiles feature properties (needs a tile rebuild; see
-                docs/research/hover-card-fields.md). Subtype (`subLandUse`)
-                IS in the tiles and is shown on the land-use line above. */}
+            {/* Max Height: DDA only, from the baked `maxHeightFloors` code.
+                Hidden when the plot has none (or the tile predates it).
+                Affection Plan dates are not in the tiles (see
+                docs/research/hover-card-fields.md); the AD card is left
+                alone — MAXALLOWABLEHEIGHTS meaning is unverified. */}
+            {ddaLandHover.maxHeight && (
+              <PmtilesHoverRow label="Max Height" value={ddaLandHover.maxHeight} />
+            )}
             {status && <PmtilesHoverRow label="Status" value={status} />}
           </Panel>
         );

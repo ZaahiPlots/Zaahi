@@ -9,7 +9,8 @@ export const DDA_PMTILES = "public/tiles/dda-land.pmtiles";
 
 /** Serves the local PMTiles archive with HTTP Range support. */
 export async function serveLocalPmtiles(page: Page) {
-  await page.route("**/tiles/dda-land.pmtiles", (route) => {
+  // Regex, not a glob: the app requests dda-land.pmtiles?v=N (cache-bust).
+  await page.route(/\/tiles\/dda-land\.pmtiles(\?.*)?$/, (route) => {
     const fd = openSync(DDA_PMTILES, "r");
     try {
       const size = fstatSync(fd).size;

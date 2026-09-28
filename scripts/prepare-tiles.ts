@@ -172,6 +172,16 @@ function parseDdaFloors(raw: string | null | undefined): number {
   return m ? parseInt(m[1], 10) : 0;
 }
 
+// Raw MAX_HEIGHT_FLOORS for the hover card ("G+17", "G+2P+8", "UNLIMITED").
+// Kept as the registry wrote it (trimmed). Non-code text ("N/A", "NA", "",
+// "SEE NOTES", "As Design", ...) → null so the property is omitted from the tile.
+function normalizeDdaHeightCode(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const v = raw.trim();
+  if (/^unlimited$/i.test(v)) return "UNLIMITED";
+  return /^G(\+[A-Z0-9]+)*$/.test(v) ? v : null;
+}
+
 function defaultHeight(landUse: string): number {
   switch (landUse) {
     case "RESIDENTIAL": return 15;
@@ -363,6 +373,7 @@ function processDdaDir(
       }
 
       const ring = (feat.geometry as GeoJSON.Polygon).coordinates[0];
+      const maxHeightFloors = normalizeDdaHeightCode(p.MAX_HEIGHT_FLOORS);
       const baseProps = {
         plotNumber,
         mainLandUse,
@@ -374,6 +385,7 @@ function processDdaDir(
         landUse: landUse ?? "",
         hasLandUse,
         source: "dda",
+        ...(maxHeightFloors ? { maxHeightFloors } : {}),
       };
 
       count += emitTiers(out, ring, insetIndex.get(ddaKey(p)), height, color, baseProps);
@@ -573,10 +585,14 @@ async function main() {
   const ddaDir = join(process.cwd(), "data", "layers", "dda-plots");
   const adDir = join(process.cwd(), "data", "layers", "ad-plots");
   const omanDir = join(process.cwd(), "data", "layers", "oman-plots");
-  const ddaOut = join(process.cwd(), "data", "tiles", "dda-plots.geojson.nl");
-  const adAdmOut = join(process.cwd(), "data", "tiles", "ad-plots-adm.geojson.nl");
-  const adOtherOut = join(process.cwd(), "data", "tiles", "ad-plots-other.geojson.nl");
-  const omanOut = join(process.cwd(), "data", "tiles", "oman-plots.geojson.nl");
+  // TILES_OUT_DIR redirects all outputs (default data/tiles) so a trial rebuild
+  // never overwrites the existing intermediates. DDA_ONLY=1 skips AD + Oman.
+  // (Both switches taken from feat/dda-tiles-v2, 275b5bf.)
+  const outDir = process.env.TILES_OUT_DIR ?? join(process.cwd(), "data", "tiles");
+  const ddaOut = join(outDir, "dda-plots.geojson.nl");
+  const adAdmOut = join(outDir, "ad-plots-adm.geojson.nl");
+  const adOtherOut = join(outDir, "ad-plots-other.geojson.nl");
+  const omanOut = join(outDir, "oman-plots.geojson.nl");
 
   // Inset polygon directories — produced by scripts/inset-geojson.py.
   // If missing the pipeline still works; tier features fall back to
@@ -598,6 +614,11 @@ async function main() {
   const ddaCount = processDdaDir(ddaDir, ddaInset, ddaStream);
   ddaStream.end();
   console.log(`  ${ddaCount.toLocaleString()} features → ${ddaOut}`);
+
+  if (process.env.DDA_ONLY === "1") {
+    console.log("DDA_ONLY=1 → skipping AD + Oman.");
+    return;
+  }
 
   console.log("Processing AD plots (split by municipality for <100MB PMTiles)...");
   const adAdmStream = createWriteStream(adAdmOut);
