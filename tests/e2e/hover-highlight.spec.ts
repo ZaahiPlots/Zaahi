@@ -12,10 +12,11 @@
 //
 // Run:  pnpm build && npx playwright test tests/e2e/hover-highlight.spec.ts
 
-import { existsSync, openSync, readSync, fstatSync, closeSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import type { Map as MLMap } from "maplibre-gl";
 import { installHarness, gotoMap } from "./harness";
+import { DDA_PMTILES, serveLocalPmtiles } from "./pmtiles";
 
 type MapWindow = Window & { __zaahiMap?: MLMap };
 
@@ -30,35 +31,6 @@ function filterOf(page: Page, layerId: string): Promise<string> {
     if (!m.getLayer(id)) return "missing";
     return JSON.stringify(m.getFilter(id) ?? null);
   }, layerId);
-}
-
-const DDA_PMTILES = "public/tiles/dda-land.pmtiles";
-
-/** Serves the local PMTiles archive with HTTP Range support. */
-async function serveLocalPmtiles(page: Page) {
-  await page.route("**/tiles/dda-land.pmtiles", (route) => {
-    const fd = openSync(DDA_PMTILES, "r");
-    try {
-      const size = fstatSync(fd).size;
-      const m = /bytes=(\d+)-(\d*)/.exec(route.request().headers()["range"] ?? "");
-      const start = m ? Number(m[1]) : 0;
-      const end = m && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
-      const buf = Buffer.alloc(end - start + 1);
-      readSync(fd, buf, 0, buf.length, start);
-      return route.fulfill({
-        status: m ? 206 : 200,
-        body: buf,
-        headers: {
-          "content-type": "application/octet-stream",
-          "accept-ranges": "bytes",
-          "content-range": `bytes ${start}-${end}/${size}`,
-          "access-control-allow-origin": "*",
-        },
-      });
-    } finally {
-      closeSync(fd);
-    }
-  });
 }
 
 const NONE = JSON.stringify(["==", ["id"], "__none__"]);

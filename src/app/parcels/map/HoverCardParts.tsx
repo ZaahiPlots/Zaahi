@@ -102,6 +102,16 @@ export function formatPmtilesStatus(raw: string): string {
 // "2026-03-14T..." → "14 Mar 2026". Empty / invalid → "".
 export const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// "RESIDENTIAL" + "Apartments" → "RESIDENTIAL · APARTMENTS". Enum-style
+// values ("MIXED_USE") become words. A subtype that repeats the main type,
+// or an empty part, is dropped; nothing to show → "".
+export function formatLandUseLine(main: string, sub: string): string {
+  const clean = (v: string) => v.replace(/_/g, " ").trim().toUpperCase();
+  const m = clean(main);
+  const s = clean(sub);
+  return [m, s && s !== m ? s : ""].filter(Boolean).join(" · ");
+}
+
 export function formatPlanDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);

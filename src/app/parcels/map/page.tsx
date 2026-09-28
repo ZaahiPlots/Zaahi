@@ -128,7 +128,7 @@ import { Panel } from "@/components/Panel";
 import { debugLog, debugWarn } from "@/lib/debug";
 import { PANEL_BG, PANEL_BLUR, RADIUS_PANEL, RADIUS_CARD } from "@/lib/design-tokens";
 import { ZAAHI_HOVER, VAULT_SHARED_HOVER, landTilesHover, addHoverHighlight, setHoverHighlight, clearHoverHighlight } from "./hover-highlight";
-import { PmtilesHoverRow, VaultAddButton, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
+import { PmtilesHoverRow, VaultAddButton, formatLandUseLine, formatPlanDate, formatPmtilesStatus } from "./HoverCardParts";
 import { CountryGroup, LayerGroup, LayerToggle } from "./LayersPanelParts";
 import { HeaderBar } from "./HeaderBar";
 import { MapToast, Toast } from "./MapToast";
@@ -320,6 +320,8 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    planExpiryIso: string;
+    subLandUse: string;
   } | null>(null);
   // Vault hover popup — mirrors zaahiHover so a vault polygon reads
   // the same as a public listing on hover. Click → VaultSidePanelAdapter
@@ -341,12 +343,15 @@ function ParcelsMapPageInner() {
     maxHeightCode: string;
     far: number;
     planDateIso: string;
+    planExpiryIso: string;
+    subLandUse: string;
     mode: "owner" | "share";
   } | null>(null);
   const [ddaLandHover, setDdaLandHover] = useState<{
     x: number; y: number;
     plotNumber: string;
     mainLandUse: string;
+    subLandUse: string;
     areaSqm: number; areaSqft: number;
     gfaSqm: number; gfaSqft: number;
     status: string;
@@ -1826,6 +1831,7 @@ function ParcelsMapPageInner() {
             maxGfaSqm?: number | null;
             maxGfaSqft?: number | null;
             sitePlanIssue?: string | null;
+            sitePlanExpiry?: string | null;
             fetchedAt?: string | null;
             far?: number | null;
             buildingLimitGeometry?: GeoJSON.Polygon | null;
@@ -1905,7 +1911,11 @@ function ParcelsMapPageInner() {
             maxHeightMeters: it.plan?.maxHeightMeters ?? 0,
             maxHeightCode: it.plan?.maxHeightCode ?? "",
             far: it.plan?.far ?? 0,
-            planDateIso: it.plan?.sitePlanIssue ?? it.plan?.fetchedAt ?? "",
+            // Issue date only — fetchedAt is when WE downloaded the plan, not
+            // an affection-plan date, so it must not stand in for one.
+            planDateIso: it.plan?.sitePlanIssue ?? "",
+            planExpiryIso: it.plan?.sitePlanExpiry ?? "",
+            subLandUse: it.plan?.landUseMix?.length === 1 ? (it.plan.landUseMix[0].sub ?? "") : "",
             // Vault branch (Phase 3) — drives click routing + vault-only
             // mode filter. The conflict marker no longer reads these off
             // this source; it gets its own Point feature below.
@@ -2563,6 +2573,7 @@ function ParcelsMapPageInner() {
           maxGfaSqft?: number | null;
           projectName?: string | null;
           sitePlanIssue?: string | null;
+          sitePlanExpiry?: string | null;
           buildingLimitGeometry?: GeoJSON.Polygon | null;
           setbacks?: SetbackEntry[] | null;
           landUseMix?: Array<{ category: string; sub?: string | null }> | null;
@@ -2590,6 +2601,8 @@ function ParcelsMapPageInner() {
           plotAreaSqft: plan?.plotAreaSqft ?? 0,
           maxGfaSqft: plan?.maxGfaSqft ?? 0,
           planDateIso: plan?.sitePlanIssue ?? "",
+          planExpiryIso: plan?.sitePlanExpiry ?? "",
+          subLandUse: plan?.landUseMix?.length === 1 ? (plan.landUseMix[0].sub ?? "") : "",
         };
 
         if (placeholder) {
@@ -2955,6 +2968,7 @@ function ParcelsMapPageInner() {
         x: e.point.x, y: e.point.y,
         plotNumber: (pr.plotNumber as string) ?? "",
         mainLandUse: ((pr.mainLandUse as string) || (pr.primaryUse as string)) ?? "",
+        subLandUse: (pr.subLandUse as string) ?? "",
         areaSqm, areaSqft, gfaSqm, gfaSqft,
         status: (pr.status as string) ?? "",
         source: ((pr.source as string) ?? "") as "dda" | "ad" | "",
@@ -3438,6 +3452,8 @@ function ParcelsMapPageInner() {
             maxHeightCode: typeof p.maxHeightCode === "string" ? p.maxHeightCode : "",
             far: typeof p.far === "number" ? p.far : 0,
             planDateIso: typeof p.planDateIso === "string" ? p.planDateIso : "",
+            planExpiryIso: typeof p.planExpiryIso === "string" ? p.planExpiryIso : "",
+            subLandUse: typeof p.subLandUse === "string" ? p.subLandUse : "",
             mode,
           });
           // Shared-vault popup wins over PMTiles for the same cursor frame.
@@ -3522,6 +3538,8 @@ function ParcelsMapPageInner() {
           maxHeightCode?: string;
           far?: number;
           planDateIso?: string;
+          planExpiryIso?: string;
+          subLandUse?: string;
         };
         // Polygon centroid (mean of outer-ring vertices). Used for the
         // click-flyTo destination — falls back to the cursor lngLat
@@ -3556,6 +3574,8 @@ function ParcelsMapPageInner() {
           maxHeightCode: p.maxHeightCode ?? "",
           far: p.far ?? 0,
           planDateIso: p.planDateIso ?? "",
+          planExpiryIso: p.planExpiryIso ?? "",
+          subLandUse: p.subLandUse ?? "",
         });
         // ZAAHI listings take priority — drop any PMTiles / shared-vault
         // popup that fired for the same cursor frame so only one card
@@ -4929,6 +4949,8 @@ function ParcelsMapPageInner() {
         if (zaahiHover.maxFloors > 0) heightParts.push(`${zaahiHover.maxFloors} floors`);
         if (zaahiHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(zaahiHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(zaahiHover.planDateIso);
+        const planExpiry = formatPlanDate(zaahiHover.planExpiryIso);
+        const landUseLine = formatLandUseLine(zaahiHover.landUse, zaahiHover.subLandUse);
         // Physical status (Under Construction / Completed / etc.) is not
         // stored on Parcel or AffectionPlan today — only Parcel.status
         // (ParcelStatus enum) which is the marketplace listing state, and
@@ -4997,6 +5019,9 @@ function ParcelsMapPageInner() {
                 )}
               </span>
             </div>
+            {landUseLine && (
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>{landUseLine}</div>
+            )}
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
                 value={fmtA(zaahiHover.plotAreaSqft, zaahiHover.plotAreaSqm) ?? "—"} />
@@ -5012,7 +5037,10 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
             )}
             {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+              <PmtilesHoverRow label="Plan Issued" value={planDate} />
+            )}
+            {planExpiry && (
+              <PmtilesHoverRow label="Plan Expires" value={planExpiry} />
             )}
             {/* Add-to-Vault button moved to the header row (top-right
                 "+" icon) as part of the founder spec 2026-05-31. The
@@ -5032,6 +5060,8 @@ function ParcelsMapPageInner() {
         if (vaultHover.maxFloors > 0) heightParts.push(`${vaultHover.maxFloors} floors`);
         if (vaultHover.maxHeightMeters > 0) heightParts.push(`~${Math.round(vaultHover.maxHeightMeters)} m`);
         const planDate = formatPlanDate(vaultHover.planDateIso);
+        const planExpiry = formatPlanDate(vaultHover.planExpiryIso);
+        const landUseLine = formatLandUseLine(vaultHover.landUse, vaultHover.subLandUse);
         const handleOpen = () => {
           if (vaultHover.id) openVaultPanel({ id: vaultHover.id, mode: vaultHover.mode });
           setVaultHover(null);
@@ -5075,6 +5105,9 @@ function ParcelsMapPageInner() {
                 {vaultHover.mode === "share" ? "SHARED" : "VAULT"}
               </span>
             </div>
+            {landUseLine && (
+              <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>{landUseLine}</div>
+            )}
             {hasPlotArea && (
               <PmtilesHoverRow label="Plot Area"
                 value={fmtA(vaultHover.plotAreaSqft > 0 ? vaultHover.plotAreaSqft : vaultHover.area, null) ?? "—"} />
@@ -5089,7 +5122,10 @@ function ParcelsMapPageInner() {
               <PmtilesHoverRow label="Max Height" value={heightParts.join(" · ")} />
             )}
             {planDate && (
-              <PmtilesHoverRow label="Affection Plan" value={planDate} />
+              <PmtilesHoverRow label="Plan Issued" value={planDate} />
+            )}
+            {planExpiry && (
+              <PmtilesHoverRow label="Plan Expires" value={planExpiry} />
             )}
             <PmtilesHoverRow
               label="Asking Price"
@@ -5165,9 +5201,11 @@ function ParcelsMapPageInner() {
               )}
               </span>
             </div>
-            {ddaLandHover.mainLandUse && (
+            {(ddaLandHover.mainLandUse || ddaLandHover.subLandUse) && (
               <div style={{ opacity: 0.78, marginTop: 4, fontSize: 12 }}>
-                {ddaLandHover.mainLandUse}
+                {ddaLandHover.subLandUse
+                  ? formatLandUseLine(ddaLandHover.mainLandUse, ddaLandHover.subLandUse)
+                  : ddaLandHover.mainLandUse}
               </div>
             )}
             <PmtilesHoverRow label="Plot Area"
@@ -5178,10 +5216,9 @@ function ParcelsMapPageInner() {
             )}
             {/* Max Height + Affection Plan rows intentionally omitted —
                 neither field is emitted by scripts/prepare-tiles.ts into
-                the PMTiles feature properties. To enable: add
-                MAX_HEIGHT_FLOORS + MAX_HEIGHT_METERS (read internally
-                already) and AFFECTION_PLAN_DATE to baseProps, then
-                rebuild via scripts/update-tiles.sh. */}
+                the PMTiles feature properties (needs a tile rebuild; see
+                docs/research/hover-card-fields.md). Subtype (`subLandUse`)
+                IS in the tiles and is shown on the land-use line above. */}
             {status && <PmtilesHoverRow label="Status" value={status} />}
           </Panel>
         );
