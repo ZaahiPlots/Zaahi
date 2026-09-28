@@ -101,7 +101,6 @@ export interface MapControls {
    *  buttons. */
   zoomMap(direction: "in" | "out"): void;
   /** Toggle the sun-time slider overlay. */
-  setSunSlider(enabled: boolean): void;
   /** Toggle auto-rotate camera. */
   setAutoRotate(enabled: boolean): CameraMotionState;
   /** Open / close the Legend panel (mirrors the rail Legend button). */
@@ -225,7 +224,6 @@ function filterLabel(action: string, a: Record<string, unknown>): string {
 function chromeLabel(action: string, enabled: boolean): string {
   const verb = enabled ? "enabling" : "disabling";
   const niceAction = action === "auto_rotate" ? "auto-rotate"
-    : action === "sun_slider" ? "sun-time slider"
     : action;
   return `${verb} ${niceAction}…`;
 }
@@ -505,9 +503,6 @@ export async function executeArchieTool(
           const state = controls.setAutoRotate(enabled);
           return { ok: true, action, ...state };
         }
-        case "sun_slider":
-          controls.setSunSlider(enabled);
-          return { ok: true, action, enabled };
         case "legend":
           controls.setLegendOpen(enabled);
           return { ok: true, action, enabled };

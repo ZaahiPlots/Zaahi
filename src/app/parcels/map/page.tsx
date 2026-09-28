@@ -23,7 +23,6 @@ import { AddPlotWizardModal } from "./AddPlotWizardModal";
 // MiniMap dock unmounted 2026-06-01 (founder spec). The component
 // file is kept in place for the future panel-control overview;
 // no current consumer.
-import SunTimeSlider from "./SunTimeSlider";
 import { useSunLight } from "./useSunLight";
 import MapZoomReadout from "./MapZoomReadout";
 import MapCoordsReadout from "./MapCoordsReadout";
@@ -583,37 +582,23 @@ function ParcelsMapPageInner() {
     const t = window.setTimeout(() => setToast(null), 4000);
     return () => window.clearTimeout(t);
   }, [toast]);
-  // Sun-time override — null means "use real wall-clock time" so the
-  // shadow direction tracks live; a Date overrides it to the slider's
-  // chosen hour-of-today. Passed straight into useSunLight which calls
-  // map.setLight() whenever this changes (or once per minute on the
-  // live path). Gate on mapStyleReady so the first setLight call lands
-  // *after* the style has loaded — otherwise it's a silent no-op.
-  //
-  // Founder spec 2026-05-23: default override at 08:15 (warm dawn-
-  // shadow look that reads best against Dubai glass). The ☀ button
-  // starts active so the slider is visible on first load.
-  const [sunTimeOverride, setSunTimeOverride] = useState<Date | null>(() => {
+  // Fixed sun time for the map light (founder spec 2026-05-23: 08:15, the
+  // warm dawn-shadow look). The sun-time slider was removed (parked until
+  // real heights + shadows exist); the light stays at this default so 3D
+  // colours look exactly as before. Gate on mapStyleReady so the first
+  // setLight call lands after the style has loaded.
+  const [sunTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(8, 15, 0, 0);
     return d;
   });
-  // Sun-time slider visibility — gated by the ☀ button in the right
-  // stack. The toggle controls UI visibility only; the directional
-  // light is always on via useSunLight below (gated solely on
-  // mapStyleReady). Default closed so users land on a clean map;
-  // the 08:15 sun is already lighting the scene, just without slider
-  // chrome on screen. Click ☀ to reveal the slider, click again
-  // to hide. Double-clicking the slider is the way to clear back to
-  // live wall-clock time.
-  const [sunSliderActive, setSunSliderActive] = useState(false);
-  useSunLight(mapRef, { overrideDate: sunTimeOverride, enabled: mapStyleReady });
-  // Drive the archetype CustomLayer's directional sun from the SAME override the
-  // sun slider feeds MapLibre's native light → archetypes self-shadow + react to
+  useSunLight(mapRef, { overrideDate: sunTime, enabled: mapStyleReady });
+  // Drive the archetype CustomLayer's directional sun from the SAME time
+  // that feeds MapLibre's native light → archetypes self-shadow + react to
   // the sun toggle exactly like the fill-extrusion 3D (founder 2026-06-15).
   useEffect(() => {
-    archetypeCtrlRef.current?.setSun(sunTimeOverride);
-  }, [sunTimeOverride, mapStyleReady]);
+    archetypeCtrlRef.current?.setSun(sunTime);
+  }, [sunTime, mapStyleReady]);
 
   // 2026-06-10 (founder backlog follow-up): live count of vault entries
   // OTHER users have shared with the caller. Drives the "Shared with me"
@@ -4270,7 +4255,6 @@ function ParcelsMapPageInner() {
     setLayers,
     setLayersOpen,
     setLegendOpen,
-    setSunSliderActive,
     setVaultOnlyMode,
   });
 
@@ -4308,13 +4292,6 @@ function ParcelsMapPageInner() {
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-
-      {/* Sun-time override slider — visible only when the ☀ button in
-          the right stack is toggled on. Drives the directional-light
-          date that useSunLight feeds to map.setLight(). Double-click
-          on the slider also resets to real time (in addition to the
-          dedicated button). */}
-      {sunSliderActive && <SunTimeSlider onChange={setSunTimeOverride} />}
 
       {showAutoRotateHint && <AutoRotateHint />}
 
@@ -4477,8 +4454,6 @@ function ParcelsMapPageInner() {
         mapRef={mapRef}
         setIs3D={setIs3D}
         setLegendOpen={setLegendOpen}
-        setSunSliderActive={setSunSliderActive}
-        sunSliderActive={sunSliderActive}
       />
 
       {/* Wave 2: Filter Panel — right-anchored side panel. Mounts on

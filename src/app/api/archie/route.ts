@@ -100,7 +100,7 @@ MEGA-TOOLS (4 — group similar actions behind one schema; pick the action with 
   • "area_range" — args: { min?: number, max?: number } — sqft. Pass {} to clear.
   • "reset_all" — clears every filter dimension
 
-- control_chrome({ action, enabled }) — chrome toggles. Actions: "auto_rotate" | "sun_slider" | "legend". Arg: enabled (boolean).
+- control_chrome({ action, enabled }) — chrome toggles. Actions: "auto_rotate" | "legend". Arg: enabled (boolean).
 
 - parcel_action({ action, ... }) — stub for Wave 3c parcel-level actions (favorite, check_dld, open_feasibility). NOT YET WIRED — Wave 3c. Will stub-respond for now.
 
@@ -513,13 +513,13 @@ const TOOLS = [
     function: {
       name: "control_chrome",
       description:
-        "Chrome toggles. `action` is one of 'auto_rotate' / 'sun_slider' / 'legend'. `enabled` is the target state. The tool result echoes the post-call state.",
+        "Chrome toggles. `action` is one of 'auto_rotate' / 'legend'. `enabled` is the target state. The tool result echoes the post-call state.",
       parameters: {
         type: "object",
         properties: {
           action: {
             type: "string",
-            enum: ["auto_rotate", "sun_slider", "legend"],
+            enum: ["auto_rotate", "legend"],
           },
           enabled: { type: "boolean" },
         },

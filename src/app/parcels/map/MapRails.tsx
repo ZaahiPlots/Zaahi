@@ -124,15 +124,13 @@ export function MapLeftRail({ autoRotateEnabled, baseMap, baseMapBusy, layersOpe
   );
 }
 
-export function MapRightRail({ is3D, legendBtnRef, legendOpen, mapRef, setIs3D, setLegendOpen, setSunSliderActive, sunSliderActive }: {
+export function MapRightRail({ is3D, legendBtnRef, legendOpen, mapRef, setIs3D, setLegendOpen }: {
   is3D: boolean;
   legendBtnRef: React.RefObject<HTMLElement | null>;
   legendOpen: boolean;
   mapRef: React.RefObject<MLMap | null>;
   setIs3D: React.Dispatch<React.SetStateAction<boolean>>;
   setLegendOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSunSliderActive: React.Dispatch<React.SetStateAction<boolean>>;
-  sunSliderActive: boolean;
 }) {
   return (
     <>
@@ -205,25 +203,6 @@ export function MapRightRail({ is3D, legendBtnRef, legendOpen, mapRef, setIs3D, 
           <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 12 }}>
             {is3D ? "3D" : "2D"}
           </span>
-        </ChromeBtn>
-        {/* 6. Sun-time slider — promoted from the removed MiniMap
-            dock to the right rail (founder spec 2026-06-01). The
-            slider overlay itself stays rendered at page-level when
-            sunSliderActive is true (see L5059). */}
-        <ChromeBtn
-          title={sunSliderActive ? "Hide sun-time slider" : "Show sun-time slider"}
-          active={sunSliderActive}
-          onClick={() => {
-            sound.whoosh();
-            setSunSliderActive((v) => !v);
-          }}
-        >
-          {/* Sun — radiating rays around a centred disc. Same glyph
-              that lived in the mini-dock for visual continuity. */}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
         </ChromeBtn>
       </div>
     </>
