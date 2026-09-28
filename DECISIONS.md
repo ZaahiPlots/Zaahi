@@ -28,3 +28,8 @@
   session and the Vercel preview isn't a local dev host (credential-entry
   rule); founder decision open on how to get one. Full log:
   `docs/agent-log/2026-09-26-vault-local-fallback.md`.
+
+## 2026-09-28 — map UX batch 1 (`fix/map-ux-batch-1`)
+- DONE: (1) filter range no longer swaps/rewrites min/max while typing — `DualRange` (FilterPanel.tsx) keeps local text, validates on blur/Enter, flags min>max (not applied, not swapped). (2) sun-time slider + dock button + Archie `sun_slider` action removed; light fixed at the 08:15 default. (3) hover card: land-use subtype (DDA tile prop `subLandUse`; ZAAHI/vault from `landUseMix` when a single category), plan Issued/Expires rows; `/api/parcels/map` + `/api/vault/shared-with-me/map` now also return `sitePlanExpiry` (read-only select, no migration). Plan-issue row no longer falls back to `fetchedAt` (download date ≠ plan date). (4) gold hover highlight on ZAAHI, vault-shared and DDA/AD PMTiles plots (`hover-highlight.ts`).
+- NOT DONE / decided against: hover-card HEIGHT for DDA/AD PMTiles and DDA plan dates — need a tile rebuild + R2 upload (or new DDA fetch); plan in `docs/research/hover-card-fields.md`.
+- OPEN: `tests/e2e/admin-pause.spec.ts:96` (sign-out race) flips red from the sun-slider commit onward; not patched (see PR).
