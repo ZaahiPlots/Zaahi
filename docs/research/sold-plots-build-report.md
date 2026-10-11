@@ -10,16 +10,16 @@ Built 2026-10-11 by `scripts/build-sold-plots.ts`. Every number is measured by t
 
 ## Totals
 
-- Plots with ≥1 sale: **11930** — pinned **5073** (dda 3671, mp 1290, geo 112; approx 112), unplaced **6857**.
-- Sales on pinned plots: 7086; sales on unplaced plots: 8354.
+- Plots with ≥1 sale: **12067** — pinned **5209** (dda 3671, mp 1290, geo 248; approx 248), unplaced **6858**.
+- Sales on pinned plots: 7113; sales on unplaced plots: 8365.
 - DXB plot rows read 25531: no usable area 281, no registry match 14271, ambiguous (>1 parcel) 470.
-- Kit land deals with a municipality number: sales 5067, mortgages 2819, gifts 505, other procedures 1148 (not shown). Duplicate (date, price) rows dropped: 136.
+- Kit land deals with a municipality number: sales 5067, mortgages 2819, gifts 505, other procedures 1148 (not shown). Duplicate (date, price) rows dropped: 98.
 - Projects-by-parcel entries: 69777.
 
 ## Files
 
-- `data/sold-plots/pins.json` — 0.48 MB (505793 bytes)
-- `data/sold-plots/cards.json` — 2.67 MB (2795666 bytes)
+- `data/sold-plots/pins.json` — 0.50 MB (522237 bytes)
+- `data/sold-plots/cards.json` — 2.71 MB (2843282 bytes)
 - `data/sold-plots/projects-by-parcel.json` — 2.08 MB (2183668 bytes)
 
 ## Placement by community
@@ -30,7 +30,7 @@ Built 2026-10-11 by `scripts/build-sold-plots.ts`. Every number is measured by t
 | DAMAC Lagoons | 715 | 694 | 0 | 0 | 0 | 0 |
 | Dubai Investment Park Second | 422 | 0 | 0 | 0 | 0 | 260 |
 | Jumeirah Golf Estates | 422 | 0 | 0 | 0 | 0 | 398 |
-| Meydan Horizon | 377 | 0 | 82 | 48 | 48 | 0 |
+| Meydan Horizon | 404 | 0 | 82 | 184 | 184 | 0 |
 | Hor Al Anz | 346 | 0 | 0 | 0 | 0 | 264 |
 | DAMAC HILLS | 346 | 333 | 0 | 0 | 0 | 1 |
 | JVT | 346 | 0 | 94 | 64 | 64 | 9 |
@@ -58,7 +58,7 @@ Built 2026-10-11 by `scripts/build-sold-plots.ts`. Every number is measured by t
 | Al Karama | 151 | 0 | 0 | 0 | 0 | 109 |
 | Al Merkadh | 150 | 0 | 0 | 0 | 0 | 139 |
 | Al Barsha Second | 145 | 8 | 0 | 0 | 0 | 112 |
-| Jumeirah Village Circle | 131 | 0 | 0 | 0 | 0 | 127 |
+| Jumeirah Village Circle | 142 | 0 | 0 | 0 | 0 | 128 |
 | Al Barari | 129 | 111 | 0 | 0 | 0 | 0 |
 | Al Barsha Third | 124 | 15 | 0 | 0 | 0 | 93 |
 | Mohammed Bin Rashid AL Maktoum City -District -1 Community | 121 | 0 | 0 | 0 | 0 | 97 |
@@ -276,7 +276,7 @@ Built 2026-10-11 by `scripts/build-sold-plots.ts`. Every number is measured by t
 | Sobha Seahaven - Tower B | 1 | 0 | 0 | 0 | 0 | 1 |
 | Emirates Living | 1 | 0 | 0 | 0 | 0 | 1 |
 | Nad Al Shiba | 1 | 0 | 0 | 0 | 0 | 1 |
-| **total** | 15440 | 3671 | 1290 | 112 | 112 | 6857 |
+| **total** | 15478 | 3671 | 1290 | 248 | 248 | 6858 |
 
 ## DXB rows that never reached a plot (by DLD area, top 25)
 

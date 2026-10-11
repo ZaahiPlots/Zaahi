@@ -89,7 +89,11 @@ for (const s of sales) {
   if (s.s === 'jvc' || s.s === 'jvt' || s.s === 'ds') plot = addCodePlot(s.plot, s.s);
   else if (s.s === 'mh') {
     const pin = geo.mhpin[s.plot];
-    if (pin) { plot = addPidPlot(pin.pid, COMM_LABEL.mh); plot.pinC = pin.c; plot.comm = plot.comm || COMM_LABEL.mh; }
+    if (pin) {
+      // pins.csv rows without a parcel_id are DXB plots the registry never joined: keep them apart, keyed by DXB plot.
+      plot = pin.pid ? addPidPlot(pin.pid, COMM_LABEL.mh) : plotFor(`MH-${s.plot.replace(/[^A-Za-z0-9]+/g, '-')}`, () => ({ pid: null, code: null, comm: COMM_LABEL.mh, area: COMM_LABEL.mh, mpKey: null, harvKey: null, pinC: null }));
+      plot.pinC = pin.c; plot.comm = plot.comm || COMM_LABEL.mh;
+    }
   } else {
     const area = dxbArea(s.loc ?? '', s.trunc ?? null);
     if (!area) { stats.dxbNoArea++; unbridgedByArea.set('(location truncated)', (unbridgedByArea.get('(location truncated)') ?? 0) + 1); continue; }

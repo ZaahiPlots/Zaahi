@@ -43,6 +43,9 @@ for (const f of fixture) {
 check('pins carry no price', () => {
   for (const p of pins.values()) assert.deepEqual(Object.keys(p).sort(), ['approx', 'id', 'last', 'lat', 'lng', 'n', 'src']);
 });
+check('pin ids are routable (match /api/sold-plots/[id] pattern)', () => {
+  for (const id of pins.keys()) assert.match(id, /^[A-Za-z0-9:_-]{1,40}$/, JSON.stringify(id));
+});
 check('every pin has a card; prices are integer fils', () => {
   for (const id of pins.keys()) {
     const c = cards[id]; assert.ok(c, id);
