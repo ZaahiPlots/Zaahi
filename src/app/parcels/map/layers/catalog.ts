@@ -17,6 +17,9 @@ export type LayersState = {
   // `vaultShared` opt-in via the "Shared with me" tab. Data lives in
   // DB (Postgres), not PMTiles.
   vaultShared: boolean;
+  // Founder research — sold plots (DXB Interact + DLD registry). Row renders only when
+  // /api/me/access says isAdmin; data comes from the gated /api/sold-plots/pins route.
+  soldPlots: boolean;
   // Plot-number labels for DDA districts (zoom > 15). Off by default;
   // user toggles via "Plot Numbers" button in the layers panel.
   plotLabels: boolean;
@@ -361,6 +364,7 @@ export type LayerCategory =
   | "landplots"       // country-scale PMTiles parcel grids (AD, Oman)
   | "amenities"       // data.dubai point overlays (EV / transit stations)
   | "vault"           // Private Plot Vault v2.1 — personal + shared overlays
+  | "founder-research" // founder/admin-only research overlays (sold plots)
   | "coming-soon";    // visual-only placeholders for Phase 2 emirates
 export type LayerLockTier = "GOLD" | "PLATINUM";
 
@@ -377,7 +381,7 @@ export const LAYER_COUNTRY_ORDER: LayerCountry[] = [
 ];
 
 export const LAYER_CATEGORY_ORDER: LayerCategory[] = [
-  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault", "coming-soon",
+  "base", "dda-admin", "masterplans", "dda-districts", "landplots", "amenities", "vault", "founder-research", "coming-soon",
 ];
 
 export const COUNTRY_LABELS: Record<LayerCountry, string> = {
@@ -400,6 +404,7 @@ export const CATEGORY_LABELS: Record<LayerCategory, string> = {
   // confused users into thinking it duplicated the HeaderBar Vault
   // lock-mode button. Renamed to match the actual semantics.
   "vault": "Shared with me",
+  "founder-research": "Founder research",
   "coming-soon": "Coming Soon",
 };
 
@@ -444,6 +449,7 @@ export const LAYER_META: Record<string, LayerMeta> = (() => {
     // (vault is technically per-user, not per-emirate — but cohort-scale
     // demand is Dubai-centric).
     vaultShared: { country: "dubai", category: "vault" },
+    soldPlots: { country: "dubai", category: "founder-research" },
     // ── Dubai — environmental layers (Phase 2 placeholders) ──
     // Real-time noise monitoring via Dubai Municipality is on the
     // roadmap but the data ingest isn't wired yet; show as a Soon row

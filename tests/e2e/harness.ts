@@ -100,7 +100,7 @@ export interface ApiLog {
  */
 export async function installHarness(
   page: Page,
-  opts: { layers?: Record<string, boolean> } = {},
+  opts: { layers?: Record<string, boolean>; admin?: boolean } = {},
 ): Promise<ApiLog> {
   const log: ApiLog = { calls: [], unexpected: [] };
 
@@ -160,6 +160,8 @@ export async function installHarness(
     // page load; the harness user is never paused.
     if (path === "/api/me/access-status") return json(route, { status: "ACTIVE" });
     if (path === "/api/me") return json(route, { id: "e2e", nickname: "e2e" });
+    // Founder-only surfaces (sold plots) probe this; the harness user is a plain approved user by default.
+    if (path === "/api/me/access") return json(route, { isAdmin: opts.admin === true });
     if (path === "/api/admin/me") return json(route, { error: "forbidden" }, 403);
     if (path.startsWith("/api/layers/")) return json(route, EMPTY_FC);
     if (path.startsWith("/api/parcels/")) {

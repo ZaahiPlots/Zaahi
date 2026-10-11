@@ -30,6 +30,9 @@ import MapCoordsReadout from "./MapCoordsReadout";
 import TermsAcceptModal from "./TermsAcceptModal";
 import BuildingCard from "./buildings/BuildingCard";
 import { useBuildingsLayer, flyToBuilding } from "./buildings/useBuildingsLayer";
+import { useSoldPlotsLayer, type SoldHover, type SoldPinsAsof } from "./sold-plots-layer";
+import { cardToParcelDetail, type SoldPlotCard } from "./plot-detail-adapter";
+import type { ParcelDetail } from "./SidePanel";
 import type { BuildingDTO } from "./buildings/types";
 import { sound } from "@/lib/sound";
 import { useProactiveArchie } from "@/lib/use-proactive-archie";
@@ -915,6 +918,7 @@ function ParcelsMapPageInner() {
     // Private Plot Vault — shared-with-me opt-in tab. Owner-side
     // entries render through the unified ZAAHI layers (Phase 3).
     vaultShared: false,
+    soldPlots: false,
     marineStations: false,
     // Master plans default OFF — same lazy semantics as DDA. The user
     // clicks the checkbox (or the section checkbox) to load them.
@@ -1133,6 +1137,44 @@ function ParcelsMapPageInner() {
     dubaiPoliceAcademy: false,
     shamalMankhool: false,
   }) as LayersState);
+  // ── Sold plots (founder research) ──
+  // The Layers row and the whole layer exist only for founders + ADMIN: /api/me/access
+  // answers { isAdmin }; the data routes enforce the same gate server-side.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/api/me/access")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { isAdmin?: boolean } | null) => { if (!cancelled) setIsAdmin(d?.isAdmin === true); })
+      .catch(() => { if (!cancelled) setIsAdmin(false); });
+    return () => { cancelled = true; };
+  }, []);
+  const [soldHover, setSoldHover] = useState<SoldHover | null>(null);
+  const [soldDetail, setSoldDetail] = useState<ParcelDetail | null>(null);
+  const soldAsofRef = useRef<SoldPinsAsof | null>(null);
+  const soldEnabled = isAdmin && layers.soldPlots;
+  useSoldPlotsLayer({
+    mapRef,
+    mapReady: mapStyleReady,
+    enabled: soldEnabled,
+    onAsof: (a) => { soldAsofRef.current = a; },
+    onHover: setSoldHover,
+    onSelect: (id) => {
+      void apiFetch(`/api/sold-plots/${encodeURIComponent(id)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { asof: SoldPinsAsof; card: SoldPlotCard } | null) => {
+          if (!d) return;
+          setSelectedParcelId(null);
+          setSelectedVaultEntry(null);
+          setSoldHover(null);
+          setSoldDetail(cardToParcelDetail(d.card, d.asof));
+        })
+        .catch(() => undefined);
+    },
+  });
+  useEffect(() => {
+    if (!soldEnabled) { setSoldHover(null); setSoldDetail(null); }
+  }, [soldEnabled]);
   const layersRef = useRef(layers);
   layersRef.current = layers;
   // Persist any layer toggle change. Debounced by React's batched state
@@ -4734,6 +4776,7 @@ function ParcelsMapPageInner() {
             tramStations: "Dubai Tram — station points",
             marineStations: "Marine transport — abra / ferry stations",
             vaultShared: "Shared with me — vault entries others granted you access to",
+            soldPlots: "Sold plots · DXB Interact + DLD registry",
             islands: "Dubai Islands master plan",
             meydan: "Meydan Horizon master plan",
             alFurjan: "Al Furjan master plan",
@@ -4769,6 +4812,7 @@ function ParcelsMapPageInner() {
             tramStations: "Dubai Tram station locations along the Marina line.",
             marineStations: "Marine transport stations — water buses, abras, ferry terminals.",
             vaultShared: "Vault entries that other ZAAHI users have shared specifically with you.",
+            soldPlots: "Plots with recorded sales. Gold = a sale in the last 24 months; dashed ring = approximate position. Founder research data, partial coverage.",
             islands: "DDA master plan for Dubai Islands (Deira waterfront development). PMTiles overlay.",
             meydan: "DDA master plan for Meydan Horizon (south of Downtown). PMTiles overlay.",
             alFurjan: "DDA master plan for Al Furjan (south of JLT). PMTiles overlay.",
@@ -4799,6 +4843,7 @@ function ParcelsMapPageInner() {
             dubai: {}, abudhabi: {}, otheruae: {}, amenities: {},
           };
           for (const [key, meta] of Object.entries(LAYER_META)) {
+            if (key === "soldPlots" && !isAdmin) continue; // founder research — admin only
             (grouped[meta.country][meta.category] ??= []).push({
               key,
               label: labels[key] ?? key,
@@ -4943,6 +4988,29 @@ function ParcelsMapPageInner() {
           opacity: 1;
         }
       `}</style>
+      {!selectedParcelId && !selectedVaultEntry && !soldDetail && soldHover && (
+        <Panel
+          radius={RADIUS_CARD}
+          noShadow
+          style={{
+            position: "absolute",
+            left: soldHover.x + 14,
+            top: soldHover.y + 14,
+            padding: "8px 12px",
+            fontSize: 12,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 30,
+            borderLeft: "3px solid #C8A96E",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <span style={{ fontWeight: 700, color: "#C8A96E" }}>{soldHover.id}</span>
+          <span style={{ opacity: 0.85 }}>
+            {" · "}{soldHover.n} {soldHover.n === 1 ? "sale" : "sales"}{soldHover.last ? ` · last ${soldHover.last}` : ""}
+          </span>
+        </Panel>
+      )}
       {!selectedParcelId && !selectedVaultEntry && zaahiHover && (() => {
         const title = zaahiHover.projectName || zaahiHover.plotNumber;
         const authority =
@@ -5270,6 +5338,14 @@ function ParcelsMapPageInner() {
           sound.swooshClose();
           openParcelPanel(null);
         }}
+        width={panelWidth}
+        onWidthChange={setPanelWidth}
+      />
+      <SidePanel
+        parcelId={null}
+        directData={!selectedParcelId && !selectedVaultEntry ? soldDetail : null}
+        mapRef={mapRef}
+        onClose={() => { sound.swooshClose(); setSoldDetail(null); }}
         width={panelWidth}
         onWidthChange={setPanelWidth}
       />

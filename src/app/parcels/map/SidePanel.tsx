@@ -12,6 +12,8 @@ import { apiFetch } from "@/lib/api-fetch";
 import { downloadFile } from "@/lib/download";
 import { generateSitePlanPdf } from "@/lib/generate-site-plan-pdf";
 import { PdfProgressBar } from "./PdfProgressBar";
+import { TransactionHistory } from "./TransactionHistory";
+import type { PlotHistory } from "./plot-history";
 import { DdaFetchProgress, type DdaFetchPhase } from "./DdaFetchProgress";
 // Phase 1 style unification (2026-05-31): the aside container migrates
 // to the shared Panel + tokens. Inner content keeps its existing
@@ -168,6 +170,12 @@ export interface ParcelDetail {
   longitude: number | null;
   geometry: GeoJSON.Polygon | null;
   affectionPlans: Plan[];
+  /** Replaces the "Total Price" caption (e.g. "Last sale · 2025-09") when the headline
+   *  figure is not an asking price. */
+  priceLabel?: string;
+  /** Sold-plots layer: transaction history + registered project (plot-detail-adapter.ts).
+   *  Rendered by TransactionHistory; absent for ordinary parcels. */
+  history?: PlotHistory;
 }
 
 interface JvTerms {
@@ -553,7 +561,7 @@ export default function SidePanel({
           {/* Price block — total + per-sqft computed for display only */}
           <div style={{ paddingBottom: 10, borderBottom: `1px solid ${LINE}` }}>
             <div style={{ color: SUBTLE, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
-              {isJvNoPrice ? "Price on Request" : "Total Price"}
+              {isJvNoPrice ? "Price on Request" : (data.priceLabel ?? "Total Price")}
             </div>
             <div
               style={
@@ -594,6 +602,8 @@ export default function SidePanel({
               )}
             </div>
 
+            {!data.history && (
+            <>
             {/* Download Site Plan — glassmorphism, gold border. Renders a
                 one-page branded PDF from the current parcel data + a
                 snapshot of the current map canvas (polygon preview as
@@ -687,6 +697,8 @@ export default function SidePanel({
               <span>{pdfBusy ? "Generating…" : "Download Site Plan"}</span>
             </button>
             <PdfProgressBar busy={pdfBusy} />
+            </>
+            )}
           </div>
 
           {/* JV Terms — only when openToJV is set AND a structured term
@@ -811,6 +823,8 @@ export default function SidePanel({
                   }
                 />
               </Section>
+
+              {data.history && <TransactionHistory h={data.history} />}
 
               {/* Land Use with colored indicator */}
               {plan.landUseMix && plan.landUseMix.length > 0 && (
