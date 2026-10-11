@@ -1,0 +1,249 @@
+[
+ {
+  "id": "6315908",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.247593,
+   25.094033
+  ],
+  "last": "2023-03",
+  "newest": "2023-03-24",
+  "priceFils": 860000000
+ },
+ {
+  "id": "3460507",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.263692,
+   25.183707
+  ],
+  "last": "2023-12",
+  "newest": "2023-12-22",
+  "priceFils": 35739037800
+ },
+ {
+  "id": "6654148",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.26814,
+   25.038568
+  ],
+  "last": "2024-02",
+  "newest": "2024-02-16",
+  "priceFils": 430000000
+ },
+ {
+  "id": "3460742",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.284033,
+   25.191432
+  ],
+  "last": "2024-02",
+  "newest": "2024-02-13",
+  "priceFils": 12100000000
+ },
+ {
+  "id": "6641947",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.275146,
+   25.047419
+  ],
+  "last": "2023-01",
+  "newest": "2023-01-12",
+  "priceFils": 499900000
+ },
+ {
+  "id": "6651142",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.275991,
+   25.039033
+  ],
+  "last": "2023-02",
+  "newest": "2023-02-17",
+  "priceFils": 390000000
+ },
+ {
+  "id": "6317313",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.242238,
+   25.104041
+  ],
+  "last": "2023-11",
+  "newest": "2023-11-13",
+  "priceFils": 20182087300
+ },
+ {
+  "id": "3020440",
+  "src": "dda",
+  "approx": false,
+  "lnglat": [
+   55.23623,
+   25.21764
+  ],
+  "last": "2024-02",
+  "newest": "2024-02-28",
+  "priceFils": 16000000000
+ },
+ {
+  "id": "JVC11LFRP001",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.215938,
+   25.063979
+  ],
+  "last": "2008-08",
+  "newest": "2008-08-14",
+  "priceFils": 390720000,
+  "n": 1
+ },
+ {
+  "id": "JVC10XMRM001",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.204337,
+   25.059952
+  ],
+  "last": "2023-02",
+  "newest": "2023-02-21",
+  "priceFils": 1340500000,
+  "n": 2
+ },
+ {
+  "id": "JVC13GFRP001",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.208791,
+   25.051964
+  ],
+  "last": "2009-12",
+  "newest": "2009-12-14",
+  "priceFils": 410330000,
+  "n": 1
+ },
+ {
+  "id": "JVC12YVIL500",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.214312,
+   25.054822
+  ],
+  "last": "2014-05",
+  "newest": "2014-05-21",
+  "priceFils": 247467000,
+  "n": 2
+ },
+ {
+  "id": "JVC12EHRS003",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.218503,
+   25.050988
+  ],
+  "last": "2009-12",
+  "newest": "2009-12-14",
+  "priceFils": 1028540000,
+  "n": 1
+ },
+ {
+  "id": "JVC17TCP020A",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.216223,
+   25.060484
+  ],
+  "last": "2015-02",
+  "newest": "2015-02-11",
+  "priceFils": 1212000000,
+  "n": 1
+ },
+ {
+  "id": "JVT02KTCP002C",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.177887,
+   25.036673
+  ],
+  "last": "2025-05",
+  "newest": "2025-05-16",
+  "priceFils": 3675000000,
+  "n": 3
+ },
+ {
+  "id": "JVT01FTCP002",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.176183,
+   25.03496
+  ],
+  "last": "2025-09",
+  "newest": "2025-09-29",
+  "priceFils": 5144431600,
+  "n": 2
+ },
+ {
+  "id": "JVC15AMRH006",
+  "src": "mp",
+  "approx": false,
+  "lnglat": null,
+  "last": "2008-07",
+  "newest": "2008-07-15",
+  "priceFils": 2800152400,
+  "n": 2
+ },
+ {
+  "id": "DWC-RG-30",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.225432,
+   24.945386
+  ]
+ },
+ {
+  "id": "6110279",
+  "src": "mp",
+  "approx": false,
+  "lnglat": [
+   55.322576,
+   25.182158
+  ]
+ },
+ {
+  "id": "6110352",
+  "src": "geo",
+  "approx": true
+ },
+ {
+  "id": "6460108",
+  "src": "dda",
+  "approx": false,
+  "project": {
+   "status": "CONDITIONAL_ACTIVATING",
+   "title": "AVENUE 353",
+   "cancel": "2022-07-26"
+  }
+ },
+ {
+  "id": "RC-D-011",
+  "absent": true
+ }
+]

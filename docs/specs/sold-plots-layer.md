@@ -323,6 +323,8 @@ showing sold history on public listings.
 | D5 | Non-DDA placement | (a) show harvested `gmaps_q` pins flagged approximate; (b) show only id-resolved pins | **(a)** with the dashed "approx" ring, and a 50-pin precision sample in Step 1 |
 | D6 | Registered-project key | (a) adopt `parcel_id → land_registry → projects` chain, Old Numbers display-only, refresh `projects.json`; (b) keep testing Old Numbers | **(a)** |
 
+**Ratified 2026-10-11:** D1 (a) · D2 (a) · D3 (a) · D4 (a) · D5 (a) · D6 (a) — all at the recommended defaults.
+
 ---
 
 ## 10. Risks
