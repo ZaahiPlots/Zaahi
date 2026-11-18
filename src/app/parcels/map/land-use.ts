@@ -71,8 +71,19 @@ export function deriveLandUse(
   const categorizeAll = (s: string): string[] => {
     const out: string[] = [];
     for (const seg of s.split(/\s*\/\s*|\s+-\s+/)) {
-      const c = categorize(seg.split(":")[0]) ?? categorize(seg);
-      if (c) out.push(c);
+      if (!seg.includes(":")) {
+        const c = categorize(seg);
+        if (c) out.push(c);
+        continue;
+      }
+      // "A : subs B : subs" with no separator between groups (stored form):
+      // every text chunk before a ":" ends in that group's category header.
+      const chunks = seg.split(":");
+      for (const chunk of chunks.slice(0, -1)) {
+        const last = chunk.trim().split(/\s+/).pop() ?? "";
+        const c = categorize(last) ?? categorize(chunk);
+        if (c) out.push(c);
+      }
     }
     return out;
   };

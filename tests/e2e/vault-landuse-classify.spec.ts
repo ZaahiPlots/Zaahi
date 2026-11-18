@@ -13,6 +13,12 @@ test("A: multi-category DDA string classifies as MIXED_USE (same as DDA layer)",
   expect(deriveLandUse([{ category: "COMMERCIAL - HOSPITALITY - RESIDENTIAL", sub: "APARTMENT - VILLA - HOTEL" }])).toBe("MIXED_USE");
 });
 
+// Form stored in AffectionPlan.landUseMix (prod rows 3720253 etc.): no "/" between groups.
+test("A: separator-less stored form classifies as MIXED_USE", () => {
+  const stored = "COMMERCIAL : OFFICES, RETAIL HOSPITALITY : HOTEL, HOTEL APARTMENT RESIDENTIAL : APARTMENT, VILLA";
+  expect(deriveLandUse([{ category: stored }])).toBe("MIXED_USE");
+});
+
 test("A: single-category strings are unchanged", () => {
   expect(deriveLandUse([{ category: "RESIDENTIAL : APARTMENT, VILLA" }])).toBe("RESIDENTIAL");
   expect(deriveLandUse([{ category: "HOSPITALITY : HOTEL, HOTEL APARTMENT" }])).toBe("HOTEL");
