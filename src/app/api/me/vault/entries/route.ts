@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, VaultStage, ParcelStatus } from "@prisma/client";
 import { z } from "zod";
-import { landUseSchema } from "@/lib/vault-land-use";
+import { landUseStoredSchema } from "@/lib/vault-land-use";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { recordVaultEvent } from "@/lib/vault-activity";
@@ -85,7 +85,7 @@ const VaultEntryCreateSchema = z.object({
   // present.
   plan: z.unknown().optional(),
   buildingLimit: z.unknown().optional(),
-  landUse: landUseSchema.optional(),
+  landUse: landUseStoredSchema.optional(),
   // Sprint 1 non-DDA manual-entry fields (founder spec
   // docs/specs/non-dda-plot-entry-DESIGN.md). Vault treats 3D fields
   // as optional (D7) — missing maxFloors → flat 2D polygon on the map.

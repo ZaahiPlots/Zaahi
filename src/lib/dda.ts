@@ -1,4 +1,5 @@
 import proj4 from 'proj4';
+import { stripSetbackTail } from './vault-land-use';
 
 // EPSG:3997 — WGS 84 / Dubai Local TM (central meridian 55°20')
 proj4.defs(
@@ -200,7 +201,7 @@ export function parseAffectionPlan(html: string): AffectionPlan {
 
   // Fallback: extract from stripped text (handles "FUTURE DEVELOPMENT" without colon)
   if (landUseMix.length === 0) {
-    const landBlock = text.match(/Land use\s+(.+?)\s+General Notes/i)?.[1]?.trim() ?? '';
+    const landBlock = stripSetbackTail(text.match(/Land use\s+(.+?)\s+General Notes/i)?.[1]?.trim() ?? '');
     if (landBlock.length > 0) {
       landUseMix.push({ category: landBlock, sub: '', areaSqm: null });
     }

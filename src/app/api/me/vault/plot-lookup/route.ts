@@ -40,6 +40,7 @@ import {
   STORED_DDA_SNAPSHOT_DATE,
 } from "@/lib/dda-stored-plot-lookup";
 import { emirateMatchVariants } from "@/lib/emirate";
+import { stripSetbackTail } from "@/lib/vault-land-use";
 
 export const runtime = "nodejs";
 
@@ -146,7 +147,8 @@ export async function POST(req: NextRequest) {
     const mix = ddaParcel.affectionPlans[0]?.landUseMix;
     if (Array.isArray(mix) && mix.length > 0) {
       const first = mix[0] as { category?: string; sub?: string };
-      primaryLandUse = first.category ?? first.sub ?? null;
+      const raw = first.category ?? first.sub ?? null;
+      primaryLandUse = raw ? stripSetbackTail(raw) : null;
     }
 
     return NextResponse.json({

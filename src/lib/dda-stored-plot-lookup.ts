@@ -18,6 +18,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { stripSetbackTail } from "./vault-land-use";
 import {
   fetchPlotInfoHtml,
   parseAffectionPlan,
@@ -167,7 +168,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 function firstLandUseCategory(plan: AffectionPlan | null): string | null {
   const first = plan?.landUseMix?.[0];
   if (!first?.category) return null;
-  const cleaned = first.category.split(/\s+Setbacks\s+Side\s+Building/i)[0].trim();
+  const cleaned = stripSetbackTail(first.category);
   return cleaned.length > 0 ? cleaned.toUpperCase() : null;
 }
 
