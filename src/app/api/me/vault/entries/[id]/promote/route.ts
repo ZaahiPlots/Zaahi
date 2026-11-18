@@ -20,7 +20,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { landUseSchema } from "@/lib/vault-land-use";
+import { landUseStoredSchema } from "@/lib/vault-land-use";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import {
@@ -52,7 +52,7 @@ const PromoteBodySchema = z
       .positive("asking_price_must_be_positive")
       .max(1e13, "asking_price_too_large"),
     flow: z.enum(["broker", "owner"]),
-    landUse: landUseSchema.optional(),
+    landUse: landUseStoredSchema.optional(),
     description: z.string().trim().max(2000).optional().nullable(),
     broker: z
       .object({

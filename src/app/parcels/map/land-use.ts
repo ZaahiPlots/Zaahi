@@ -63,13 +63,25 @@ export function deriveLandUse(
     return null;
   };
 
-  // Step 1: For each entry, determine its mapped category from category + sub.
+  // A DDA string can itself hold several categories, either " - " separated
+  // ("COMMERCIAL - HOSPITALITY - RESIDENTIAL", the DDA layer / tile form) or
+  // "A : subs / B : subs" (PlotInfo form). Classify each segment on its own
+  // so one first-match regex can't swallow the whole string. In a segment the
+  // text before ":" is the category; subs only decide when it maps to nothing.
+  const categorizeAll = (s: string): string[] => {
+    const out: string[] = [];
+    for (const seg of s.split(/\s*\/\s*|\s+-\s+/)) {
+      const c = categorize(seg.split(":")[0]) ?? categorize(seg);
+      if (c) out.push(c);
+    }
+    return out;
+  };
+
+  // Step 1: For each entry, determine its mapped categories from category + sub.
   const uniqueCats = new Set<string>();
   for (const u of mix) {
-    const fromCat = categorize(u.category || "");
-    const fromSub = categorize(u.sub || "");
-    if (fromCat) uniqueCats.add(fromCat);
-    if (fromSub) uniqueCats.add(fromSub);
+    for (const c of categorizeAll(u.category || "")) uniqueCats.add(c);
+    for (const c of categorizeAll(u.sub || "")) uniqueCats.add(c);
   }
 
   // Step 2: 2+ different mapped categories → Mixed Use.

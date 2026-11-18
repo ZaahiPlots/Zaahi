@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, VaultStage } from "@prisma/client";
 import { z } from "zod";
-import { landUseSchema } from "@/lib/vault-land-use";
+import { landUseStoredSchema } from "@/lib/vault-land-use";
 import { prisma } from "@/lib/prisma";
 import { getApprovedUserId } from "@/lib/auth";
 import { recordVaultEvent } from "@/lib/vault-activity";
@@ -42,7 +42,7 @@ const VaultEntryUpdateSchema = z
     latitude: z.number().min(22).max(27).nullable().optional(),
     longitude: z.number().min(51).max(57).nullable().optional(),
     geometry: z.unknown().optional(),
-    landUse: landUseSchema.nullable().optional(),
+    landUse: landUseStoredSchema.nullable().optional(),
     askingPriceFils: z
       .string()
       .regex(/^\d{1,16}$/, "askingPriceFils must be a non-negative integer string")

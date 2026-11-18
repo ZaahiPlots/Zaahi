@@ -2588,6 +2588,9 @@ function ParcelsMapPageInner() {
         const landUseKey =
           deriveLandUse(plan?.landUseMix) ??
           (typeof props.landUse === "string" && props.landUse
+            ? deriveLandUse([{ category: props.landUse }])
+            : null) ??
+          (typeof props.landUse === "string" && props.landUse
             ? props.landUse.toUpperCase().replace(/[ -]+/g, "_")
             : null);
         const color = (landUseKey && ZAAHI_LANDUSE_COLOR[landUseKey]) ?? ZAAHI_DEFAULT_COLOR;
