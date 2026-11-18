@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, ParcelStatus, UserRole, ClaimStatus } from '@prisma/client';
 import { z } from 'zod';
+import { landUseSchema } from '@/lib/vault-land-use';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { getApprovedUserId, getAdminUserId } from '@/lib/auth';
@@ -53,7 +54,7 @@ const SubmitSchema = z
       .number()
       .positive('asking_price_must_be_positive')
       .max(1e13, 'asking_price_too_large'),
-    landUse: z.string().trim().min(1).max(64).optional(),
+    landUse: landUseSchema.min(1).optional(),
     description: z.string().trim().max(2000).optional().nullable(),
     flow: z.enum(['broker', 'owner']),
     broker: z
