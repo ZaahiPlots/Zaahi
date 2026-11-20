@@ -18,6 +18,7 @@ import { recordVaultEvent } from "@/lib/vault-activity";
 import { recomputeConflictsForPlot } from "@/lib/vault-conflict";
 import { recordPriceChange, getPriceHistory } from "@/lib/vault-price-history";
 import { serializeVaultEntryFull } from "@/lib/vault-serialize";
+import { studiesForVaultEntry } from "@/lib/feasibility-studies";
 
 export const runtime = "nodejs";
 
@@ -145,6 +146,12 @@ export async function GET(
 
   const full = serializeVaultEntryFull(entry);
   const priceHistory = await getPriceHistory(id, 50);
+  // Feasibility v6.1: studies attached to this entry. Never throws — an
+  // empty list while the study tables are not deployed.
+  const studies = await studiesForVaultEntry(
+    { id, ownerId: entry.ownerId },
+    { kind: "owner" },
+  );
 
   // Resolve affectionPlan from publicParcel join when present. Side panel
   // uses these fields to render DIMENSIONS / LAND USE / AFFECTION PLAN
@@ -194,6 +201,7 @@ export async function GET(
     })),
     priceHistory,
     affectionPlan,
+    studies,
   });
 }
 

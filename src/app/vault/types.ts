@@ -29,6 +29,9 @@ export interface VaultEntrySummary {
   source: string | null;
   nextFollowUpAt: string | null;
   shareCount: number;
+  /** Saved feasibility studies attached to the entry. Optional: an older
+   *  API response (or the study tables not deployed yet) omits it / sends 0. */
+  studyCount?: number;
   conflictsWithOthers: boolean;
   addedByUserId: string | null;
   addedByNickname: string | null;

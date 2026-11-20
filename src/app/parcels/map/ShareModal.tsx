@@ -3,7 +3,9 @@
 // ZAAHI Vault — Share modal.
 //
 // Recipient picker (email / nickname) + permission selector + expiry.
-// MVP: VIEW only. FEASIBILITY + OFFER are Phase 2.2.
+// VIEW, or FEASIBILITY (= view + read-only access to the saved feasibility
+// studies attached to this entry — feasibility v6.1, 2026-11-20). OFFER is
+// Phase 2.2.
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §6.4.
 
@@ -30,11 +32,13 @@ type Recipient =
   | { kind: "nickname"; value: string };
 
 type ExpiryChoice = "never" | "7d" | "30d";
+type PermissionChoice = "VIEW" | "FEASIBILITY";
 
 export function ShareModal({ entryId, entryLabel, onClose, onShared }: Props) {
   const [recipientKind, setRecipientKind] = useState<"email" | "nickname">("nickname");
   const [recipientValue, setRecipientValue] = useState("");
   const [expiry, setExpiry] = useState<ExpiryChoice>("never");
+  const [permission, setPermission] = useState<PermissionChoice>("VIEW");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEscapeClose(onClose, !submitting);
@@ -64,7 +68,7 @@ export function ShareModal({ entryId, entryLabel, onClose, onShared }: Props) {
             recipient.kind === "email"
               ? { email: recipient.value }
               : { nickname: recipient.value },
-          permission: "VIEW",
+          permission,
           ...(expiresAt ? { expiresAt } : {}),
         }),
       });
@@ -126,21 +130,30 @@ export function ShareModal({ entryId, entryLabel, onClose, onShared }: Props) {
         </Field>
 
         <Field label="Permission" style={{ marginTop: 14 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            <label style={radioLabelStyle(true)}>
-              <input
-                type="radio"
-                checked
-                readOnly
-                style={radioInputStyle}
-              />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              aria-pressed={permission === "VIEW"}
+              onClick={() => setPermission("VIEW")}
+              style={togglePillStyle(permission === "VIEW")}
+            >
               View only
-            </label>
-            <label style={radioLabelStyle(false)} title="Phase 2.2">
-              <input type="radio" disabled style={radioInputStyle} />
-              View + Feasibility (soon)
-            </label>
+            </button>
+            <button
+              type="button"
+              aria-pressed={permission === "FEASIBILITY"}
+              onClick={() => setPermission("FEASIBILITY")}
+              style={togglePillStyle(permission === "FEASIBILITY")}
+              title="The recipient can also open the feasibility studies you attached to this entry. Read-only — never your drafts."
+            >
+              View + Feasibility studies
+            </button>
           </div>
+          {permission === "FEASIBILITY" && (
+            <p style={{ color: TEXT_DIM, fontSize: 11, margin: "6px 0 0", lineHeight: 1.45 }}>
+              They can read the saved versions of studies attached to this entry. Drafts stay private, and they cannot change anything.
+            </p>
+          )}
         </Field>
 
         <Field label="Expiry" style={{ marginTop: 14 }}>
@@ -202,24 +215,6 @@ function togglePillStyle(active: boolean): React.CSSProperties {
     transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
   };
 }
-
-function radioLabelStyle(active: boolean): React.CSSProperties {
-  return {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "8px 12px",
-    background: active ? "rgba(200, 169, 110, 0.06)" : "rgba(255, 255, 255, 0.02)",
-    border: `1px solid ${active ? "rgba(200, 169, 110, 0.3)" : BORDER}`,
-    color: active ? TEXT_PRIMARY : TEXT_DIM,
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: active ? "pointer" : "not-allowed",
-    opacity: active ? 1 : 0.55,
-  };
-}
-
-const radioInputStyle: React.CSSProperties = { accentColor: GOLD };
 
 const backdropStyle: React.CSSProperties = {
   position: "fixed",

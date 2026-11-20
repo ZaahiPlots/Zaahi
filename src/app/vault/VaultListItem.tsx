@@ -64,7 +64,15 @@ export function VaultListItem(props: Props) {
             </button>
             <div>
               <div style={{ color: TEXT_PRIMARY, fontWeight: 600 }}>{e.plotNumber}</div>
-              <div style={{ color: TEXT_DIM, fontSize: 11 }}>{e.district}</div>
+              <div style={{ color: TEXT_DIM, fontSize: 11 }}>
+                {e.district}
+                {(e.studyCount ?? 0) > 0 && (
+                  <span data-testid="vault-row-studies" style={{ color: GOLD }} title="Saved feasibility studies attached to this entry — expand the row to list them">
+                    {" · "}
+                    {e.studyCount} stud{e.studyCount === 1 ? "y" : "ies"}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div>

@@ -21,6 +21,7 @@ import {
   maybeAppendAffectionPlan,
 } from "@/lib/vault-affection-plan";
 import type { AffectionPlan } from "@/lib/dda";
+import { studyCountsByVaultEntry } from "@/lib/feasibility-studies";
 
 export const runtime = "nodejs";
 
@@ -117,6 +118,8 @@ interface VaultEntrySummary {
   source: string | null;
   nextFollowUpAt: string | null;
   shareCount: number;
+  /** Saved feasibility studies attached to the entry (non-archived). */
+  studyCount: number;
   conflictsWithOthers: boolean;
   addedByUserId: string | null;
   addedByNickname: string | null;
@@ -184,6 +187,15 @@ export async function GET(req: NextRequest) {
   const rows = hasMore ? rowsRaw.slice(0, limit) : rowsRaw;
   const nextCursor = hasMore ? rows[rows.length - 1].id : null;
 
+  // Feasibility v6.1: studies per entry. A separate, never-throwing query
+  // (one groupBy for the page) rather than a relation count on the query
+  // above, so this route keeps working while the study tables are not
+  // deployed — it then reports 0 everywhere.
+  const studyCounts = await studyCountsByVaultEntry(
+    userId,
+    rows.map((r) => r.id),
+  );
+
   const items: VaultEntrySummary[] = rows.map((r) => ({
     id: r.id,
     plotNumber: r.plotNumber,
@@ -194,6 +206,7 @@ export async function GET(req: NextRequest) {
     source: r.source,
     nextFollowUpAt: r.nextFollowUpAt?.toISOString() ?? null,
     shareCount: r._count.shares,
+    studyCount: studyCounts.get(r.id) ?? 0,
     conflictsWithOthers: r.conflictsWithOthers,
     addedByUserId: r.addedByUserId,
     addedByNickname: r.addedBy?.nickname ?? null,
@@ -397,6 +410,7 @@ export async function POST(req: NextRequest) {
     source: created.source,
     nextFollowUpAt: created.nextFollowUpAt?.toISOString() ?? null,
     shareCount: 0,
+    studyCount: 0, // fresh row — nothing can be attached yet
     conflictsWithOthers: created.conflictsWithOthers,
     addedByUserId: created.addedByUserId,
     addedByNickname: null, // fresh row — no need to round-trip to fetch own nickname
