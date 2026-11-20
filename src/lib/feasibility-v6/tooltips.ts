@@ -5,6 +5,8 @@
 // to enter (and the formula if helpful). No jargon, no academic citations.
 // English only at v6 launch; AR/RU translations deferred per spec Q3.
 
+import { ENGINES, PROJECT_PROV, type EngineId, type ProvKey } from './engines';
+
 export const TOOLTIPS: Record<string, string> = {
   // ── Engine selector ───────────────────────────────────────────────
   engine:
@@ -105,6 +107,30 @@ export const TOOLTIPS: Record<string, string> = {
     "How far your value sits from the engine default, in %. Green up to 15%, amber 15–30%, deeper amber 30–50%, red 50%+. Click to reset to the default.",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  sourced: 'Sourced',
+  derived: 'Derived from published figures',
+  carried: 'Carried over from v5 — not re-verified',
+  assumed: 'Assumption — no published source',
+  placeholder: 'Placeholder — no market data; enter your own',
+};
+
+/**
+ * Tooltip text for a field. Besides the static dictionary above, two dynamic
+ * key forms expose where a default came from (engines.ts provenance):
+ *
+ *   prov:<engineId>:<param>   an engine default
+ *   proj:<key>                a project-level default
+ */
 export function getTooltip(key: string): string | undefined {
+  if (key.startsWith('prov:')) {
+    const [, engineId, param] = key.split(':');
+    const p = ENGINES[engineId as EngineId]?.prov[param as ProvKey];
+    return p ? `${STATUS_LABEL[p.s]}. ${p.note}` : undefined;
+  }
+  if (key.startsWith('proj:')) {
+    const p = PROJECT_PROV[key.slice(5) as keyof typeof PROJECT_PROV];
+    return p ? `${STATUS_LABEL[p.s]}. ${p.note}` : undefined;
+  }
   return TOOLTIPS[key];
 }

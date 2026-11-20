@@ -6,7 +6,8 @@
 //
 // Land-use derivation logic mirrors deriveLandUse() in src/app/parcels/map/
 // page.tsx and the SidePanel "primary category" rule (multi-category mix →
-// "MIXED USE", single mix → first category, no mix → "RESIDENTIAL" fallback).
+// "MIXED USE", single mix → first category, no mix → '' = unknown; the
+// calculator then asks for an engine instead of assuming Residential).
 // Kept minimal here: the v6 EngineSelector lets the user override the auto-
 // derived land use anyway, so this is just a sensible default.
 
@@ -18,10 +19,18 @@ export interface ParcelInput {
   community: string | null;
   projectName: string | null;
   masterDeveloper: string | null;
+  /** '' when the plot has no land use on record. Never defaulted to Residential. */
   landUse: string;
   plotAreaSqft: number;
-  far: number;
-  gfaSqft: number;
+  /**
+   * null when the affection plan carries no FAR and no Max GFA to derive one
+   * from. Audit B6: the calculator used to print an invented 2.5 as fact.
+   */
+  far: number | null;
+  /** The plan's Max GFA when it has one (it wins over plot × FAR — audit M10). */
+  maxGfaSqft: number | null;
+  /** Max GFA, else plot × FAR, else null. Display only. */
+  gfaSqft: number | null;
   plotPriceAed: number;
   /**
    * False when the parcel has no `currentValuation` at all. plotPriceAed is 0
@@ -75,8 +84,7 @@ export function adaptParcelToInput(
   plan: AffectionPlanLike | null,
 ): ParcelInput {
   const plotAreaSqft = plan?.plotAreaSqft ?? parcel.area ?? 0;
-  const far = plan?.far ?? 2.5;
-  const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
+  const { far, maxGfaSqft, gfaSqft } = resolvePlanArea(plotAreaSqft, plan?.far ?? null, plan?.maxGfaSqft ?? null);
   const landPriceKnown =
     parcel.currentValuation != null && Number(parcel.currentValuation) > 0;
   const plotPriceAed = landPriceKnown ? Number(parcel.currentValuation) / 100 : 0;
@@ -91,7 +99,7 @@ export function adaptParcelToInput(
       .map((m) => (m.category ?? '').trim().toUpperCase())
       .filter((c) => c.length > 0),
   );
-  let landUse = 'RESIDENTIAL';
+  let landUse = '';
   if (uniqueCategories.size > 1) {
     landUse = 'MIXED USE';
   } else if (uniqueCategories.size === 1) {
@@ -109,6 +117,7 @@ export function adaptParcelToInput(
     landUse,
     plotAreaSqft,
     far,
+    maxGfaSqft,
     gfaSqft,
     plotPriceAed,
     landPriceKnown,
@@ -159,8 +168,7 @@ export function adaptSidePanelToInput(
   const landPriceKnown = plotPriceAedOrNull != null && plotPriceAedOrNull > 0;
   const plotPriceAed = landPriceKnown ? (plotPriceAedOrNull as number) : 0;
   const plotAreaSqft = plan?.plotAreaSqft ?? data.area ?? 0;
-  const far = plan?.far ?? 2.5;
-  const gfaSqft = plan?.maxGfaSqft ?? plotAreaSqft * far;
+  const { far, maxGfaSqft, gfaSqft } = resolvePlanArea(plotAreaSqft, plan?.far ?? null, plan?.maxGfaSqft ?? null);
 
   // Land-use derivation — distinct categories only (founder 2026-06-08).
   // See adaptParcelToInput above for the reasoning.
@@ -170,7 +178,7 @@ export function adaptSidePanelToInput(
       .map((m) => (m.category ?? '').trim().toUpperCase())
       .filter((c) => c.length > 0),
   );
-  let landUse = 'RESIDENTIAL';
+  let landUse = '';
   if (uniqueCategories.size > 1) {
     landUse = 'MIXED USE';
   } else if (uniqueCategories.size === 1) {
@@ -188,6 +196,7 @@ export function adaptSidePanelToInput(
     landUse,
     plotAreaSqft,
     far,
+    maxGfaSqft,
     gfaSqft,
     plotPriceAed,
     landPriceKnown,
@@ -197,36 +206,26 @@ export function adaptSidePanelToInput(
   };
 }
 
-// Map a Land-Use string (from the adapter or a future user override) to the
-// most appropriate v6 engine. Used by Sprint 1 to seed Residential by default
-// when the parcel's land-use is residential. Future sprints expand this map
-// as more engines become available.
-import type { EngineId } from './engines';
+// FAR / GFA straight from the plan. A FAR is derived only from the plan's own
+// Max GFA — never assumed.
+function resolvePlanArea(
+  plotAreaSqft: number,
+  planFar: number | null,
+  planMaxGfa: number | null,
+): { far: number | null; maxGfaSqft: number | null; gfaSqft: number | null } {
+  const maxGfaSqft = planMaxGfa != null && planMaxGfa > 0 ? planMaxGfa : null;
+  let far = planFar != null && planFar > 0 ? planFar : null;
+  if (far == null && maxGfaSqft != null && plotAreaSqft > 0) far = maxGfaSqft / plotAreaSqft;
+  const gfaSqft = maxGfaSqft ?? (far != null && plotAreaSqft > 0 ? plotAreaSqft * far : null);
+  return { far, maxGfaSqft, gfaSqft };
+}
 
-// Routing per spec 00_OVERVIEW.md §3 + founder ratification 2026-06-06:
-//   Agricultural / Farm → Engine 13 Land-Hold (manual cost override; per spec §3)
-//   Future Development  → Engine 13 Land-Hold (Rezoning Upside sub-mode per spec §3)
-//   Investment (POST-spec, added 2026-06-03) → Engine 13 Land-Hold (founder ratified)
-// HOSPITAL substring intentionally checked AFTER HEALTHCARE so "HOSPITALITY" wins
-// for hotels and "HOSPITAL" (clinic context) doesn't accidentally route there.
-export function defaultEngineFor(landUse: string): EngineId {
-  const u = (landUse ?? '').toUpperCase().trim();
-  if (!u) return 'residential';
-  if (u.includes('MIXED')) return 'mixeduse';
-  if (u.includes('HOTEL') || u.includes('HOSPITALITY') || u.includes('RESORT'))
-    return 'hospitality';
-  if (u.includes('OFFICE')) return 'office';
-  if (u.includes('RETAIL') || u.includes('MALL') || u.includes('SHOWROOM'))
-    return 'retail';
-  if (u.includes('INDUSTRIAL') || u.includes('WAREHOUSE') || u.includes('LOGISTIC') || u.includes('FACTORY'))
-    return 'industrial';
-  if (u.includes('HEALTH') || u.includes('CLINIC') || u.includes('HOSPITAL'))
-    return 'healthcare';
-  if (u.includes('EDUCATION') || u.includes('SCHOOL') || u.includes('UNIVERSITY') || u.includes('ACADEMY') || u.includes('NURSERY'))
-    return 'educational';
-  if (u.includes('COMMERCIAL')) return 'office';
-  if (u.includes('AGRICULTURAL') || u.includes('FARM')) return 'landhold';
-  if (u.includes('FUTURE')) return 'landhold';
-  if (u.includes('INVESTMENT')) return 'landhold';
-  return 'residential';
+// Land use → engine now lives in ./routing.ts, where a land use can also be
+// "not a development plot" or "unknown" instead of falling through to
+// Residential (audit B5). This wrapper returns null in both of those cases.
+import type { EngineId } from './engines';
+import { routeLandUse } from './routing';
+
+export function defaultEngineFor(landUse: string): EngineId | null {
+  return routeLandUse(landUse).engineId;
 }
