@@ -193,6 +193,9 @@ model User {
   vaultSharesReceived   VaultShare[]    @relation("VaultShareRecipient")
   vaultActivityAuthored VaultActivity[] @relation("VaultActivityActor")
 
+  // Feasibility v6.1 saved studies (back-relation only — no column on User)
+  feasibilityStudies FeasibilityStudy[] @relation("FeasibilityStudyOwner")
+
   accessEvents UserAccessEvent[] @relation("UserAccessEventUser")
 
   @@index([role])
@@ -258,6 +261,9 @@ model Parcel {
 
   // Private Plot Vault v2.1 — entries that reference this public parcel
   vaultEntryLinks VaultEntry[] @relation("VaultEntryPublicParcel")
+
+  // Feasibility v6.1 saved studies (back-relation only — no column on Parcel)
+  feasibilityStudies FeasibilityStudy[] @relation("FeasibilityStudyParcel")
 
   @@unique([emirate, district, plotNumber])
   @@index([ownerId])
@@ -871,6 +877,10 @@ model VaultEntry {
   activity     VaultActivity[]
   priceHistory VaultPriceHistory[]
 
+  // Feasibility v6.1 saved studies attached to this entry (back-relation
+  // only — no column on VaultEntry).
+  feasibilityStudies FeasibilityStudy[]
+
   @@unique([ownerId, emirate, district, plotNumber])
   @@index([ownerId])
   @@index([stage])
@@ -974,4 +984,98 @@ model FeedbackSubmission {
   // 24h text dedup.
   @@index([userId, textHash, createdAt])
   @@index([createdAt])
+}
+
+// ── Feasibility v6.1 — saved studies ───────────────────────────────────
+//
+// Added 2026-11-20 on explicit founder instruction (feasibility v6.1 brief:
+// "a user never loses a calculation"). CLAUDE.md forbids touching
+// schema.prisma without that instruction; this is two NEW tables plus
+// back-relation fields — no column on an existing table is added or altered.
+// Spec: docs/specs/feasibility-v6/SAVED_STUDIES_AND_COMPARE.md.
+//
+// A study is one named working document for one plot: a mutable autosaved
+// draft plus an append-only list of immutable versions.
+//
+// Plot identity is denormalised (plotNumber / district / emirate) because a
+// study does not need a Parcel row: vault entries and preview plots have
+// none. `parcelId` and `vaultEntryId` are optional links and SET NULL when
+// the target goes away, so deleting a vault entry never deletes a study.
+//
+// `draftInputs` is the calculator's StudyInputs (src/lib/feasibility-v6/
+// model.ts) as last autosaved. It is private to the owner — a share
+// recipient never receives it.
+model FeasibilityStudy {
+  id      String @id @default(cuid())
+  ownerId String
+  owner   User   @relation("FeasibilityStudyOwner", fields: [ownerId], references: [id])
+
+  parcelId     String?
+  parcel       Parcel?     @relation("FeasibilityStudyParcel", fields: [parcelId], references: [id], onDelete: SetNull)
+  vaultEntryId String?
+  vaultEntry   VaultEntry? @relation(fields: [vaultEntryId], references: [id], onDelete: SetNull)
+
+  // Plot identity (denormalised)
+  plotNumber String
+  district   String
+  emirate    String
+
+  name String
+
+  draftInputs    Json?
+  draftUpdatedAt DateTime?
+
+  // Highest version number issued. Incremented atomically in the same
+  // transaction that inserts the version row; @@unique([studyId, version])
+  // on the version table is the race guard.
+  latestVersion Int @default(0)
+
+  // Soft delete. Studies are never hard-deleted by the app.
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions FeasibilityStudyVersion[]
+
+  @@index([ownerId, updatedAt]) // "my studies", newest first
+  @@index([parcelId])
+  @@index([vaultEntryId]) // vault row count + shared-reader lookup
+  @@index([ownerId, plotNumber]) // the calculator's "studies for this plot"
+}
+
+// One saved version of a study. IMMUTABLE: rows are only ever inserted.
+// No route updates or deletes a version — a correction is a new version.
+//
+// `outputs` is recomputed on the server from `inputs` at save time and is
+// never taken from the client (CLAUDE.md: financial calculations
+// server-side only). It is a snapshot in AED as the model produces it, not
+// a money column — nothing is summed or charged from it.
+//
+// `defaultsSnapshot` + `plotSnapshot` + `modelVersion` are what a reopen is
+// compared against to raise "defaults / the plot / the model changed since".
+model FeasibilityStudyVersion {
+  id      String           @id @default(cuid())
+  studyId String
+  study   FeasibilityStudy @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  version Int
+  name    String
+  notes   String? @db.Text
+
+  mode    String // 'bts' | 'btr' | 'jv'
+  engines String // display label, e.g. "Residential 60% · Retail 40%"
+
+  inputs           Json
+  outputs          Json
+  defaultsSnapshot Json
+  plotSnapshot     Json
+
+  modelVersion    String
+  defaultsVersion String
+
+  createdByUserId String
+  createdAt       DateTime @default(now())
+
+  @@unique([studyId, version])
 }
