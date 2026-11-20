@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { patchVaultEntry, PHONE_RE } from "./patchEntry";
 import { PriceHistoryDropdown } from "./PriceHistoryDropdown";
+import { VaultStudiesList } from "@/components/feasibility/VaultStudiesList";
+import type { VaultStudyRefDto } from "@/lib/feasibility-v6/studyRules";
 
 const GOLD = "#C8A96E";
 const RED = "#E63946";
@@ -46,6 +48,7 @@ export function VaultDetailsPanel({ entryId }: { entryId: string }) {
   const [contact, setContact] = useState<OwnerContact>({});
   const [savedContact, setSavedContact] = useState<OwnerContact>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [studies, setStudies] = useState<VaultStudyRefDto[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -60,8 +63,10 @@ export function VaultDetailsPanel({ entryId }: { entryId: string }) {
           brokerNotes: string | null;
           source: string | null;
           ownerContact: OwnerContact | null;
+          studies?: VaultStudyRefDto[];
         };
         if (!alive) return;
+        setStudies(d.studies ?? []);
         setNotes(d.brokerNotes ?? "");
         setSavedNotes(d.brokerNotes ?? "");
         setSource(d.source ?? "");
@@ -194,6 +199,15 @@ export function VaultDetailsPanel({ entryId }: { entryId: string }) {
           </label>
         ))}
       </div>
+
+      {studies.length > 0 && (
+        <>
+          <div style={{ ...sectionLabel, marginTop: 18 }}>Feasibility studies ({studies.length})</div>
+          <div style={{ maxWidth: 520 }}>
+            <VaultStudiesList studies={studies} owner />
+          </div>
+        </>
+      )}
 
       <div style={{ marginTop: 18 }}>
         <PriceHistoryDropdown entryId={entryId} />

@@ -19,8 +19,13 @@ const VaultShareCreateSchema = z.object({
     z.object({ nickname: z.string().trim().min(1).max(64) }).strict(),
     z.object({ userId: z.string().cuid() }).strict(),
   ]),
-  // MVP: VIEW only at the API gate. FEASIBILITY / OFFER ship in 2.2.
-  permission: z.enum(["VIEW"]).default("VIEW"),
+  // VIEW (default) or FEASIBILITY. FEASIBILITY = VIEW + read-only access to
+  // the saved feasibility studies attached to this entry (feasibility v6.1,
+  // 2026-11-20 — docs/specs/feasibility-v6/SAVED_STUDIES_AND_COMPARE.md; the
+  // gate is resolveStudyAccess in src/lib/feasibility-v6/studyRules.ts).
+  // Omitting the field still yields VIEW, so existing clients are unaffected.
+  // OFFER stays un-grantable here until Phase 2.2 ships its own behaviour.
+  permission: z.enum(["VIEW", "FEASIBILITY"]).default("VIEW"),
   expiresAt: z.string().datetime().optional(),
 });
 

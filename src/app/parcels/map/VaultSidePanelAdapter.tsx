@@ -24,6 +24,8 @@ import SidePanel, { type ParcelDetail } from "./SidePanel";
 // which has already been migrated.
 import { Panel } from "@/components/Panel";
 import { PANEL_BORDER_COLOR, RADIUS_EDGE } from "@/lib/design-tokens";
+import { VaultStudiesList } from "@/components/feasibility/VaultStudiesList";
+import type { VaultStudyRefDto } from "@/lib/feasibility-v6/studyRules";
 
 // ── Brand tokens — unified against login reference (founder spec 2026-05-30).
 const GOLD = "#C8A96E";
@@ -104,6 +106,8 @@ interface OwnerView {
     actor: { id: string; nickname: string | null } | null;
     createdAt: string;
   }>;
+  /** Saved feasibility studies attached to this entry (v6.1). */
+  studies?: VaultStudyRefDto[];
 }
 
 interface RecipientView {
@@ -126,6 +130,9 @@ interface RecipientView {
   geometry?: GeoJSON.Polygon | null;
   latitude?: number | null;
   longitude?: number | null;
+  /** The owner's saved studies on this entry — only with a FEASIBILITY /
+   *  OFFER share, and only studies that have a saved version. */
+  studies?: VaultStudyRefDto[];
 }
 
 type EntryView = OwnerView | RecipientView;
@@ -165,6 +172,9 @@ function mapEntryToParcelDetail(view: EntryView): ParcelDetail {
   return {
     id: backingParcelId ?? view.id,
     hasBackingParcel: backingParcelId !== null,
+    // Always the VaultEntry id (owner and share-recipient views alike). The
+    // feasibility calculator uses it to attach / list saved studies.
+    vaultEntryId: view.id,
     plotNumber: view.plotNumber,
     district: view.district,
     emirate: view.emirate,
@@ -490,6 +500,12 @@ function VaultFooter({
               <span style={{ color: TEXT_PRIMARY }}>{s.permission}</span>
             </div>
           ))}
+        </Section>
+      )}
+
+      {view.studies && view.studies.length > 0 && (
+        <Section label={`Feasibility studies (${view.studies.length})`}>
+          <VaultStudiesList studies={view.studies} owner={view.access === "owner"} />
         </Section>
       )}
 

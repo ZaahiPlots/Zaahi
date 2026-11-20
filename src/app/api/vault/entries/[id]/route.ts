@@ -21,6 +21,7 @@ import {
   serializeVaultEntryForRecipient,
 } from "@/lib/vault-serialize";
 import { getPriceHistory } from "@/lib/vault-price-history";
+import { studiesForVaultEntry } from "@/lib/feasibility-studies";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,10 @@ export async function GET(
   // Owner path — full view.
   if (entry.ownerId === userId) {
     const priceHistory = await getPriceHistory(id, 50);
+    const studies = await studiesForVaultEntry(
+      { id, ownerId: entry.ownerId },
+      { kind: "owner" },
+    );
     return NextResponse.json({
       ...serializeVaultEntryFull(entry),
       addedBy: entry.addedBy,
@@ -73,6 +78,7 @@ export async function GET(
         lastViewedAt: s.lastViewedAt?.toISOString() ?? null,
       })),
       priceHistory,
+      studies,
       access: "owner",
     });
   }
@@ -128,6 +134,21 @@ export async function GET(
     });
   }
 
+  // Feasibility v6.1: a FEASIBILITY / OFFER share also lists the owner's
+  // saved studies on this entry (those with at least one version — a draft
+  // is private). A VIEW share gets an empty list. Never throws.
+  const studies = await studiesForVaultEntry(
+    { id, ownerId: entry.ownerId },
+    {
+      kind: "recipient",
+      share: {
+        permission: share.permission,
+        revokedAt: share.revokedAt,
+        expiresAt: share.expiresAt,
+      },
+    },
+  );
+
   const view = serializeVaultEntryForRecipient(
     entry,
     { permission: share.permission },
@@ -136,6 +157,7 @@ export async function GET(
 
   return NextResponse.json({
     ...view,
+    studies,
     access: "share",
     // shareId surfaced so the client's "Add to my vault" button can POST
     // to /api/vault/shared-with-me/[shareId]/import without an extra lookup.

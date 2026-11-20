@@ -2,9 +2,11 @@
 //
 // Spec: docs/specs/phase-2/private-plot-vault/spec.md §3.2, §5.1, §6.4.
 //
-// MVP share permission is VIEW only at the API gate. FEASIBILITY and
-// OFFER are declared in the enum so Phase 2.2 can ship gate behaviour
-// without a schema migration.
+// The API gate issues VIEW or FEASIBILITY (the latter since feasibility
+// v6.1, 2026-11-20: it also unlocks read-only access to the saved studies
+// attached to the entry — see src/lib/feasibility-v6/studyRules.ts). OFFER
+// is declared in the enum so Phase 2.2 can ship its gate behaviour without
+// a schema migration.
 //
 // Re-sharing semantics: if a (vaultEntryId, recipientUserId) row
 // already exists (revoked or not), createShare UPDATES it

@@ -148,6 +148,10 @@ export interface ParcelDetail {
   // where `id` is always a real Parcel id — so only an explicit `false`
   // suppresses anything.
   hasBackingParcel?: boolean;
+  // Set ONLY when the panel is showing a vault entry (VaultSidePanelAdapter):
+  // the VaultEntry id, whatever `id` above resolved to. Passed to the v6
+  // feasibility calculator so saved studies attach to / list from the entry.
+  vaultEntryId?: string | null;
   plotNumber: string;
   district: string;
   emirate: string;
@@ -1033,6 +1037,7 @@ export default function SidePanel({
                         parcel={adaptSidePanelToInput(data, plan, aed)}
                         banner="none"
                         mode="sidepanel"
+                        vaultEntryId={data.vaultEntryId ?? null}
                         // Sprint 2-fast (2026-05-06): all 13 engines unlocked.
                         // Founder accepted "speed > full validation" trade-off.
                         // EngineSelector splits into VALIDATED (Residential,
