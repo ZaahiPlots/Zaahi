@@ -328,11 +328,14 @@ Full description: `docs/specs/feasibility-v6/SAVED_STUDIES_AND_COMPARE.md`. Buil
 
 **Not done:** real DLD unit-sale medians per area (A10); a land-banking model (A8); the manual smoke-test checklist for the map and sign-in (nothing is being pushed; the automated suite covers the map, vault and auth specs).
 
-**Side effect to clean up:** the full Playwright run rewrote eight tracked screenshots under `docs/research/dda-height-tiles/` and `docs/research/map-ux-batch-1/`. They are not part of this work and are not committed; my attempt to restore them with `git checkout` was blocked by the permission system, so they are left modified in the working tree.
+**Side effect, cleaned up:** the full Playwright run rewrote eight tracked screenshots under `docs/research/dda-height-tiles/` and `docs/research/map-ux-batch-1/`. They are not part of this work and were never committed. My own `git checkout` to restore them was blocked by the permission system; the founder then ran `git checkout -- docs/research/dda-height-tiles docs/research/map-ux-batch-1` in the session and the files are back to their committed state.
 
 ## Ad-hoc instructions during the session
 
-None. The only messages after the task were automated progress nudges.
+- Restore the eight screenshots the e2e run had overwritten (`git checkout -- docs/research/dda-height-tiles docs/research/map-ux-batch-1`) — done, working tree verified.
+- Correct this log's side-effect paragraph in a follow-up commit, committing only this file — this commit.
+
+Other messages after the task were automated progress nudges.
 
 ## Commits
 
