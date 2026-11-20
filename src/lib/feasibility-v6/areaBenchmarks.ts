@@ -12,6 +12,11 @@
 // LAND transactions (data/dld-transactions.csv), no unit sales or rents.
 //
 // Every figure: AED per sqft (sale) or AED per sqft per year (rent).
+//
+// RESIDENTIAL RENT: no area carries one. The earlier figures were sale price ×
+// a quoted gross yield, i.e. derived, not published. Residential rent is the
+// Dubai city average (engines.ts) until an area has its own PUBLISHED rent per
+// sqft: add `residentialRentPsfYear` with its source then.
 
 import type { EngineId, EngineParams } from './engines';
 
@@ -35,43 +40,38 @@ export const AREA_BENCHMARKS: AreaBenchmark[] = [
     name: 'Jumeirah Village Circle',
     match: ['JUMEIRAH VILLAGE CIRCLE', 'JVC'],
     residentialSalePsf: 1408,
-    residentialRentPsfYear: 106,
-    source: `${PM}: AED 1,408/sqft, gross yield 7.53%`,
+    source: `${PM}: AED 1,408/sqft`,
   },
   {
     name: 'Dubai South',
     match: ['DUBAI SOUTH', 'DUBAI WORLD CENTRAL'],
     residentialSalePsf: 1496,
-    residentialRentPsfYear: 109,
     officeRentPsfYear: 124,
     industrialRentPsfYear: 55,
-    source: `${PM}: AED 1,496/sqft, yield 7.28%; office AED 124 (Property Monitor, May 2026); warehouses AED 55 (Knight Frank, H1 2026)`,
+    source: `${PM}: AED 1,496/sqft; office AED 124 (Property Monitor, May 2026); warehouses AED 55 (Knight Frank, H1 2026)`,
   },
   {
     name: 'Business Bay',
     match: ['BUSINESS BAY'],
     residentialSalePsf: 2224,
-    residentialRentPsfYear: 141,
     officeRentPsfYear: 151,
     retailRentPsfYear: 221,
-    source: `${PM}: AED 2,224/sqft, yield 6.33%; office AED 151 (May 2026); retail AED 221 (Engel & Völkers, H1 2026)`,
+    source: `${PM}: AED 2,224/sqft; office AED 151 (May 2026); retail AED 221 (Engel & Völkers, H1 2026)`,
   },
   {
     name: 'Dubai Hills',
     match: ['DUBAI HILLS'],
     residentialSalePsf: 2366,
-    residentialRentPsfYear: 145,
-    source: `${PM}: AED 2,366/sqft, yield 6.12%`,
+    source: `${PM}: AED 2,366/sqft`,
   },
   {
     name: 'Downtown Dubai',
     match: ['DOWNTOWN', 'BURJ KHALIFA'],
     residentialSalePsf: 3121,
-    residentialRentPsfYear: 166,
     officeSalePsf: 5130,
     officeRentPsfYear: 367,
     retailRentPsfYear: 817,
-    source: `${PM}: AED 3,121/sqft, yield 5.32%; office sale AED 5,130 (Knight Frank, 2025), rent AED 367 (Savills); retail AED 817 (Engel & Völkers, H1 2026)`,
+    source: `${PM}: AED 3,121/sqft; office sale AED 5,130 (Knight Frank, 2025), rent AED 367 (Savills); retail AED 817 (Engel & Völkers, H1 2026)`,
   },
   { name: 'DIFC', match: ['DIFC', 'INTERNATIONAL FINANCIAL'], officeRentPsfYear: 537, source: 'Savills, Q4 2025: office AED 537/sqft/yr' },
   { name: 'Jumeirah Lakes Towers', match: ['JUMEIRAH LAKE', 'JLT'], officeRentPsfYear: 135, source: 'Property Monitor via Engel & Völkers, May 2026: office AED 135/sqft/yr' },

@@ -674,7 +674,7 @@ function Calculator({
           }
         >
           {componentRevenueFields(0)}
-          {inputs.site.priceBasis && leadEngine.kind === 'psf' && <Note>Price / rent seeded from the {inputs.site.priceBasis} area benchmark.</Note>}
+          {inputs.site.priceBasis && leadEngine.kind === 'psf' && <Note>Sale price seeded from the {inputs.site.priceBasis} area benchmark. Rent stays at the city average unless the area has its own published rent.</Note>}
         </Panel>
       )}
 
@@ -776,7 +776,14 @@ function Calculator({
               tip: inputs.jv.type === 'revenue_share' ? 'proj:jvRevenueSharePct' : 'proj:jvProfitSharePct',
               base: inputs.jv.type === 'revenue_share' ? P.jvRevenueSharePct : P.jvProfitSharePct,
             })}
-          {num('DLD development-agreement fee', inputs.jv.developmentAgreementFeePct, (n) => setSec('jv', { developmentAgreementFeePct: n }), { unit: '% of land value', tip: 'proj:jvDevelopmentAgreementFeePct', base: P.jvDevelopmentAgreementFeePct })}
+          {choice(
+            'Land title transfers to the JV company',
+            <Seg value={inputs.jv.landTitleTransfers ? 'on' : 'off'} options={[['off', 'No'], ['on', 'Yes']]} onChange={(v) => setSec('jv', { landTitleTransfers: v === 'on' })} />,
+            'landTitleTransfers',
+          )}
+          <Note>{inputs.jv.landTitleTransfers ? 'DLD on the land value is charged to the project. Confirm with a lawyer.' : 'No DLD charged on the land. If the title transfers to the JV company, switch this on and confirm with a lawyer.'}</Note>
+          {inputs.jv.landTitleTransfers &&
+            num('DLD on land transfer', inputs.jv.developmentAgreementFeePct, (n) => setSec('jv', { developmentAgreementFeePct: n }), { unit: '% of land value', tip: 'proj:jvDevelopmentAgreementFeePct', base: P.jvDevelopmentAgreementFeePct })}
         </Panel>
       )}
     </>

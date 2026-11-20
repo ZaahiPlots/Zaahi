@@ -159,10 +159,12 @@ export interface StudyInputs {
     /** Profit share (profit_share) or revenue share (revenue_share), %. */
     landownerSharePct: number;
     /**
-     * DLD fee to register the development agreement when the landowner is not
-     * the developer — % of the land value. 0 when the landowner IS the
-     * developer of record.
+     * True when the land title transfers to the JV company. Only then is the
+     * DLD fee charged. Off by default; whether a structure transfers title is
+     * a legal question ("confirm with lawyer").
      */
+    landTitleTransfers: boolean;
+    /** DLD fee on the land value when the title transfers (%). Ignored while landTitleTransfers is off. */
     developmentAgreementFeePct: number;
   };
   discountRatePct: number;
@@ -672,7 +674,7 @@ function simulate(inp: StudyInputs, o: SimOptions): CoreResult {
   if (inKind) {
     addCost('land', 'Land (contributed in kind, agreed value)', 0, landCost);
     if (inKind.feePct > 0)
-      addCost('dld', `DLD development-agreement fee (${inKind.feePct}%)`, 0, landCost * (inKind.feePct / 100), { basis: '% of land value; landowner is not the developer' });
+      addCost('dld', `DLD on land title transfer to the JV company (${inKind.feePct}%)`, 0, landCost * (inKind.feePct / 100), { basis: '% of land value; title transfers to the JV company, confirm with lawyer' });
   } else {
     if (inp.land.paymentMode === 'installments') {
       const dp = landCost * (inp.land.downPaymentPct / 100);
@@ -1097,9 +1099,14 @@ function landownerEntitlement(type: JvType, sharePct: number, contribution: numb
   return contribution + core.profitAed * (sharePct / 100);
 }
 
+/** The DLD % actually charged on the JV land: the rate only when title transfers, else 0. */
+export function jvLandFeePct(inp: StudyInputs): number {
+  return inp.jv.landTitleTransfers ? Math.max(0, inp.jv.developmentAgreementFeePct) : 0;
+}
+
 function computeJv(inp: StudyInputs, area: ResolvedArea, baseMode: 'bts' | 'btr'): JvResult {
   const landValue = pos(inp.jv.landValueAed) || pos(inp.land.costAed);
-  const core = simulate(inp, { mode: baseMode, area, landInKind: { valueAed: landValue, feePct: Math.max(0, inp.jv.developmentAgreementFeePct) } });
+  const core = simulate(inp, { mode: baseMode, area, landInKind: { valueAed: landValue, feePct: jvLandFeePct(inp) } });
   const cash = pos(inp.jv.landownerCashAed);
   const contribution = landValue + cash;
 
@@ -1202,7 +1209,7 @@ function computeJv(inp: StudyInputs, area: ResolvedArea, baseMode: 'bts' | 'btr'
 /** The base project a JV is struck on — exposed so the UI can show its lines. */
 function jvCore(inp: StudyInputs, area: ResolvedArea, baseMode: 'bts' | 'btr'): CoreResult {
   const landValue = pos(inp.jv.landValueAed) || pos(inp.land.costAed);
-  return simulate(inp, { mode: baseMode, area, landInKind: { valueAed: landValue, feePct: Math.max(0, inp.jv.developmentAgreementFeePct) } });
+  return simulate(inp, { mode: baseMode, area, landInKind: { valueAed: landValue, feePct: jvLandFeePct(inp) } });
 }
 
 // ── Sensitivity + residual land ──────────────────────────────────────────
@@ -1387,8 +1394,14 @@ export function computeFeasibility(inp: StudyInputs, opts?: ComputeOptions): Fea
       if (!LOCATION_SENSITIVE.includes(c.engineId)) return false;
       return base === 'bts' ? c.salesPsfSfa === eng.salesPsfSfa : c.rentPsfSfaYear === eng.rentPsfSfaYear;
     });
-    if (blind.length > 0)
-      caveats.push(`${base === 'bts' ? 'Sale price' : 'Rent'} is the Dubai city-wide average, not this plot's location (${[...new Set(blind.map((c) => ENGINES[c.engineId].label))].join(', ')}). Replace it with a local figure before relying on the result.`);
+    if (blind.length > 0) {
+      const names = [...new Set(blind.map((c) => ENGINES[c.engineId].label))].join(', ');
+      caveats.push(
+        base === 'bts'
+          ? `Sale price is the Dubai city-wide average, not this plot's location (${names}). Replace it with a local figure before relying on the result.`
+          : `City average rent: ${[...new Set(blind.map((c) => `${ENGINES[c.engineId].label} AED ${ENGINES[c.engineId].rentPsfSfaYear}/sqft/yr`))].join(', ')}. It is not this plot's location and no area-specific rent is published for it. Replace it with a local figure before relying on the result.`,
+      );
+    }
   }
 
   const unverified = unverifiedInputs(inp, base);
@@ -1556,6 +1569,7 @@ export function defaultInputs(seed: SeedSite, engineId: EngineId | null, engineC
       landValueAed: null,
       landownerCashAed: 0,
       landownerSharePct: PROJECT_DEFAULTS.jvProfitSharePct,
+      landTitleTransfers: false,
       developmentAgreementFeePct: PROJECT_DEFAULTS.jvDevelopmentAgreementFeePct,
     },
     discountRatePct: PROJECT_DEFAULTS.discountRatePct,

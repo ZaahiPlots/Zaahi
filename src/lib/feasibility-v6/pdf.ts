@@ -524,6 +524,12 @@ export function buildFeasibilityPdf(a: FeasibilityPdfArgs): { kit: PdfKit; fileN
         (jv.entitlementCapped ? ' The project cannot pay the landowner in full; receipts are capped at what it generates.' : ''),
       { size: 8.5 },
     );
+    kit.para(
+      inputs.jv.landTitleTransfers
+        ? `Land title transfers to the JV company: DLD ${inputs.jv.developmentAgreementFeePct}% of the land value (${pdfAed(jv.landValueAed * (inputs.jv.developmentAgreementFeePct / 100))}) is charged to the project, in every figure above and in the sell-vs-JV comparison. Confirm with a lawyer.`
+        : 'Land title stays with the landowner: no DLD is charged on the land. If the title transfers to the JV company, DLD of 4% of the land value applies and these results fall. Confirm with a lawyer.',
+      { size: 8.5, color: C.amber },
+    );
     if (!jv.shareIsDerived) {
       kit.subhead('Sell the land today, or contribute it');
       kit.table({

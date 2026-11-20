@@ -59,6 +59,8 @@ export const TOOLTIPS: Record<string, string> = {
     "Sum of construction + brand + consultancy + infra (× BUA), plus contingency. Auto.",
 
   // ── Finance block ─────────────────────────────────────────────────
+  landTitleTransfers:
+    "Does the land title move to the JV company? If yes, DLD charges 4% of the land value to register the transfer and that cost is added to the project. If the landowner stays the registered owner and only signs a development agreement, leave this off. Which applies to your deal is a legal question: confirm with a lawyer.",
   financeEnabled:
     "Turn on if the project carries a construction loan. Off = pure equity, no interest.",
   loanAed:

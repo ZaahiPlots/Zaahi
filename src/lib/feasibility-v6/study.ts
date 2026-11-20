@@ -196,6 +196,7 @@ export const studyInputsSchema = z.object({
     landValueAed: money.nullable(),
     landownerCashAed: money,
     landownerSharePct: pct,
+    landTitleTransfers: z.boolean().default(false),
     developmentAgreementFeePct: num(0, 20),
   }),
   discountRatePct: num(0, 50),
@@ -463,6 +464,7 @@ export function assumptionRows(list: StudyInputs[]): AssumptionRow[] {
     ['Plot area / FAR', (i) => `${i.site.plotAreaSqft == null ? "unknown" : `${n(i.site.plotAreaSqft)} sqft`} / ${i.site.maxGfaSqft != null ? `Max GFA ${n(i.site.maxGfaSqft)}` : i.site.far != null ? n(i.site.far, 2) : 'unknown'}`],
     ['Use mix', (i) => i.components.map((c) => `${ENGINES[c.engineId].label} ${n(c.sharePct, 1)}%`).join(' · ')],
     ['Price basis', (i) => i.site.priceBasis ?? 'Dubai city-wide'],
+    ['Rent basis', (i) => i.components.map((c) => (ENGINES[c.engineId].kind === 'psf' ? (c.rentPsfSfaYear === ENGINES[c.engineId].rentPsfSfaYear ? 'City average' : 'Edited') : '—')).join(' · ')],
     ['Sale price (AED/sqft)', (i) => i.components.map((c) => (ENGINES[c.engineId].kind === 'psf' ? n(c.salesPsfSfa) : '—')).join(' · ')],
     ['Rent (AED/sqft/yr)', (i) => i.components.map((c) => (ENGINES[c.engineId].kind === 'psf' ? n(c.rentPsfSfaYear) : '—')).join(' · ')],
     ['Revenue per unit', (i) => i.components.map((c) => (ENGINES[c.engineId].kind === 'operating' ? `${n(c.revenuePerUnit)} / ${ENGINES[c.engineId].unitLabel.replace(/s$/, '')}` : '—')).join(' · ')],
@@ -480,7 +482,7 @@ export function assumptionRows(list: StudyInputs[]): AssumptionRow[] {
     ['Authority fees / overhead', (i) => `${n(i.softCosts.authorityFeesPct, 1)}% / ${n(i.softCosts.developerOverheadPct, 1)}%`],
     ['Finance', (i) => (i.finance.enabled && i.finance.loanAed > 0 ? `AED ${n(i.finance.loanAed)} at ${n(i.finance.ratePct, 2)}%` : 'None')],
     ['Hold / rent growth', (i) => `${n(i.rental.holdYears)} yr / ${n(i.rental.rentGrowthPct, 1)}%`],
-    ['JV terms', (i) => (i.mode === 'jv' ? `${i.jv.type.replace('_', ' ')} · landowner ${n(i.jv.landownerSharePct, 1)}%` : '—')],
+    ['JV terms', (i) => (i.mode === 'jv' ? `${i.jv.type.replace('_', ' ')} · landowner ${n(i.jv.landownerSharePct, 1)}% · ${i.jv.landTitleTransfers ? `title transfers, DLD ${n(i.jv.developmentAgreementFeePct, 1)}%` : 'no title transfer, no DLD'}` : '—')],
     ['Discount rate', (i) => `${n(i.discountRatePct, 1)}%`],
   ];
   return rows.map(([label, f]) => {

@@ -14,6 +14,8 @@ import {
   type StudyInputs,
   type CoreResult,
 } from '../src/lib/feasibility-v6/model';
+import { AREA_BENCHMARKS, benchmarkFor, benchmarkPatch } from '../src/lib/feasibility-v6/areaBenchmarks';
+import { parseStudyInputs } from '../src/lib/feasibility-v6/study';
 import { irr } from '../src/lib/feasibility-v6/irr';
 import { routeLandUse, shareToEngine } from '../src/lib/feasibility-v6/routing';
 import { adaptParcelToInput, adaptSidePanelToInput } from '../src/lib/feasibility-v6/parcelInput';
@@ -237,6 +239,45 @@ function mixed(shares: Array<[string, string, number]>, patch?: (i: StudyInputs)
   ok(ps.sellVsJv.every((r) => near(r.vsSellAed, r.landownerReceiptsAed - ps.landValueAed)), 'M8: sell-vs-JV compares total receipts with a sale today');
   const noFee = computeFeasibility(base('offplan', (i) => { i.mode = 'jv'; i.jv.developmentAgreementFeePct = 0; })).core!;
   ok(!noFee.costLines.some((l) => l.id === 'dld'), 'M8: no DLD line when no fee applies');
+
+  // Rent and JV fee, 2026-11-20: title transfer drives the 4% DLD, default off.
+  const jvRun = (transfers?: boolean) => computeFeasibility(base('residential', (i) => { i.mode = 'jv'; if (transfers !== undefined) (i.jv as { landTitleTransfers: boolean }).landTitleTransfers = transfers; }));
+  const jvOff = jvRun();
+  const jvOn = jvRun(true);
+  const land = 150_000_000;
+  ok(jvOff.core!.costLines.every((l) => l.id !== 'dld'), 'JV fee: default charges no DLD on the land');
+  ok(jvOff.jv!.sellVsJv.length > 0 && jvOn.jv!.sellVsJv.length > 0, 'JV fee: sell-vs-JV present');
+  const dldLine = jvOn.core!.costLines.find((l) => l.id === 'dld');
+  ok(!!dldLine && near(dldLine.aed, land * 0.04, 1), 'JV fee: toggle on charges 4% of the land value', `${dldLine?.aed}`);
+  ok(near(jvOn.core!.totalCostAed - jvOff.core!.totalCostAed, land * 0.04, 1), 'JV fee: the project cost differs by exactly the 4% DLD');
+  ok(jvOn.jv!.project.profitAed < jvOff.jv!.project.profitAed, 'JV fee: toggle on lowers project profit');
+  ok(jvOn.jv!.landowner.profitAed < jvOff.jv!.landowner.profitAed, 'JV fee: toggle on lowers landowner profit (profit share)');
+  ok(jvOn.jv!.developer.profitAed < jvOff.jv!.developer.profitAed, 'JV fee: toggle on lowers developer profit');
+  ok(jvOn.jv!.sellVsJv.every((r, k) => r.vsSellAed <= jvOff.jv!.sellVsJv[k].vsSellAed), 'JV fee: sell-vs-JV carries the same rule');
+  const jvOnZero = computeFeasibility(base('residential', (i) => { i.mode = 'jv'; i.jv.landTitleTransfers = true; i.jv.developmentAgreementFeePct = 0; }));
+  ok(jvOnZero.core!.costLines.every((l) => l.id !== 'dld'), 'JV fee: toggle on with a 0% rate charges nothing');
+  const legacy = JSON.parse(JSON.stringify(base('residential')));
+  delete legacy.jv.landTitleTransfers;
+  const parsed = parseStudyInputs(legacy);
+  ok(parsed !== null && parsed.jv.landTitleTransfers === false, 'JV fee: a saved study without the toggle reads as off');
+}
+
+// ── 7b. Residential rent: city average, no derived area rents (2026-11-20)
+{
+  ok(ENGINES.residential.rentPsfSfaYear === 77.3, 'rent: residential default is AED 77.3/sqft/yr (Cavendish Maxwell, Sep 2026)');
+  ok(ENGINES.offplan.rentPsfSfaYear === 77.3, 'rent: off-plan residential shares the same city average');
+  const btr = computeFeasibility(base('residential', (i) => { i.mode = 'btr'; }));
+  ok(btr.caveats.some((c) => /City average rent/.test(c) && /77\.3/.test(c)), 'rent: BtR on the default shows the "city average" flag');
+  const edited = computeFeasibility(base('residential', (i) => { i.mode = 'btr'; i.components[0].rentPsfSfaYear = 110; }));
+  ok(!edited.caveats.some((c) => /City average rent/.test(c)), 'rent: an edited rent drops the "city average" flag');
+  ok(edited.core!.stabilisedNoiAed > btr.core!.stabilisedNoiAed, 'rent: the rent stays editable and drives income');
+  ok(ENGINES.residential.prov.rentPsfSfaYear.s === 'sourced', 'rent: provenance is sourced, not derived');
+  for (const b of AREA_BENCHMARKS) {
+    if (b.residentialRentPsfYear != null) ok(!/yield/i.test(b.source), `rent: ${b.name} residential rent is published, not price x yield`);
+  }
+  const jvc = benchmarkFor({ district: 'JUMEIRAH VILLAGE CIRCLE' });
+  const patch = benchmarkPatch('residential', jvc);
+  ok(patch.salesPsfSfa === 1408 && patch.rentPsfSfaYear === undefined, 'rent: JVC keeps its published sale price but falls back to the city-average rent');
 }
 
 // ── 8. Placeholder inputs withhold the verdict

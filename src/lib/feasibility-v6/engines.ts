@@ -25,7 +25,7 @@
 // old field was per month, and an annual figure typed into it produced the
 // 39.9% residential yield (audit B2).
 
-export const ENGINE_DEFAULTS_VERSION = '2026-11-20.1';
+export const ENGINE_DEFAULTS_VERSION = '2026-11-20.2';
 
 export type EngineId =
   | 'residential'
@@ -185,7 +185,7 @@ const RESIDENTIAL_BASE = {
   infrastructurePsfGfa: 37,
   consultancyPct: 4,
   contingencyPct: 5,
-  rentPsfSfaYear: 125,
+  rentPsfSfaYear: 77.3,
   occupancyPct: 95,
   operatingPct: 25,
   ...NO_UNIT,
@@ -205,8 +205,8 @@ const RESIDENTIAL_PROV: Partial<Record<ProvKey, Prov>> = {
   consultancyPct: P_CONSULT,
   contingencyPct: P_CONT,
   rentPsfSfaYear: {
-    s: 'derived',
-    note: 'Apartment gross yield 6.96% (Property Monitor, Nov 2026) × AED 1,800/sqft. The Cavendish Maxwell all-residential average is AED 77.3 (Sep 2026) and includes villas and old stock. Pending founder decision on which basis.',
+    s: 'sourced',
+    note: 'AED 77.3/sqft/yr, Dubai city average (Cavendish Maxwell, Sep 2026, via Khaleej Times). Covers all residential stock, villas and older units included; a new block in a prime area can rent higher. Replace it with a local figure where you have one.',
   },
   occupancyPct: { s: 'assumed', note: 'Dubai Residential REIT reports 98.4–98.6% (2026); 95% allows for voids on one new block.' },
   operatingPct: { s: 'sourced', note: 'Dubai Residential REIT all-in opex 20.6–28.3% of revenue (H1 2026).' },
@@ -931,7 +931,7 @@ export const PROJECT_PROV: Record<keyof typeof PROJECT_DEFAULTS, Prov> = {
   discountRatePct: { s: 'carried', note: 'v5 default: 10% for NPV.' },
   jvProfitSharePct: { s: 'sourced', note: '"30% landowner / 70% developer" profit shares reported for JVC, Dubailand, Sports City (Gulf News, c.2018). Low confidence.' },
   jvRevenueSharePct: { s: 'derived', note: 'Fitch (Mar 2026): land is about 20% of end value in Dubai.' },
-  jvDevelopmentAgreementFeePct: { s: 'sourced', note: 'Where the landowner is not the developer, DLD charges 4% of the land value to register the development agreement (DLD "Register Project" page + FAQ).' },
+  jvDevelopmentAgreementFeePct: { s: 'assumed', note: 'Charged only when the land title transfers to the JV company (toggle, off by default): DLD then takes 4% of the land value (DLD "Register Project" page + FAQ). Whether a given JV structure transfers title is a legal question: confirm with a lawyer.' },
 };
 
 /** What a study records so it can later tell that defaults moved. */

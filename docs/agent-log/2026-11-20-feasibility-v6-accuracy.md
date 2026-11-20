@@ -352,3 +352,41 @@ The model/calculator commit does not build on its own (the calculator mounts `St
 1. **BUA ÷ GFA = 1.85** (residential, off-plan, office, retail, mixed-use). Carried from v5; its cited source could not be found. At 1.45 the audit plot's residential BtS moves from −50.5M to +2.8M and office from −13.1M to +40.4M. It decides whether ordinary Dubai plots read as losses.
 2. **Income to the property owner = 50% of operator EBITDA** for hospitals and schools. My assumption. At 100% the same hospital would look several times more valuable; it decides whether healthcare and education read "Below" or not.
 3. **Residential rent = AED 125 / sqft / year.** Derived from a 6.96% gross apartment yield on AED 1,800/sqft; Cavendish Maxwell's all-residential average is AED 77.3 (it includes villas and older stock). It drives every residential Build-to-Rent yield.
+
+## Rent and JV fee
+
+**Instruction (founder, via `~/Downloads/PROMPT_feasibility_rent_and_jv_fee.md`):** two default changes before merge, same branch, no push / merge / deploy, migration stays unapplied.
+
+1. Residential Build to Rent: replace AED 125/sqft/yr with AED 77.3 ("city average", Cavendish Maxwell Sep 2026 via Khaleej Times). No rent derived from sale price × yield. Area rent only where the area has its own published rent figure, else city average with the flag on screen and in the PDF. Rent stays editable.
+2. JV land fee: the 4% DLD development-agreement fee defaults to 0%. New toggle "Land title transfers to the JV company"; on = 4% DLD on land value, labelled "confirm with lawyer". Same rule in the JV cashflow, Sell-vs-JV and the PDF.
+
+**Done**
+- `engines.ts`: residential/off-plan rent 125 → 77.3, provenance `sourced`; `ENGINE_DEFAULTS_VERSION` → `2026-11-20.2` (saved studies flag "defaults changed").
+- `areaBenchmarks.ts`: the five area residential rents (JVC 106, Dubai South 109, Business Bay 141, Dubai Hills 145, Downtown 166) were sale price × quoted yield, i.e. derived, the thing the instruction rules out. Removed. A web search found no published per-area residential rent per sqft for them (Cavendish Maxwell publishes the city average; Savills gives Business Bay/JVC as % change; a JVC AED 91 median came from an unnamed analysis, not usable). **No area carries its own residential rent today**, so every residential BtR plot shows "city average". Area sale prices are unchanged. A published rent plugs in by adding `residentialRentPsfYear` + source to the table.
+- Flag: BtR caveat now reads "City average rent: … AED 77.3/sqft/yr …" (screen and PDF caveat block); compare table gets a "Rent basis" row (City average / Edited); the area-benchmark note no longer claims rent was seeded.
+- `model.ts`: new `jv.landTitleTransfers` (default false), `jvLandFeePct()` is the single place the fee is decided; JV cashflow, Sell-vs-JV and the project core all read it. The DLD cost line is relabelled "DLD on land title transfer to the JV company".
+- `study.ts`: schema `landTitleTransfers` (`.default(false)`, so saved studies without it read as off, which means older saved JVs no longer carry the 4%); compare table JV row shows the title/DLD state.
+- UI: Seg toggle + "confirm with lawyer" note; the DLD % field appears only when on. PDF JV section states whether DLD was charged. Tooltip added.
+- No Prisma change; `FeasibilityStudy` migration still unapplied.
+
+**Model checks:** 17 new checks FAIL on the old code (src stashed) and the full suite passes after (996 checks, 0 failures; studies test 227/227).
+
+**Gates:** `tsc --noEmit` clean · `pnpm build` exit 0 · model checks 996/0 · `tests/e2e/feasibility-gates.spec.ts` 12/12 · no tracked screenshot rewritten.
+
+### Test plot 3720111 (land AED 150M, 144,250 sqft, FAR 2.5)
+
+| Residential Build to Rent | Before (rent 125) | After (rent 77.3) |
+|---|---|---|
+| Yield on cost | 4.8% | 3.0% |
+| IRR | 0.5% | −6.6% |
+
+| JV on residential (profit share 30%, sale economics) | Before (fee always 4%) | After, toggle OFF | After, toggle ON |
+|---|---|---|---|
+| Project profit | −50.5M | −44.5M | −50.5M |
+| Landowner profit / IRR | −15.1M / −2.4% | −13.3M / −2.1% | −15.1M / −2.4% |
+| Developer profit / IRR | −35.3M / −4.6% | −31.1M / −4.2% | −35.3M / −4.6% |
+| Sell vs JV at 30% (vs selling today / in today's money) | −15.1M / −60.4M | −13.3M / −59.2M | −15.1M / −60.4M |
+
+Toggle ON reproduces the old numbers exactly. All JV cases lose money because the residential sale economics at the engine's sale price do not cover this land at AED 150M; that is the existing model result, not this change.
+
+**Open for the founder:** the default JV is still a loss at this land price; and whether older saved JVs should keep their 4% (currently they read as toggle off).
